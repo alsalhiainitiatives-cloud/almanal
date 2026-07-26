@@ -73,12 +73,17 @@ export async function recordLoginAttempt(input: {
   success: boolean;
   meta: RequestMeta;
 }) {
-  await supabaseAdmin.from("login_attempts").insert({
-    identifier: input.identifier.slice(0, 160).toLowerCase(),
-    ip_address: input.meta.ip,
-    user_agent: input.meta.userAgent,
-    success: input.success,
-  });
+  try {
+    await supabaseAdmin.from("login_attempts").insert({
+      identifier: input.identifier.slice(0, 160).toLowerCase(),
+      ip_address: input.meta.ip,
+      user_agent: input.meta.userAgent,
+      success: input.success,
+    });
+  } catch (error) {
+    // Telemetry must never block authentication.
+    console.error("[auth] failed to record login attempt", error);
+  }
 }
 
 export async function recordAudit(input: {
@@ -91,7 +96,8 @@ export async function recordAudit(input: {
   metadata?: Record<string, unknown>;
   meta: RequestMeta;
 }) {
-  await supabaseAdmin.from("audit_logs").insert({
+  try {
+    await supabaseAdmin.from("audit_logs").insert({
     user_id: input.userId ?? null,
     actor_email: input.actorEmail ?? null,
     action: input.action,
@@ -103,29 +109,37 @@ export async function recordAudit(input: {
     user_agent: input.meta.userAgent,
     browser: input.meta.browser,
     device: input.meta.device,
-  });
+    });
+  } catch (error) {
+    console.error("[auth] failed to write audit log", error);
+  }
 }
 
 /** Brute-force protection: too many recent failures for the identifier or IP. */
 export async function isRateLimited(identifier: string, ip: string | null): Promise<boolean> {
   const since = new Date(Date.now() - LOCKOUT_WINDOW_MINUTES * 60_000).toISOString();
-  const byIdentifier = await supabaseAdmin
+  try {
+    const byIdentifier = await supabaseAdmin
     .from("login_attempts")
     .select("id", { count: "exact", head: true })
     .eq("identifier", identifier.toLowerCase())
     .eq("success", false)
     .gte("created_at", since);
 
-  if ((byIdentifier.count ?? 0) >= MAX_FAILED_ATTEMPTS) return true;
+    if ((byIdentifier.count ?? 0) >= MAX_FAILED_ATTEMPTS) return true;
 
-  if (ip) {
-    const byIp = await supabaseAdmin
-      .from("login_attempts")
-      .select("id", { count: "exact", head: true })
-      .eq("ip_address", ip)
-      .eq("success", false)
-      .gte("created_at", since);
-    if ((byIp.count ?? 0) >= MAX_FAILED_ATTEMPTS * 4) return true;
+    if (ip) {
+      const byIp = await supabaseAdmin
+        .from("login_attempts")
+        .select("id", { count: "exact", head: true })
+        .eq("ip_address", ip)
+        .eq("success", false)
+        .gte("created_at", since);
+      if ((byIp.count ?? 0) >= MAX_FAILED_ATTEMPTS * 4) return true;
+    }
+  } catch (error) {
+    // Fail open on telemetry outages rather than locking every family out.
+    console.error("[auth] rate limit check failed", error);
   }
   return false;
 }
@@ -142,14 +156,19 @@ export async function resolveEmail(identifier: string): Promise<string | null> {
   const phone = normalizePhone(value);
   if (!phone) return null;
 
-  const { data } = await supabaseAdmin
-    .from("profiles")
-    .select("email, phone")
-    .ilike("phone", `%${phone}`)
-    .limit(2);
+  try {
+    const { data } = await supabaseAdmin
+      .from("profiles")
+      .select("email, phone")
+      .ilike("phone", `%${phone}`)
+      .limit(2);
 
-  if (!data || data.length !== 1) return null;
-  return data[0].email ?? null;
+    if (!data || data.length !== 1) return null;
+    return data[0].email ?? null;
+  } catch (error) {
+    console.error("[auth] phone resolution failed", error);
+    return null;
+  }
 }
 
 /** Publishable-key client used for server-side credential verification. */
@@ -167,8 +186,8 @@ export async function registerSessionRecord(input: {
   meta: RequestMeta;
 }) {
   const now = new Date().toISOString();
-
-  const existing = await supabaseAdmin
+  try {
+    const existing = await supabaseAdmin
     .from("user_sessions")
     .select("id")
     .eq("user_id", input.userId)
@@ -177,25 +196,28 @@ export async function registerSessionRecord(input: {
     .eq("ip_address", input.meta.ip ?? "")
     .maybeSingle();
 
-  if (existing.data?.id) {
-    await supabaseAdmin
-      .from("user_sessions")
-      .update({ last_seen_at: now, remember_me: input.rememberMe })
-      .eq("id", existing.data.id);
-  } else {
-    await supabaseAdmin.from("user_sessions").insert({
-      user_id: input.userId,
-      ip_address: input.meta.ip,
-      user_agent: input.meta.userAgent,
-      browser: input.meta.browser,
-      device: input.meta.device,
-      remember_me: input.rememberMe,
-      last_seen_at: now,
-    });
-  }
+    if (existing.data?.id) {
+      await supabaseAdmin
+        .from("user_sessions")
+        .update({ last_seen_at: now, remember_me: input.rememberMe })
+        .eq("id", existing.data.id);
+    } else {
+      await supabaseAdmin.from("user_sessions").insert({
+        user_id: input.userId,
+        ip_address: input.meta.ip,
+        user_agent: input.meta.userAgent,
+        browser: input.meta.browser,
+        device: input.meta.device,
+        remember_me: input.rememberMe,
+        last_seen_at: now,
+      });
+    }
 
-  await supabaseAdmin
-    .from("profiles")
-    .update({ last_login_at: now })
-    .eq("id", input.userId);
+    await supabaseAdmin
+      .from("profiles")
+      .update({ last_login_at: now })
+      .eq("id", input.userId);
+  } catch (error) {
+    console.error("[auth] session bookkeeping failed", error);
+  }
 }
