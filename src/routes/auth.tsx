@@ -16,6 +16,7 @@ import { useAuth } from "@/features/auth/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "تسجيل الدخول | بوابة مدارس وروضة المنال" },
