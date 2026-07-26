@@ -24,10 +24,16 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdmissionsIndexRouteImport } from './routes/admissions.index'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedMyApplicationsRouteImport } from './routes/_authenticated/my-applications'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AdmissionsStageSlugRouteImport } from './routes/admissions.stage.$slug'
+import { Route as AuthenticatedTrackApplicationIdRouteImport } from './routes/_authenticated/track.$applicationId'
+import { Route as AuthenticatedApplyApplicationIdRouteImport } from './routes/_authenticated/apply.$applicationId'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
+import { Route as AdmissionsStageSlugClassroomsRouteImport } from './routes/admissions.stage.$slug.classrooms'
 
 const StagesRoute = StagesRouteImport.update({
   id: '/stages',
@@ -103,16 +109,44 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdmissionsIndexRoute = AdmissionsIndexRouteImport.update({
+  id: '/admissions/',
+  path: '/admissions/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMyApplicationsRoute =
+  AuthenticatedMyApplicationsRouteImport.update({
+    id: '/my-applications',
+    path: '/my-applications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AdmissionsStageSlugRoute = AdmissionsStageSlugRouteImport.update({
+  id: '/admissions/stage/$slug',
+  path: '/admissions/stage/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedTrackApplicationIdRoute =
+  AuthenticatedTrackApplicationIdRouteImport.update({
+    id: '/track/$applicationId',
+    path: '/track/$applicationId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedApplyApplicationIdRoute =
+  AuthenticatedApplyApplicationIdRouteImport.update({
+    id: '/apply/$applicationId',
+    path: '/apply/$applicationId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -123,6 +157,12 @@ const AuthenticatedAdminAuditRoute = AuthenticatedAdminAuditRouteImport.update({
   path: '/admin/audit',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AdmissionsStageSlugClassroomsRoute =
+  AdmissionsStageSlugClassroomsRouteImport.update({
+    id: '/classrooms',
+    path: '/classrooms',
+    getParentRoute: () => AdmissionsStageSlugRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -140,9 +180,15 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/admissions/': typeof AdmissionsIndexRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/apply/$applicationId': typeof AuthenticatedApplyApplicationIdRoute
+  '/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
+  '/admissions/stage/$slug': typeof AdmissionsStageSlugRouteWithChildren
+  '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -160,9 +206,15 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/admissions': typeof AdmissionsIndexRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/apply/$applicationId': typeof AuthenticatedApplyApplicationIdRoute
+  '/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
+  '/admissions/stage/$slug': typeof AdmissionsStageSlugRouteWithChildren
+  '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -182,9 +234,15 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/admissions/': typeof AdmissionsIndexRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/apply/$applicationId': typeof AuthenticatedApplyApplicationIdRoute
+  '/_authenticated/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
+  '/admissions/stage/$slug': typeof AdmissionsStageSlugRouteWithChildren
+  '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -204,9 +262,15 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stages'
     | '/dashboard'
+    | '/my-applications'
     | '/profile'
+    | '/admissions/'
     | '/admin/audit'
     | '/admin/users'
+    | '/apply/$applicationId'
+    | '/track/$applicationId'
+    | '/admissions/stage/$slug'
+    | '/admissions/stage/$slug/classrooms'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -224,9 +288,15 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stages'
     | '/dashboard'
+    | '/my-applications'
     | '/profile'
+    | '/admissions'
     | '/admin/audit'
     | '/admin/users'
+    | '/apply/$applicationId'
+    | '/track/$applicationId'
+    | '/admissions/stage/$slug'
+    | '/admissions/stage/$slug/classrooms'
   id:
     | '__root__'
     | '/'
@@ -245,9 +315,15 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stages'
     | '/_authenticated/dashboard'
+    | '/_authenticated/my-applications'
     | '/_authenticated/profile'
+    | '/admissions/'
     | '/_authenticated/admin/audit'
     | '/_authenticated/admin/users'
+    | '/_authenticated/apply/$applicationId'
+    | '/_authenticated/track/$applicationId'
+    | '/admissions/stage/$slug'
+    | '/admissions/stage/$slug/classrooms'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -266,6 +342,8 @@ export interface RootRouteChildren {
   SchoolLifeRoute: typeof SchoolLifeRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StagesRoute: typeof StagesRoute
+  AdmissionsIndexRoute: typeof AdmissionsIndexRoute
+  AdmissionsStageSlugRoute: typeof AdmissionsStageSlugRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -375,6 +453,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admissions/': {
+      id: '/admissions/'
+      path: '/admissions'
+      fullPath: '/admissions/'
+      preLoaderRoute: typeof AdmissionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
@@ -382,11 +467,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/my-applications': {
+      id: '/_authenticated/my-applications'
+      path: '/my-applications'
+      fullPath: '/my-applications'
+      preLoaderRoute: typeof AuthenticatedMyApplicationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/admissions/stage/$slug': {
+      id: '/admissions/stage/$slug'
+      path: '/admissions/stage/$slug'
+      fullPath: '/admissions/stage/$slug'
+      preLoaderRoute: typeof AdmissionsStageSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/track/$applicationId': {
+      id: '/_authenticated/track/$applicationId'
+      path: '/track/$applicationId'
+      fullPath: '/track/$applicationId'
+      preLoaderRoute: typeof AuthenticatedTrackApplicationIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/apply/$applicationId': {
+      id: '/_authenticated/apply/$applicationId'
+      path: '/apply/$applicationId'
+      fullPath: '/apply/$applicationId'
+      preLoaderRoute: typeof AuthenticatedApplyApplicationIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/users': {
@@ -403,25 +516,49 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAuditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/admissions/stage/$slug/classrooms': {
+      id: '/admissions/stage/$slug/classrooms'
+      path: '/classrooms'
+      fullPath: '/admissions/stage/$slug/classrooms'
+      preLoaderRoute: typeof AdmissionsStageSlugClassroomsRouteImport
+      parentRoute: typeof AdmissionsStageSlugRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedMyApplicationsRoute: typeof AuthenticatedMyApplicationsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedApplyApplicationIdRoute: typeof AuthenticatedApplyApplicationIdRoute
+  AuthenticatedTrackApplicationIdRoute: typeof AuthenticatedTrackApplicationIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedMyApplicationsRoute: AuthenticatedMyApplicationsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedApplyApplicationIdRoute: AuthenticatedApplyApplicationIdRoute,
+  AuthenticatedTrackApplicationIdRoute: AuthenticatedTrackApplicationIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
+interface AdmissionsStageSlugRouteChildren {
+  AdmissionsStageSlugClassroomsRoute: typeof AdmissionsStageSlugClassroomsRoute
+}
+
+const AdmissionsStageSlugRouteChildren: AdmissionsStageSlugRouteChildren = {
+  AdmissionsStageSlugClassroomsRoute: AdmissionsStageSlugClassroomsRoute,
+}
+
+const AdmissionsStageSlugRouteWithChildren =
+  AdmissionsStageSlugRoute._addFileChildren(AdmissionsStageSlugRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -439,6 +576,8 @@ const rootRouteChildren: RootRouteChildren = {
   SchoolLifeRoute: SchoolLifeRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StagesRoute: StagesRoute,
+  AdmissionsIndexRoute: AdmissionsIndexRoute,
+  AdmissionsStageSlugRoute: AdmissionsStageSlugRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
