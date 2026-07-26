@@ -472,7 +472,7 @@ function WizardPage() {
                   serviceNames={catalog.services
                     .filter((s) => s.is_required || services.includes(s.id))
                     .map((s) => s.name_ar)}
-                  documentNames={bundle.documents.map((d) => d.file_name)}
+                  documentNames={bundle.documents.map((d) => d.file_name ?? "ملف مرفوع")}
                   onEdit={(target) => setStep(Math.max(3, target))}
                 />
               ) : null}
