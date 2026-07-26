@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { ContactBlock } from "@/components/site/ContactBlock";
+import { ContactForm } from "@/components/site/ContactForm";
 import { PageHero } from "@/components/site/PageHero";
 
 const title = "تواصل معنا | مدارس وروضة المنال بعنيزة";
@@ -32,6 +33,9 @@ function ContactPage() {
       />
       <section className="section-y">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
+          <div className="mb-10">
+            <ContactForm />
+          </div>
           <ContactBlock />
         </div>
       </section>
