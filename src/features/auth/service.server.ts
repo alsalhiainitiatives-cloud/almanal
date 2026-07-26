@@ -181,14 +181,22 @@ export async function revokeOtherSessionRecords(userId: string) {
   const meta = getRequestMeta();
   const now = new Date().toISOString();
 
-  await supabaseAdmin
+  const { data: sessions } = await supabaseAdmin
     .from("user_sessions")
-    .update({ revoked_at: now })
+    .select("id, user_agent, ip_address")
     .eq("user_id", userId)
-    .is("revoked_at", null)
-    .or(
-      `user_agent.neq.${(meta.userAgent ?? "unknown").replace(/[,()]/g, "")},ip_address.neq.${meta.ip ?? "unknown"}`,
-    );
+    .is("revoked_at", null);
+
+  const otherIds = (sessions ?? [])
+    .filter((s) => s.user_agent !== meta.userAgent || s.ip_address !== meta.ip)
+    .map((s) => s.id);
+
+  if (otherIds.length) {
+    await supabaseAdmin
+      .from("user_sessions")
+      .update({ revoked_at: now })
+      .in("id", otherIds);
+  }
 
   await recordAudit({ userId, action: "auth.sessions.revoke_others", meta });
   return { ok: true as const };
