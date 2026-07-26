@@ -51,7 +51,7 @@ function AuthPage() {
   const signup = mode === "signup";
 
   return (
-    <div className="relative flex min-h-svh items-center justify-center overflow-hidden gradient-soft-cream px-4 py-10">
+    <div className="relative flex items-center justify-center overflow-hidden gradient-soft-cream px-4 py-12 lg:py-16">
       <div
         aria-hidden
         className="absolute -top-32 -start-24 size-[26rem] rounded-full bg-primary/10 blur-3xl"
