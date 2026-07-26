@@ -13,7 +13,7 @@ import {
 import { emptyChild, type ChildInput } from "../../schemas";
 
 type Stage = { id: string; slug: string; name_ar: string; min_age_months: number; max_age_months: number; total_seats: number; taken_seats: number };
-type Classroom = { id: string; stage_id: string; name_ar: string; capacity: number; taken_seats: number; min_age_months: number | null; max_age_months: number | null; color_hex: string };
+type Classroom = { id: string; stage_id: string; name_ar: string; capacity: number; taken_seats: number; min_age_months: number; max_age_months: number; color_hex: string };
 
 export function ChildrenStep({
   children,
@@ -40,10 +40,7 @@ export function ChildrenStep({
           const months = ageInMonths(child.birthDate);
           const fit = stages.filter((s) => isStageEligible(s, months));
           const rooms = child.stageId
-            ? eligibleClassrooms(
-                classrooms.filter((c) => c.stage_id === child.stageId),
-                months,
-              )
+            ? eligibleClassrooms(classrooms, child.stageId, months)
             : [];
 
           return (
