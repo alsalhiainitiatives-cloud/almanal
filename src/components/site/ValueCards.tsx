@@ -38,16 +38,24 @@ export function ValueCards() {
           <motion.div
             key={value.title}
             variants={staggerItem}
-            whileHover={{ y: -6 }}
-            className="rounded-4xl border border-border/60 bg-card p-7 shadow-soft transition-shadow hover:shadow-card"
+            whileHover={{ y: -8 }}
+            className="group relative overflow-hidden rounded-[2.5rem] bg-card p-8 shadow-soft transition-shadow hover:shadow-card"
           >
             <span
-              className={`grid size-14 place-items-center rounded-3xl ${tones[value.tone]}`}
+              aria-hidden
+              className={`absolute -top-10 -end-10 size-28 rounded-full opacity-50 blur-2xl ${tones[value.tone]}`}
+            />
+            <span
+              className={`relative grid size-16 place-items-center rounded-[1.4rem] transition-transform duration-500 group-hover:-rotate-6 ${tones[value.tone]}`}
             >
-              <Icon className="size-7" strokeWidth={2} />
+              <Icon className="size-8" strokeWidth={2} />
             </span>
-            <h3 className="mt-6 text-xl text-foreground">{value.title}</h3>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            <h3 className="relative mt-6 text-xl font-extrabold text-foreground">{value.title}</h3>
+            <span
+              aria-hidden
+              className="relative mt-3 block h-1.5 w-12 rounded-full bg-gold/60"
+            />
+            <p className="relative mt-3 text-sm leading-relaxed text-muted-foreground">
               {value.description}
             </p>
           </motion.div>

@@ -3,6 +3,7 @@ import { ArrowLeft, Compass, Heart, Sparkles, Target } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ContactBlock } from "@/components/site/ContactBlock";
+import { Doodle, MarqueeBand, WaveDivider } from "@/components/site/Decor";
 import { FaqAccordion } from "@/components/site/FaqAccordion";
 import { Hero } from "@/components/site/Hero";
 import { NewsCards } from "@/components/site/NewsCards";
@@ -62,18 +63,29 @@ function Index() {
       <Hero />
 
       {/* About preview */}
-      <section className="section-y">
-        <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 md:px-8 lg:grid-cols-2">
+      <section className="section-y relative overflow-hidden">
+        <Doodle kind="spark" className="end-8 top-16 hidden text-gold/60 lg:block" />
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 md:px-8 lg:grid-cols-2">
           <Reveal direction="right">
-            <div className="overflow-hidden rounded-4xl shadow-card">
-              <img
-                src={images.campus}
-                alt="مبنى مدارس وروضة المنال في حي الخزامي بعنيزة"
-                width={1400}
-                height={1000}
-                loading="lazy"
-                className="aspect-4/3 w-full object-cover"
+            <div className="relative">
+              <span
+                aria-hidden
+                className="absolute -bottom-6 -start-6 size-40 rounded-full bg-mint/70 blur-2xl"
               />
+              <div className="relative overflow-hidden blob-shape-alt shadow-glow">
+                <img
+                  src={images.campus}
+                  alt="مبنى مدارس وروضة المنال في حي الخزامي بعنيزة"
+                  width={1400}
+                  height={1200}
+                  loading="lazy"
+                  className="aspect-4/3 w-full object-cover"
+                />
+              </div>
+              <div className="glass-panel absolute -bottom-5 end-6 rounded-3xl px-5 py-3 text-center">
+                <p className="font-latin text-xl font-black text-secondary">400+</p>
+                <p className="text-xs font-bold text-muted-foreground">أسرة تثق بنا</p>
+              </div>
             </div>
           </Reveal>
 
@@ -87,9 +99,9 @@ function Index() {
             <div className="mt-8 space-y-4">
               {missionCards.map((card, i) => (
                 <Reveal key={card.title} delay={i * 0.08}>
-                  <div className="flex gap-4 rounded-3xl border border-border/60 bg-card p-5 shadow-soft">
+                  <div className="flex gap-4 rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft transition-shadow hover:shadow-card">
                     <span
-                      className={`grid size-12 shrink-0 place-items-center rounded-2xl ${card.tone} text-primary`}
+                      className={`grid size-12 shrink-0 place-items-center rounded-[1.1rem] ${card.tone} text-primary`}
                     >
                       <card.icon className="size-6" />
                     </span>
@@ -116,8 +128,13 @@ function Index() {
       </section>
 
       {/* Stages */}
-      <section className="section-y bg-beige/60">
-        <div className="mx-auto max-w-7xl px-4 md:px-8">
+      <MarqueeBand
+        items={["تعليم بمحبة", "قيم إسلامية", "بيئة آمنة", "مونتيسوري معتمد", "أنشطة ممتعة"]}
+      />
+
+      <section className="section-y relative overflow-hidden bg-beige/60 pt-24 md:pt-28">
+        <div className="pattern-dots absolute inset-0 opacity-40" aria-hidden />
+        <div className="relative z-20 mx-auto max-w-7xl px-4 md:px-8">
           <SectionHeading
             eyebrow="المراحل التعليمية"
             title="ثلاث مراحل تنمو مع طفلك"
@@ -127,6 +144,7 @@ function Index() {
             <StageCards />
           </div>
         </div>
+        <WaveDivider className="text-background" />
       </section>
 
       {/* Why choose */}
@@ -144,8 +162,8 @@ function Index() {
       </section>
 
       {/* Daily school life */}
-      <section className="section-y bg-beige/60">
-        <div className="mx-auto max-w-7xl px-4 md:px-8">
+      <section className="section-y relative overflow-hidden bg-beige/60 pb-28 md:pb-36">
+        <div className="relative z-20 mx-auto max-w-7xl px-4 md:px-8">
           <SectionHeading
             eyebrow="الحياة المدرسية"
             title="يوم في المنال"
@@ -153,11 +171,7 @@ function Index() {
           />
           <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {galleryItems.slice(0, 6).map((item, index) => (
-              <Reveal
-                key={item.title}
-                delay={index * 0.06}
-                className={index === 0 ? "sm:col-span-2 lg:col-span-2" : ""}
-              >
+              <Reveal key={item.title} delay={index * 0.06}>
                 <figure className="group relative h-full overflow-hidden rounded-4xl shadow-soft">
                   <img
                     src={item.src}
@@ -165,9 +179,7 @@ function Index() {
                     width={1000}
                     height={800}
                     loading="lazy"
-                    className={`w-full object-cover transition-transform duration-700 group-hover:scale-105 ${
-                      index === 0 ? "aspect-16/10 lg:h-full" : "aspect-4/3"
-                    }`}
+                    className="aspect-4/3 w-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <figcaption className="absolute inset-x-4 bottom-4 rounded-2xl bg-card/85 px-4 py-3 backdrop-blur-md">
                     <span className="block text-sm font-extrabold text-primary">{item.title}</span>
@@ -186,6 +198,7 @@ function Index() {
             </Button>
           </Reveal>
         </div>
+        <WaveDivider className="text-background" />
       </section>
 
       <StatsBand />
