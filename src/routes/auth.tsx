@@ -89,7 +89,7 @@ function AuthPage() {
                 <p className="mt-3 max-w-xs text-sm leading-relaxed text-primary-foreground/80">
                   {signup
                     ? "هل لديك حساب بالفعل؟ سجّل الدخول لمتابعة أبنائك، الطلبات والفواتير."
-                    : "ليس لديك حساب؟ أنشئ حساب ولي أمر في دقيقة وابدأ رحلة أبنائك معنا."}
+                    : "ليس لديك حساب؟ أنشئ حساب في دقيقة واحدة"}
                 </p>
                 <button
                   type="button"
@@ -235,7 +235,7 @@ function SignInForm() {
     <div className="space-y-6">
       <PaneHeader
         title="تسجيل الدخول"
-        subtitle="دخول آمن لأولياء الأمور وفريق العمل — تابع الطلبات والمستندات والفواتير."
+        subtitle=""
       />
 
       <form onSubmit={onSubmit} className="space-y-5" noValidate>
