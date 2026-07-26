@@ -30,7 +30,7 @@ function NewsPage() {
         title="آخر ما يحدث في المنال"
         description="نشارككم فعالياتنا وبرامجنا وإنجازات طلابنا ومعلماتنا خلال العام الدراسي."
       />
-      <section className="section-y">
+      <section className="section-y pt-4 md:pt-8">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <NewsCards />
         </div>
