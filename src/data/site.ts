@@ -38,10 +38,12 @@ export const navLinks = [
   { label: "الرئيسية", to: "/" },
   { label: "عن المنال", to: "/about" },
   { label: "المراحل التعليمية", to: "/stages" },
+  { label: "الروضة", to: "/kindergarten" },
+  { label: "الابتدائي", to: "/primary" },
   { label: "الحياة المدرسية", to: "/school-life" },
   { label: "الأخبار", to: "/news" },
-  { label: "معرض الصور", to: "/gallery" },
-  { label: "الأسئلة الشائعة", to: "/faq" },
+  { label: "المعرض", to: "/gallery" },
+  { label: "الأسئلة", to: "/faq" },
   { label: "تواصل معنا", to: "/contact" },
 ] as const;
 

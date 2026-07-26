@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as StagesRouteImport } from './routes/stages'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SchoolLifeRouteImport } from './routes/school-life'
+import { Route as PrimaryRouteImport } from './routes/primary'
 import { Route as NewsRouteImport } from './routes/news'
+import { Route as KindergartenRouteImport } from './routes/kindergarten'
 import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -34,9 +36,19 @@ const SchoolLifeRoute = SchoolLifeRouteImport.update({
   path: '/school-life',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrimaryRoute = PrimaryRouteImport.update({
+  id: '/primary',
+  path: '/primary',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NewsRoute = NewsRouteImport.update({
   id: '/news',
   path: '/news',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KindergartenRoute = KindergartenRouteImport.update({
+  id: '/kindergarten',
+  path: '/kindergarten',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GalleryRoute = GalleryRouteImport.update({
@@ -71,7 +83,9 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/gallery': typeof GalleryRoute
+  '/kindergarten': typeof KindergartenRoute
   '/news': typeof NewsRoute
+  '/primary': typeof PrimaryRoute
   '/school-life': typeof SchoolLifeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
@@ -82,7 +96,9 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/gallery': typeof GalleryRoute
+  '/kindergarten': typeof KindergartenRoute
   '/news': typeof NewsRoute
+  '/primary': typeof PrimaryRoute
   '/school-life': typeof SchoolLifeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
@@ -94,7 +110,9 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/gallery': typeof GalleryRoute
+  '/kindergarten': typeof KindergartenRoute
   '/news': typeof NewsRoute
+  '/primary': typeof PrimaryRoute
   '/school-life': typeof SchoolLifeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
@@ -107,7 +125,9 @@ export interface FileRouteTypes {
     | '/contact'
     | '/faq'
     | '/gallery'
+    | '/kindergarten'
     | '/news'
+    | '/primary'
     | '/school-life'
     | '/sitemap.xml'
     | '/stages'
@@ -118,7 +138,9 @@ export interface FileRouteTypes {
     | '/contact'
     | '/faq'
     | '/gallery'
+    | '/kindergarten'
     | '/news'
+    | '/primary'
     | '/school-life'
     | '/sitemap.xml'
     | '/stages'
@@ -129,7 +151,9 @@ export interface FileRouteTypes {
     | '/contact'
     | '/faq'
     | '/gallery'
+    | '/kindergarten'
     | '/news'
+    | '/primary'
     | '/school-life'
     | '/sitemap.xml'
     | '/stages'
@@ -141,7 +165,9 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   GalleryRoute: typeof GalleryRoute
+  KindergartenRoute: typeof KindergartenRoute
   NewsRoute: typeof NewsRoute
+  PrimaryRoute: typeof PrimaryRoute
   SchoolLifeRoute: typeof SchoolLifeRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StagesRoute: typeof StagesRoute
@@ -170,11 +196,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SchoolLifeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/primary': {
+      id: '/primary'
+      path: '/primary'
+      fullPath: '/primary'
+      preLoaderRoute: typeof PrimaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/news': {
       id: '/news'
       path: '/news'
       fullPath: '/news'
       preLoaderRoute: typeof NewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kindergarten': {
+      id: '/kindergarten'
+      path: '/kindergarten'
+      fullPath: '/kindergarten'
+      preLoaderRoute: typeof KindergartenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gallery': {
@@ -221,7 +261,9 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   GalleryRoute: GalleryRoute,
+  KindergartenRoute: KindergartenRoute,
   NewsRoute: NewsRoute,
+  PrimaryRoute: PrimaryRoute,
   SchoolLifeRoute: SchoolLifeRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StagesRoute: StagesRoute,
@@ -229,13 +271,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
