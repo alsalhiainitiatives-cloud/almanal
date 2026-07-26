@@ -5,7 +5,8 @@ export const identifierSchema = z
   .string()
   .trim()
   .min(5, "أدخل البريد الإلكتروني")
-  .max(160);
+  .max(160)
+  .email("البريد الإلكتروني غير صحيح");
 
 export const passwordSchema = z
   .string()

@@ -225,7 +225,9 @@ function SignInForm() {
       toast.success("تم تسجيل الدخول بنجاح");
       navigate({ to: "/dashboard", replace: true });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "تعذّر تسجيل الدخول.");
+      const message = error instanceof Error ? error.message : "تعذّر تسجيل الدخول.";
+      setErrors({ identifier: message });
+      toast.error(message);
     } finally {
       setLoading(false);
     }
