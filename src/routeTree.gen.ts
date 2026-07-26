@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StagesRouteImport } from './routes/stages'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SchoolLifeRouteImport } from './routes/school-life'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as GalleryRouteImport } from './routes/gallery'
@@ -21,6 +22,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const StagesRoute = StagesRouteImport.update({
   id: '/stages',
   path: '/stages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SchoolLifeRoute = SchoolLifeRouteImport.update({
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/gallery': typeof GalleryRoute
   '/news': typeof NewsRoute
   '/school-life': typeof SchoolLifeRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/gallery': typeof GalleryRoute
   '/news': typeof NewsRoute
   '/school-life': typeof SchoolLifeRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
 }
 export interface FileRoutesById {
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/gallery': typeof GalleryRoute
   '/news': typeof NewsRoute
   '/school-life': typeof SchoolLifeRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/gallery'
     | '/news'
     | '/school-life'
+    | '/sitemap.xml'
     | '/stages'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/gallery'
     | '/news'
     | '/school-life'
+    | '/sitemap.xml'
     | '/stages'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/gallery'
     | '/news'
     | '/school-life'
+    | '/sitemap.xml'
     | '/stages'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   GalleryRoute: typeof GalleryRoute
   NewsRoute: typeof NewsRoute
   SchoolLifeRoute: typeof SchoolLifeRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StagesRoute: typeof StagesRoute
 }
 
@@ -141,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/stages'
       fullPath: '/stages'
       preLoaderRoute: typeof StagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/school-life': {
@@ -203,6 +223,7 @@ const rootRouteChildren: RootRouteChildren = {
   GalleryRoute: GalleryRoute,
   NewsRoute: NewsRoute,
   SchoolLifeRoute: SchoolLifeRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   StagesRoute: StagesRoute,
 }
 export const routeTree = rootRouteImport
