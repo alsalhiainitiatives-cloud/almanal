@@ -28,6 +28,7 @@ type AuthContextValue = {
   initializing: boolean;
   loadingContext: boolean;
   profile: SecurityContextData["profile"] | null;
+  sessions: SecurityContextData["sessions"];
   roles: AppRole[];
   permissions: string[];
   primaryRole: AppRole | null;
@@ -115,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       initializing,
       loadingContext: isLoading,
       profile: data?.profile ?? null,
+      sessions: data?.sessions ?? [],
       roles,
       permissions,
       primaryRole,

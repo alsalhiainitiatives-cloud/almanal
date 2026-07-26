@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as StagesRouteImport } from './routes/stages'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SchoolLifeRouteImport } from './routes/school-life'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrimaryRouteImport } from './routes/primary'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as KindergartenRouteImport } from './routes/kindergarten'
@@ -21,7 +22,9 @@ import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 
 const StagesRoute = StagesRouteImport.update({
   id: '/stages',
@@ -36,6 +39,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const SchoolLifeRoute = SchoolLifeRouteImport.update({
   id: '/school-life',
   path: '/school-life',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrimaryRoute = PrimaryRouteImport.update({
@@ -83,10 +91,19 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -100,9 +117,11 @@ export interface FileRoutesByFullPath {
   '/kindergarten': typeof KindergartenRoute
   '/news': typeof NewsRoute
   '/primary': typeof PrimaryRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/school-life': typeof SchoolLifeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -115,13 +134,16 @@ export interface FileRoutesByTo {
   '/kindergarten': typeof KindergartenRoute
   '/news': typeof NewsRoute
   '/primary': typeof PrimaryRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/school-life': typeof SchoolLifeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
@@ -131,9 +153,11 @@ export interface FileRoutesById {
   '/kindergarten': typeof KindergartenRoute
   '/news': typeof NewsRoute
   '/primary': typeof PrimaryRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/school-life': typeof SchoolLifeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -148,9 +172,11 @@ export interface FileRouteTypes {
     | '/kindergarten'
     | '/news'
     | '/primary'
+    | '/reset-password'
     | '/school-life'
     | '/sitemap.xml'
     | '/stages'
+    | '/dashboard'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -163,12 +189,15 @@ export interface FileRouteTypes {
     | '/kindergarten'
     | '/news'
     | '/primary'
+    | '/reset-password'
     | '/school-life'
     | '/sitemap.xml'
     | '/stages'
+    | '/dashboard'
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
     | '/about'
     | '/auth'
     | '/contact'
@@ -178,13 +207,16 @@ export interface FileRouteTypes {
     | '/kindergarten'
     | '/news'
     | '/primary'
+    | '/reset-password'
     | '/school-life'
     | '/sitemap.xml'
     | '/stages'
+    | '/_authenticated/dashboard'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
   ContactRoute: typeof ContactRoute
@@ -194,6 +226,7 @@ export interface RootRouteChildren {
   KindergartenRoute: typeof KindergartenRoute
   NewsRoute: typeof NewsRoute
   PrimaryRoute: typeof PrimaryRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SchoolLifeRoute: typeof SchoolLifeRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StagesRoute: typeof StagesRoute
@@ -220,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/school-life'
       fullPath: '/school-life'
       preLoaderRoute: typeof SchoolLifeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/primary': {
@@ -285,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -292,11 +339,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
   ContactRoute: ContactRoute,
@@ -306,6 +372,7 @@ const rootRouteChildren: RootRouteChildren = {
   KindergartenRoute: KindergartenRoute,
   NewsRoute: NewsRoute,
   PrimaryRoute: PrimaryRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SchoolLifeRoute: SchoolLifeRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StagesRoute: StagesRoute,

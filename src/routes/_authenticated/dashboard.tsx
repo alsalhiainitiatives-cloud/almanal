@@ -106,7 +106,7 @@ function StatCard({
 }
 
 function SessionsCard() {
-  const { sessionsList } = useSessions();
+  const { sessions } = useAuth();
 
   return (
     <section className="rounded-[2rem] border border-border/60 bg-card p-6 shadow-soft sm:p-8">
@@ -115,12 +115,12 @@ function SessionsCard() {
         الأجهزة التي سجّلت الدخول منها مؤخرًا. يمكنك إنهاء الجلسات الأخرى من صفحة ملفي الشخصي.
       </p>
       <ul className="mt-5 space-y-3">
-        {sessionsList.length === 0 && (
+        {sessions.length === 0 && (
           <li className="rounded-2xl bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
             لا توجد جلسات مسجّلة بعد.
           </li>
         )}
-        {sessionsList.map((session) => (
+        {sessions.map((session) => (
           <li
             key={session.id}
             className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/60 bg-background/60 px-4 py-3"
@@ -146,18 +146,4 @@ function SessionsCard() {
       </ul>
     </section>
   );
-}
-
-function useSessions() {
-  const { sessions } = useAuthSessions();
-  return { sessionsList: sessions };
-}
-
-function useAuthSessions() {
-  const auth = useAuth();
-  return { sessions: auth.profile ? authSessions(auth) : [] };
-}
-
-function authSessions(auth: ReturnType<typeof useAuth>) {
-  return auth.session ? auth.sessionRecords : [];
 }
