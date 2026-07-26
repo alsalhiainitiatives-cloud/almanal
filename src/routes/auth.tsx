@@ -241,7 +241,7 @@ function SignInForm() {
       <form onSubmit={onSubmit} className="space-y-5" noValidate>
         <div className="space-y-2">
           <Label htmlFor="identifier" className="text-sm font-bold">
-            البريد الإلكتروني أو رقم الجوال
+            البريد الإلكتروني
           </Label>
           <div className="relative">
             <Mail className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-muted-foreground" />
