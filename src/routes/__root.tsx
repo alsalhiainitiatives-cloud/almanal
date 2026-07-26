@@ -46,6 +46,18 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
+  // A new deploy invalidates the previous build's hashed chunks, so an open tab
+  // fails to lazy-load a route module. Reload once to pick up the fresh assets.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!/Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed/i.test(error?.message ?? ""))
+      return;
+    const key = "stale-chunk-reloaded";
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+    window.location.reload();
+  }, [error]);
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
