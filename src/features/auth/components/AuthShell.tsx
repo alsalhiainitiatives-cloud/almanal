@@ -58,7 +58,7 @@ export function AuthShell({
         <div className="order-1 lg:order-2">
           <div className="mx-auto w-full max-w-md rounded-[2.5rem] border border-border/60 bg-card/85 p-6 shadow-soft backdrop-blur-xl sm:p-9">
             <div className="flex flex-col items-center text-center">
-              <Logo className="h-12 w-auto" />
+              <Logo />
               <h1 className="mt-5 text-2xl font-extrabold text-foreground sm:text-3xl">{title}</h1>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{subtitle}</p>
             </div>
@@ -73,7 +73,7 @@ export function AuthShell({
                 className="inline-flex items-center gap-1.5 text-sm font-bold text-primary transition-colors hover:text-primary/80"
               >
                 <ArrowRight className="size-4" />
-                العودة إلى موقع {school.shortName ?? "المنال"}
+                العودة إلى موقع {school.shortName}
               </Link>
             </div>
           </div>
