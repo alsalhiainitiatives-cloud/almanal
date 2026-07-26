@@ -88,7 +88,7 @@ function AuthPage() {
                 </h2>
                 <p className="mt-3 max-w-xs text-sm leading-relaxed text-primary-foreground/80">
                   {signup
-                    ? "هل لديك حساب بالفعل؟ سجّل الدخول لمتابعة أبنائك، الطلبات والفواتير."
+                    ? "هل لديك حساب بالفعل؟ سجّل الدخول للمتابعة."
                     : "ليس لديك حساب؟ أنشئ حساب في دقيقة واحدة"}
                 </p>
                 <button
@@ -448,7 +448,7 @@ function SignUpForm() {
       <OrDivider />
       <GoogleButton label="التسجيل باستخدام حساب جوجل" />
       <p className="text-center text-xs leading-relaxed text-muted-foreground">
-        بإنشاء الحساب أنت توافق على سياسة الخصوصية وحفظ بيانات الأسرة بشكل آمن.
+        بإنشاء الحساب أنت توافق على سياسات الخصوصية وشروط الاستخدام
       </p>
     </div>
   );
