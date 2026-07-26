@@ -1,15 +1,17 @@
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
-import { Clock, MapPin, Menu, Phone, Sparkles, X } from "lucide-react";
+import { Clock, LayoutDashboard, LogIn, MapPin, Menu, Phone, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { navLinks, school } from "@/data/site";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { Logo } from "./Logo";
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { isAuthenticated, profile } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16);
@@ -68,10 +70,21 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Button variant="hero" size="default" className="hidden sm:inline-flex">
-            <Sparkles className="size-4" />
-            التسجيل والقبول
-          </Button>
+          {isAuthenticated ? (
+            <Button variant="hero" size="default" className="hidden sm:inline-flex" asChild>
+              <Link to="/dashboard">
+                <LayoutDashboard className="size-4" />
+                {profile?.fullName?.split(" ")[0] ?? "لوحتي"}
+              </Link>
+            </Button>
+          ) : (
+            <Button variant="hero" size="default" className="hidden sm:inline-flex" asChild>
+              <Link to="/auth">
+                <LogIn className="size-4" />
+                تسجيل الدخول
+              </Link>
+            </Button>
+          )}
           <Button
             variant="soft"
             size="icon"
@@ -106,8 +119,10 @@ export function Header() {
                   {link.label}
                 </Link>
               ))}
-              <Button variant="hero" size="lg" className="mt-2 w-full sm:hidden">
-                التسجيل والقبول
+              <Button variant="hero" size="lg" className="mt-2 w-full sm:hidden" asChild>
+                <Link to={isAuthenticated ? "/dashboard" : "/auth"} onClick={() => setOpen(false)}>
+                  {isAuthenticated ? "لوحتي" : "تسجيل الدخول"}
+                </Link>
               </Button>
             </nav>
           </motion.div>
