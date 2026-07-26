@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
-import { Menu, Phone, X } from "lucide-react";
+import { Clock, MapPin, Menu, Phone, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -19,25 +19,48 @@ export function Header() {
   }, []);
 
   return (
-    <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "border-b border-border/70 bg-background/85 backdrop-blur-xl shadow-soft"
-          : "bg-transparent"
-      }`}
-    >
-      <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 md:px-8">
+    <>
+      {/* Top contact strip */}
+      <div className="gradient-burgundy text-primary-foreground">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2 text-xs font-semibold md:px-8">
+          <a href={`tel:${school.phoneIntl}`} className="inline-flex items-center gap-2">
+            <Phone className="size-3.5 text-gold" />
+            <span dir="ltr">{school.phone}</span>
+          </a>
+          <span className="inline-flex items-center gap-2 text-primary-foreground/85">
+            <Clock className="size-3.5 text-gold" />
+            الأحد – الخميس · 7:00 ص – 12:30 م
+          </span>
+          <span className="hidden items-center gap-2 text-primary-foreground/85 sm:inline-flex">
+            <MapPin className="size-3.5 text-gold" />
+            {school.address.district}، عنيزة
+          </span>
+        </div>
+      </div>
+
+      <header
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? "bg-background/90 shadow-card backdrop-blur-xl"
+            : "bg-background/70 backdrop-blur-sm"
+        }`}
+      >
+        <div
+          className={`mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 transition-all duration-300 md:px-8 xl:grid-cols-[auto_1fr_auto] ${
+            scrolled ? "py-2" : ""
+          }`}
+        >
         <Link to="/" className="min-w-0" onClick={() => setOpen(false)}>
           <Logo />
         </Link>
 
-        <nav className="hidden items-center gap-1 xl:flex">
+        <nav className="hidden items-center justify-center gap-1 rounded-full bg-accent/50 p-1.5 xl:flex">
           {navLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}
               activeOptions={{ exact: link.to === "/" }}
-              className="rounded-full px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-primary data-[status=active]:bg-accent data-[status=active]:text-primary"
+              className="rounded-full px-4 py-2 text-sm font-bold text-muted-foreground transition-all hover:bg-card hover:text-primary hover:shadow-soft data-[status=active]:bg-card data-[status=active]:text-primary data-[status=active]:shadow-soft"
             >
               {link.label}
             </Link>
@@ -45,14 +68,8 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <a
-            href={`tel:${school.phoneIntl}`}
-            className="hidden items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-accent md:inline-flex"
-          >
-            <Phone className="size-4" />
-            <span dir="ltr">{school.phone}</span>
-          </a>
           <Button variant="hero" size="default" className="hidden sm:inline-flex">
+            <Sparkles className="size-4" />
             التسجيل والقبول
           </Button>
           <Button
@@ -66,7 +83,7 @@ export function Header() {
             {open ? <X /> : <Menu />}
           </Button>
         </div>
-      </div>
+        </div>
 
       <AnimatePresence>
         {open ? (
@@ -96,6 +113,7 @@ export function Header() {
           </motion.div>
         ) : null}
       </AnimatePresence>
-    </header>
+      </header>
+    </>
   );
 }
