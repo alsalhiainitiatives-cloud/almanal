@@ -33,13 +33,14 @@ export function PasswordInput({
         <Input
           id={id}
           type={visible ? "text" : "password"}
+          dir="ltr"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           autoComplete={autoComplete}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${id}-error` : undefined}
-          className="h-12 rounded-2xl border-border/70 bg-background/80 ps-10 pe-12 text-base transition-all focus-visible:ring-4 focus-visible:ring-primary/15"
+          className="h-12 rounded-2xl border-border/70 bg-background/80 ps-10 pe-12 text-start text-base transition-all focus-visible:ring-4 focus-visible:ring-primary/15"
         />
         <button
           type="button"
