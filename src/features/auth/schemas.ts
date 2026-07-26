@@ -4,7 +4,7 @@ import { z } from "zod";
 export const identifierSchema = z
   .string()
   .trim()
-  .min(5, "أدخل البريد الإلكتروني أو رقم الجوال")
+  .min(5, "أدخل البريد الإلكتروني")
   .max(160);
 
 export const passwordSchema = z

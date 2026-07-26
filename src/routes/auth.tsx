@@ -249,11 +249,11 @@ function SignInForm() {
               id="identifier"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="name@example.com أو 05xxxxxxxx"
+              placeholder="name@example.com"
               autoComplete="username"
               dir="ltr"
               aria-invalid={Boolean(errors.identifier)}
-              className="h-12 rounded-2xl border-border/70 bg-background/80 ps-10 text-base focus-visible:ring-4 focus-visible:ring-primary/15"
+              className="h-12 rounded-2xl border-border/70 bg-background/80 ps-10 text-start text-base focus-visible:ring-4 focus-visible:ring-primary/15"
             />
           </div>
           {errors.identifier && (
@@ -373,8 +373,9 @@ function SignUpForm() {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             placeholder="مثال: أحمد بن عبدالله"
+            dir="rtl"
             aria-invalid={Boolean(errors.fullName)}
-            className="h-12 rounded-2xl border-border/70 bg-background/80 text-base focus-visible:ring-4 focus-visible:ring-primary/15"
+            className="h-12 rounded-2xl border-border/70 bg-background/80 text-start text-base focus-visible:ring-4 focus-visible:ring-primary/15"
           />
           {errors.fullName && (
             <p className="text-xs font-semibold text-destructive">{errors.fullName}</p>
@@ -395,7 +396,7 @@ function SignUpForm() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com"
               aria-invalid={Boolean(errors.email)}
-              className="h-12 rounded-2xl border-border/70 bg-background/80 ps-10 text-base focus-visible:ring-4 focus-visible:ring-primary/15"
+              className="h-12 rounded-2xl border-border/70 bg-background/80 ps-10 text-start text-base focus-visible:ring-4 focus-visible:ring-primary/15"
             />
           </div>
           {errors.email && <p className="text-xs font-semibold text-destructive">{errors.email}</p>}
@@ -414,7 +415,7 @@ function SignUpForm() {
               onChange={(e) => setPhone(e.target.value)}
               placeholder="05xxxxxxxx"
               aria-invalid={Boolean(errors.phone)}
-              className="h-12 rounded-2xl border-border/70 bg-background/80 ps-10 text-base focus-visible:ring-4 focus-visible:ring-primary/15"
+              className="h-12 rounded-2xl border-border/70 bg-background/80 ps-10 text-start text-base focus-visible:ring-4 focus-visible:ring-primary/15"
             />
           </div>
           {errors.phone && <p className="text-xs font-semibold text-destructive">{errors.phone}</p>}
