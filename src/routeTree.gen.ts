@@ -29,6 +29,7 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedMyApplicationsRouteImport } from './routes/_authenticated/my-applications'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AdmissionsStageSlugRouteImport } from './routes/admissions.stage.$slug'
+import { Route as AuthenticatedTrackApplicationIdRouteImport } from './routes/_authenticated/track.$applicationId'
 import { Route as AuthenticatedApplyApplicationIdRouteImport } from './routes/_authenticated/apply.$applicationId'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
@@ -134,6 +135,12 @@ const AdmissionsStageSlugRoute = AdmissionsStageSlugRouteImport.update({
   path: '/admissions/stage/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedTrackApplicationIdRoute =
+  AuthenticatedTrackApplicationIdRouteImport.update({
+    id: '/track/$applicationId',
+    path: '/track/$applicationId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedApplyApplicationIdRoute =
   AuthenticatedApplyApplicationIdRouteImport.update({
     id: '/apply/$applicationId',
@@ -179,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/apply/$applicationId': typeof AuthenticatedApplyApplicationIdRoute
+  '/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
   '/admissions/stage/$slug': typeof AdmissionsStageSlugRouteWithChildren
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
 }
@@ -204,6 +212,7 @@ export interface FileRoutesByTo {
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/apply/$applicationId': typeof AuthenticatedApplyApplicationIdRoute
+  '/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
   '/admissions/stage/$slug': typeof AdmissionsStageSlugRouteWithChildren
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
 }
@@ -231,6 +240,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/apply/$applicationId': typeof AuthenticatedApplyApplicationIdRoute
+  '/_authenticated/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
   '/admissions/stage/$slug': typeof AdmissionsStageSlugRouteWithChildren
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
 }
@@ -258,6 +268,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/users'
     | '/apply/$applicationId'
+    | '/track/$applicationId'
     | '/admissions/stage/$slug'
     | '/admissions/stage/$slug/classrooms'
   fileRoutesByTo: FileRoutesByTo
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/users'
     | '/apply/$applicationId'
+    | '/track/$applicationId'
     | '/admissions/stage/$slug'
     | '/admissions/stage/$slug/classrooms'
   id:
@@ -309,6 +321,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/audit'
     | '/_authenticated/admin/users'
     | '/_authenticated/apply/$applicationId'
+    | '/_authenticated/track/$applicationId'
     | '/admissions/stage/$slug'
     | '/admissions/stage/$slug/classrooms'
   fileRoutesById: FileRoutesById
@@ -475,6 +488,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdmissionsStageSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/track/$applicationId': {
+      id: '/_authenticated/track/$applicationId'
+      path: '/track/$applicationId'
+      fullPath: '/track/$applicationId'
+      preLoaderRoute: typeof AuthenticatedTrackApplicationIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/apply/$applicationId': {
       id: '/_authenticated/apply/$applicationId'
       path: '/apply/$applicationId'
@@ -513,6 +533,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedApplyApplicationIdRoute: typeof AuthenticatedApplyApplicationIdRoute
+  AuthenticatedTrackApplicationIdRoute: typeof AuthenticatedTrackApplicationIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -522,6 +543,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedApplyApplicationIdRoute: AuthenticatedApplyApplicationIdRoute,
+  AuthenticatedTrackApplicationIdRoute: AuthenticatedTrackApplicationIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

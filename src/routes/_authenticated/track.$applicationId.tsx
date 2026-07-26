@@ -124,9 +124,9 @@ function TrackPage() {
                 <span className="absolute -start-[1.95rem] top-1 grid size-4 place-items-center rounded-full bg-primary text-primary-foreground">
                   <CircleDot className="size-3" />
                 </span>
-                <p className="text-sm font-black text-foreground">{e.title}</p>
-                {e.body ? (
-                  <p className="mt-1 text-sm text-muted-foreground">{e.body}</p>
+                <p className="text-sm font-black text-foreground">{e.title_ar}</p>
+                {e.body_ar ? (
+                  <p className="mt-1 text-sm text-muted-foreground">{e.body_ar}</p>
                 ) : null}
                 <p className="mt-1 text-xs text-muted-foreground" dir="ltr">
                   {new Date(e.created_at).toLocaleString("ar-SA")}
