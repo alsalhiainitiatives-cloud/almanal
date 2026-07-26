@@ -11,7 +11,12 @@ type DocType = {
   is_required: boolean;
 };
 
-type Uploaded = { id: string; document_type_slug: string; file_name: string; file_size: number };
+type Uploaded = {
+  id: string;
+  document_type_slug: string;
+  file_name: string | null;
+  file_size: number | null;
+};
 
 export function DocumentsStep({
   types,
@@ -71,7 +76,7 @@ function DocumentRow({
         {doc ? (
           <p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-mint-foreground">
             <CheckCircle2 className="size-4" />
-            {doc.file_name} — {(doc.file_size / 1024).toFixed(0)} كيلوبايت
+            {doc.file_name ?? "ملف مرفوع"} — {((doc.file_size ?? 0) / 1024).toFixed(0)} كيلوبايت
           </p>
         ) : null}
       </div>
