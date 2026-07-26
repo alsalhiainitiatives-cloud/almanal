@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
+
+import type { Database } from "@/integrations/supabase/types";
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "الاسم قصير جدًا").max(100),
@@ -15,9 +18,13 @@ export type ContactInput = z.infer<typeof contactSchema>;
 export const submitContactMessage = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => contactSchema.parse(data))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabase = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } },
+    );
 
-    const { error } = await supabaseAdmin.from("contact_messages").insert({
+    const { error } = await supabase.from("contact_messages").insert({
       name: data.name,
       phone: data.phone,
       email: data.email || null,
