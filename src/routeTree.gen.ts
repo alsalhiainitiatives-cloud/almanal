@@ -26,6 +26,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdmissionsIndexRouteImport } from './routes/admissions.index'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedMyApplicationsRouteImport } from './routes/_authenticated/my-applications'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AdmissionsStageSlugRouteImport } from './routes/admissions.stage.$slug'
 import { Route as AuthenticatedApplyApplicationIdRouteImport } from './routes/_authenticated/apply.$applicationId'
@@ -117,6 +118,12 @@ const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMyApplicationsRoute =
+  AuthenticatedMyApplicationsRouteImport.update({
+    id: '/my-applications',
+    path: '/my-applications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -166,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/admissions/': typeof AdmissionsIndexRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -190,6 +198,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/admissions': typeof AdmissionsIndexRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -216,6 +225,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/admissions/': typeof AdmissionsIndexRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stages'
     | '/dashboard'
+    | '/my-applications'
     | '/profile'
     | '/admissions/'
     | '/admin/audit'
@@ -266,6 +277,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stages'
     | '/dashboard'
+    | '/my-applications'
     | '/profile'
     | '/admissions'
     | '/admin/audit'
@@ -291,6 +303,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stages'
     | '/_authenticated/dashboard'
+    | '/_authenticated/my-applications'
     | '/_authenticated/profile'
     | '/admissions/'
     | '/_authenticated/admin/audit'
@@ -441,6 +454,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/my-applications': {
+      id: '/_authenticated/my-applications'
+      path: '/my-applications'
+      fullPath: '/my-applications'
+      preLoaderRoute: typeof AuthenticatedMyApplicationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -488,6 +508,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedMyApplicationsRoute: typeof AuthenticatedMyApplicationsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
@@ -496,6 +517,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedMyApplicationsRoute: AuthenticatedMyApplicationsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
