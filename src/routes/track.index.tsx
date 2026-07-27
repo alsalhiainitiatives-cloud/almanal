@@ -122,7 +122,7 @@ function PublicTrackPage() {
         description="أدخل رقم الطلب مع رمز التحقق الخاص به، أو امسح رمز QR الموجود على نموذج الطلب لعرض الحالة فورًا — بدون تسجيل دخول."
       />
 
-      <section className="container mx-auto -mt-20 px-4 pb-20 md:px-8">
+      <section className="relative z-30 container mx-auto -mt-20 px-4 pb-20 md:px-8">
         <div className="mx-auto max-w-3xl space-y-6">
           <form onSubmit={submit} className="rounded-[2.5rem] bg-card p-6 shadow-card sm:p-8">
             <div className="grid gap-4 sm:grid-cols-2">
