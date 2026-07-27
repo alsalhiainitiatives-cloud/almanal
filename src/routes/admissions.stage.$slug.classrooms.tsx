@@ -2,7 +2,7 @@ import { useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Check, Loader2, Users } from "lucide-react";
+import { ArrowLeft, Loader2, Users } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 
@@ -65,15 +65,14 @@ function ClassroomsPage() {
   const { data } = useSuspenseQuery(stageQuery(slug));
   const navigate = useNavigate();
   const start = useServerFn(createApplication);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
 
   if (!data) return null;
   const { stage, classrooms } = data;
 
-  async function handleStart() {
+  async function handleStart(classroomId: string) {
     if (!data) return;
-    setBusy(true);
+    setBusy(classroomId);
     try {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) {
@@ -81,12 +80,12 @@ function ClassroomsPage() {
         navigate({ to: "/auth" });
         return;
       }
-      const res = await start({ data: { stageId: data.stage.id, classroomId: selected } });
+      const res = await start({ data: { stageId: data.stage.id, classroomId } });
       navigate({ to: "/apply/$applicationId", params: { applicationId: res.id } });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "تعذّر بدء الطلب");
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
@@ -95,7 +94,7 @@ function ClassroomsPage() {
       <PageHero
         eyebrow={stage.name_ar}
         title="اختر فصل طفلك"
-        description="كل فصل له معلمته وسعته ولونه — يمكنك اختيار فصل محدد أو ترك الاختيار لإدارة القبول."
+        description="كل فصل له معلمته وسعته ولونه — اضغط «ابدأ التسجيل» للفصل المناسب أو «عرض التفاصيل» لمعرفة المزيد عنه."
       />
 
       <section className="section-y">
@@ -104,29 +103,18 @@ function ClassroomsPage() {
             {classrooms.map((c, i) => {
               const left = seatsLeft(c);
               const full = left <= 0;
-              const active = selected === c.id;
               return (
-                <motion.button
+                <motion.article
                   key={c.id}
-                  type="button"
-                  disabled={full}
-                  onClick={() => setSelected(active ? null : c.id)}
                   initial={{ opacity: 0, y: 24 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.45, delay: i * 0.06 }}
-                  className={`relative overflow-hidden rounded-[2rem] border-2 p-6 text-start shadow-soft transition ${
+                  className={`relative flex flex-col overflow-hidden rounded-[2rem] border-2 p-6 text-start shadow-soft transition ${
                     full
-                      ? "cursor-not-allowed border-border/50 bg-muted/40 opacity-70"
-                      : active
-                        ? "border-primary bg-card shadow-card"
-                        : "border-transparent bg-card hover:-translate-y-1 hover:shadow-card"
+                      ? "border-border/50 bg-muted/40"
+                      : "border-transparent bg-card hover:-translate-y-1 hover:shadow-card"
                   }`}
                 >
-                  {active ? (
-                    <span className="absolute top-4 end-4 grid size-7 place-items-center rounded-full bg-primary text-primary-foreground">
-                      <Check className="size-4" />
-                    </span>
-                  ) : null}
                   <span
                     aria-hidden
                     className="block size-10 rounded-2xl ring-2 ring-border"
@@ -134,32 +122,45 @@ function ClassroomsPage() {
                   />
                   <p className="mt-4 text-lg font-black text-foreground">{c.name_ar}</p>
                   <p className="text-sm font-bold text-secondary">{c.teacher_name}</p>
-                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{c.description_ar}</p>
+                  <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                    {c.description_ar}
+                  </p>
                   <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-beige px-3 py-1 text-xs font-black text-foreground">
                     <Users className="size-3.5" />
                     {full ? "اكتمل العدد" : `${left} مقعد من ${c.capacity}`}
                   </p>
-                </motion.button>
+                  <div className="mt-6 flex flex-wrap gap-2.5">
+                    <Button
+                      variant="hero"
+                      className="flex-1"
+                      disabled={full || busy === c.id}
+                      onClick={() => handleStart(c.id)}
+                    >
+                      {busy === c.id ? <Loader2 className="size-4 animate-spin" /> : null}
+                      ابدأ التسجيل
+                      <ArrowLeft className="size-4" />
+                    </Button>
+                    <Button asChild variant="soft" className="flex-1">
+                      <Link
+                        to="/admissions/stage/$slug/classroom/$classroomSlug"
+                        params={{ slug, classroomSlug: c.slug }}
+                      >
+                        عرض التفاصيل
+                      </Link>
+                    </Button>
+                  </div>
+                </motion.article>
               );
             })}
           </div>
 
           <div className="mt-12 flex flex-col items-center gap-4 rounded-[2.5rem] bg-card p-8 text-center shadow-card">
             <p className="text-sm text-muted-foreground">
-              {selected
-                ? "سيتم حجز المقعد مؤقتًا لمدة 7 أيام أثناء استكمال الطلب."
-                : "يمكنك المتابعة بدون تحديد فصل وسنقوم بترشيح الأنسب لطفلك."}
+              سيتم حجز المقعد مؤقتًا لمدة 7 أيام أثناء استكمال الطلب.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              <Button variant="hero" size="lg" onClick={handleStart} disabled={busy}>
-                {busy ? <Loader2 className="size-4 animate-spin" /> : null}
-                متابعة وبدء الطلب
-                <ArrowLeft className="size-4" />
-              </Button>
               <Button asChild variant="soft" size="lg">
-                <Link to="/admissions/stage/$slug" params={{ slug }}>
-                  العودة لتفاصيل المرحلة
-                </Link>
+                <Link to="/admissions">العودة للمراحل</Link>
               </Button>
             </div>
           </div>
