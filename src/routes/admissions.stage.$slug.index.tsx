@@ -30,7 +30,7 @@ const stageQuery = (slug: string) =>
     queryFn: () => getStageBundle({ data: slug }),
   });
 
-export const Route = createFileRoute("/admissions/stage/$slug")({
+export const Route = createFileRoute("/admissions/stage/$slug/")({
   loader: async ({ context, params }) => {
     const data = await context.queryClient.ensureQueryData(stageQuery(params.slug));
     if (!data) throw notFound();
