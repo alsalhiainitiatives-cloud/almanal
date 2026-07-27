@@ -94,7 +94,7 @@ function QueuePage() {
     return [...filtered].sort((a, b) => Number(b.pinned) - Number(a.pinned));
   }, [data, term]);
   const setFilter = (key: keyof QueueSearch, value: string) =>
-    navigate({ search: (prev) => ({ ...prev, [key]: value === ALL ? undefined : value }) });
+    navigate({ search: { ...search, [key]: value === ALL ? undefined : value } });
   return (
     <AmsShell
       wide
