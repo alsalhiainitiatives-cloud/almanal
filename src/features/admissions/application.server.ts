@@ -45,15 +45,17 @@ async function logEvent(
 export async function startApplication(
   supabase: Db,
   userId: string,
-  input: { stageId: string; classroomId: string | null },
+  input: { stageId: string | null; classroomId: string | null },
 ) {
-  const { data: existing } = await supabase
+  const query = supabase
     .from("applications")
     .select("id")
     .eq("parent_id", userId)
-    .eq("status", "draft")
-    .eq("stage_id", input.stageId)
-    .maybeSingle();
+    .eq("status", "draft");
+
+  const { data: existing } = input.stageId
+    ? await query.eq("stage_id", input.stageId).maybeSingle()
+    : await query.is("stage_id", null).maybeSingle();
 
   if (existing) {
     if (input.classroomId) {

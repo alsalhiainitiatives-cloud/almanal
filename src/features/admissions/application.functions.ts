@@ -22,7 +22,12 @@ import {
 export const createApplication = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ stageId: z.string().uuid(), classroomId: z.string().uuid().nullable() }).parse(data),
+    z
+      .object({
+        stageId: z.string().uuid().nullable(),
+        classroomId: z.string().uuid().nullable(),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => startApplication(context.supabase, context.userId, data));
 
