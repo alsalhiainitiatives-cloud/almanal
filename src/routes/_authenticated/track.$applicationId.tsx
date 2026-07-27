@@ -86,10 +86,10 @@ function TrackPage() {
 
   const trackUrl = useMemo(() => {
     const origin = typeof window === "undefined" ? "" : window.location.origin;
-    return app.application_number
-      ? `${origin}/track?no=${encodeURIComponent(app.application_number)}`
+    return app.application_number && app.track_token
+      ? `${origin}/track?no=${encodeURIComponent(app.application_number)}&t=${encodeURIComponent(app.track_token)}`
       : `${origin}/track/${applicationId}`;
-  }, [app.application_number, applicationId]);
+  }, [app.application_number, app.track_token, applicationId]);
   const qr = qrDataUrl(trackUrl);
 
   async function handleWithdraw() {
