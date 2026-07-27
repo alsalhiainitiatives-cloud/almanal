@@ -514,7 +514,6 @@ function WizardPage() {
 
   if (done || submitted) {
     const number = done?.applicationNumber ?? bundle.application.application_number ?? "—";
-    const tracking = done?.trackingNumber ?? bundle.application.tracking_number ?? "—";
     return (
       <section className="section-y">
         <div className="mx-auto max-w-2xl px-4 text-center md:px-8">
@@ -529,21 +528,13 @@ function WizardPage() {
             </span>
             <h1 className="mt-6 text-3xl font-black text-foreground">تم استلام طلبك بنجاح</h1>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              سيقوم مسؤول القبول بمراجعة الطلب والتواصل معك. احتفظ برقم التتبع لمتابعة حالة الطلب.
+              سيقوم مسؤول القبول بمراجعة الطلب والتواصل معك. احتفظ برقم الطلب لمتابعة حالته.
             </p>
-            <div className="mt-7 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl bg-beige/70 p-5">
-                <p className="text-xs font-bold text-muted-foreground">رقم الطلب</p>
-                <p className="mt-1 font-black text-primary" dir="ltr">
-                  {number}
-                </p>
-              </div>
-              <div className="rounded-2xl bg-beige/70 p-5">
-                <p className="text-xs font-bold text-muted-foreground">رقم التتبع</p>
-                <p className="mt-1 font-black text-primary" dir="ltr">
-                  {tracking}
-                </p>
-              </div>
+            <div className="mt-7 rounded-2xl bg-beige/70 p-5">
+              <p className="text-xs font-bold text-muted-foreground">رقم الطلب</p>
+              <p className="mt-1 text-xl font-black text-primary" dir="ltr">
+                {number}
+              </p>
             </div>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Button variant="hero" onClick={() => navigate({ to: "/my-applications" })}>
