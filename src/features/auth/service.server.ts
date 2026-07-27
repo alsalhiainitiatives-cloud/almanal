@@ -239,16 +239,21 @@ export async function listUsersWithRoles(supabase: Db) {
   }));
 }
 
-export async function replaceUserRoles(actorId: string, userId: string, roles: AppRole[]) {
+export async function replaceUserRoles(
+  supabase: Db,
+  actorId: string,
+  userId: string,
+  roles: AppRole[],
+) {
   const meta = getRequestMeta();
 
-  await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
-  if (roles.length) {
-    const { error } = await supabaseAdmin
-      .from("user_roles")
-      .insert(roles.map((role) => ({ user_id: userId, role })));
-    if (error) throw new Error("تعذّر تحديث الأدوار.");
-  }
+  // Handled by a SECURITY DEFINER function that re-checks the admin role in the
+  // database, so no service-role key is needed at runtime.
+  const { error } = await (supabase as any).rpc("admin_set_user_roles", {
+    _user_id: userId,
+    _roles: roles,
+  });
+  if (error) throw new Error("تعذّر تحديث الأدوار.");
 
   await recordAudit({
     userId: actorId,
