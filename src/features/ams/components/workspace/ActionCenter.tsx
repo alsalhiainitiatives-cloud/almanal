@@ -65,6 +65,29 @@ const TONE_STYLES = {
   yellow: "border-gold/50 bg-gold/12",
   red: "border-destructive/25 bg-destructive/6",
 } as const;
+
+/** One numbered stage of the official review workflow. */
+function Stage({
+  index,
+  title,
+  children,
+}: {
+  index: number;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mt-3 rounded-2xl border border-border/60 bg-muted/20 p-2.5">
+      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-extrabold text-muted-foreground">
+        <span className="grid size-4.5 place-items-center rounded-md bg-primary/12 px-1 text-[10px] text-primary">
+          {index}
+        </span>
+        {title}
+      </p>
+      <div className="grid grid-cols-2 gap-2">{children}</div>
+    </div>
+  );
+}
 export function ActionCenter({ data }: { data: WorkspaceData }) {
   const queryClient = useQueryClient();
   const roles = (data.roles ?? []) as AppRole[];
