@@ -474,16 +474,6 @@ export async function deleteDraftApplication(supabase: Db, userId: string, id: s
   return { ok: true as const };
 }
 
-async function _unusedContinueWithoutQurra(supabase: Db, userId: string, id: string) {
-  await loadApplicationRow(supabase, id, userId);
-  await supabase
-    .from("qurra_requests")
-    .update({ requested: false, status: "not_requested" })
-    .eq("application_id", id);
-  await logEvent(supabase, id, userId, "qurra.skipped", "تم استكمال الطلب بدون دعم قرة");
-  return { ok: true as const };
-}
-
 export async function createDocumentUploadPath(userId: string, applicationId: string, slug: string, fileName: string) {
   const safe = fileName.replace(/[^\w.\-]/g, "_").slice(-60);
   return `${userId}/${applicationId}/${slug}-${Date.now()}-${safe}`;
