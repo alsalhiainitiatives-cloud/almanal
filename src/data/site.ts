@@ -38,6 +38,7 @@ export const navLinks = [
   { label: "الرئيسية", to: "/" },
   { label: "عن المنال", to: "/about" },
   { label: "المراحل والتسجيل", to: "/admissions" },
+  { label: "تتبع الطلب", to: "/track" },
   { label: "الحياة المدرسية", to: "/school-life" },
   { label: "الأخبار", to: "/news" },
   { label: "المعرض", to: "/gallery" },
