@@ -170,6 +170,16 @@ function TrackPage() {
               <p className="text-2xl font-black tracking-wide text-primary" dir="ltr">
                 {appNumber}
               </p>
+              {app.track_token ? (
+                <div className="mt-3 rounded-2xl bg-beige/70 px-4 py-3">
+                  <p className="text-xs font-bold text-muted-foreground">
+                    رمز التحقق للتتبع السريع (بدون تسجيل دخول)
+                  </p>
+                  <p className="mt-1 break-all text-sm font-black text-foreground" dir="ltr">
+                    {app.track_token}
+                  </p>
+                </div>
+              ) : null}
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <Info label="العام الدراسي" value={app.academic_year} />
