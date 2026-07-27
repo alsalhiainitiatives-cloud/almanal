@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
-import { Clock, LayoutDashboard, LogIn, MapPin, Menu, Phone, X } from "lucide-react";
+import { ChevronDown, Clock, LayoutDashboard, LogIn, MapPin, Menu, Phone, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -57,16 +57,46 @@ export function Header() {
         </Link>
 
         <nav className="hidden items-center justify-center gap-1 rounded-full bg-accent/50 p-1.5 xl:flex">
-          {navLinks.map((link) => (
-            <Link
+          {navLinks.map((link) =>
+            "children" in link ? (
+              <div key={link.to} className="group relative">
+                <Link
+                  to={link.to}
+                  className="flex items-center gap-1 rounded-full px-4 py-2 text-sm font-bold text-muted-foreground transition-all group-hover:bg-card group-hover:text-primary group-hover:shadow-soft data-[status=active]:bg-card data-[status=active]:text-primary data-[status=active]:shadow-soft"
+                >
+                  {link.label}
+                  <ChevronDown className="size-3.5 transition-transform group-hover:rotate-180" />
+                </Link>
+                <div className="invisible absolute start-1/2 top-full z-50 w-64 -translate-x-1/2 translate-y-1 pt-3 opacity-0 transition-all group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
+                  <div className="rounded-3xl border border-border/60 bg-card p-2 shadow-card">
+                    {link.children.map((child) => (
+                      <Link
+                        key={child.to}
+                        to={child.to}
+                        className="block rounded-2xl px-4 py-3 text-start transition-colors hover:bg-accent"
+                      >
+                        <span className="block text-sm font-black text-foreground">
+                          {child.label}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                          {child.desc}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <Link
               key={link.to}
               to={link.to}
               activeOptions={{ exact: link.to === "/" }}
               className="rounded-full px-4 py-2 text-sm font-bold text-muted-foreground transition-all hover:bg-card hover:text-primary hover:shadow-soft data-[status=active]:bg-card data-[status=active]:text-primary data-[status=active]:shadow-soft"
             >
               {link.label}
-            </Link>
-          ))}
+              </Link>
+            ),
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -109,7 +139,8 @@ export function Header() {
           >
             <nav className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4 md:px-8">
               {navLinks.map((link) => (
-                <Link
+                <div key={link.to} className="flex flex-col">
+                  <Link
                   key={link.to}
                   to={link.to}
                   activeOptions={{ exact: link.to === "/" }}
@@ -117,7 +148,22 @@ export function Header() {
                   className="rounded-2xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-primary data-[status=active]:bg-accent data-[status=active]:text-primary"
                 >
                   {link.label}
-                </Link>
+                  </Link>
+                  {"children" in link
+                    ? link.children
+                        .filter((c) => c.to !== link.to)
+                        .map((child) => (
+                          <Link
+                            key={child.to}
+                            to={child.to}
+                            onClick={() => setOpen(false)}
+                            className="ms-4 rounded-2xl px-4 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-primary data-[status=active]:bg-accent data-[status=active]:text-primary"
+                          >
+                            {child.label}
+                          </Link>
+                        ))
+                    : null}
+                </div>
               ))}
               <Button variant="hero" size="lg" className="mt-2 w-full sm:hidden" asChild>
                 <Link to={isAuthenticated ? "/dashboard" : "/auth"} onClick={() => setOpen(false)}>
