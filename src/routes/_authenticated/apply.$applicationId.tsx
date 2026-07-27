@@ -226,7 +226,15 @@ function WizardPage() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ applicationNumber: string; trackingNumber: string } | null>(null);
 
-  const stage = catalog.stages.find((s) => s.id === bundle.application.stage_id);
+  const stage =
+    catalog.stages.find((s) => s.id === bundle.application.stage_id) ??
+    catalog.stages.find(
+      (s) =>
+        s.id ===
+        (children.find((c) => c.stageId)?.stageId ??
+          catalog.classrooms.find((c) => c.id === children.find((ch) => ch.classroomId)?.classroomId)
+            ?.stage_id),
+    );
   const submitted =
     bundle.application.status !== "draft" && bundle.application.status !== "needs_action";
 

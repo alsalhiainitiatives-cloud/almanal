@@ -57,6 +57,9 @@ function AdmissionsPage() {
         description="خطوتان فقط: تصفّح المراحل واختر الفصل المناسب لطفلك، أو تابع طلباتك السابقة."
       >
         <Button asChild variant="hero" size="lg">
+          <Link to="/apply/new">ابدأ التسجيل الآن</Link>
+        </Button>
+        <Button asChild variant="soft" size="lg">
           <a href="#stages">تصفّح المراحل</a>
         </Button>
         <Button asChild variant="soft" size="lg">

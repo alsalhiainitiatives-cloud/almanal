@@ -81,7 +81,7 @@ export function Hero() {
             className="mt-9 flex flex-wrap justify-center gap-3 lg:justify-start"
           >
             <Button asChild variant="hero" size="xl">
-              <Link to="/admissions">التسجيل الآن</Link>
+              <Link to="/apply/new">التسجيل الآن</Link>
             </Button>
             <Button asChild variant="soft" size="xl">
               <Link to="/admissions">
