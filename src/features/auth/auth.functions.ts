@@ -32,7 +32,7 @@ export const updateMyProfile = createServerFn({ method: "POST" })
 /** "Logout from all other devices" bookkeeping (Supabase revokes the tokens). */
 export const revokeOtherSessions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => revokeOtherSessionRecords(context.userId));
+  .handler(async ({ context }) => revokeOtherSessionRecords(context.supabase, context.userId));
 
 export const logSecurityEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

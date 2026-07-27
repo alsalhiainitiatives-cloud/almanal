@@ -22,7 +22,7 @@ export const adminSetUserRoles = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => roleAssignmentSchema.parse(data))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    return replaceUserRoles(context.userId, data.userId, data.roles);
+    return replaceUserRoles(context.supabase, context.userId, data.userId, data.roles);
   });
 
 export const adminListAuditLogs = createServerFn({ method: "GET" })

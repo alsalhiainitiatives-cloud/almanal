@@ -1210,6 +1210,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_set_user_roles: {
+        Args: {
+          _roles: Database["public"]["Enums"]["app_role"][]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_permission: {
         Args: { _permission: string; _user_id: string }
         Returns: boolean
@@ -1227,6 +1234,10 @@ export type Database = {
         Returns: {
           permission_key: string
         }[]
+      }
+      revoke_my_other_sessions: {
+        Args: { _ip: string; _user_agent: string }
+        Returns: number
       }
     }
     Enums: {
