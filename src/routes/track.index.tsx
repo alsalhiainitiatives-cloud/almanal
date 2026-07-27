@@ -397,6 +397,8 @@ function PublicTrackPage() {
           ) : null}
         </div>
       </section>
+
+      <QrScanDialog open={scanOpen} onClose={() => setScanOpen(false)} onResult={handleScan} />
     </>
   );
 }
