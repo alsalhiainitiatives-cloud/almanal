@@ -177,26 +177,14 @@ export async function saveProfile(supabase: Db, userId: string, data: ProfileInp
   return { ok: true as const };
 }
 
-export async function revokeOtherSessionRecords(userId: string) {
+export async function revokeOtherSessionRecords(supabase: Db, userId: string) {
   const meta = getRequestMeta();
-  const now = new Date().toISOString();
 
-  const { data: sessions } = await supabaseAdmin
-    .from("user_sessions")
-    .select("id, user_agent, ip_address")
-    .eq("user_id", userId)
-    .is("revoked_at", null);
-
-  const otherIds = (sessions ?? [])
-    .filter((s) => s.user_agent !== meta.userAgent || s.ip_address !== meta.ip)
-    .map((s) => s.id);
-
-  if (otherIds.length) {
-    await supabaseAdmin
-      .from("user_sessions")
-      .update({ revoked_at: now })
-      .in("id", otherIds);
-  }
+  // SECURITY DEFINER function scoped to auth.uid() — no service-role key needed.
+  await (supabase as any).rpc("revoke_my_other_sessions", {
+    _user_agent: meta.userAgent,
+    _ip: meta.ip,
+  });
 
   await recordAudit({ userId, action: "auth.sessions.revoke_others", meta });
   return { ok: true as const };
