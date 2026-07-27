@@ -1239,6 +1239,10 @@ export type Database = {
         Args: { _ip: string; _user_agent: string }
         Returns: number
       }
+      withdraw_my_application: {
+        Args: { _application_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role:

@@ -72,6 +72,7 @@ export const P = {
   auditView: "audit.view",
   childrenManage: "children.manage",
   applicationsSubmit: "applications.submit",
+  applicationsTrack: "applications.track",
   applicationsReview: "applications.review",
   applicationsApprove: "applications.approve",
   paymentsManage: "payments.manage",

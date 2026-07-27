@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { school } from "@/data/site";
+import { PortalLayout } from "@/features/auth/components/PortalLayout";
 import {
   getApplication,
   withdrawApplicationFn,
@@ -84,8 +85,10 @@ function TrackPage() {
   const qr = qrDataUrl(trackUrl);
 
   const isWithdrawn = app.status === "withdrawn";
-  const canWithdraw = !["withdrawn", "rejected", "approved"].includes(app.status);
+  const isClosed = ["withdrawn", "rejected", "approved"].includes(app.status);
+  const canWithdraw = !isClosed;
   const printedAt = new Date().toLocaleString("ar-SA", { dateStyle: "long", timeStyle: "short" });
+  const appNumber = app.application_number ?? app.tracking_number ?? "—";
 
   async function handleWithdraw() {
     setBusy(true);
@@ -102,8 +105,11 @@ function TrackPage() {
   }
 
   return (
-    <section className="section-y">
-      <div className="mx-auto max-w-4xl px-4 md:px-8">
+    <PortalLayout
+      title="تتبع طلب القبول"
+      description="تابع حالة طلبك خطوة بخطوة، واطبع نسخة رسمية من الطلب في أي وقت."
+    >
+      <div className="space-y-6">
         {/* Print-only letterhead */}
         <div className="print-only mb-6 border-b-2 border-black/70 pb-4">
           <div className="flex items-start justify-between gap-6">
@@ -117,7 +123,7 @@ function TrackPage() {
             <div className="text-left">
               <p className="text-base font-black">نموذج طلب قبول</p>
               <p className="text-xs" dir="ltr">
-                {app.application_number ?? "—"}
+                {appNumber}
               </p>
               <p className="text-xs">العام الدراسي {app.academic_year}</p>
             </div>
@@ -125,7 +131,7 @@ function TrackPage() {
         </div>
 
         {isWithdrawn ? (
-          <div className="print-avoid-break mb-6 flex items-start gap-4 rounded-[2rem] border border-destructive/25 bg-destructive/10 p-6">
+          <div className="print-avoid-break flex items-start gap-4 rounded-[2rem] border border-destructive/25 bg-destructive/10 p-6">
             <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-destructive/15 text-destructive">
               <Archive className="size-5" />
             </span>
@@ -142,73 +148,84 @@ function TrackPage() {
           </div>
         ) : null}
 
-        <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-start">
-          <div className="print-sheet rounded-[2.5rem] bg-card p-7 shadow-card">
-            <div className="flex flex-wrap items-center gap-3">
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-black ${
-                  APPLICATION_STATUS_COLORS[app.status] ?? "bg-beige text-foreground"
-                }`}
-              >
-                {APPLICATION_STATUS_LABELS[app.status] ?? app.status}
-              </span>
-              <span className="text-xs font-bold text-muted-foreground">
-                آخر تحديث: {new Date(app.updated_at).toLocaleDateString("ar-SA")}
-              </span>
-            </div>
-            <h1 className="mt-4 text-2xl font-black text-foreground">تتبع طلب القبول</h1>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <Info label="رقم الطلب" value={app.application_number ?? "—"} />
-              <Info label="رقم التتبع" value={app.tracking_number ?? "—"} />
-              <Info label="العام الدراسي" value={app.academic_year} />
-              <Info
-                label="الإجمالي التقديري"
-                value={`${Number(app.grand_total).toLocaleString("ar-SA")} ر.س`}
-              />
-              {bundle.qurra ? (
-                <Info
-                  label="دعم قرة"
-                  value={QURRA_STATUS_LABELS[bundle.qurra.status] ?? bundle.qurra.status}
-                />
-              ) : null}
-              {bundle.children.length > 0 ? (
-                <Info
-                  label={bundle.children.length > 1 ? "الأبناء" : "الطالب"}
-                  value={bundle.children.map((c) => c.name_ar).join(" · ")}
-                />
-              ) : null}
-            </div>
-          </div>
+        {/* Summary card */}
+        <div className="print-sheet print-avoid-break rounded-[2.5rem] bg-card p-6 shadow-card sm:p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-3">
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-black ${
+                    APPLICATION_STATUS_COLORS[app.status] ?? "bg-beige text-foreground"
+                  }`}
+                >
+                  {APPLICATION_STATUS_LABELS[app.status] ?? app.status}
+                </span>
+                <span className="text-xs font-bold text-muted-foreground">
+                  آخر تحديث: {new Date(app.updated_at).toLocaleDateString("ar-SA")}
+                </span>
+              </div>
+              <p className="mt-4 text-xs font-bold text-muted-foreground">رقم الطلب</p>
+              <p className="text-2xl font-black tracking-wide text-primary" dir="ltr">
+                {appNumber}
+              </p>
 
-          <div className="print-avoid-break rounded-[2.5rem] bg-card p-6 text-center shadow-card">
-            <img src={qr} alt="رمز QR لفتح صفحة تتبع الطلب" className="mx-auto size-36 rounded-2xl" />
-            <p className="mt-3 flex items-center justify-center gap-1.5 text-xs font-bold text-muted-foreground">
-              <ScanLine className="size-3.5" />
-              امسح الرمز لفتح صفحة التتبع
-            </p>
-            <p className="mt-1 break-all text-[10px] text-muted-foreground" dir="ltr">
-              {trackUrl}
-            </p>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <Info label="العام الدراسي" value={app.academic_year} />
+                <Info
+                  label="الإجمالي التقديري"
+                  value={`${Number(app.grand_total).toLocaleString("ar-SA")} ر.س`}
+                />
+                {bundle.qurra ? (
+                  <Info
+                    label="دعم قرة"
+                    value={QURRA_STATUS_LABELS[bundle.qurra.status] ?? bundle.qurra.status}
+                  />
+                ) : null}
+                {bundle.children.length > 0 ? (
+                  <Info
+                    label={bundle.children.length > 1 ? "الأبناء" : "الطالب"}
+                    value={bundle.children.map((c) => c.name_ar).join(" · ")}
+                  />
+                ) : null}
+              </div>
+            </div>
+
+            <div className="print-avoid-break mx-auto w-full max-w-[15rem] shrink-0 rounded-[2rem] border border-border/60 bg-beige/40 p-5 text-center lg:mx-0">
+              <img
+                src={qr}
+                alt="رمز QR لفتح صفحة تتبع الطلب"
+                className="mx-auto size-32 rounded-xl bg-card p-1"
+              />
+              <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+                <ScanLine className="size-3.5" />
+                امسح الرمز لفتح صفحة التتبع
+              </p>
+              <p className="mt-1 break-all text-[10px] leading-relaxed text-muted-foreground" dir="ltr">
+                {trackUrl}
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Progress */}
-        <div className="print-avoid-break mt-8 rounded-[2.5rem] bg-card p-7 shadow-soft">
+        <div className="print-avoid-break rounded-[2.5rem] bg-card p-6 shadow-soft sm:p-8">
           <h2 className="text-lg font-black text-foreground">مسار الطلب</h2>
-          <div className="mt-6">
-            <ApplicationStepper status={app.status} />
+          <div className="mt-8 overflow-x-auto pb-2">
+            <div className="min-w-[34rem]">
+              <ApplicationStepper status={app.status} />
+            </div>
           </div>
         </div>
 
         {/* Timeline */}
-        <div className="mt-8 rounded-[2.5rem] bg-card p-7 shadow-soft">
+        <div className="rounded-[2.5rem] bg-card p-6 shadow-soft sm:p-8">
           <h2 className="text-lg font-black text-foreground">الخط الزمني للإجراءات</h2>
           <div className="mt-6">
             <ApplicationTimeline events={bundle.events} />
           </div>
         </div>
 
-        <div className="no-print mt-8 flex flex-wrap justify-between gap-3">
+        <div className="no-print flex flex-wrap items-center justify-between gap-3">
           <Button variant="soft" onClick={() => window.print()}>
             <Printer className="size-4" />
             طباعة الطلب
@@ -259,7 +276,7 @@ function TrackPage() {
                 <strong>حالة الطلب:</strong> {APPLICATION_STATUS_LABELS[app.status] ?? app.status}
               </p>
               <p>
-                <strong>رقم التتبع:</strong> <span dir="ltr">{app.tracking_number ?? "—"}</span>
+                <strong>رقم الطلب:</strong> <span dir="ltr">{appNumber}</span>
               </p>
               <p>
                 <strong>تاريخ الطباعة:</strong> {printedAt}
@@ -275,7 +292,7 @@ function TrackPage() {
           </div>
         </div>
       </div>
-    </section>
+    </PortalLayout>
   );
 }
 
