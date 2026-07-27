@@ -18,7 +18,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { next?: string | undefined } => ({
     next: typeof search.next === "string" && search.next.startsWith("/") ? search.next : undefined,
   }),
   head: () => ({
