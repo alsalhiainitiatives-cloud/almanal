@@ -67,6 +67,22 @@ async function profileMap(supabase: Db, ids: (string | null | undefined)[]) {
   return map;
 }
 
+type QueueChild = {
+  id: string;
+  name_ar: string;
+  national_id: string | null;
+  birth_date: string | null;
+  gender: string | null;
+  nationality: string | null;
+  stage_id: string | null;
+  classroom_id: string | null;
+  preference_1_classroom_id: string | null;
+  photo_url: string | null;
+  medical_conditions: string | null;
+  allergies: string | null;
+  special_needs: string | null;
+};
+
 export type QueueFilters = {
   status?: string | null;
   stageId?: string | null;
@@ -132,7 +148,7 @@ export async function listQueue(supabase: Db, userId: string, filters: QueueFilt
     const docs = (row.application_documents as unknown as { status: string }[] | null) ?? [];
     return {
       ...row,
-      children: (row.application_children as unknown as Record<string, unknown>[]) ?? [],
+      children: (row.application_children as unknown as QueueChild[]) ?? [],
       qurraStatus: qurra?.status ?? "not_requested",
       documentsTotal: docs.length,
       documentsApproved: docs.filter((d) => d.status === "approved").length,
