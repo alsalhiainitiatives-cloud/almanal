@@ -20,8 +20,8 @@ export function ReviewStep({
   qurra,
   serviceNames,
   documentNames,
-  stageName,
   classroomNameOf,
+  stageNameOf,
   onEdit,
 }: {
   parent: ParentInfoInput;
@@ -29,8 +29,8 @@ export function ReviewStep({
   qurra: QurraInput;
   serviceNames: string[];
   documentNames: string[];
-  stageName: string;
   classroomNameOf: (id?: string) => string;
+  stageNameOf: (classroomId?: string) => string;
   onEdit: (step: number) => void;
 }) {
   return (
@@ -42,10 +42,6 @@ export function ReviewStep({
           تأكد من صحة كل البيانات. يمكنك الرجوع لأي خطوة وتعديلها — لن تفقد أي معلومة أدخلتها.
         </p>
       </div>
-
-      <Card title="المرحلة" icon={Layers} step={4} onEdit={onEdit}>
-        <Row label="المرحلة المختارة" value={stageName} />
-      </Card>
 
       <Card title="بيانات ولي الأمر" icon={UserRound} step={3} onEdit={onEdit}>
         <Row label="الاسم" value={parent.fullName} />
@@ -79,6 +75,7 @@ export function ReviewStep({
               <Row label="العمر" value={formatAgeDetailed(ageParts(c.birthDate))} />
               <Row label="الجنس" value={c.gender === "male" ? "ذكر" : "أنثى"} />
               <Row label="الجنسية" value={c.nationality || "—"} />
+              <Row label="المرحلة" value={stageNameOf(c.classroomId)} />
               <Row label="الرغبة الأولى" value={classroomNameOf(c.classroomId)} />
               {c.preference2 ? (
                 <Row label="الرغبة الثانية" value={classroomNameOf(c.preference2)} />

@@ -340,6 +340,12 @@ function WizardPage() {
   const classroomNameOf = (id?: string) =>
     catalog.classrooms.find((c) => c.id === id)?.name_ar ?? "ترك الاختيار للإدارة";
 
+  const stageNameOf = (classroomId?: string) => {
+    const cls = catalog.classrooms.find((c) => c.id === classroomId);
+    const stageId = cls?.stage_id ?? stage?.id;
+    return catalog.stages.find((s) => s.id === stageId)?.name_ar ?? stage?.name_ar ?? "—";
+  };
+
   /* ---------------------------------------------------------------- */
 
   async function goNext() {
@@ -655,8 +661,8 @@ function WizardPage() {
                 parent={parent}
                 children={children}
                 qurra={qurra}
-                stageName={stage?.name_ar ?? "—"}
                 classroomNameOf={classroomNameOf}
+                stageNameOf={stageNameOf}
                 serviceNames={catalog.services
                   .filter((s) => s.is_required || services.includes(s.id))
                   .map((s) => s.name_ar)}
