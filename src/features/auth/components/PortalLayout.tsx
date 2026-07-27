@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Inbox, LayoutDashboard, LogOut, ShieldCheck, UserCog, Users } from "lucide-react";
+import { FileClock, Inbox, LayoutDashboard, LogOut, ShieldCheck, UserCog, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +9,7 @@ import { P, ROLE_COLORS, ROLE_LABELS } from "../rbac";
 
 const NAV = [
   { to: "/dashboard", label: "لوحة المعلومات", icon: LayoutDashboard, permission: P.dashboardView },
+  { to: "/my-applications", label: "طلباتي وتتبع الطلب", icon: FileClock, permission: P.applicationsTrack },
   { to: "/ams", label: "نظام إدارة القبول", icon: Inbox, permission: P.applicationsReview },
   { to: "/profile", label: "ملفي الشخصي", icon: UserCog, permission: P.profileEdit },
   { to: "/admin/users", label: "المستخدمون والأدوار", icon: Users, permission: P.usersView },
@@ -40,7 +41,7 @@ export function PortalLayout({
     <div className="gradient-soft-cream min-h-[80vh] py-10">
       <div className="container mx-auto grid gap-8 px-4 lg:grid-cols-[280px_1fr]">
         {/* Side navigation */}
-        <aside className="lg:sticky lg:top-24 lg:self-start">
+        <aside className="no-print lg:sticky lg:top-24 lg:self-start">
           <div className="rounded-[2rem] border border-border/60 bg-card/90 p-5 shadow-soft backdrop-blur">
             <div className="flex items-center gap-3">
               <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-lg font-extrabold text-primary">
@@ -75,7 +76,7 @@ export function PortalLayout({
 
             <nav className="mt-5 space-y-1.5">
               {items.map((item) => {
-                const active = pathname === item.to;
+                const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
                 return (
                   <Link
                     key={item.to}
@@ -106,7 +107,7 @@ export function PortalLayout({
 
         {/* Content */}
         <div>
-          <header className="rounded-[2rem] border border-border/60 bg-card/90 p-6 shadow-soft backdrop-blur sm:p-8">
+          <header className="no-print rounded-[2rem] border border-border/60 bg-card/90 p-6 shadow-soft backdrop-blur sm:p-8">
             <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">{title}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
               {description}
