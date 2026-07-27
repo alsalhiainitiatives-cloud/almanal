@@ -165,6 +165,9 @@ export const APPLICATION_STATUS_LABELS: Record<string, string> = {
   withdrawn: "مسحوب",
 };
 
+APPLICATION_STATUS_LABELS.principal_review = "لدى مدير المدرسة";
+APPLICATION_STATUS_LABELS.waitlisted = "قائمة الانتظار";
+
 export const APPLICATION_STATUS_COLORS: Record<string, string> = {
   draft: "bg-beige text-foreground",
   submitted: "bg-sky/70 text-foreground",
