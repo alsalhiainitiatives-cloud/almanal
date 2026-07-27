@@ -24,7 +24,7 @@ export const Route = createFileRoute("/admissions/stage/$slug/classroom/$classro
   loader: async ({ context, params }) => {
     const data = await context.queryClient.ensureQueryData(stageQuery(params.slug));
     if (!data) throw notFound();
-    const classroom = data.classrooms.find((c) => c.slug === params.classroomSlug);
+    const classroom = data.classrooms.find((c: { slug: string }) => c.slug === params.classroomSlug);
     if (!classroom) throw notFound();
     return { stage: data.stage, classroom };
   },

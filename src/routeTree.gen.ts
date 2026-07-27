@@ -161,15 +161,15 @@ const AdmissionsStageSlugIndexRoute =
   } as any)
 const AdmissionsStageSlugClassroomsRoute =
   AdmissionsStageSlugClassroomsRouteImport.update({
-    id: '/classrooms',
-    path: '/classrooms',
-    getParentRoute: () => AdmissionsStageSlugRoute,
+    id: '/admissions/stage/$slug/classrooms',
+    path: '/admissions/stage/$slug/classrooms',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const AdmissionsStageSlugClassroomClassroomSlugRoute =
   AdmissionsStageSlugClassroomClassroomSlugRouteImport.update({
-    id: '/classroom/$classroomSlug',
-    path: '/classroom/$classroomSlug',
-    getParentRoute: () => AdmissionsStageSlugRoute,
+    id: '/admissions/stage/$slug/classroom/$classroomSlug',
+    path: '/admissions/stage/$slug/classroom/$classroomSlug',
+    getParentRoute: () => rootRouteImport,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -357,7 +357,9 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StagesRoute: typeof StagesRoute
   AdmissionsIndexRoute: typeof AdmissionsIndexRoute
+  AdmissionsStageSlugClassroomsRoute: typeof AdmissionsStageSlugClassroomsRoute
   AdmissionsStageSlugIndexRoute: typeof AdmissionsStageSlugIndexRoute
+  AdmissionsStageSlugClassroomClassroomSlugRoute: typeof AdmissionsStageSlugClassroomClassroomSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -532,17 +534,17 @@ declare module '@tanstack/react-router' {
     }
     '/admissions/stage/$slug/classrooms': {
       id: '/admissions/stage/$slug/classrooms'
-      path: '/classrooms'
+      path: '/admissions/stage/$slug/classrooms'
       fullPath: '/admissions/stage/$slug/classrooms'
       preLoaderRoute: typeof AdmissionsStageSlugClassroomsRouteImport
-      parentRoute: typeof AdmissionsStageSlugRoute
+      parentRoute: typeof rootRouteImport
     }
     '/admissions/stage/$slug/classroom/$classroomSlug': {
       id: '/admissions/stage/$slug/classroom/$classroomSlug'
-      path: '/classroom/$classroomSlug'
+      path: '/admissions/stage/$slug/classroom/$classroomSlug'
       fullPath: '/admissions/stage/$slug/classroom/$classroomSlug'
       preLoaderRoute: typeof AdmissionsStageSlugClassroomClassroomSlugRouteImport
-      parentRoute: typeof AdmissionsStageSlugRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -587,18 +589,11 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StagesRoute: StagesRoute,
   AdmissionsIndexRoute: AdmissionsIndexRoute,
+  AdmissionsStageSlugClassroomsRoute: AdmissionsStageSlugClassroomsRoute,
   AdmissionsStageSlugIndexRoute: AdmissionsStageSlugIndexRoute,
+  AdmissionsStageSlugClassroomClassroomSlugRoute:
+    AdmissionsStageSlugClassroomClassroomSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
