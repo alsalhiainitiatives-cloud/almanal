@@ -160,7 +160,7 @@ function PublicTrackPage() {
                         : "—"
                     }
                   />
-                  <Info label="الطالب" value={`${app.student_initial} • بيانات محمية`} />
+                  <Info label="الطالب" value={`${app.student_initial}… (بيانات محمية)`} />
                 </div>
 
                 <div className="mt-8 overflow-x-auto pb-2">
