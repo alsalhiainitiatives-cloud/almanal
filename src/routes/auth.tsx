@@ -20,8 +20,9 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   validateSearch: (
     search: Record<string, unknown>,
-  ): { next?: string | undefined } => ({
+  ): { next?: string | undefined; reason?: string | undefined } => ({
     next: typeof search.next === "string" && search.next.startsWith("/") ? search.next : undefined,
+    reason: typeof search.reason === "string" ? search.reason.slice(0, 40) : undefined,
   }),
   head: () => ({
     meta: [
