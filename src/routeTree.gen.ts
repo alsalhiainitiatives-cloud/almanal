@@ -24,6 +24,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TrackIndexRouteImport } from './routes/track.index'
 import { Route as AdmissionsIndexRouteImport } from './routes/admissions.index'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedMyApplicationsRouteImport } from './routes/_authenticated/my-applications'
@@ -115,6 +116,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrackIndexRoute = TrackIndexRouteImport.update({
+  id: '/track/',
+  path: '/track/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdmissionsIndexRoute = AdmissionsIndexRouteImport.update({
@@ -235,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/admissions/': typeof AdmissionsIndexRoute
+  '/track/': typeof TrackIndexRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/ams/queue': typeof AuthenticatedAmsQueueRoute
@@ -269,6 +276,7 @@ export interface FileRoutesByTo {
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/admissions': typeof AdmissionsIndexRoute
+  '/track': typeof TrackIndexRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/ams/queue': typeof AuthenticatedAmsQueueRoute
@@ -305,6 +313,7 @@ export interface FileRoutesById {
   '/_authenticated/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/admissions/': typeof AdmissionsIndexRoute
+  '/track/': typeof TrackIndexRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/ams/queue': typeof AuthenticatedAmsQueueRoute
@@ -341,6 +350,7 @@ export interface FileRouteTypes {
     | '/my-applications'
     | '/profile'
     | '/admissions/'
+    | '/track/'
     | '/admin/audit'
     | '/admin/users'
     | '/ams/queue'
@@ -375,6 +385,7 @@ export interface FileRouteTypes {
     | '/my-applications'
     | '/profile'
     | '/admissions'
+    | '/track'
     | '/admin/audit'
     | '/admin/users'
     | '/ams/queue'
@@ -410,6 +421,7 @@ export interface FileRouteTypes {
     | '/_authenticated/my-applications'
     | '/_authenticated/profile'
     | '/admissions/'
+    | '/track/'
     | '/_authenticated/admin/audit'
     | '/_authenticated/admin/users'
     | '/_authenticated/ams/queue'
@@ -443,6 +455,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StagesRoute: typeof StagesRoute
   AdmissionsIndexRoute: typeof AdmissionsIndexRoute
+  TrackIndexRoute: typeof TrackIndexRoute
   AdmissionsStageSlugClassroomsRoute: typeof AdmissionsStageSlugClassroomsRoute
   AdmissionsStageSlugIndexRoute: typeof AdmissionsStageSlugIndexRoute
   AdmissionsStageSlugClassroomClassroomSlugRoute: typeof AdmissionsStageSlugClassroomClassroomSlugRoute
@@ -553,6 +566,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/track/': {
+      id: '/track/'
+      path: '/track'
+      fullPath: '/track/'
+      preLoaderRoute: typeof TrackIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admissions/': {
@@ -739,6 +759,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StagesRoute: StagesRoute,
   AdmissionsIndexRoute: AdmissionsIndexRoute,
+  TrackIndexRoute: TrackIndexRoute,
   AdmissionsStageSlugClassroomsRoute: AdmissionsStageSlugClassroomsRoute,
   AdmissionsStageSlugIndexRoute: AdmissionsStageSlugIndexRoute,
   AdmissionsStageSlugClassroomClassroomSlugRoute:
