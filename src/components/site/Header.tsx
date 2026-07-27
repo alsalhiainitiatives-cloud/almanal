@@ -41,6 +41,7 @@ export function Header() {
       </div>
 
       <header
+        data-site-header
         className={`sticky top-0 z-50 transition-all duration-300 ${
           scrolled
             ? "bg-background/90 shadow-card backdrop-blur-xl"

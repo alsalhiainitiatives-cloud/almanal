@@ -12,7 +12,7 @@ const socials = [
 
 export function Footer() {
   return (
-    <footer className="mt-24 gradient-burgundy text-primary-foreground">
+    <footer data-site-footer className="mt-24 gradient-burgundy text-primary-foreground">
       <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 md:grid-cols-2 md:px-8 lg:grid-cols-4">
         <div className="space-y-5">
           <div className="rounded-3xl bg-primary-foreground/10 p-4">
