@@ -10,6 +10,7 @@ import { EmptyState, PriorityPill, SkeletonRows, StatusPill } from "@/features/a
 import { ActionCenter } from "@/features/ams/components/workspace/ActionCenter";
 import { ApplicantPanel } from "@/features/ams/components/workspace/ApplicantPanel";
 import { InsightBar } from "@/features/ams/components/workspace/InsightBar";
+import { ReviewStepper } from "@/features/ams/components/workspace/ReviewStepper";
 import { TimelinePanel } from "@/features/ams/components/workspace/TimelinePanel";
 import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/ams/applications/$applicationId")({
@@ -99,6 +100,7 @@ function WorkspacePage() {
             ) : null}
           </div>
           <InsightBar data={data} />
+          <ReviewStepper data={data} />
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_minmax(0,0.95fr)]">
             <div className="min-w-0">
               <ApplicantPanel data={data} />

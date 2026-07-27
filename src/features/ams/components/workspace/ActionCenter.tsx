@@ -65,6 +65,29 @@ const TONE_STYLES = {
   yellow: "border-gold/50 bg-gold/12",
   red: "border-destructive/25 bg-destructive/6",
 } as const;
+
+/** One numbered stage of the official review workflow. */
+function Stage({
+  index,
+  title,
+  children,
+}: {
+  index: number;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mt-3 rounded-2xl border border-border/60 bg-muted/20 p-2.5">
+      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-extrabold text-muted-foreground">
+        <span className="grid size-4.5 place-items-center rounded-md bg-primary/12 px-1 text-[10px] text-primary">
+          {index}
+        </span>
+        {title}
+      </p>
+      <div className="grid grid-cols-2 gap-2">{children}</div>
+    </div>
+  );
+}
 export function ActionCenter({ data }: { data: WorkspaceData }) {
   const queryClient = useQueryClient();
   const roles = (data.roles ?? []) as AppRole[];
@@ -133,7 +156,11 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
       </div>
       <div className="rounded-3xl border border-border/60 bg-card p-4">
         <p className="text-sm font-extrabold text-foreground">مركز الإجراءات</p>
-        <div className="mt-3 grid grid-cols-2 gap-2">
+        <p className="mt-1 text-[11px] font-bold text-muted-foreground">
+          الإجراءات مرتبة حسب مراحل المعالجة الرسمية للطلب.
+        </p>
+
+        <Stage index={1} title="الفرز والإسناد">
           {can(roles, "assign") ? (
             <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("assign")}>
               <UserCog className="size-3.5" /> إسناد
@@ -150,6 +177,9 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
               <FileCheck2 className="size-3.5" /> بدء المراجعة
             </Button>
           ) : null}
+        </Stage>
+
+        <Stage index={2} title="مراجعة البيانات والمستندات">
           {can(roles, "review") ? (
             <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("request")}>
               <FileWarning className="size-3.5" /> طلب مستندات
@@ -160,26 +190,14 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
               <Undo2 className="size-3.5" /> إعادة لولي الأمر
             </Button>
           ) : null}
-          {can(roles, "seats") ? (
-            <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("seat")}>
-              <Armchair className="size-3.5" /> المقعد
-            </Button>
-          ) : null}
-          {can(roles, "seats") ? (
-            <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("waitlist")}>
-              <ListOrdered className="size-3.5" /> قائمة الانتظار
-            </Button>
-          ) : null}
           {can(roles, "qurra") ? (
             <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("qurra")}>
               <BadgeCheck className="size-3.5" /> حالة قرة
             </Button>
           ) : null}
-          {can(roles, "payments") ? (
-            <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("payment")}>
-              <Wallet className="size-3.5" /> السداد
-            </Button>
-          ) : null}
+        </Stage>
+
+        <Stage index={3} title="التوصية والقرار">
           {can(roles, "review") ? (
             <Button
               variant="outline"
@@ -205,7 +223,26 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
               </Button>
             </>
           ) : null}
-        </div>
+        </Stage>
+
+        <Stage index={4} title="المقعد والسداد">
+          {can(roles, "seats") ? (
+            <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("seat")}>
+              <Armchair className="size-3.5" /> المقعد
+            </Button>
+          ) : null}
+          {can(roles, "seats") ? (
+            <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("waitlist")}>
+              <ListOrdered className="size-3.5" /> قائمة الانتظار
+            </Button>
+          ) : null}
+          {can(roles, "payments") ? (
+            <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("payment")}>
+              <Wallet className="size-3.5" /> السداد
+            </Button>
+          ) : null}
+        </Stage>
+
         {can(roles, "assign") ? (
           <div className="mt-3">
             <p className="mb-1.5 text-[11px] font-bold text-muted-foreground">الأولوية</p>

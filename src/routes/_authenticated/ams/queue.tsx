@@ -1,26 +1,49 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Inbox, Pin, Search, SlidersHorizontal, Users } from "lucide-react";
+import {
+  Download,
+  Flag,
+  Inbox,
+  LayoutGrid,
+  Rows3,
+  Search,
+  SlidersHorizontal,
+  Table2,
+  Users,
+  X,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { amsAssignOfficer, amsQueue, amsStaff, amsTogglePin } from "@/features/ams/ams.functions";
-import { AmsShell } from "@/features/ams/components/AmsShell";
-import {
-  EmptyState,
-  PriorityPill,
-  STATUS_LABELS,
-  SkeletonRows,
-  StatusPill,
-  formatDateTime,
-} from "@/features/ams/components/atoms";
-import { PAYMENT_STATUS_LABELS, SEAT_STATUS_LABELS } from "@/features/ams/roles";
 import { QURRA_STATUS_LABELS } from "@/features/admissions/eligibility";
+import {
+  amsAssignOfficer,
+  amsQueue,
+  amsSetPriority,
+  amsStaff,
+  amsTogglePin,
+} from "@/features/ams/ams.functions";
+import { AmsShell } from "@/features/ams/components/AmsShell";
+import { EmptyState, STATUS_LABELS, SkeletonRows } from "@/features/ams/components/atoms";
+import { QueueCards } from "@/features/ams/components/queue/QueueCards";
+import { QueueTable } from "@/features/ams/components/queue/QueueTable";
+import {
+  SORT_LABELS,
+  type SortKey,
+  type ViewMode,
+  matchesTerm,
+  sortRows,
+  toCsv,
+} from "@/features/ams/queue-view";
+import { PAYMENT_STATUS_LABELS, PRIORITY_LABELS } from "@/features/ams/roles";
 import { cn } from "@/lib/utils";
+
 type QueueSearch = { status?: string; officerId?: string; payment?: string; qurra?: string };
+
 export const Route = createFileRoute("/_authenticated/ams/queue")({
   validateSearch: (search: Record<string, unknown>): QueueSearch => ({
     status: typeof search.status === "string" ? search.status : undefined,
@@ -37,32 +60,57 @@ export const Route = createFileRoute("/_authenticated/ams/queue")({
   }),
   component: QueuePage,
 });
+
 const ALL = "all";
+
+const TABS: { key: string | undefined; label: string }[] = [
+  { key: undefined, label: "الكل" },
+  { key: "submitted", label: STATUS_LABELS.submitted ?? "جديد" },
+  { key: "under_review", label: STATUS_LABELS.under_review ?? "قيد المراجعة" },
+  { key: "needs_action", label: STATUS_LABELS.needs_action ?? "بانتظار ولي الأمر" },
+  { key: "principal_review", label: STATUS_LABELS.principal_review ?? "اعتماد المدير" },
+  { key: "waitlisted", label: STATUS_LABELS.waitlisted ?? "قائمة الانتظار" },
+  { key: "approved", label: STATUS_LABELS.approved ?? "مقبول" },
+  { key: "rejected", label: STATUS_LABELS.rejected ?? "مرفوض" },
+];
+
 function QueuePage() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const queryClient = useQueryClient();
+
   const [term, setTerm] = useState("");
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkOfficer, setBulkOfficer] = useState("");
+  const [bulkPriority, setBulkPriority] = useState("");
+  const [view, setView] = useState<ViewMode>("table");
+  const [compact, setCompact] = useState(false);
+  const [sort, setSort] = useState<SortKey>("recent");
+
+  // Status tab is applied client-side so the tab counters always show totals.
   const filters = {
-    status: search.status ?? null,
+    status: null,
     officerId: search.officerId ?? null,
     payment: search.payment ?? null,
     qurra: search.qurra ?? null,
   };
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["ams", "queue", filters],
     queryFn: () => amsQueue({ data: filters }),
   });
   const { data: staff } = useQuery({ queryKey: ["ams", "staff"], queryFn: () => amsStaff() });
+
   const togglePin = useServerFn(amsTogglePin);
   const assign = useServerFn(amsAssignOfficer);
+  const priority = useServerFn(amsSetPriority);
+
   const pinMutation = useMutation({
     mutationFn: (input: { id: string; pinned: boolean }) => togglePin({ data: input }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ams"] }),
   });
+
   const bulkAssign = useMutation({
     mutationFn: async (officerId: string) => {
       for (const id of selected) await assign({ data: { id, officerId } });
@@ -70,242 +118,300 @@ function QueuePage() {
     onSuccess: () => {
       toast.success("تم إسناد الطلبات المحددة");
       setSelected([]);
+      setBulkOfficer("");
       queryClient.invalidateQueries({ queryKey: ["ams"] });
     },
     onError: (err: Error) => toast.error(err.message),
   });
+
+  const bulkPriorityMutation = useMutation({
+    mutationFn: async (level: string) => {
+      for (const id of selected) await priority({ data: { id, priority: level } });
+    },
+    onSuccess: () => {
+      toast.success("تم تحديث أولوية الطلبات المحددة");
+      setSelected([]);
+      setBulkPriority("");
+      queryClient.invalidateQueries({ queryKey: ["ams"] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const all = data ?? [];
+  const counts = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const row of all) map[row.status] = (map[row.status] ?? 0) + 1;
+    return map;
+  }, [all]);
+
   const rows = useMemo(() => {
     const needle = term.trim().toLowerCase();
-    const list = data ?? [];
-    const filtered = needle
-      ? list.filter((row) =>
-          [
-            row.application_number,
-            row.tracking_number,
-            row.parentName,
-            row.parentPhone,
-            row.parent_national_id,
-            ...row.children.flatMap((child) => [child.name_ar, child.national_id]),
-          ]
-            .filter(Boolean)
-            .some((value) => String(value).toLowerCase().includes(needle)),
-        )
-      : list;
-    return [...filtered].sort((a, b) => Number(b.pinned) - Number(a.pinned));
-  }, [data, term]);
+    const filtered = all.filter(
+      (row) => (!search.status || row.status === search.status) && matchesTerm(row, needle),
+    );
+    return sortRows(filtered, sort);
+  }, [all, term, search.status, sort]);
+
   const setFilter = (key: keyof QueueSearch, value: string) =>
     navigate({ search: { ...search, [key]: value === ALL ? undefined : value } });
+
+  const activeFilters = [search.officerId, search.payment, search.qurra].filter(Boolean).length;
+
+  const exportCsv = () => {
+    const blob = new Blob(["\uFEFF" + toCsv(rows)], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `applications-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <AmsShell
       wide
       title="قائمة الطلبات"
-      description={`${rows.length} طلب مطابق للفلاتر الحالية`}
+      description={`${rows.length} طلب معروض من إجمالي ${all.length}`}
       actions={
-        <Button
-          variant="outline"
-          className="rounded-2xl text-xs font-bold"
-          onClick={() => setShowFilters((value) => !value)}
-        >
-          <SlidersHorizontal className="size-3.5" /> الفلاتر
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-2xl border border-border/60 bg-card p-0.5">
+            <button
+              type="button"
+              onClick={() => setView("table")}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-[11px] font-extrabold",
+                view === "table" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+              )}
+            >
+              <Table2 className="size-3.5" /> جدول
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("cards")}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-[11px] font-extrabold",
+                view === "cards" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+              )}
+            >
+              <LayoutGrid className="size-3.5" /> بطاقات
+            </button>
+          </div>
+          {view === "table" ? (
+            <Button
+              variant="outline"
+              className="rounded-2xl text-xs font-bold"
+              onClick={() => setCompact((value) => !value)}
+            >
+              <Rows3 className="size-3.5" /> {compact ? "عرض مريح" : "عرض مكثف"}
+            </Button>
+          ) : null}
+          <Button variant="outline" className="rounded-2xl text-xs font-bold" onClick={exportCsv}>
+            <Download className="size-3.5" /> تصدير
+          </Button>
+          <Button
+            variant={activeFilters ? "default" : "outline"}
+            className="rounded-2xl text-xs font-bold"
+            onClick={() => setShowFilters((value) => !value)}
+          >
+            <SlidersHorizontal className="size-3.5" /> الفلاتر
+            {activeFilters ? (
+              <span className="ms-1 rounded-full bg-background/25 px-1.5 text-[10px]">{activeFilters}</span>
+            ) : null}
+          </Button>
+        </div>
       }
     >
-      {showFilters ? (
-        <div className="grid gap-2.5 rounded-3xl border border-border/60 bg-card p-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-1.5 rounded-3xl border border-border/60 bg-card p-2">
+          {TABS.map((tab) => {
+            const active = (search.status ?? undefined) === tab.key;
+            const count = tab.key ? (counts[tab.key] ?? 0) : all.length;
+            return (
+              <button
+                key={tab.label}
+                type="button"
+                onClick={() => navigate({ search: { ...search, status: tab.key } })}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-2xl px-3 py-1.5 text-[11px] font-extrabold transition",
+                  active
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-accent/60",
+                )}
+              >
+                {tab.label}
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 text-[10px]",
+                    active ? "bg-background/25" : "bg-muted",
+                  )}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="grid gap-2.5 rounded-3xl border border-border/60 bg-card p-3 lg:grid-cols-[minmax(0,1fr)_auto]">
           <div className="relative">
             <Search className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={term}
               onChange={(event) => setTerm(event.target.value)}
-              placeholder="بحث بالاسم أو الرقم أو الهوية…"
+              placeholder="بحث برقم الطلب أو اسم الطالب أو ولي الأمر أو الهوية أو الجوال…"
               className="rounded-2xl pe-9 text-xs"
             />
           </div>
-          <Select value={search.status ?? ALL} onValueChange={(value) => setFilter("status", value)}>
-            <SelectTrigger className="rounded-2xl text-xs">
-              <SelectValue placeholder="الحالة" />
+          <Select value={sort} onValueChange={(value) => setSort(value as SortKey)}>
+            <SelectTrigger className="w-full rounded-2xl text-xs lg:w-56">
+              <SelectValue placeholder="الترتيب" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>كل الحالات</SelectItem>
-              {["submitted", "under_review", "needs_action", "principal_review", "waitlisted", "approved", "rejected"].map(
-                (status) => (
-                  <SelectItem key={status} value={status}>
-                    {STATUS_LABELS[status] ?? status}
+              {Object.entries(SORT_LABELS).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  ترتيب: {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {showFilters ? (
+            <div className="grid gap-2.5 sm:grid-cols-3 lg:col-span-2">
+              <Select value={search.officerId ?? ALL} onValueChange={(value) => setFilter("officerId", value)}>
+                <SelectTrigger className="rounded-2xl text-xs">
+                  <SelectValue placeholder="المسؤول" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>كل المسؤولين</SelectItem>
+                  <SelectItem value="unassigned">غير مُسند</SelectItem>
+                  {(staff ?? []).map((person) => (
+                    <SelectItem key={person.id} value={person.id}>
+                      {person.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={search.qurra ?? ALL} onValueChange={(value) => setFilter("qurra", value)}>
+                <SelectTrigger className="rounded-2xl text-xs">
+                  <SelectValue placeholder="قرة" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>كل حالات قرة</SelectItem>
+                  {Object.entries(QURRA_STATUS_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={search.payment ?? ALL} onValueChange={(value) => setFilter("payment", value)}>
+                <SelectTrigger className="rounded-2xl text-xs">
+                  <SelectValue placeholder="السداد" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>كل حالات السداد</SelectItem>
+                  {Object.entries(PAYMENT_STATUS_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {activeFilters ? (
+                <Button
+                  variant="ghost"
+                  className="justify-self-start rounded-2xl text-xs font-bold text-muted-foreground"
+                  onClick={() => navigate({ search: { status: search.status } })}
+                >
+                  <X className="size-3.5" /> مسح الفلاتر
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        {selected.length > 0 ? (
+          <div className="sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-3xl border border-primary/30 bg-primary/8 p-3 backdrop-blur">
+            <span className="text-xs font-extrabold text-primary">{selected.length} طلب محدد</span>
+            <Select value={bulkOfficer} onValueChange={setBulkOfficer}>
+              <SelectTrigger className="h-9 w-52 rounded-2xl text-xs">
+                <SelectValue placeholder="إسناد جماعي إلى…" />
+              </SelectTrigger>
+              <SelectContent>
+                {(staff ?? []).map((person) => (
+                  <SelectItem key={person.id} value={person.id}>
+                    {person.name}
                   </SelectItem>
-                ),
-              )}
-            </SelectContent>
-          </Select>
-          <Select value={search.officerId ?? ALL} onValueChange={(value) => setFilter("officerId", value)}>
-            <SelectTrigger className="rounded-2xl text-xs">
-              <SelectValue placeholder="المسؤول" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>كل المسؤولين</SelectItem>
-              <SelectItem value="unassigned">غير مُسند</SelectItem>
-              {(staff ?? []).map((person) => (
-                <SelectItem key={person.id} value={person.id}>
-                  {person.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={search.qurra ?? ALL} onValueChange={(value) => setFilter("qurra", value)}>
-            <SelectTrigger className="rounded-2xl text-xs">
-              <SelectValue placeholder="قرة" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>كل حالات قرة</SelectItem>
-              {Object.entries(QURRA_STATUS_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={search.payment ?? ALL} onValueChange={(value) => setFilter("payment", value)}>
-            <SelectTrigger className="rounded-2xl text-xs">
-              <SelectValue placeholder="السداد" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>كل حالات السداد</SelectItem>
-              {Object.entries(PAYMENT_STATUS_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      ) : null}
-      {selected.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-3xl border border-primary/30 bg-primary/5 p-3">
-          <span className="text-xs font-extrabold text-primary">{selected.length} طلب محدد</span>
-          <Select value={bulkOfficer} onValueChange={setBulkOfficer}>
-            <SelectTrigger className="h-9 w-56 rounded-2xl text-xs">
-              <SelectValue placeholder="إسناد جماعي إلى…" />
-            </SelectTrigger>
-            <SelectContent>
-              {(staff ?? []).map((person) => (
-                <SelectItem key={person.id} value={person.id}>
-                  {person.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            size="sm"
-            className="rounded-2xl text-xs font-bold"
-            disabled={!bulkOfficer || bulkAssign.isPending}
-            onClick={() => bulkAssign.mutate(bulkOfficer)}
-          >
-            <Users className="size-3.5" /> تنفيذ
-          </Button>
-          <Button size="sm" variant="ghost" className="rounded-2xl text-xs" onClick={() => setSelected([])}>
-            إلغاء التحديد
-          </Button>
-        </div>
-      ) : null}
-      {error ? (
-        <EmptyState title="تعذّر تحميل الطلبات" description={(error as Error).message} />
-      ) : isLoading ? (
-        <SkeletonRows rows={8} />
-      ) : rows.length === 0 ? (
-        <EmptyState icon={<Inbox className="size-5" />} title="لا توجد طلبات" description="جرّب تغيير الفلاتر أو البحث." />
-      ) : (
-        <div className="overflow-x-auto rounded-3xl border border-border/60 bg-card">
-          <table className="w-full min-w-[1100px] text-start text-xs">
-            <thead className="bg-muted/40 text-[11px] font-extrabold text-muted-foreground">
-              <tr>
-                <th className="px-3 py-3"> </th>
-                <th className="px-3 py-3 text-start">رقم الطلب</th>
-                <th className="px-3 py-3 text-start">الطلاب</th>
-                <th className="px-3 py-3 text-start">ولي الأمر</th>
-                <th className="px-3 py-3 text-start">الحالة</th>
-                <th className="px-3 py-3 text-start">الأولوية</th>
-                <th className="px-3 py-3 text-start">المستندات</th>
-                <th className="px-3 py-3 text-start">قرة</th>
-                <th className="px-3 py-3 text-start">المقعد</th>
-                <th className="px-3 py-3 text-start">السداد</th>
-                <th className="px-3 py-3 text-start">المسؤول</th>
-                <th className="px-3 py-3 text-start">آخر تحديث</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="border-t border-border/50 transition-colors hover:bg-accent/40">
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="checkbox"
-                        checked={selected.includes(row.id)}
-                        onChange={(event) =>
-                          setSelected((prev) =>
-                            event.target.checked ? [...prev, row.id] : prev.filter((value) => value !== row.id),
-                          )
-                        }
-                        className="size-3.5 accent-[var(--color-primary)]"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => pinMutation.mutate({ id: row.id, pinned: !row.pinned })}
-                        aria-label="تثبيت"
-                      >
-                        <Pin className={cn("size-3.5", row.pinned ? "fill-primary text-primary" : "text-muted-foreground")} />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3">
-                    <Link
-                      to="/ams/applications/$applicationId"
-                      params={{ applicationId: row.id }}
-                      className="font-extrabold text-foreground hover:text-primary"
-                    >
-                      {row.application_number ?? "بدون رقم"}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-3">
-                    <span className="font-bold text-foreground">
-                      {row.children.map((child) => child.name_ar).join("، ") || "—"}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3">
-                    <span className="font-bold text-foreground">{row.parentName}</span>
-                    <span className="block text-[10px] text-muted-foreground" dir="ltr">
-                      {row.parentPhone ?? ""}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3">
-                    <StatusPill status={row.status} />
-                  </td>
-                  <td className="px-3 py-3">
-                    <PriorityPill priority={row.priority} />
-                  </td>
-                  <td className="px-3 py-3 font-bold">
-                    {row.documentsApproved}/{row.documentsTotal}
-                    {row.documentsRejected > 0 ? (
-                      <span className="ms-1 text-destructive">({row.documentsRejected} مرفوض)</span>
-                    ) : null}
-                  </td>
-                  <td className="px-3 py-3 font-bold text-muted-foreground">
-                    {QURRA_STATUS_LABELS[row.qurraStatus] ?? row.qurraStatus}
-                  </td>
-                  <td className="px-3 py-3 font-bold text-muted-foreground">
-                    {SEAT_STATUS_LABELS[row.seat_status] ?? row.seat_status}
-                  </td>
-                  <td className="px-3 py-3 font-bold text-muted-foreground">
-                    {PAYMENT_STATUS_LABELS[row.payment_status] ?? row.payment_status}
-                  </td>
-                  <td className="px-3 py-3 font-bold text-muted-foreground">{row.officerName ?? "غير مُسند"}</td>
-                  <td className="px-3 py-3 text-[10px] font-bold text-muted-foreground">
-                    {formatDateTime(row.updated_at)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              className="rounded-2xl text-xs font-bold"
+              disabled={!bulkOfficer || bulkAssign.isPending}
+              onClick={() => bulkAssign.mutate(bulkOfficer)}
+            >
+              <Users className="size-3.5" /> إسناد
+            </Button>
+            <Select value={bulkPriority} onValueChange={setBulkPriority}>
+              <SelectTrigger className="h-9 w-44 rounded-2xl text-xs">
+                <SelectValue placeholder="تغيير الأولوية…" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-2xl text-xs font-bold"
+              disabled={!bulkPriority || bulkPriorityMutation.isPending}
+              onClick={() => bulkPriorityMutation.mutate(bulkPriority)}
+            >
+              <Flag className="size-3.5" /> تطبيق
+            </Button>
+            <Button size="sm" variant="ghost" className="rounded-2xl text-xs" onClick={() => setSelected([])}>
+              إلغاء التحديد
+            </Button>
+          </div>
+        ) : null}
+
+        {error ? (
+          <EmptyState title="تعذّر تحميل الطلبات" description={(error as Error).message} />
+        ) : isLoading ? (
+          <SkeletonRows rows={8} />
+        ) : rows.length === 0 ? (
+          <EmptyState
+            icon={<Inbox className="size-5" />}
+            title="لا توجد طلبات مطابقة"
+            description="جرّب تغيير التبويب أو الفلاتر أو كلمة البحث."
+          />
+        ) : view === "table" ? (
+          <QueueTable
+            rows={rows}
+            selected={selected}
+            compact={compact}
+            onToggle={(id, checked) =>
+              setSelected((prev) => (checked ? [...prev, id] : prev.filter((value) => value !== id)))
+            }
+            onToggleAll={(checked) => setSelected(checked ? rows.map((row) => row.id) : [])}
+            onPin={(row) => pinMutation.mutate({ id: row.id, pinned: !row.pinned })}
+          />
+        ) : (
+          <QueueCards
+            rows={rows}
+            selected={selected}
+            onToggle={(id, checked) =>
+              setSelected((prev) => (checked ? [...prev, id] : prev.filter((value) => value !== id)))
+            }
+            onPin={(row) => pinMutation.mutate({ id: row.id, pinned: !row.pinned })}
+          />
+        )}
+      </div>
     </AmsShell>
   );
 }
