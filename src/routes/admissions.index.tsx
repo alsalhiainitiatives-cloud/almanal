@@ -40,17 +40,10 @@ export const Route = createFileRoute("/admissions/")({
 });
 
 const steps = [
-  { icon: Sparkles, title: "اختر المرحلة والفصل", body: "تصفّح المراحل والمقاعد المتاحة واحجز مقعد طفلك مؤقتًا." },
-  { icon: FileCheck2, title: "أكمل البيانات", body: "بيانات ولي الأمر والأبناء والخدمات والمستندات في خطوات قصيرة." },
-  { icon: CalendarCheck, title: "راجع وأرسل", body: "ملخص كامل مع الملخص المالي ثم إرسال الطلب برقم تتبع." },
-  { icon: ShieldCheck, title: "تابع طلبك", body: "خط زمني مباشر لحالة الطلب والمستندات ودعم قرة." },
-];
-
-const onboarding = [
-  { step: "1", title: "استقبال ولقاء", body: "لقاء تعريفي مع الأسرة وتعرّف الطفل على بيئته الجديدة." },
-  { step: "2", title: "تقييم لطيف", body: "ملاحظة مهارات الطفل لتحديد المستوى والدعم المناسب." },
-  { step: "3", title: "خطة نمو", body: "أهداف تعليمية وسلوكية واضحة يتابعها فريق المرحلة." },
-  { step: "4", title: "شراكة مستمرة", body: "تقارير دورية ولقاءات مع أولياء الأمور خلال العام." },
+  { icon: Sparkles, title: "اختر المرحلة", body: "ثلاث مراحل حسب عمر طفلك." },
+  { icon: FileCheck2, title: "اختر الفصل", body: "بطاقة لكل فصل بلونه ومعلمته." },
+  { icon: CalendarCheck, title: "أكمل الطلب", body: "خطوات قصيرة مع حفظ تلقائي." },
+  { icon: ShieldCheck, title: "تابع طلبك", body: "رقم تتبع وحالة مباشرة." },
 ];
 
 function AdmissionsPage() {
@@ -60,13 +53,13 @@ function AdmissionsPage() {
     <>
       <PageHero
         eyebrow="المراحل والتسجيل"
-        title="المراحل التعليمية وتسجيل طفلك في مكان واحد"
-        description="تصفّح مراحل المنال من الحضانة إلى السادس الابتدائي، قارن بينها بسهولة، ثم ابدأ التسجيل مباشرة من نفس الصفحة."
+        title="المراحل التعليمية والتسجيل"
+        description="خطوتان فقط: تصفّح المراحل واختر الفصل المناسب لطفلك، أو تابع طلباتك السابقة."
       >
         <Button asChild variant="hero" size="lg">
           <a href="#stages">تصفّح المراحل</a>
         </Button>
-        <Button asChild variant="hero" size="lg">
+        <Button asChild variant="soft" size="lg">
           <Link to="/my-applications">متابعة طلباتي</Link>
         </Button>
       </PageHero>
@@ -76,16 +69,8 @@ function AdmissionsPage() {
           <SectionHeading
             eyebrow="المراحل المتاحة"
             title="اختر المرحلة المناسبة لعمر طفلك"
-            description="كل مرحلة لها فلسفتها التربوية وبيئتها وفريقها المتخصص — والمقاعد محدودة لضمان جودة الرعاية."
+            description="اضغط على المرحلة لعرض فصولها المتاحة."
           />
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Button asChild variant="soft">
-              <Link to="/kindergarten">تفاصيل برنامج الروضة</Link>
-            </Button>
-            <Button asChild variant="soft">
-              <Link to="/primary">تفاصيل المرحلة الابتدائية</Link>
-            </Button>
-          </div>
           {stages.length === 0 ? (
             <div className="mt-12 rounded-[2.5rem] border border-dashed border-border bg-card/60 p-12 text-center">
               <p className="text-lg font-bold text-foreground">لا توجد مراحل متاحة للتسجيل حاليًا</p>
@@ -110,8 +95,7 @@ function AdmissionsPage() {
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <SectionHeading
             eyebrow="كيف تسير الرحلة"
-            title="أربع محطات فقط تفصلك عن مقعد طفلك"
-            description="يمكنك حفظ تقدّمك في أي لحظة والعودة لاستكمال الطلب لاحقًا."
+            title="أربع خطوات بسيطة"
           />
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map((s, i) => (
@@ -126,34 +110,6 @@ function AdmissionsPage() {
               </Reveal>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="section-y">
-        <div className="mx-auto max-w-7xl px-4 md:px-8">
-          <SectionHeading
-            eyebrow="بعد القبول"
-            title="خطوات انتقال الطفل إلى المنال"
-            description="نحرص أن تكون البداية هادئة ومطمئنة للطفل وأسرته."
-          />
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {onboarding.map((item, i) => (
-              <Reveal key={item.step} delay={i * 0.08}>
-                <div className="h-full rounded-4xl bg-card p-7 shadow-soft">
-                  <span className="grid size-12 place-items-center rounded-2xl bg-accent text-lg font-extrabold text-primary">
-                    {item.step}
-                  </span>
-                  <h3 className="mt-5 text-lg font-black text-foreground">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-          <Reveal delay={0.2} className="mt-12 text-center">
-            <Button asChild variant="hero" size="lg">
-              <Link to="/contact">تواصل معنا للاستفسار</Link>
-            </Button>
-          </Reveal>
         </div>
       </section>
     </>
