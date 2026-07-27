@@ -46,6 +46,13 @@ const steps = [
   { icon: ShieldCheck, title: "تابع طلبك", body: "خط زمني مباشر لحالة الطلب والمستندات ودعم قرة." },
 ];
 
+const onboarding = [
+  { step: "1", title: "استقبال ولقاء", body: "لقاء تعريفي مع الأسرة وتعرّف الطفل على بيئته الجديدة." },
+  { step: "2", title: "تقييم لطيف", body: "ملاحظة مهارات الطفل لتحديد المستوى والدعم المناسب." },
+  { step: "3", title: "خطة نمو", body: "أهداف تعليمية وسلوكية واضحة يتابعها فريق المرحلة." },
+  { step: "4", title: "شراكة مستمرة", body: "تقارير دورية ولقاءات مع أولياء الأمور خلال العام." },
+];
+
 function AdmissionsPage() {
   const { data: stages } = useSuspenseQuery(stagesQuery);
 
