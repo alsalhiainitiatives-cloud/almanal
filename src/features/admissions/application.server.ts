@@ -393,8 +393,9 @@ export async function submitApplication(supabase: Db, userId: string, id: string
   const discount = childCount > 1 ? tuition * 0.1 : 0;
   const grandTotal = admissionFee + tuition + servicesTotal - discount;
 
+  // One unified number is used for both the application and its tracking page.
   const applicationNumber = `MN-${ACADEMIC_YEAR}-${randomCode(5)}`;
-  const trackingNumber = randomCode(10);
+  const trackingNumber = applicationNumber;
 
   const { error } = await supabase
     .from("applications")
@@ -420,7 +421,7 @@ export async function submitApplication(supabase: Db, userId: string, id: string
     userId,
     "application.submitted",
     "تم إرسال الطلب إلى قائمة مراجعة مسؤول التسجيل",
-    `رقم الطلب ${applicationNumber} — رقم التتبع ${trackingNumber}`,
+    `رقم الطلب ${applicationNumber}`,
     { qurraStatus: qurra?.status ?? "not_requested" },
   );
 
@@ -428,16 +429,14 @@ export async function submitApplication(supabase: Db, userId: string, id: string
 }
 
 export async function withdrawApplication(supabase: Db, userId: string, id: string) {
-  await loadApplicationRow(supabase, id, userId);
+  const row = await loadApplicationRow(supabase, id, userId);
+  if (["withdrawn", "rejected", "approved"].includes(row.status)) {
+    throw new Error("لا يمكن سحب هذا الطلب في حالته الحالية.");
+  }
 
-  await supabase
-    .from("seat_holds")
-    .update({ released_at: new Date().toISOString() })
-    .eq("application_id", id)
-    .is("released_at", null);
-
-  const { error } = await supabase.from("applications").update({ status: "withdrawn" }).eq("id", id);
+  const { data, error } = await supabase.rpc("withdraw_my_application", { _application_id: id });
   if (error) throw new Error("تعذّر سحب الطلب.");
+  if (data !== true) throw new Error("لا يمكن سحب هذا الطلب في حالته الحالية.");
 
   await logEvent(supabase, id, userId, "application.withdrawn", "تم سحب الطلب وتحرير المقعد المحجوز");
   return { ok: true as const };
