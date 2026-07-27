@@ -20,8 +20,9 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   validateSearch: (
     search: Record<string, unknown>,
-  ): { next?: string | undefined } => ({
+  ): { next?: string | undefined; reason?: string | undefined } => ({
     next: typeof search.next === "string" && search.next.startsWith("/") ? search.next : undefined,
+    reason: typeof search.reason === "string" ? search.reason.slice(0, 40) : undefined,
   }),
   head: () => ({
     meta: [
@@ -43,6 +44,14 @@ export const Route = createFileRoute("/auth")({
 });
 
 type Mode = "signin" | "signup";
+
+const REASON_TITLES: Record<string, string> = {
+  documents: "مطلوب رفع مرفقات — سجّل الدخول لإكمال رفع المستندات المطلوبة",
+  action: "مطلوب إجراء على طلبك — سجّل الدخول لتعديل البيانات المطلوبة",
+  payment: "الدفع وجدولة السداد — سجّل الدخول للمتابعة",
+  details: "عرض تفاصيل الطلب الكاملة يتطلب تسجيل الدخول",
+  default: "يلزم تسجيل الدخول لإكمال الإجراء المطلوب على طلبك",
+};
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -206,7 +215,7 @@ function OrDivider() {
 
 function SignInForm() {
   const navigate = useNavigate();
-  const { next } = Route.useSearch();
+  const { next, reason } = Route.useSearch();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
@@ -248,6 +257,15 @@ function SignInForm() {
         title="تسجيل الدخول"
         subtitle=""
       />
+
+      {reason ? (
+        <div className="rounded-2xl border border-gold/50 bg-gold/15 px-4 py-3">
+          <p className="text-sm font-black text-foreground">{REASON_TITLES[reason] ?? REASON_TITLES.default}</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            بعد تسجيل الدخول سيتم نقلك مباشرة إلى صفحة الطلب والخطوة المطلوبة.
+          </p>
+        </div>
+      ) : null}
 
       <form onSubmit={onSubmit} className="space-y-5" noValidate>
         <div className="space-y-2">

@@ -380,6 +380,7 @@ export type Database = {
           status: Database["public"]["Enums"]["application_status"]
           student_number: string | null
           submitted_at: string | null
+          track_token: string
           tracking_number: string | null
           tuition_total: number
           updated_at: string
@@ -416,6 +417,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["application_status"]
           student_number?: string | null
           submitted_at?: string | null
+          track_token?: string
           tracking_number?: string | null
           tuition_total?: number
           updated_at?: string
@@ -452,6 +454,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["application_status"]
           student_number?: string | null
           submitted_at?: string | null
+          track_token?: string
           tracking_number?: string | null
           tuition_total?: number
           updated_at?: string
@@ -1239,8 +1242,17 @@ export type Database = {
         Args: { _ip: string; _user_agent: string }
         Returns: number
       }
+      track_application_documents_public: {
+        Args: { _application_number: string; _token: string }
+        Returns: {
+          document_name_ar: string
+          id: string
+          note: string
+          requested_at: string
+        }[]
+      }
       track_application_events_public: {
-        Args: { _application_number: string }
+        Args: { _application_number: string; _token: string }
         Returns: {
           created_at: string
           event_type: string
@@ -1249,7 +1261,7 @@ export type Database = {
         }[]
       }
       track_application_public: {
-        Args: { _application_number: string }
+        Args: { _application_number: string; _token: string }
         Returns: {
           academic_year: string
           application_number: string

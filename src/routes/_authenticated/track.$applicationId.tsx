@@ -86,10 +86,10 @@ function TrackPage() {
 
   const trackUrl = useMemo(() => {
     const origin = typeof window === "undefined" ? "" : window.location.origin;
-    return app.application_number
-      ? `${origin}/track?no=${encodeURIComponent(app.application_number)}`
+    return app.application_number && app.track_token
+      ? `${origin}/track?no=${encodeURIComponent(app.application_number)}&t=${encodeURIComponent(app.track_token)}`
       : `${origin}/track/${applicationId}`;
-  }, [app.application_number, applicationId]);
+  }, [app.application_number, app.track_token, applicationId]);
   const qr = qrDataUrl(trackUrl);
 
   async function handleWithdraw() {
@@ -170,6 +170,16 @@ function TrackPage() {
               <p className="text-2xl font-black tracking-wide text-primary" dir="ltr">
                 {appNumber}
               </p>
+              {app.track_token ? (
+                <div className="mt-3 rounded-2xl bg-beige/70 px-4 py-3">
+                  <p className="text-xs font-bold text-muted-foreground">
+                    رمز التحقق للتتبع السريع (بدون تسجيل دخول)
+                  </p>
+                  <p className="mt-1 break-all text-sm font-black text-foreground" dir="ltr">
+                    {app.track_token}
+                  </p>
+                </div>
+              ) : null}
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <Info label="العام الدراسي" value={app.academic_year} />
