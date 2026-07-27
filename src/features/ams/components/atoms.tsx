@@ -77,16 +77,20 @@ export function EmptyState({
   description,
   action,
 }: {
-  icon: ReactNode;
+  icon?: ReactNode;
   title: string;
-  description: string;
+  description?: string;
   action?: ReactNode;
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-border/70 bg-card/50 px-6 py-14 text-center">
-      <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">{icon}</span>
+      {icon ? (
+        <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">{icon}</span>
+      ) : null}
       <p className="text-sm font-extrabold text-foreground">{title}</p>
-      <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">{description}</p>
+      {description ? (
+        <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">{description}</p>
+      ) : null}
       {action}
     </div>
   );
