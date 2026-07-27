@@ -78,17 +78,19 @@ function TrackPage() {
   const { data: bundle } = useSuspenseQuery(appQuery);
   const app = bundle.application;
 
-  const trackUrl = useMemo(() => {
-    const origin = typeof window === "undefined" ? "" : window.location.origin;
-    return `${origin}/track/${applicationId}`;
-  }, [applicationId]);
-  const qr = qrDataUrl(trackUrl);
-
   const isWithdrawn = app.status === "withdrawn";
   const isClosed = ["withdrawn", "rejected", "approved"].includes(app.status);
   const canWithdraw = !isClosed;
   const printedAt = new Date().toLocaleString("ar-SA", { dateStyle: "long", timeStyle: "short" });
   const appNumber = app.application_number ?? app.tracking_number ?? "—";
+
+  const trackUrl = useMemo(() => {
+    const origin = typeof window === "undefined" ? "" : window.location.origin;
+    return app.application_number
+      ? `${origin}/track?no=${encodeURIComponent(app.application_number)}`
+      : `${origin}/track/${applicationId}`;
+  }, [app.application_number, applicationId]);
+  const qr = qrDataUrl(trackUrl);
 
   async function handleWithdraw() {
     setBusy(true);
