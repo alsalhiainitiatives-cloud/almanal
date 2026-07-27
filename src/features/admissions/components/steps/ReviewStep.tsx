@@ -2,7 +2,6 @@ import {
   Baby,
   FileText,
   HeartHandshake,
-  Layers,
   Pencil,
   Sparkles,
   UserRound,
