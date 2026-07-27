@@ -149,6 +149,8 @@ export type Database = {
           file_size: number | null
           id: string
           note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: string
           updated_at: string
         }
@@ -162,6 +164,8 @@ export type Database = {
           file_size?: number | null
           id?: string
           note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           updated_at?: string
         }
@@ -175,6 +179,8 @@ export type Database = {
           file_size?: number | null
           id?: string
           note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           updated_at?: string
         }
@@ -229,6 +235,79 @@ export type Database = {
           },
         ]
       }
+      application_notes: {
+        Row: {
+          application_id: string
+          attachments: Json
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          mentions: string[]
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          application_id: string
+          attachments?: Json
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          mentions?: string[]
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          application_id?: string
+          attachments?: Json
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          mentions?: string[]
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_notes_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      application_pins: {
+        Row: {
+          application_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_pins_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       application_services: {
         Row: {
           application_id: string
@@ -273,23 +352,33 @@ export type Database = {
           academic_year: string
           admission_fee: number
           application_number: string | null
+          archived_at: string | null
+          assigned_officer_id: string | null
           classroom_id: string | null
           created_at: string
           current_step: number
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
           discount_total: number
           draft_data: Json
           grand_total: number
           id: string
+          officer_recommendation: string | null
           parent_id: string
           parent_national_id: string | null
           parent_nationality: string | null
           parent_relationship: string | null
           parent_relationship_other: string | null
+          payment_status: string
+          priority: string
           review_note: string | null
           reviewed_at: string | null
+          seat_status: string
           services_total: number
           stage_id: string | null
           status: Database["public"]["Enums"]["application_status"]
+          student_number: string | null
           submitted_at: string | null
           tracking_number: string | null
           tuition_total: number
@@ -299,23 +388,33 @@ export type Database = {
           academic_year?: string
           admission_fee?: number
           application_number?: string | null
+          archived_at?: string | null
+          assigned_officer_id?: string | null
           classroom_id?: string | null
           created_at?: string
           current_step?: number
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
           discount_total?: number
           draft_data?: Json
           grand_total?: number
           id?: string
+          officer_recommendation?: string | null
           parent_id: string
           parent_national_id?: string | null
           parent_nationality?: string | null
           parent_relationship?: string | null
           parent_relationship_other?: string | null
+          payment_status?: string
+          priority?: string
           review_note?: string | null
           reviewed_at?: string | null
+          seat_status?: string
           services_total?: number
           stage_id?: string | null
           status?: Database["public"]["Enums"]["application_status"]
+          student_number?: string | null
           submitted_at?: string | null
           tracking_number?: string | null
           tuition_total?: number
@@ -325,23 +424,33 @@ export type Database = {
           academic_year?: string
           admission_fee?: number
           application_number?: string | null
+          archived_at?: string | null
+          assigned_officer_id?: string | null
           classroom_id?: string | null
           created_at?: string
           current_step?: number
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
           discount_total?: number
           draft_data?: Json
           grand_total?: number
           id?: string
+          officer_recommendation?: string | null
           parent_id?: string
           parent_national_id?: string | null
           parent_nationality?: string | null
           parent_relationship?: string | null
           parent_relationship_other?: string | null
+          payment_status?: string
+          priority?: string
           review_note?: string | null
           reviewed_at?: string | null
+          seat_status?: string
           services_total?: number
           stage_id?: string | null
           status?: Database["public"]["Enums"]["application_status"]
+          student_number?: string | null
           submitted_at?: string | null
           tracking_number?: string | null
           tuition_total?: number
@@ -518,6 +627,50 @@ export type Database = {
           subject?: string | null
         }
         Relationships: []
+      }
+      document_requests: {
+        Row: {
+          application_id: string
+          child_index: number | null
+          created_at: string
+          document_type_slug: string
+          fulfilled_at: string | null
+          id: string
+          note: string | null
+          requested_by: string
+          updated_at: string
+        }
+        Insert: {
+          application_id: string
+          child_index?: number | null
+          created_at?: string
+          document_type_slug: string
+          fulfilled_at?: string | null
+          id?: string
+          note?: string | null
+          requested_by: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string
+          child_index?: number | null
+          created_at?: string
+          document_type_slug?: string
+          fulfilled_at?: string | null
+          id?: string
+          note?: string | null
+          requested_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_requests_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       document_types: {
         Row: {
@@ -991,6 +1144,67 @@ export type Database = {
         }
         Relationships: []
       }
+      waiting_list_entries: {
+        Row: {
+          application_id: string
+          child_id: string | null
+          classroom_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          position: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          application_id: string
+          child_id?: string | null
+          classroom_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          position?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string
+          child_id?: string | null
+          classroom_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          position?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiting_list_entries_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiting_list_entries_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "application_children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiting_list_entries_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1031,6 +1245,8 @@ export type Database = {
         | "approved"
         | "rejected"
         | "withdrawn"
+        | "principal_review"
+        | "waitlisted"
       qurra_status:
         | "eligible"
         | "waiting_school_review"
@@ -1189,6 +1405,8 @@ export const Constants = {
         "approved",
         "rejected",
         "withdrawn",
+        "principal_review",
+        "waitlisted",
       ],
       qurra_status: [
         "eligible",
