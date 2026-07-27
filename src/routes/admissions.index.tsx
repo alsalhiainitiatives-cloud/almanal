@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 import { StageCatalogCard } from "@/features/admissions/components/StageCatalogCard";
 import { listStages } from "@/features/admissions/catalog.functions";
 
-const title = "ابدأ رحلة تسجيل طفلك | مدارس وروضة المنال";
+const title = "المراحل التعليمية والتسجيل | مدارس وروضة المنال";
 const description =
-  "اختر المرحلة التعليمية المناسبة لطفلك في مدارس وروضة المنال بعنيزة، تعرّف على الفصول والمقاعد المتاحة، وابدأ رحلة القبول خطوة بخطوة.";
+  "تعرّف على المراحل التعليمية في مدارس وروضة المنال بعنيزة — صغار المنال، مونتيسوري، والابتدائي — واطّلع على المقاعد المتاحة وابدأ التسجيل خطوة بخطوة.";
 
 const stagesQuery = queryOptions({
   queryKey: ["admissions", "stages"],
@@ -52,22 +52,33 @@ function AdmissionsPage() {
   return (
     <>
       <PageHero
-        eyebrow="القبول والتسجيل"
-        title="ابدأ رحلة تسجيل طفلك"
-        description="رحلة تسجيل مرنة وواضحة: اختر المرحلة، تعرّف على الفصل ومعلمته، أكمل البيانات، وتابع طلبك لحظة بلحظة."
+        eyebrow="المراحل والتسجيل"
+        title="المراحل التعليمية وتسجيل طفلك في مكان واحد"
+        description="تصفّح مراحل المنال من الحضانة إلى السادس الابتدائي، قارن بينها بسهولة، ثم ابدأ التسجيل مباشرة من نفس الصفحة."
       >
+        <Button asChild variant="hero" size="lg">
+          <a href="#stages">تصفّح المراحل</a>
+        </Button>
         <Button asChild variant="hero" size="lg">
           <Link to="/my-applications">متابعة طلباتي</Link>
         </Button>
       </PageHero>
 
-      <section className="section-y">
+      <section id="stages" className="section-y scroll-mt-24">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <SectionHeading
             eyebrow="المراحل المتاحة"
             title="اختر المرحلة المناسبة لعمر طفلك"
             description="كل مرحلة لها فلسفتها التربوية وبيئتها وفريقها المتخصص — والمقاعد محدودة لضمان جودة الرعاية."
           />
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Button asChild variant="soft">
+              <Link to="/kindergarten">تفاصيل برنامج الروضة</Link>
+            </Button>
+            <Button asChild variant="soft">
+              <Link to="/primary">تفاصيل المرحلة الابتدائية</Link>
+            </Button>
+          </div>
           {stages.length === 0 ? (
             <div className="mt-12 rounded-[2.5rem] border border-dashed border-border bg-card/60 p-12 text-center">
               <p className="text-lg font-bold text-foreground">لا توجد مراحل متاحة للتسجيل حاليًا</p>
@@ -108,6 +119,34 @@ function AdmissionsPage() {
               </Reveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="section-y">
+        <div className="mx-auto max-w-7xl px-4 md:px-8">
+          <SectionHeading
+            eyebrow="بعد القبول"
+            title="خطوات انتقال الطفل إلى المنال"
+            description="نحرص أن تكون البداية هادئة ومطمئنة للطفل وأسرته."
+          />
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {onboarding.map((item, i) => (
+              <Reveal key={item.step} delay={i * 0.08}>
+                <div className="h-full rounded-4xl bg-card p-7 shadow-soft">
+                  <span className="grid size-12 place-items-center rounded-2xl bg-accent text-lg font-extrabold text-primary">
+                    {item.step}
+                  </span>
+                  <h3 className="mt-5 text-lg font-black text-foreground">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <Reveal delay={0.2} className="mt-12 text-center">
+            <Button asChild variant="hero" size="lg">
+              <Link to="/contact">تواصل معنا للاستفسار</Link>
+            </Button>
+          </Reveal>
         </div>
       </section>
     </>
