@@ -49,7 +49,7 @@ export function Header() {
         }`}
       >
         <div
-          className={`mx-auto grid w-full max-w-[1600px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 transition-all duration-300 md:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-4 2xl:px-10 ${
+          className={`mx-auto grid w-full max-w-[1600px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 transition-all duration-300 md:px-6 xl:grid-cols-[auto_minmax(0,1fr)_auto] xl:gap-4 2xl:px-10 ${
             scrolled ? "py-2" : ""
           }`}
         >
@@ -57,7 +57,7 @@ export function Header() {
           <Logo />
         </Link>
 
-        <nav className="hidden min-w-0 items-center justify-center gap-0.5 rounded-full bg-accent/50 p-1.5 lg:flex xl:gap-1">
+        <nav className="hidden min-w-0 items-center justify-center gap-0.5 rounded-full bg-accent/50 p-1.5 xl:flex xl:gap-1">
           {navLinks.map((link) => (
             <Link
               key={link.to}
@@ -91,7 +91,7 @@ export function Header() {
             size="icon"
             aria-label={open ? "إغلاق القائمة" : "فتح القائمة"}
             aria-expanded={open}
-            className="lg:hidden"
+            className="xl:hidden"
             onClick={() => setOpen((v) => !v)}
           >
             {open ? <X /> : <Menu />}
@@ -106,7 +106,7 @@ export function Header() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden border-t border-border/70 bg-background/95 backdrop-blur-xl lg:hidden"
+            className="overflow-hidden border-t border-border/70 bg-background/95 backdrop-blur-xl xl:hidden"
           >
             <nav className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4 md:px-8">
               {navLinks.map((link) => (
