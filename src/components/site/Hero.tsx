@@ -80,11 +80,11 @@ export function Hero() {
             transition={{ duration: 0.7, delay: 0.24 }}
             className="mt-9 flex flex-wrap justify-center gap-3 lg:justify-start"
           >
-            <Button variant="hero" size="xl">
-              التسجيل الآن
+            <Button asChild variant="hero" size="xl">
+              <Link to="/admissions">التسجيل الآن</Link>
             </Button>
             <Button asChild variant="soft" size="xl">
-              <Link to="/stages">
+              <Link to="/admissions">
                 <Compass className="size-5" />
                 استكشف المراحل التعليمية
               </Link>
