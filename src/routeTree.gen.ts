@@ -28,13 +28,19 @@ import { Route as AdmissionsIndexRouteImport } from './routes/admissions.index'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedMyApplicationsRouteImport } from './routes/_authenticated/my-applications'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedAmsIndexRouteImport } from './routes/_authenticated/ams/index'
 import { Route as AuthenticatedTrackApplicationIdRouteImport } from './routes/_authenticated/track.$applicationId'
 import { Route as AuthenticatedApplyNewRouteImport } from './routes/_authenticated/apply.new'
 import { Route as AuthenticatedApplyApplicationIdRouteImport } from './routes/_authenticated/apply.$applicationId'
+import { Route as AuthenticatedAmsWaitingListRouteImport } from './routes/_authenticated/ams/waiting-list'
+import { Route as AuthenticatedAmsSeatsRouteImport } from './routes/_authenticated/ams/seats'
+import { Route as AuthenticatedAmsReportsRouteImport } from './routes/_authenticated/ams/reports'
+import { Route as AuthenticatedAmsQueueRouteImport } from './routes/_authenticated/ams/queue'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
 import { Route as AdmissionsStageSlugIndexRouteImport } from './routes/admissions.stage.$slug.index'
 import { Route as AdmissionsStageSlugClassroomsRouteImport } from './routes/admissions.stage.$slug.classrooms'
+import { Route as AuthenticatedAmsApplicationsApplicationIdRouteImport } from './routes/_authenticated/ams/applications.$applicationId'
 import { Route as AdmissionsStageSlugClassroomClassroomSlugRouteImport } from './routes/admissions.stage.$slug.classroom.$classroomSlug'
 
 const StagesRoute = StagesRouteImport.update({
@@ -132,6 +138,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAmsIndexRoute = AuthenticatedAmsIndexRouteImport.update({
+  id: '/ams/',
+  path: '/ams/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedTrackApplicationIdRoute =
   AuthenticatedTrackApplicationIdRouteImport.update({
     id: '/track/$applicationId',
@@ -149,6 +160,27 @@ const AuthenticatedApplyApplicationIdRoute =
     path: '/apply/$applicationId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAmsWaitingListRoute =
+  AuthenticatedAmsWaitingListRouteImport.update({
+    id: '/ams/waiting-list',
+    path: '/ams/waiting-list',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAmsSeatsRoute = AuthenticatedAmsSeatsRouteImport.update({
+  id: '/ams/seats',
+  path: '/ams/seats',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAmsReportsRoute = AuthenticatedAmsReportsRouteImport.update({
+  id: '/ams/reports',
+  path: '/ams/reports',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAmsQueueRoute = AuthenticatedAmsQueueRouteImport.update({
+  id: '/ams/queue',
+  path: '/ams/queue',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -170,6 +202,12 @@ const AdmissionsStageSlugClassroomsRoute =
     id: '/admissions/stage/$slug/classrooms',
     path: '/admissions/stage/$slug/classrooms',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedAmsApplicationsApplicationIdRoute =
+  AuthenticatedAmsApplicationsApplicationIdRouteImport.update({
+    id: '/ams/applications/$applicationId',
+    path: '/ams/applications/$applicationId',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AdmissionsStageSlugClassroomClassroomSlugRoute =
   AdmissionsStageSlugClassroomClassroomSlugRouteImport.update({
@@ -199,9 +237,15 @@ export interface FileRoutesByFullPath {
   '/admissions/': typeof AdmissionsIndexRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/ams/queue': typeof AuthenticatedAmsQueueRoute
+  '/ams/reports': typeof AuthenticatedAmsReportsRoute
+  '/ams/seats': typeof AuthenticatedAmsSeatsRoute
+  '/ams/waiting-list': typeof AuthenticatedAmsWaitingListRoute
   '/apply/$applicationId': typeof AuthenticatedApplyApplicationIdRoute
   '/apply/new': typeof AuthenticatedApplyNewRoute
   '/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
+  '/ams/': typeof AuthenticatedAmsIndexRoute
+  '/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
   '/admissions/stage/$slug/': typeof AdmissionsStageSlugIndexRoute
   '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
@@ -227,9 +271,15 @@ export interface FileRoutesByTo {
   '/admissions': typeof AdmissionsIndexRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/ams/queue': typeof AuthenticatedAmsQueueRoute
+  '/ams/reports': typeof AuthenticatedAmsReportsRoute
+  '/ams/seats': typeof AuthenticatedAmsSeatsRoute
+  '/ams/waiting-list': typeof AuthenticatedAmsWaitingListRoute
   '/apply/$applicationId': typeof AuthenticatedApplyApplicationIdRoute
   '/apply/new': typeof AuthenticatedApplyNewRoute
   '/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
+  '/ams': typeof AuthenticatedAmsIndexRoute
+  '/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
   '/admissions/stage/$slug': typeof AdmissionsStageSlugIndexRoute
   '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
@@ -257,9 +307,15 @@ export interface FileRoutesById {
   '/admissions/': typeof AdmissionsIndexRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/ams/queue': typeof AuthenticatedAmsQueueRoute
+  '/_authenticated/ams/reports': typeof AuthenticatedAmsReportsRoute
+  '/_authenticated/ams/seats': typeof AuthenticatedAmsSeatsRoute
+  '/_authenticated/ams/waiting-list': typeof AuthenticatedAmsWaitingListRoute
   '/_authenticated/apply/$applicationId': typeof AuthenticatedApplyApplicationIdRoute
   '/_authenticated/apply/new': typeof AuthenticatedApplyNewRoute
   '/_authenticated/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
+  '/_authenticated/ams/': typeof AuthenticatedAmsIndexRoute
+  '/_authenticated/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
   '/admissions/stage/$slug/': typeof AdmissionsStageSlugIndexRoute
   '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
@@ -287,9 +343,15 @@ export interface FileRouteTypes {
     | '/admissions/'
     | '/admin/audit'
     | '/admin/users'
+    | '/ams/queue'
+    | '/ams/reports'
+    | '/ams/seats'
+    | '/ams/waiting-list'
     | '/apply/$applicationId'
     | '/apply/new'
     | '/track/$applicationId'
+    | '/ams/'
+    | '/ams/applications/$applicationId'
     | '/admissions/stage/$slug/classrooms'
     | '/admissions/stage/$slug/'
     | '/admissions/stage/$slug/classroom/$classroomSlug'
@@ -315,9 +377,15 @@ export interface FileRouteTypes {
     | '/admissions'
     | '/admin/audit'
     | '/admin/users'
+    | '/ams/queue'
+    | '/ams/reports'
+    | '/ams/seats'
+    | '/ams/waiting-list'
     | '/apply/$applicationId'
     | '/apply/new'
     | '/track/$applicationId'
+    | '/ams'
+    | '/ams/applications/$applicationId'
     | '/admissions/stage/$slug/classrooms'
     | '/admissions/stage/$slug'
     | '/admissions/stage/$slug/classroom/$classroomSlug'
@@ -344,9 +412,15 @@ export interface FileRouteTypes {
     | '/admissions/'
     | '/_authenticated/admin/audit'
     | '/_authenticated/admin/users'
+    | '/_authenticated/ams/queue'
+    | '/_authenticated/ams/reports'
+    | '/_authenticated/ams/seats'
+    | '/_authenticated/ams/waiting-list'
     | '/_authenticated/apply/$applicationId'
     | '/_authenticated/apply/new'
     | '/_authenticated/track/$applicationId'
+    | '/_authenticated/ams/'
+    | '/_authenticated/ams/applications/$applicationId'
     | '/admissions/stage/$slug/classrooms'
     | '/admissions/stage/$slug/'
     | '/admissions/stage/$slug/classroom/$classroomSlug'
@@ -509,6 +583,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ams/': {
+      id: '/_authenticated/ams/'
+      path: '/ams'
+      fullPath: '/ams/'
+      preLoaderRoute: typeof AuthenticatedAmsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/track/$applicationId': {
       id: '/_authenticated/track/$applicationId'
       path: '/track/$applicationId'
@@ -528,6 +609,34 @@ declare module '@tanstack/react-router' {
       path: '/apply/$applicationId'
       fullPath: '/apply/$applicationId'
       preLoaderRoute: typeof AuthenticatedApplyApplicationIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ams/waiting-list': {
+      id: '/_authenticated/ams/waiting-list'
+      path: '/ams/waiting-list'
+      fullPath: '/ams/waiting-list'
+      preLoaderRoute: typeof AuthenticatedAmsWaitingListRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ams/seats': {
+      id: '/_authenticated/ams/seats'
+      path: '/ams/seats'
+      fullPath: '/ams/seats'
+      preLoaderRoute: typeof AuthenticatedAmsSeatsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ams/reports': {
+      id: '/_authenticated/ams/reports'
+      path: '/ams/reports'
+      fullPath: '/ams/reports'
+      preLoaderRoute: typeof AuthenticatedAmsReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ams/queue': {
+      id: '/_authenticated/ams/queue'
+      path: '/ams/queue'
+      fullPath: '/ams/queue'
+      preLoaderRoute: typeof AuthenticatedAmsQueueRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/users': {
@@ -558,6 +667,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdmissionsStageSlugClassroomsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/ams/applications/$applicationId': {
+      id: '/_authenticated/ams/applications/$applicationId'
+      path: '/ams/applications/$applicationId'
+      fullPath: '/ams/applications/$applicationId'
+      preLoaderRoute: typeof AuthenticatedAmsApplicationsApplicationIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/admissions/stage/$slug/classroom/$classroomSlug': {
       id: '/admissions/stage/$slug/classroom/$classroomSlug'
       path: '/admissions/stage/$slug/classroom/$classroomSlug'
@@ -574,9 +690,15 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedAmsQueueRoute: typeof AuthenticatedAmsQueueRoute
+  AuthenticatedAmsReportsRoute: typeof AuthenticatedAmsReportsRoute
+  AuthenticatedAmsSeatsRoute: typeof AuthenticatedAmsSeatsRoute
+  AuthenticatedAmsWaitingListRoute: typeof AuthenticatedAmsWaitingListRoute
   AuthenticatedApplyApplicationIdRoute: typeof AuthenticatedApplyApplicationIdRoute
   AuthenticatedApplyNewRoute: typeof AuthenticatedApplyNewRoute
   AuthenticatedTrackApplicationIdRoute: typeof AuthenticatedTrackApplicationIdRoute
+  AuthenticatedAmsIndexRoute: typeof AuthenticatedAmsIndexRoute
+  AuthenticatedAmsApplicationsApplicationIdRoute: typeof AuthenticatedAmsApplicationsApplicationIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -585,9 +707,16 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedAmsQueueRoute: AuthenticatedAmsQueueRoute,
+  AuthenticatedAmsReportsRoute: AuthenticatedAmsReportsRoute,
+  AuthenticatedAmsSeatsRoute: AuthenticatedAmsSeatsRoute,
+  AuthenticatedAmsWaitingListRoute: AuthenticatedAmsWaitingListRoute,
   AuthenticatedApplyApplicationIdRoute: AuthenticatedApplyApplicationIdRoute,
   AuthenticatedApplyNewRoute: AuthenticatedApplyNewRoute,
   AuthenticatedTrackApplicationIdRoute: AuthenticatedTrackApplicationIdRoute,
+  AuthenticatedAmsIndexRoute: AuthenticatedAmsIndexRoute,
+  AuthenticatedAmsApplicationsApplicationIdRoute:
+    AuthenticatedAmsApplicationsApplicationIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

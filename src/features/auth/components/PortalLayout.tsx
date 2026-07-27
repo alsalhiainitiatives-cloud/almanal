@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, LogOut, ShieldCheck, UserCog, Users } from "lucide-react";
+import { Inbox, LayoutDashboard, LogOut, ShieldCheck, UserCog, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +9,7 @@ import { P, ROLE_COLORS, ROLE_LABELS } from "../rbac";
 
 const NAV = [
   { to: "/dashboard", label: "لوحة المعلومات", icon: LayoutDashboard, permission: P.dashboardView },
+  { to: "/ams", label: "نظام إدارة القبول", icon: Inbox, permission: P.applicationsReview },
   { to: "/profile", label: "ملفي الشخصي", icon: UserCog, permission: P.profileEdit },
   { to: "/admin/users", label: "المستخدمون والأدوار", icon: Users, permission: P.usersView },
   { to: "/admin/audit", label: "سجل العمليات", icon: ShieldCheck, permission: P.auditView },
