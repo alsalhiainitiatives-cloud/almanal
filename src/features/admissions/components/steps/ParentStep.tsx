@@ -30,13 +30,6 @@ import type { ParentInfoInput } from "../../schemas";
 
 type Errors = Partial<Record<keyof ParentInfoInput, string>>;
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
-const maxBirth = () => {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() - 16);
-  return d.toISOString().slice(0, 10);
-};
-
 export function ParentStep({
   value,
   errors,
@@ -202,7 +195,6 @@ export function ParentStep({
             onChange={(v) => onChange({ employer: v })}
           />
         </FieldGrid>
-        <input type="hidden" value={todayIso()} readOnly aria-hidden max={maxBirth()} />
       </FormSection>
 
       {/* ---------------------------------------------------------------- */}
