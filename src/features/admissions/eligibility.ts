@@ -163,6 +163,8 @@ export const APPLICATION_STATUS_LABELS: Record<string, string> = {
   approved: "مقبول",
   rejected: "مرفوض",
   withdrawn: "مسحوب",
+  principal_review: "لدى مدير المدرسة",
+  waitlisted: "قائمة الانتظار",
 };
 
 export const APPLICATION_STATUS_COLORS: Record<string, string> = {
@@ -173,4 +175,6 @@ export const APPLICATION_STATUS_COLORS: Record<string, string> = {
   approved: "bg-mint text-foreground",
   rejected: "bg-destructive/15 text-destructive",
   withdrawn: "bg-muted text-muted-foreground",
+  principal_review: "bg-primary/10 text-primary",
+  waitlisted: "bg-gold/40 text-foreground",
 };

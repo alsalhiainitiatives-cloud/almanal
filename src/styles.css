@@ -351,3 +351,47 @@
     letter-spacing: -0.01em;
   }
 }
+
+/* ---------- Print: professional application sheet ---------- */
+.print-only {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+
+  header[data-site-header],
+  footer[data-site-footer],
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .print-sheet {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .print-avoid-break {
+    break-inside: avoid;
+  }
+
+  a[href]::after {
+    content: "";
+  }
+}

@@ -3,14 +3,30 @@ import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import qrcode from "qrcode-generator";
-import { CircleDot, Loader2, Printer, XCircle } from "lucide-react";
+import { Archive, GraduationCap, Loader2, Printer, ScanLine, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { school } from "@/data/site";
 import {
   getApplication,
   withdrawApplicationFn,
 } from "@/features/admissions/application.functions";
+import {
+  ApplicationStepper,
+  ApplicationTimeline,
+} from "@/features/admissions/components/ApplicationJourney";
 import {
   APPLICATION_STATUS_COLORS,
   APPLICATION_STATUS_LABELS,
@@ -40,7 +56,7 @@ function qrDataUrl(text: string) {
   const qr = qrcode(0, "M");
   qr.addData(text);
   qr.make();
-  return qr.createDataURL(6, 8);
+  return qr.createDataURL(5, 8);
 }
 
 function TrackPage() {
@@ -61,15 +77,23 @@ function TrackPage() {
   const { data: bundle } = useSuspenseQuery(appQuery);
   const app = bundle.application;
 
-  const qr = app.tracking_number ? qrDataUrl(app.tracking_number) : null;
+  const trackUrl = useMemo(() => {
+    const origin = typeof window === "undefined" ? "" : window.location.origin;
+    return `${origin}/track/${applicationId}`;
+  }, [applicationId]);
+  const qr = qrDataUrl(trackUrl);
+
+  const isWithdrawn = app.status === "withdrawn";
   const canWithdraw = !["withdrawn", "rejected", "approved"].includes(app.status);
+  const printedAt = new Date().toLocaleString("ar-SA", { dateStyle: "long", timeStyle: "short" });
 
   async function handleWithdraw() {
     setBusy(true);
     try {
       await withdraw({ data: applicationId });
       await queryClient.invalidateQueries({ queryKey: ["application", applicationId] });
-      toast.success("تم سحب الطلب");
+      await queryClient.invalidateQueries({ queryKey: ["my-applications"] });
+      toast.success("تم إلغاء الطلب وسحب التسجيل");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "تعذّر سحب الطلب");
     } finally {
@@ -80,15 +104,58 @@ function TrackPage() {
   return (
     <section className="section-y">
       <div className="mx-auto max-w-4xl px-4 md:px-8">
-        <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
-          <div className="rounded-[2.5rem] bg-card p-7 shadow-card">
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-black ${
-                APPLICATION_STATUS_COLORS[app.status] ?? "bg-beige text-foreground"
-              }`}
-            >
-              {APPLICATION_STATUS_LABELS[app.status] ?? app.status}
+        {/* Print-only letterhead */}
+        <div className="print-only mb-6 border-b-2 border-black/70 pb-4">
+          <div className="flex items-start justify-between gap-6">
+            <div>
+              <p className="text-lg font-black">{school.name}</p>
+              <p className="text-xs">{school.organization}</p>
+              <p className="text-xs">
+                {school.address.district} — {school.address.city} · {school.phone}
+              </p>
+            </div>
+            <div className="text-left">
+              <p className="text-base font-black">نموذج طلب قبول</p>
+              <p className="text-xs" dir="ltr">
+                {app.application_number ?? "—"}
+              </p>
+              <p className="text-xs">العام الدراسي {app.academic_year}</p>
+            </div>
+          </div>
+        </div>
+
+        {isWithdrawn ? (
+          <div className="print-avoid-break mb-6 flex items-start gap-4 rounded-[2rem] border border-destructive/25 bg-destructive/10 p-6">
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-destructive/15 text-destructive">
+              <Archive className="size-5" />
             </span>
+            <div>
+              <p className="text-base font-black text-destructive">تم إلغاء هذا الطلب</p>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                تم سحب التسجيل وتحرير المقعد المحجوز، ولم يعد بالإمكان تعديل هذا الطلب أو متابعته.
+                إذا رغبت في التسجيل مرة أخرى، يلزم تقديم طلب قبول جديد.
+              </p>
+              <Button asChild variant="soft" className="mt-4 no-print">
+                <Link to="/admissions">تقديم طلب جديد</Link>
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-start">
+          <div className="print-sheet rounded-[2.5rem] bg-card p-7 shadow-card">
+            <div className="flex flex-wrap items-center gap-3">
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-black ${
+                  APPLICATION_STATUS_COLORS[app.status] ?? "bg-beige text-foreground"
+                }`}
+              >
+                {APPLICATION_STATUS_LABELS[app.status] ?? app.status}
+              </span>
+              <span className="text-xs font-bold text-muted-foreground">
+                آخر تحديث: {new Date(app.updated_at).toLocaleDateString("ar-SA")}
+              </span>
+            </div>
             <h1 className="mt-4 text-2xl font-black text-foreground">تتبع طلب القبول</h1>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <Info label="رقم الطلب" value={app.application_number ?? "—"} />
@@ -104,42 +171,44 @@ function TrackPage() {
                   value={QURRA_STATUS_LABELS[bundle.qurra.status] ?? bundle.qurra.status}
                 />
               ) : null}
+              {bundle.children.length > 0 ? (
+                <Info
+                  label={bundle.children.length > 1 ? "الأبناء" : "الطالب"}
+                  value={bundle.children.map((c) => c.name_ar).join(" · ")}
+                />
+              ) : null}
             </div>
           </div>
 
-          {qr ? (
-            <div className="rounded-[2.5rem] bg-card p-6 text-center shadow-card">
-              <img src={qr} alt="رمز تتبع الطلب" className="mx-auto size-36 rounded-2xl" />
-              <p className="mt-3 text-xs font-bold text-muted-foreground">امسح للتتبع السريع</p>
-            </div>
-          ) : null}
+          <div className="print-avoid-break rounded-[2.5rem] bg-card p-6 text-center shadow-card">
+            <img src={qr} alt="رمز QR لفتح صفحة تتبع الطلب" className="mx-auto size-36 rounded-2xl" />
+            <p className="mt-3 flex items-center justify-center gap-1.5 text-xs font-bold text-muted-foreground">
+              <ScanLine className="size-3.5" />
+              امسح الرمز لفتح صفحة التتبع
+            </p>
+            <p className="mt-1 break-all text-[10px] text-muted-foreground" dir="ltr">
+              {trackUrl}
+            </p>
+          </div>
+        </div>
+
+        {/* Progress */}
+        <div className="print-avoid-break mt-8 rounded-[2.5rem] bg-card p-7 shadow-soft">
+          <h2 className="text-lg font-black text-foreground">مسار الطلب</h2>
+          <div className="mt-6">
+            <ApplicationStepper status={app.status} />
+          </div>
         </div>
 
         {/* Timeline */}
         <div className="mt-8 rounded-[2.5rem] bg-card p-7 shadow-soft">
-          <h2 className="text-lg font-black text-foreground">الخط الزمني</h2>
-          <ol className="mt-6 space-y-5 border-s-2 border-border ps-6">
-            {bundle.events.map((e) => (
-              <li key={e.id} className="relative">
-                <span className="absolute -start-[1.95rem] top-1 grid size-4 place-items-center rounded-full bg-primary text-primary-foreground">
-                  <CircleDot className="size-3" />
-                </span>
-                <p className="text-sm font-black text-foreground">{e.title_ar}</p>
-                {e.body_ar ? (
-                  <p className="mt-1 text-sm text-muted-foreground">{e.body_ar}</p>
-                ) : null}
-                <p className="mt-1 text-xs text-muted-foreground" dir="ltr">
-                  {new Date(e.created_at).toLocaleString("ar-SA")}
-                </p>
-              </li>
-            ))}
-            {bundle.events.length === 0 ? (
-              <li className="text-sm text-muted-foreground">لا توجد أحداث بعد.</li>
-            ) : null}
-          </ol>
+          <h2 className="text-lg font-black text-foreground">الخط الزمني للإجراءات</h2>
+          <div className="mt-6">
+            <ApplicationTimeline events={bundle.events} />
+          </div>
         </div>
 
-        <div className="mt-8 flex flex-wrap justify-between gap-3">
+        <div className="no-print mt-8 flex flex-wrap justify-between gap-3">
           <Button variant="soft" onClick={() => window.print()}>
             <Printer className="size-4" />
             طباعة الطلب
@@ -149,11 +218,60 @@ function TrackPage() {
               <Link to="/my-applications">طلباتي</Link>
             </Button>
             {canWithdraw ? (
-              <Button variant="destructive" disabled={busy} onClick={handleWithdraw}>
-                {busy ? <Loader2 className="size-4 animate-spin" /> : <XCircle className="size-4" />}
-                سحب الطلب
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" disabled={busy}>
+                    {busy ? <Loader2 className="size-4 animate-spin" /> : <XCircle className="size-4" />}
+                    سحب الطلب وإلغاء التسجيل
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent dir="rtl" className="text-right">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-destructive">
+                      تحذير: سحب الطلب وإلغاء التسجيل نهائيًا
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="leading-relaxed">
+                      عند تأكيد السحب سيتم إلغاء طلب القبول نهائيًا، وتحرير المقعد المحجوز لطفلك
+                      وإتاحته لغيره، وإيقاف مراجعة الطلب من قبل إدارة القبول. لا يمكن التراجع عن
+                      هذا الإجراء، وللتسجيل مرة أخرى ستحتاج إلى تقديم طلب جديد من البداية.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="gap-2 sm:flex-row-reverse sm:justify-start">
+                    <AlertDialogAction
+                      onClick={handleWithdraw}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      نعم، ألغِ التسجيل
+                    </AlertDialogAction>
+                    <AlertDialogCancel>تراجع</AlertDialogCancel>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             ) : null}
+          </div>
+        </div>
+
+        {/* Print-only footer */}
+        <div className="print-only mt-8 border-t-2 border-black/70 pt-3">
+          <div className="flex items-start justify-between gap-6 text-xs">
+            <div>
+              <p>
+                <strong>حالة الطلب:</strong> {APPLICATION_STATUS_LABELS[app.status] ?? app.status}
+              </p>
+              <p>
+                <strong>رقم التتبع:</strong> <span dir="ltr">{app.tracking_number ?? "—"}</span>
+              </p>
+              <p>
+                <strong>تاريخ الطباعة:</strong> {printedAt}
+              </p>
+            </div>
+            <div className="text-left">
+              <p className="flex items-center gap-1 justify-end">
+                <GraduationCap className="size-3.5" />
+                {school.name}
+              </p>
+              <p>هذا المستند صادر إلكترونيًا من بوابة القبول ولا يتطلب توقيعًا.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -163,7 +281,7 @@ function TrackPage() {
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-beige/70 p-4">
+    <div className="print-avoid-break rounded-2xl bg-beige/70 p-4">
       <p className="text-xs font-bold text-muted-foreground">{label}</p>
       <p className="mt-1 font-black text-foreground" dir="auto">
         {value}

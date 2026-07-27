@@ -453,6 +453,27 @@ export async function continueWithoutQurra(supabase: Db, userId: string, id: str
   return { ok: true as const };
 }
 
+/** Parent-side permanent deletion of an unsubmitted draft (RLS allows draft only). */
+export async function deleteDraftApplication(supabase: Db, userId: string, id: string) {
+  const row = await loadApplicationRow(supabase, id, userId);
+  if (row.status !== "draft") throw new Error("لا يمكن حذف طلب تم إرساله. يمكنك سحبه بدلًا من ذلك.");
+
+  const { data: docs } = await supabase
+    .from("application_documents")
+    .select("file_path")
+    .eq("application_id", id);
+  const paths = (docs ?? []).map((d) => d.file_path).filter(Boolean);
+  if (paths.length > 0) {
+    await supabase.storage.from("admission-documents").remove(paths);
+  }
+
+  await supabase.from("seat_holds").update({ released_at: new Date().toISOString() }).eq("application_id", id).is("released_at", null);
+
+  const { error } = await supabase.from("applications").delete().eq("id", id);
+  if (error) throw new Error("تعذّر حذف المسودة.");
+  return { ok: true as const };
+}
+
 export async function createDocumentUploadPath(userId: string, applicationId: string, slug: string, fileName: string) {
   const safe = fileName.replace(/[^\w.\-]/g, "_").slice(-60);
   return `${userId}/${applicationId}/${slug}-${Date.now()}-${safe}`;
