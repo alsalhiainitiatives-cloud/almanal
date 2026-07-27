@@ -47,14 +47,14 @@ function MyApplicationsPage() {
   const queryClient = useQueryClient();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  async function handleDelete(id: string) {
+  async function handleDelete(id: string, isDraftRow: boolean) {
     setDeletingId(id);
     try {
       await deleteDraft({ data: id });
       await queryClient.invalidateQueries({ queryKey: ["my-applications"] });
-      toast.success("تم حذف المسودة وجميع بياناتها نهائيًا");
+      toast.success(isDraftRow ? "تم حذف المسودة وجميع بياناتها نهائيًا" : "تم حذف الطلب وجميع بياناته نهائيًا");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "تعذّر حذف المسودة");
+      toast.error(error instanceof Error ? error.message : "تعذّر حذف الطلب");
     } finally {
       setDeletingId(null);
     }
@@ -103,6 +103,50 @@ function MyApplicationsPage() {
                 const stage = catalog.stages.find((s) => s.id === app.stage_id);
                 const isDraft = app.status === "draft" || app.status === "needs_action";
                 const withdrawn = app.status === "withdrawn";
+                const canDelete =
+                  app.status === "draft" || app.status === "withdrawn" || app.status === "rejected";
+                const deleteBlock = canDelete ? (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        disabled={deletingId === app.id}
+                        aria-label={app.status === "draft" ? "حذف المسودة" : "حذف الطلب"}
+                      >
+                        {deletingId === app.id ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="size-4" />
+                        )}
+                        حذف
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent dir="rtl" className="text-right">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-destructive">
+                          {app.status === "draft"
+                            ? "تحذير: حذف المسودة نهائيًا"
+                            : "تحذير: حذف الطلب نهائيًا"}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="leading-relaxed">
+                          سيتم حذف هذا الطلب وكل ما أدخلته فيه: بيانات ولي الأمر، بيانات الأبناء،
+                          الخدمات المختارة، والمستندات المرفوعة، إضافة إلى تحرير أي مقعد محجوز.
+                          ستفقد كل تقدمك وسجل التتبع ولا يمكن استرجاع هذه البيانات لاحقًا.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="gap-2 sm:flex-row-reverse sm:justify-start">
+                        <AlertDialogAction
+                          onClick={() => handleDelete(app.id, app.status === "draft")}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          نعم، احذف نهائيًا
+                        </AlertDialogAction>
+                        <AlertDialogCancel>تراجع</AlertDialogCancel>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                ) : null;
                 return (
                   <div
                     key={app.id}
@@ -132,7 +176,7 @@ function MyApplicationsPage() {
                       ) : null}
                     </div>
 
-                    <div className="flex shrink-0 gap-2">
+                    <div className="flex shrink-0 flex-wrap gap-2">
                       {isDraft && !withdrawn ? (
                         <>
                           <Button asChild variant="hero">
@@ -141,55 +185,18 @@ function MyApplicationsPage() {
                               <ArrowLeft className="size-4" />
                             </Link>
                           </Button>
-                          {app.status === "draft" ? (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                  disabled={deletingId === app.id}
-                                  aria-label="حذف المسودة"
-                                >
-                                  {deletingId === app.id ? (
-                                    <Loader2 className="size-4 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="size-4" />
-                                  )}
-                                  حذف
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent dir="rtl" className="text-right">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle className="text-destructive">
-                                    تحذير: حذف المسودة نهائيًا
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription className="leading-relaxed">
-                                    سيتم حذف هذه المسودة وكل ما أدخلته فيها: بيانات ولي الأمر،
-                                    بيانات الأبناء، الخدمات المختارة، والمستندات المرفوعة، إضافة
-                                    إلى تحرير أي مقعد محجوز. ستفقد كل تقدمك ولا يمكن استرجاع هذه
-                                    البيانات لاحقًا.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter className="gap-2 sm:flex-row-reverse sm:justify-start">
-                                  <AlertDialogAction
-                                    onClick={() => handleDelete(app.id)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    نعم، احذف نهائيًا
-                                  </AlertDialogAction>
-                                  <AlertDialogCancel>تراجع</AlertDialogCancel>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          ) : null}
+                          {deleteBlock}
                         </>
                       ) : (
-                        <Button asChild variant="soft">
-                          <Link to="/track/$applicationId" params={{ applicationId: app.id }}>
-                            تتبع الطلب
-                            <ArrowLeft className="size-4" />
-                          </Link>
-                        </Button>
+                        <>
+                          <Button asChild variant="soft">
+                            <Link to="/track/$applicationId" params={{ applicationId: app.id }}>
+                              تتبع الطلب
+                              <ArrowLeft className="size-4" />
+                            </Link>
+                          </Button>
+                          {deleteBlock}
+                        </>
                       )}
                     </div>
                    </div>
