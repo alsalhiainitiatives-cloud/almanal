@@ -18,6 +18,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>) => ({
+    next: typeof search.next === "string" && search.next.startsWith("/") ? search.next : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "تسجيل الدخول | بوابة مدارس وروضة المنال" },
@@ -41,12 +44,15 @@ type Mode = "signin" | "signup";
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const { isAuthenticated, initializing } = useAuth();
   const [mode, setMode] = useState<Mode>("signin");
 
   useEffect(() => {
-    if (!initializing && isAuthenticated) navigate({ to: "/dashboard", replace: true });
-  }, [initializing, isAuthenticated, navigate]);
+    if (!initializing && isAuthenticated) {
+      navigate({ to: (next ?? "/dashboard") as "/dashboard", replace: true });
+    }
+  }, [initializing, isAuthenticated, navigate, next]);
 
   const signup = mode === "signup";
 
@@ -198,6 +204,7 @@ function OrDivider() {
 
 function SignInForm() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
@@ -223,7 +230,7 @@ function SignInForm() {
       });
       if (error) throw new Error("تعذّر إنشاء الجلسة، حاول مرة أخرى.");
       toast.success("تم تسجيل الدخول بنجاح");
-      navigate({ to: "/dashboard", replace: true });
+      navigate({ to: (next ?? "/dashboard") as "/dashboard", replace: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : "تعذّر تسجيل الدخول.";
       setErrors({ identifier: message });
