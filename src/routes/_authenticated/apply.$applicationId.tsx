@@ -3,9 +3,33 @@ import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, ArrowRight, Check, CloudUpload, Loader2, PartyPopper } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  Baby,
+  Check,
+  ClipboardCheck,
+  FileText,
+  HeartHandshake,
+  Loader2,
+  PartyPopper,
+  Sparkles,
+  UserRound,
+  Wallet,
+} from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { getAdmissionCatalog } from "@/features/admissions/catalog.functions";
 import {
@@ -19,7 +43,7 @@ import {
   saveApplicationServices,
   submitApplicationFn,
 } from "@/features/admissions/application.functions";
-import { ageInMonths, isQurraEligible } from "@/features/admissions/eligibility";
+import { ageInMonths } from "@/features/admissions/eligibility";
 import {
   childrenSchema,
   emptyChild,
@@ -28,6 +52,7 @@ import {
   type ParentInfoInput,
   type QurraInput,
 } from "@/features/admissions/schemas";
+import { WizardShell, type WizardStep } from "@/features/admissions/components/WizardShell";
 import { ChildrenStep } from "@/features/admissions/components/steps/ChildrenStep";
 import { DocumentsStep } from "@/features/admissions/components/steps/DocumentsStep";
 import {
@@ -62,14 +87,56 @@ export const Route = createFileRoute("/_authenticated/apply/$applicationId")({
   component: WizardPage,
 });
 
-const STEPS = [
-  { id: 3, label: "ولي الأمر" },
-  { id: 4, label: "الأبناء" },
-  { id: 5, label: "قرة" },
-  { id: 6, label: "الخدمات" },
-  { id: 7, label: "المستندات" },
-  { id: 8, label: "المراجعة" },
-  { id: 9, label: "الملخص المالي" },
+const STEPS: WizardStep[] = [
+  {
+    id: 3,
+    label: "بيانات ولي الأمر",
+    short: "ولي الأمر",
+    description: "الهوية والجنسية وبيانات التواصل والعنوان الوطني.",
+    icon: UserRound,
+  },
+  {
+    id: 4,
+    label: "بيانات الأبناء",
+    short: "الأبناء",
+    description: "بيانات كل طفل مع حساب العمر وتحديد المرحلة والفصول المفضلة.",
+    icon: Baby,
+  },
+  {
+    id: 5,
+    label: "برنامج قرة",
+    short: "قرة",
+    description: "تأكيد طلب دعم قرة للأمهات السعوديات العاملات.",
+    icon: HeartHandshake,
+  },
+  {
+    id: 6,
+    label: "الخدمات الإضافية",
+    short: "الخدمات",
+    description: "اختر النقل والوجبات والأنشطة التي تناسب أسرتك.",
+    icon: Sparkles,
+  },
+  {
+    id: 7,
+    label: "المستندات المطلوبة",
+    short: "المستندات",
+    description: "مستندات ولي الأمر ومستندات مستقلة لكل طفل.",
+    icon: FileText,
+  },
+  {
+    id: 8,
+    label: "مراجعة الطلب",
+    short: "المراجعة",
+    description: "راجع كل البيانات وعدّل ما تحتاجه قبل الإرسال.",
+    icon: ClipboardCheck,
+  },
+  {
+    id: 9,
+    label: "الملخص المالي",
+    short: "المالية",
+    description: "تفاصيل الرسوم والخصومات والمبلغ الإجمالي.",
+    icon: Wallet,
+  },
 ];
 
 const emptyParent = (): ParentInfoInput => ({
@@ -83,12 +150,17 @@ const emptyParent = (): ParentInfoInput => ({
   altMobile: "",
   email: "",
   relationship: "father",
+  relationshipOther: "",
   occupation: "",
   employer: "",
   nationalAddress: "",
   city: "عنيزة",
   district: "",
   mapUrl: "",
+  motherIsWorking: undefined,
+  motherEmployer: "",
+  motherJobTitle: "",
+  motherDeclaration: false,
 });
 
 const emptyQurra = (): QurraInput => ({
@@ -134,9 +206,9 @@ function WizardPage() {
   const { data: catalog } = useSuspenseQuery(catalogQuery);
 
   const draft = (bundle.application.draft_data ?? {}) as {
-    parent?: ParentInfoInput;
+    parent?: Partial<ParentInfoInput>;
     children?: ChildInput[];
-    qurra?: QurraInput;
+    qurra?: Partial<QurraInput>;
   };
 
   const [step, setStep] = useState(() => Math.min(Math.max(bundle.application.current_step, 3), 9));
@@ -147,14 +219,67 @@ function WizardPage() {
   const [qurra, setQurra] = useState<QurraInput>(() => ({ ...emptyQurra(), ...draft.qurra }));
   const [services, setServices] = useState<string[]>(() => bundle.services);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [duplicates, setDuplicates] = useState<Record<number, boolean>>({});
+  const [duplicates, setDuplicates] = useState<Record<number, string>>({});
+  const [duplicateDialog, setDuplicateDialog] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ applicationNumber: string; trackingNumber: string } | null>(null);
 
   const stage = catalog.stages.find((s) => s.id === bundle.application.stage_id);
-  const submitted = bundle.application.status !== "draft" && bundle.application.status !== "needs_action";
+  const submitted =
+    bundle.application.status !== "draft" && bundle.application.status !== "needs_action";
+
+  /* ---------------------------------------------------------------- */
+  /* Qurra mirrors the guardian step — no duplicate data entry.        */
+  /* ---------------------------------------------------------------- */
+  const youngestMonths = children
+    .map((c) => ageInMonths(c.birthDate))
+    .filter((m): m is number => m !== null)
+    .sort((a, b) => a - b)[0];
+
+  const qurraEligible =
+    parent.relationship === "mother" &&
+    parent.nationality === "saudi" &&
+    youngestMonths !== undefined &&
+    youngestMonths < 72;
+
+  const qurraReason =
+    parent.relationship !== "mother"
+      ? "دعم «قرة» يُقدَّم من الأم مباشرة. إذا كنتِ الأم، عدّلي صلة القرابة في خطوة ولي الأمر."
+      : parent.nationality !== "saudi"
+        ? "دعم «قرة» متاح للأمهات السعوديات فقط."
+        : "دعم «قرة» مخصص للأطفال دون سن السادسة.";
+
+  useEffect(() => {
+    if (!qurraEligible) return;
+    setQurra((prev) => {
+      const next: QurraInput = {
+        ...prev,
+        motherNationalId: parent.nationalId,
+        motherEmploymentStatus:
+          parent.motherIsWorking === "yes"
+            ? "working"
+            : parent.motherIsWorking === "no"
+              ? "not_working"
+              : "",
+        motherEmployer: parent.motherEmployer ?? "",
+        motherJobTitle: parent.motherJobTitle ?? "",
+      };
+      const same =
+        prev.motherNationalId === next.motherNationalId &&
+        prev.motherEmploymentStatus === next.motherEmploymentStatus &&
+        prev.motherEmployer === next.motherEmployer &&
+        prev.motherJobTitle === next.motherJobTitle;
+      return same ? prev : next;
+    });
+  }, [
+    qurraEligible,
+    parent.nationalId,
+    parent.motherIsWorking,
+    parent.motherEmployer,
+    parent.motherJobTitle,
+  ]);
 
   // Debounced autosave of the draft payload.
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -179,14 +304,12 @@ function WizardPage() {
     };
   }, [parent, children, qurra, step, applicationId, saveDraft, submitted, done]);
 
-  const childAgeMonths = ageInMonths(children[0]?.birthDate);
-  const qurraEligible = isQurraEligible(
-    parent.nationality === "saudi" ? "saudi" : "resident",
-    childAgeMonths,
-  );
-
-  const requiredDocTypes = catalog.documentTypes.filter((d) => {
-    if (d.applies_to_nationality !== "all" && d.applies_to_nationality !== parent.nationality) return false;
+  /* ---------------------------------------------------------------- */
+  /* Documents: parent-scoped once, child-scoped per child.            */
+  /* ---------------------------------------------------------------- */
+  const applicableDocTypes = catalog.documentTypes.filter((d) => {
+    if (d.applies_to_nationality !== "all" && d.applies_to_nationality !== parent.nationality)
+      return false;
     if (d.applies_to_stage_slug && stage && d.applies_to_stage_slug !== stage.slug) return false;
     if (d.requires_service_slug) {
       const svc = catalog.services.find((s) => s.slug === d.requires_service_slug);
@@ -194,6 +317,16 @@ function WizardPage() {
     }
     return true;
   });
+
+  const parentDocTypes = applicableDocTypes.filter((d) => d.scope !== "child");
+  const childDocTypes = applicableDocTypes.filter((d) => d.scope === "child");
+  const uploadedDocs = bundle.documents as unknown as {
+    id: string;
+    document_type_slug: string;
+    file_name: string | null;
+    file_size: number | null;
+    child_index: number | null;
+  }[];
 
   const financials = computeFinancials({
     childCount: children.length,
@@ -203,6 +336,11 @@ function WizardPage() {
       .filter((s) => s.is_required || services.includes(s.id))
       .map((s) => Number(s.price)),
   });
+
+  const classroomNameOf = (id?: string) =>
+    catalog.classrooms.find((c) => c.id === id)?.name_ar ?? "ترك الاختيار للإدارة";
+
+  /* ---------------------------------------------------------------- */
 
   async function goNext() {
     setBusy(true);
@@ -228,25 +366,17 @@ function WizardPage() {
           toast.error("يرجى استكمال بيانات الأبناء");
           return;
         }
-        const dupes: Record<number, boolean> = {};
-        for (let i = 0; i < children.length; i++) {
-          const res = await checkDuplicate({ data: children[i].nationalId });
-          if (res.duplicate) dupes[i] = true;
-        }
-        setDuplicates(dupes);
-        if (Object.keys(dupes).length) {
-          toast.error("يوجد طلب سابق بنفس رقم هوية الطفل");
-          return;
-        }
         await saveChildrenFn({ data: { id: applicationId, children: parsed.data } });
       }
 
-      if (step === 5 && qurraEligible) {
-        if (qurra.requested && !qurra.declarationAccepted) {
+      if (step === 5) {
+        if (qurraEligible && qurra.requested && !qurra.declarationAccepted) {
           setErrors({ declarationAccepted: "يجب الموافقة على الإقرار" });
           return;
         }
-        await saveQurraFn({ data: { id: applicationId, qurra } });
+        await saveQurraFn({
+          data: { id: applicationId, qurra: qurraEligible ? qurra : emptyQurra() },
+        });
       }
 
       if (step === 6) {
@@ -254,16 +384,34 @@ function WizardPage() {
       }
 
       if (step === 7) {
-        const missing = requiredDocTypes.filter(
-          (d) => d.is_required && !bundle.documents.some((u) => u.document_type_slug === d.slug),
-        );
+        const missing: string[] = [];
+        for (const d of parentDocTypes) {
+          if (
+            d.is_required &&
+            !uploadedDocs.some((u) => u.document_type_slug === d.slug && u.child_index === null)
+          ) {
+            missing.push(d.name_ar);
+          }
+        }
+        children.forEach((c, i) => {
+          for (const d of childDocTypes) {
+            if (
+              d.is_required &&
+              !uploadedDocs.some((u) => u.document_type_slug === d.slug && u.child_index === i)
+            ) {
+              missing.push(`${d.name_ar} — ${c.nameAr || `الطفل ${i + 1}`}`);
+            }
+          }
+        });
         if (missing.length) {
-          toast.error(`مستندات مطلوبة ناقصة: ${missing.map((m) => m.name_ar).join("، ")}`);
+          toast.error(`مستندات مطلوبة ناقصة: ${missing.slice(0, 3).join("، ")}`);
           return;
         }
       }
 
-      await saveDraft({ data: { id: applicationId, step: step + 1, draft: { parent, children, qurra } } });
+      await saveDraft({
+        data: { id: applicationId, step: step + 1, draft: { parent, children, qurra } },
+      });
       setStep((s) => Math.min(s + 1, 9));
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
@@ -273,7 +421,7 @@ function WizardPage() {
     }
   }
 
-  async function handleUpload(slug: string, file: File) {
+  async function handleUpload(slug: string, file: File, childIndex: number | null) {
     if (file.size > 10 * 1024 * 1024) {
       toast.error("حجم الملف يتجاوز 10 ميغابايت");
       return;
@@ -281,7 +429,8 @@ function WizardPage() {
     const { data: auth } = await supabase.auth.getUser();
     if (!auth.user) return;
     const safeName = file.name.replace(/[^\w.\-]/g, "_").slice(-60);
-    const path = `${auth.user.id}/${applicationId}/${slug}-${Date.now()}-${safeName}`;
+    const scope = childIndex === null ? "parent" : `child${childIndex}`;
+    const path = `${auth.user.id}/${applicationId}/${scope}-${slug}-${Date.now()}-${safeName}`;
 
     const { error } = await supabase.storage.from("admission-documents").upload(path, file);
     if (error) {
@@ -289,7 +438,14 @@ function WizardPage() {
       return;
     }
     await recordDoc({
-      data: { id: applicationId, slug, filePath: path, fileName: file.name, fileSize: file.size },
+      data: {
+        id: applicationId,
+        slug,
+        filePath: path,
+        fileName: file.name,
+        fileSize: file.size,
+        childIndex,
+      },
     });
     await queryClient.invalidateQueries({ queryKey: ["application", applicationId] });
     toast.success("تم رفع المستند");
@@ -300,9 +456,37 @@ function WizardPage() {
     await queryClient.invalidateQueries({ queryKey: ["application", applicationId] });
   }
 
+  /** Final gate: duplicate national IDs are only fatal at submission time. */
   async function handleSubmit() {
     setBusy(true);
     try {
+      const seen = new Map<string, number>();
+      const found: Record<number, string> = {};
+
+      for (let i = 0; i < children.length; i++) {
+        const id = children[i].nationalId;
+        if (seen.has(id)) {
+          found[i] = `رقم الهوية مكرر داخل نفس الطلب (الطفل ${(seen.get(id) ?? 0) + 1}).`;
+          continue;
+        }
+        seen.set(id, i);
+        const res = await checkDuplicate({
+          data: { nationalId: id, excludeApplicationId: applicationId },
+        });
+        if (res.duplicate) {
+          found[i] = res.isMine
+            ? `لديك طلب آخر بنفس رقم الهوية${res.applicationNumber ? ` (${res.applicationNumber})` : ""} لهذا العام الدراسي.`
+            : "يوجد طلب مسجّل بنفس رقم الهوية لهذا العام الدراسي — يرجى مراجعة إدارة القبول.";
+        }
+      }
+
+      if (Object.keys(found).length) {
+        setDuplicates(found);
+        setDuplicateDialog(Object.values(found).join(" "));
+        return;
+      }
+
+      setDuplicates({});
       const res = await submit({ data: applicationId });
       setDone({ applicationNumber: res.applicationNumber, trackingNumber: res.trackingNumber });
       await queryClient.invalidateQueries({ queryKey: ["application", applicationId] });
@@ -336,11 +520,15 @@ function WizardPage() {
             <div className="mt-7 grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl bg-beige/70 p-5">
                 <p className="text-xs font-bold text-muted-foreground">رقم الطلب</p>
-                <p className="mt-1 font-black text-primary" dir="ltr">{number}</p>
+                <p className="mt-1 font-black text-primary" dir="ltr">
+                  {number}
+                </p>
               </div>
               <div className="rounded-2xl bg-beige/70 p-5">
                 <p className="text-xs font-bold text-muted-foreground">رقم التتبع</p>
-                <p className="mt-1 font-black text-primary" dir="ltr">{tracking}</p>
+                <p className="mt-1 font-black text-primary" dir="ltr">
+                  {tracking}
+                </p>
               </div>
             </div>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -360,154 +548,156 @@ function WizardPage() {
   const activeIndex = STEPS.findIndex((s) => s.id === step);
 
   return (
-    <section className="section-y">
-      <div className="mx-auto max-w-4xl px-4 md:px-8">
-        {/* Stepper */}
-        <div className="rounded-[2.5rem] bg-card p-6 shadow-card">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-xs font-bold text-muted-foreground">طلب قبول — {stage?.name_ar ?? ""}</p>
-              <h1 className="mt-1 text-2xl font-black text-foreground">{STEPS[activeIndex]?.label}</h1>
-            </div>
-            <span className="flex items-center gap-2 rounded-full bg-beige px-3 py-1.5 text-xs font-bold text-foreground">
-              {saving ? (
-                <>
-                  <Loader2 className="size-3.5 animate-spin" /> جارٍ الحفظ
-                </>
-              ) : savedAt ? (
-                <>
-                  <CloudUpload className="size-3.5" /> تم حفظ المسودة
-                </>
-              ) : (
-                <>الخطوة {activeIndex + 1} من {STEPS.length}</>
-              )}
-            </span>
-          </div>
-
-          <div className="mt-6 flex items-center gap-1.5">
-            {STEPS.map((s, i) => (
-              <div key={s.id} className="flex-1">
-                <div
-                  className={`h-2 rounded-full transition-colors ${
-                    i <= activeIndex ? "gradient-burgundy" : "bg-border"
-                  }`}
-                />
-                <p
-                  className={`mt-2 hidden text-center text-[11px] font-bold sm:block ${
-                    i <= activeIndex ? "text-primary" : "text-muted-foreground"
-                  }`}
-                >
-                  {s.label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Step body */}
-        <div className="mt-8">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, x: -24 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 24 }}
-              transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+    <>
+      <WizardShell
+        steps={STEPS}
+        activeIndex={activeIndex}
+        stageName={stage?.name_ar ?? ""}
+        saving={saving}
+        savedAt={savedAt}
+        onJump={(id) => {
+          setStep(id);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+        footer={
+          <div className="flex items-center justify-between gap-3">
+            <Button
+              type="button"
+              variant="soft"
+              disabled={step === 3 || busy}
+              onClick={() => {
+                setStep((s) => Math.max(3, s - 1));
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
             >
-              {step === 3 ? (
-                <ParentStep
-                  value={parent}
-                  errors={errors as Partial<Record<keyof ParentInfoInput, string>>}
-                  onChange={(p) => setParent((prev) => ({ ...prev, ...p }))}
-                />
-              ) : null}
+              <ArrowRight className="size-4" />
+              السابق
+            </Button>
 
-              {step === 4 ? (
-                <ChildrenStep
-                  children={children}
-                  errors={errors}
-                  duplicates={duplicates}
-                  stages={catalog.stages}
-                  classrooms={catalog.classrooms}
-                  onChange={setChildren}
-                />
-              ) : null}
-
-              {step === 5 ? (
-                <QurraStep
-                  value={qurra}
-                  eligible={qurraEligible}
-                  errors={errors}
-                  onChange={(p) => setQurra((prev) => ({ ...prev, ...p }))}
-                />
-              ) : null}
-
-              {step === 6 ? (
-                <ServicesStep
-                  services={catalog.services}
-                  selected={services}
-                  onToggle={(id) =>
-                    setServices((prev) =>
-                      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-                    )
-                  }
-                />
-              ) : null}
-
-              {step === 7 ? (
-                <DocumentsStep
-                  types={requiredDocTypes}
-                  uploaded={bundle.documents}
-                  onUpload={handleUpload}
-                  onRemove={handleRemove}
-                />
-              ) : null}
-
-              {step === 8 ? (
-                <ReviewStep
-                  parent={parent}
-                  children={children}
-                  qurra={qurra}
-                  stageName={stage?.name_ar ?? "—"}
-                  serviceNames={catalog.services
-                    .filter((s) => s.is_required || services.includes(s.id))
-                    .map((s) => s.name_ar)}
-                  documentNames={bundle.documents.map((d) => d.file_name ?? "ملف مرفوع")}
-                  onEdit={(target) => setStep(Math.max(3, target))}
-                />
-              ) : null}
-
-              {step === 9 ? <FinancialStep data={financials} /> : null}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* Nav */}
-        <div className="mt-10 flex items-center justify-between gap-3">
-          <Button
-            type="button"
-            variant="soft"
-            disabled={step === 3 || busy}
-            onClick={() => setStep((s) => Math.max(3, s - 1))}
+            {step < 9 ? (
+              <Button type="button" variant="hero" size="lg" disabled={busy} onClick={goNext}>
+                {busy ? <Loader2 className="size-4 animate-spin" /> : null}
+                التالي
+                <ArrowLeft className="size-4" />
+              </Button>
+            ) : (
+              <Button type="button" variant="hero" size="lg" disabled={busy} onClick={handleSubmit}>
+                {busy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                إرسال الطلب
+              </Button>
+            )}
+          </div>
+        }
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, x: -24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 24 }}
+            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
           >
-            <ArrowRight className="size-4" />
-            السابق
-          </Button>
+            {step === 3 ? (
+              <ParentStep
+                value={parent}
+                errors={errors as Partial<Record<keyof ParentInfoInput, string>>}
+                onChange={(p) => setParent((prev) => ({ ...prev, ...p }))}
+              />
+            ) : null}
 
-          {step < 9 ? (
-            <Button type="button" variant="hero" size="lg" disabled={busy} onClick={goNext}>
-              {busy ? <Loader2 className="size-4 animate-spin" /> : null}
-              التالي
-              <ArrowLeft className="size-4" />
-            </Button>
-          ) : (
-            <Button type="button" variant="hero" size="lg" disabled={busy} onClick={handleSubmit}>
-              {busy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-              إرسال الطلب
-            </Button>
-          )}
-        </div>
-      </div>
-    </section>
+            {step === 4 ? (
+              <ChildrenStep
+                children={children}
+                errors={errors}
+                duplicates={duplicates}
+                stages={catalog.stages}
+                classrooms={catalog.classrooms}
+                onChange={setChildren}
+              />
+            ) : null}
+
+            {step === 5 ? (
+              <QurraStep
+                value={qurra}
+                eligible={qurraEligible}
+                reason={qurraReason}
+                errors={errors}
+                onChange={(p) => setQurra((prev) => ({ ...prev, ...p }))}
+                onEditParent={() => setStep(3)}
+              />
+            ) : null}
+
+            {step === 6 ? (
+              <ServicesStep
+                services={catalog.services}
+                selected={services}
+                onToggle={(id) =>
+                  setServices((prev) =>
+                    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+                  )
+                }
+              />
+            ) : null}
+
+            {step === 7 ? (
+              <DocumentsStep
+                parentTypes={parentDocTypes}
+                childTypes={childDocTypes}
+                childNames={children.map((c, i) => c.nameAr || `الطفل ${i + 1}`)}
+                uploaded={uploadedDocs}
+                onUpload={handleUpload}
+                onRemove={handleRemove}
+              />
+            ) : null}
+
+            {step === 8 ? (
+              <ReviewStep
+                parent={parent}
+                children={children}
+                qurra={qurra}
+                stageName={stage?.name_ar ?? "—"}
+                classroomNameOf={classroomNameOf}
+                serviceNames={catalog.services
+                  .filter((s) => s.is_required || services.includes(s.id))
+                  .map((s) => s.name_ar)}
+                documentNames={uploadedDocs.map((d) => d.file_name ?? "ملف مرفوع")}
+                onEdit={(target) => {
+                  setStep(Math.max(3, target));
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              />
+            ) : null}
+
+            {step === 9 ? <FinancialStep data={financials} /> : null}
+          </motion.div>
+        </AnimatePresence>
+      </WizardShell>
+
+      <AlertDialog open={Boolean(duplicateDialog)} onOpenChange={() => setDuplicateDialog(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="size-5" />
+              تعذّر إرسال الطلب — بيانات مكررة
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-start leading-relaxed">
+              {duplicateDialog}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إغلاق</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setDuplicateDialog(null);
+                setStep(4);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            >
+              مراجعة بيانات الأبناء
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

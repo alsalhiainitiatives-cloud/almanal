@@ -1,9 +1,18 @@
 import { useRef, useState } from "react";
-import { CheckCircle2, FileUp, Loader2, Trash2 } from "lucide-react";
+import {
+  CheckCircle2,
+  FileText,
+  FileUp,
+  Loader2,
+  ShieldCheck,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { FormSection, StatusNote } from "../fields";
 
-type DocType = {
+export type DocType = {
   id: string;
   slug: string;
   name_ar: string;
@@ -11,36 +20,128 @@ type DocType = {
   is_required: boolean;
 };
 
-type Uploaded = {
+export type UploadedDoc = {
   id: string;
   document_type_slug: string;
   file_name: string | null;
   file_size: number | null;
+  child_index: number | null;
 };
 
+const MAX_MB = 10;
+
 export function DocumentsStep({
-  types,
+  parentTypes,
+  childTypes,
+  childNames,
   uploaded,
   onUpload,
   onRemove,
 }: {
-  types: DocType[];
-  uploaded: Uploaded[];
-  onUpload: (slug: string, file: File) => Promise<void>;
+  parentTypes: DocType[];
+  childTypes: DocType[];
+  childNames: string[];
+  uploaded: UploadedDoc[];
+  onUpload: (slug: string, file: File, childIndex: number | null) => Promise<void>;
   onRemove: (docId: string) => Promise<void>;
 }) {
+  const totalRequired =
+    parentTypes.filter((t) => t.is_required).length +
+    childTypes.filter((t) => t.is_required).length * childNames.length;
+
+  const doneRequired =
+    parentTypes.filter(
+      (t) => t.is_required && uploaded.some((u) => u.document_type_slug === t.slug && u.child_index === null),
+    ).length +
+    childNames.reduce(
+      (sum, _n, i) =>
+        sum +
+        childTypes.filter(
+          (t) => t.is_required && uploaded.some((u) => u.document_type_slug === t.slug && u.child_index === i),
+        ).length,
+      0,
+    );
+
+  const complete = totalRequired > 0 && doneRequired >= totalRequired;
+
   return (
-    <div className="space-y-4">
-      {types.map((t) => (
-        <DocumentRow
-          key={t.id}
-          type={t}
-          doc={uploaded.find((u) => u.document_type_slug === t.slug)}
-          onUpload={onUpload}
-          onRemove={onRemove}
-        />
-      ))}
-      {types.length === 0 ? (
+    <div className="space-y-6">
+      <StatusNote
+        tone={complete ? "success" : "info"}
+        title={complete ? "اكتملت جميع المستندات المطلوبة" : `تم رفع ${doneRequired} من ${totalRequired} مستند مطلوب`}
+        icon={complete ? CheckCircle2 : ShieldCheck}
+      >
+        الصيغ المقبولة: PDF أو صورة، وبحد أقصى {MAX_MB} ميغابايت للملف الواحد. لكل طفل مستنداته
+        المستقلة.
+      </StatusNote>
+
+      {parentTypes.length ? (
+        <FormSection
+          title="مستندات ولي الأمر"
+          description="ترفع مرة واحدة لكل الطلب."
+          icon={UserRound}
+        >
+          <div className="space-y-3">
+            {parentTypes.map((t) => (
+              <DocumentRow
+                key={t.id}
+                type={t}
+                childIndex={null}
+                doc={uploaded.find((u) => u.document_type_slug === t.slug && u.child_index === null)}
+                onUpload={onUpload}
+                onRemove={onRemove}
+              />
+            ))}
+          </div>
+        </FormSection>
+      ) : null}
+
+      {childNames.map((name, index) => {
+        const childDone = childTypes.filter(
+          (t) =>
+            t.is_required &&
+            uploaded.some((u) => u.document_type_slug === t.slug && u.child_index === index),
+        ).length;
+        const childRequired = childTypes.filter((t) => t.is_required).length;
+
+        return (
+          <FormSection
+            key={index}
+            title={`مستندات: ${name || `الطفل ${index + 1}`}`}
+            description="مستندات خاصة بهذا الطفل فقط."
+            icon={FileText}
+            tone="accent"
+            action={
+              <span
+                className={`rounded-full px-3 py-1.5 text-xs font-black ${
+                  childDone >= childRequired
+                    ? "bg-mint text-foreground"
+                    : "bg-gold/30 text-gold-foreground"
+                }`}
+              >
+                {childDone} / {childRequired}
+              </span>
+            }
+          >
+            <div className="space-y-3">
+              {childTypes.map((t) => (
+                <DocumentRow
+                  key={`${index}-${t.id}`}
+                  type={t}
+                  childIndex={index}
+                  doc={uploaded.find(
+                    (u) => u.document_type_slug === t.slug && u.child_index === index,
+                  )}
+                  onUpload={onUpload}
+                  onRemove={onRemove}
+                />
+              ))}
+            </div>
+          </FormSection>
+        );
+      })}
+
+      {parentTypes.length === 0 && childTypes.length === 0 ? (
         <p className="rounded-[2rem] bg-beige/60 p-8 text-center text-sm text-muted-foreground">
           لا توجد مستندات مطلوبة لهذا الطلب.
         </p>
@@ -52,31 +153,43 @@ export function DocumentsStep({
 function DocumentRow({
   type,
   doc,
+  childIndex,
   onUpload,
   onRemove,
 }: {
   type: DocType;
-  doc?: Uploaded;
-  onUpload: (slug: string, file: File) => Promise<void>;
+  doc?: UploadedDoc;
+  childIndex: number | null;
+  onUpload: (slug: string, file: File, childIndex: number | null) => Promise<void>;
   onRemove: (docId: string) => Promise<void>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
 
   return (
-    <div className="flex flex-col gap-4 rounded-[2rem] border border-border/60 bg-card p-6 shadow-soft sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <p className="font-black text-foreground">
-          {type.name_ar}
-          {type.is_required ? <span className="text-destructive"> *</span> : null}
+    <div
+      className={`grid gap-4 rounded-2xl border-2 p-4 transition sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-5 ${
+        doc ? "border-mint bg-mint/25" : "border-border bg-background"
+      }`}
+    >
+      <div className="min-w-0">
+        <p className="flex items-center gap-2 font-black text-foreground">
+          {doc ? (
+            <CheckCircle2 className="size-4 shrink-0 text-mint-foreground" />
+          ) : (
+            <FileText className="size-4 shrink-0 text-muted-foreground" />
+          )}
+          <span className="truncate">{type.name_ar}</span>
+          {type.is_required ? <span className="text-destructive">*</span> : (
+            <span className="text-xs font-bold text-muted-foreground">(اختياري)</span>
+          )}
         </p>
         {type.description_ar ? (
-          <p className="mt-1 text-sm text-muted-foreground">{type.description_ar}</p>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{type.description_ar}</p>
         ) : null}
         {doc ? (
-          <p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-mint-foreground">
-            <CheckCircle2 className="size-4" />
-            {doc.file_name ?? "ملف مرفوع"} — {((doc.file_size ?? 0) / 1024).toFixed(0)} كيلوبايت
+          <p className="mt-2 truncate text-xs font-bold text-mint-foreground" dir="ltr">
+            {doc.file_name ?? "ملف مرفوع"} · {((doc.file_size ?? 0) / 1024).toFixed(0)} KB
           </p>
         ) : null}
       </div>
@@ -93,7 +206,7 @@ function DocumentRow({
             if (!file) return;
             setBusy(true);
             try {
-              await onUpload(type.slug, file);
+              await onUpload(type.slug, file, childIndex);
             } finally {
               setBusy(false);
             }
@@ -112,7 +225,8 @@ function DocumentRow({
           <Button
             type="button"
             variant="ghost"
-            className="text-destructive"
+            aria-label="حذف الملف"
+            className="min-h-11 min-w-11 text-destructive"
             disabled={busy}
             onClick={async () => {
               setBusy(true);

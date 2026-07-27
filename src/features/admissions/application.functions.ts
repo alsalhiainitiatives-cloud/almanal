@@ -50,7 +50,14 @@ export const saveApplicationDraft = createServerFn({ method: "POST" })
 
 export const checkChildDuplicate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((id: unknown) => z.string().regex(/^\d{10}$/).parse(id))
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        nationalId: z.string().regex(/^\d{10}$/),
+        excludeApplicationId: z.string().uuid().nullable().optional(),
+      })
+      .parse(data),
+  )
   .handler(async ({ data, context }) => checkDuplicateChild(context.supabase, context.userId, data));
 
 export const saveApplicationChildren = createServerFn({ method: "POST" })
@@ -84,6 +91,7 @@ export const saveApplicationDocument = createServerFn({ method: "POST" })
         filePath: z.string().max(400),
         fileName: z.string().max(200),
         fileSize: z.number().int().min(0).max(20_000_000),
+        childIndex: z.number().int().min(0).max(10).nullable().optional(),
       })
       .parse(data),
   )
