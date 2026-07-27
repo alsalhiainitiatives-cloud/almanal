@@ -452,10 +452,14 @@ export async function continueWithoutQurra(supabase: Db, userId: string, id: str
   return { ok: true as const };
 }
 
-/** Parent-side permanent deletion of an unsubmitted draft (RLS allows draft only). */
+/** Parent-side permanent deletion of a draft or a closed (withdrawn/rejected) application. */
+const PARENT_DELETABLE_STATUSES = ["draft", "withdrawn", "rejected"] as const;
+
 export async function deleteDraftApplication(supabase: Db, userId: string, id: string) {
   const row = await loadApplicationRow(supabase, id, userId);
-  if (row.status !== "draft") throw new Error("لا يمكن حذف طلب تم إرساله. يمكنك سحبه بدلًا من ذلك.");
+  if (!PARENT_DELETABLE_STATUSES.includes(row.status as (typeof PARENT_DELETABLE_STATUSES)[number])) {
+    throw new Error("لا يمكن حذف طلب قيد المعالجة. يمكنك سحب الطلب أولًا ثم حذفه.");
+  }
 
   const { data: docs } = await supabase
     .from("application_documents")
@@ -469,7 +473,7 @@ export async function deleteDraftApplication(supabase: Db, userId: string, id: s
   await supabase.from("seat_holds").update({ released_at: new Date().toISOString() }).eq("application_id", id).is("released_at", null);
 
   const { error } = await supabase.from("applications").delete().eq("id", id);
-  if (error) throw new Error("تعذّر حذف المسودة.");
+  if (error) throw new Error("تعذّر حذف الطلب.");
   return { ok: true as const };
 }
 
