@@ -161,9 +161,9 @@ const AdmissionsStageSlugIndexRoute =
   } as any)
 const AdmissionsStageSlugClassroomsRoute =
   AdmissionsStageSlugClassroomsRouteImport.update({
-    id: '/admissions/stage/$slug/classrooms',
-    path: '/admissions/stage/$slug/classrooms',
-    getParentRoute: () => rootRouteImport,
+    id: '/classrooms',
+    path: '/classrooms',
+    getParentRoute: () => AdmissionsStageSlugRoute,
   } as any)
 const AdmissionsStageSlugClassroomClassroomSlugRoute =
   AdmissionsStageSlugClassroomClassroomSlugRouteImport.update({
@@ -357,7 +357,6 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StagesRoute: typeof StagesRoute
   AdmissionsIndexRoute: typeof AdmissionsIndexRoute
-  AdmissionsStageSlugClassroomsRoute: typeof AdmissionsStageSlugClassroomsRoute
   AdmissionsStageSlugIndexRoute: typeof AdmissionsStageSlugIndexRoute
   AdmissionsStageSlugClassroomClassroomSlugRoute: typeof AdmissionsStageSlugClassroomClassroomSlugRoute
 }
@@ -534,10 +533,10 @@ declare module '@tanstack/react-router' {
     }
     '/admissions/stage/$slug/classrooms': {
       id: '/admissions/stage/$slug/classrooms'
-      path: '/admissions/stage/$slug/classrooms'
+      path: '/classrooms'
       fullPath: '/admissions/stage/$slug/classrooms'
       preLoaderRoute: typeof AdmissionsStageSlugClassroomsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdmissionsStageSlugRoute
     }
     '/admissions/stage/$slug/classroom/$classroomSlug': {
       id: '/admissions/stage/$slug/classroom/$classroomSlug'
@@ -589,7 +588,6 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StagesRoute: StagesRoute,
   AdmissionsIndexRoute: AdmissionsIndexRoute,
-  AdmissionsStageSlugClassroomsRoute: AdmissionsStageSlugClassroomsRoute,
   AdmissionsStageSlugIndexRoute: AdmissionsStageSlugIndexRoute,
   AdmissionsStageSlugClassroomClassroomSlugRoute:
     AdmissionsStageSlugClassroomClassroomSlugRoute,
@@ -597,3 +595,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
