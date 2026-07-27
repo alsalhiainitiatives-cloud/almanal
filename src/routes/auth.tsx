@@ -45,6 +45,14 @@ export const Route = createFileRoute("/auth")({
 
 type Mode = "signin" | "signup";
 
+const REASON_TITLES: Record<string, string> = {
+  documents: "مطلوب رفع مرفقات — سجّل الدخول لإكمال رفع المستندات المطلوبة",
+  action: "مطلوب إجراء على طلبك — سجّل الدخول لتعديل البيانات المطلوبة",
+  payment: "الدفع وجدولة السداد — سجّل الدخول للمتابعة",
+  details: "عرض تفاصيل الطلب الكاملة يتطلب تسجيل الدخول",
+  default: "يلزم تسجيل الدخول لإكمال الإجراء المطلوب على طلبك",
+};
+
 function AuthPage() {
   const navigate = useNavigate();
   const { next } = Route.useSearch();
