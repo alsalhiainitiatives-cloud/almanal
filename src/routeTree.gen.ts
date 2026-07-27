@@ -34,6 +34,7 @@ import { Route as AuthenticatedApplyApplicationIdRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
 import { Route as AdmissionsStageSlugClassroomsRouteImport } from './routes/admissions.stage.$slug.classrooms'
+import { Route as AdmissionsStageSlugClassroomClassroomSlugRouteImport } from './routes/admissions.stage.$slug.classroom.$classroomSlug'
 
 const StagesRoute = StagesRouteImport.update({
   id: '/stages',
@@ -163,6 +164,12 @@ const AdmissionsStageSlugClassroomsRoute =
     path: '/classrooms',
     getParentRoute: () => AdmissionsStageSlugRoute,
   } as any)
+const AdmissionsStageSlugClassroomClassroomSlugRoute =
+  AdmissionsStageSlugClassroomClassroomSlugRouteImport.update({
+    id: '/classroom/$classroomSlug',
+    path: '/classroom/$classroomSlug',
+    getParentRoute: () => AdmissionsStageSlugRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -189,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
   '/admissions/stage/$slug': typeof AdmissionsStageSlugRouteWithChildren
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
+  '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -215,6 +223,7 @@ export interface FileRoutesByTo {
   '/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
   '/admissions/stage/$slug': typeof AdmissionsStageSlugRouteWithChildren
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
+  '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -243,6 +252,7 @@ export interface FileRoutesById {
   '/_authenticated/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
   '/admissions/stage/$slug': typeof AdmissionsStageSlugRouteWithChildren
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
+  '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -271,6 +281,7 @@ export interface FileRouteTypes {
     | '/track/$applicationId'
     | '/admissions/stage/$slug'
     | '/admissions/stage/$slug/classrooms'
+    | '/admissions/stage/$slug/classroom/$classroomSlug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -297,6 +308,7 @@ export interface FileRouteTypes {
     | '/track/$applicationId'
     | '/admissions/stage/$slug'
     | '/admissions/stage/$slug/classrooms'
+    | '/admissions/stage/$slug/classroom/$classroomSlug'
   id:
     | '__root__'
     | '/'
@@ -324,6 +336,7 @@ export interface FileRouteTypes {
     | '/_authenticated/track/$applicationId'
     | '/admissions/stage/$slug'
     | '/admissions/stage/$slug/classrooms'
+    | '/admissions/stage/$slug/classroom/$classroomSlug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -523,6 +536,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdmissionsStageSlugClassroomsRouteImport
       parentRoute: typeof AdmissionsStageSlugRoute
     }
+    '/admissions/stage/$slug/classroom/$classroomSlug': {
+      id: '/admissions/stage/$slug/classroom/$classroomSlug'
+      path: '/classroom/$classroomSlug'
+      fullPath: '/admissions/stage/$slug/classroom/$classroomSlug'
+      preLoaderRoute: typeof AdmissionsStageSlugClassroomClassroomSlugRouteImport
+      parentRoute: typeof AdmissionsStageSlugRoute
+    }
   }
 }
 
@@ -551,10 +571,13 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface AdmissionsStageSlugRouteChildren {
   AdmissionsStageSlugClassroomsRoute: typeof AdmissionsStageSlugClassroomsRoute
+  AdmissionsStageSlugClassroomClassroomSlugRoute: typeof AdmissionsStageSlugClassroomClassroomSlugRoute
 }
 
 const AdmissionsStageSlugRouteChildren: AdmissionsStageSlugRouteChildren = {
   AdmissionsStageSlugClassroomsRoute: AdmissionsStageSlugClassroomsRoute,
+  AdmissionsStageSlugClassroomClassroomSlugRoute:
+    AdmissionsStageSlugClassroomClassroomSlugRoute,
 }
 
 const AdmissionsStageSlugRouteWithChildren =
@@ -582,3 +605,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
