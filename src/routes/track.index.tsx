@@ -21,6 +21,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHero } from "@/components/site/PageHero";
+import { QrScanDialog } from "@/components/site/QrScanDialog";
+import { parseTrackCode } from "@/features/admissions/parseTrackCode";
 import { publicTrackApplication } from "@/features/admissions/track.functions";
 import {
   ApplicationStepper,
@@ -72,6 +74,7 @@ function PublicTrackPage() {
   const [number, setNumber] = useState(search.no ?? "");
   const [token, setToken] = useState(search.t ?? "");
   const [formError, setFormError] = useState<string | null>(null);
+  const [scanOpen, setScanOpen] = useState(false);
 
   useEffect(() => {
     setNumber(search.no ?? "");
@@ -95,10 +98,31 @@ function PublicTrackPage() {
     e.preventDefault();
     const no = number.trim();
     const t = token.trim();
+    const pasted = parseTrackCode(no) ?? parseTrackCode(`${no} ${t}`.trim());
+    if (pasted) {
+      setNumber(pasted.number);
+      setToken(pasted.token);
+      setFormError(null);
+      void navigate({ to: "/track", search: { no: pasted.number, t: pasted.token }, replace: true });
+      return;
+    }
     if (no.length < 4) return setFormError("يرجى إدخال رقم الطلب كاملًا");
     if (t.length < 16) return setFormError("يرجى إدخال رمز التحقق الظاهر على إشعار الطلب أو امسح رمز QR");
     setFormError(null);
     void navigate({ to: "/track", search: { no, t }, replace: true });
+  }
+
+  function handleScan(text: string) {
+    const parsed = parseTrackCode(text);
+    setScanOpen(false);
+    if (!parsed) {
+      setFormError("رمز QR غير صالح لهذا النظام. تأكد من مسح الرمز الموجود على نموذج الطلب.");
+      return;
+    }
+    setNumber(parsed.number);
+    setToken(parsed.token);
+    setFormError(null);
+    void navigate({ to: "/track", search: { no: parsed.number, t: parsed.token }, replace: true });
   }
 
   const result = query.data;
@@ -169,6 +193,15 @@ function PublicTrackPage() {
                 )}
                 تتبع الطلب
               </Button>
+              <Button
+                type="button"
+                variant="soft"
+                className="h-12"
+                onClick={() => setScanOpen(true)}
+              >
+                <QrCode className="size-4" />
+                مسح رمز QR
+              </Button>
               {enabled ? (
                 <Button
                   type="button"
@@ -185,8 +218,8 @@ function PublicTrackPage() {
 
             <p className="mt-4 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
               <QrCode className="size-4 text-primary" />
-              مسح رمز QR يفتح هذه الصفحة بالرقم ورمز التحقق تلقائيًا — ولا يمكن الوصول لأي طلب برقمه
-              وحده.
+              امسح رمز QR بكاميرا جوالك أو من هنا — ستُعبّأ الحقول تلقائيًا وتظهر الحالة مباشرة. يمكنك
+              أيضًا لصق رابط التتبع كاملًا في خانة رقم الطلب.
             </p>
 
             {formError || lookupError ? (
@@ -364,6 +397,8 @@ function PublicTrackPage() {
           ) : null}
         </div>
       </section>
+
+      <QrScanDialog open={scanOpen} onClose={() => setScanOpen(false)} onResult={handleScan} />
     </>
   );
 }
