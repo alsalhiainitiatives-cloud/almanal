@@ -1,13 +1,29 @@
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo } from "react";
-import { ArrowLeft, FilePlus2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowLeft, FilePlus2, Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { PageHero } from "@/components/site/PageHero";
 import { Button } from "@/components/ui/button";
-import { getMyApplications } from "@/features/admissions/application.functions";
+import {
+  deleteDraftApplicationFn,
+  getMyApplications,
+} from "@/features/admissions/application.functions";
 import { getAdmissionCatalog } from "@/features/admissions/catalog.functions";
+import { ApplicationStepper } from "@/features/admissions/components/ApplicationJourney";
 import {
   APPLICATION_STATUS_COLORS,
   APPLICATION_STATUS_LABELS,
@@ -27,6 +43,22 @@ export const Route = createFileRoute("/_authenticated/my-applications")({
 function MyApplicationsPage() {
   const fetchApps = useServerFn(getMyApplications);
   const fetchCatalog = useServerFn(getAdmissionCatalog);
+  const deleteDraft = useServerFn(deleteDraftApplicationFn);
+  const queryClient = useQueryClient();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function handleDelete(id: string) {
+    setDeletingId(id);
+    try {
+      await deleteDraft({ data: id });
+      await queryClient.invalidateQueries({ queryKey: ["my-applications"] });
+      toast.success("تم حذف المسودة وجميع بياناتها نهائيًا");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذّر حذف المسودة");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   const appsQuery = useMemo(
     () => queryOptions({ queryKey: ["my-applications"], queryFn: () => fetchApps() }),
@@ -75,8 +107,9 @@ function MyApplicationsPage() {
                 return (
                   <div
                     key={app.id}
-                    className="flex flex-col gap-5 rounded-[2rem] bg-card p-7 shadow-soft sm:flex-row sm:items-center sm:justify-between"
+                    className="rounded-[2rem] bg-card p-7 shadow-soft"
                   >
+                   <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="flex flex-wrap items-center gap-3">
                         <span
@@ -101,12 +134,55 @@ function MyApplicationsPage() {
 
                     <div className="flex shrink-0 gap-2">
                       {isDraft ? (
-                        <Button asChild variant="hero">
-                          <Link to="/apply/$applicationId" params={{ applicationId: app.id }}>
-                            متابعة الطلب
-                            <ArrowLeft className="size-4" />
-                          </Link>
-                        </Button>
+                        <>
+                          <Button asChild variant="hero">
+                            <Link to="/apply/$applicationId" params={{ applicationId: app.id }}>
+                              متابعة الطلب
+                              <ArrowLeft className="size-4" />
+                            </Link>
+                          </Button>
+                          {app.status === "draft" ? (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                  disabled={deletingId === app.id}
+                                  aria-label="حذف المسودة"
+                                >
+                                  {deletingId === app.id ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="size-4" />
+                                  )}
+                                  حذف
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent dir="rtl" className="text-right">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="text-destructive">
+                                    تحذير: حذف المسودة نهائيًا
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription className="leading-relaxed">
+                                    سيتم حذف هذه المسودة وكل ما أدخلته فيها: بيانات ولي الأمر،
+                                    بيانات الأبناء، الخدمات المختارة، والمستندات المرفوعة، إضافة
+                                    إلى تحرير أي مقعد محجوز. ستفقد كل تقدمك ولا يمكن استرجاع هذه
+                                    البيانات لاحقًا.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter className="gap-2 sm:flex-row-reverse sm:justify-start">
+                                  <AlertDialogAction
+                                    onClick={() => handleDelete(app.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    نعم، احذف نهائيًا
+                                  </AlertDialogAction>
+                                  <AlertDialogCancel>تراجع</AlertDialogCancel>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          ) : null}
+                        </>
                       ) : (
                         <Button asChild variant="soft">
                           <Link to="/track/$applicationId" params={{ applicationId: app.id }}>
@@ -116,6 +192,10 @@ function MyApplicationsPage() {
                         </Button>
                       )}
                     </div>
+                   </div>
+                   <div className="mt-6 border-t border-border/60 pt-5">
+                     <ApplicationStepper status={app.status} />
+                   </div>
                   </div>
                 );
               })}
