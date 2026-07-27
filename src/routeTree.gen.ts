@@ -34,6 +34,7 @@ import { Route as AuthenticatedApplyNewRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedApplyApplicationIdRouteImport } from './routes/_authenticated/apply.$applicationId'
 import { Route as AuthenticatedAmsWaitingListRouteImport } from './routes/_authenticated/ams/waiting-list'
 import { Route as AuthenticatedAmsSeatsRouteImport } from './routes/_authenticated/ams/seats'
+import { Route as AuthenticatedAmsReportsRouteImport } from './routes/_authenticated/ams/reports'
 import { Route as AuthenticatedAmsQueueRouteImport } from './routes/_authenticated/ams/queue'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
@@ -170,6 +171,11 @@ const AuthenticatedAmsSeatsRoute = AuthenticatedAmsSeatsRouteImport.update({
   path: '/ams/seats',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAmsReportsRoute = AuthenticatedAmsReportsRouteImport.update({
+  id: '/ams/reports',
+  path: '/ams/reports',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAmsQueueRoute = AuthenticatedAmsQueueRouteImport.update({
   id: '/ams/queue',
   path: '/ams/queue',
@@ -232,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/ams/queue': typeof AuthenticatedAmsQueueRoute
+  '/ams/reports': typeof AuthenticatedAmsReportsRoute
   '/ams/seats': typeof AuthenticatedAmsSeatsRoute
   '/ams/waiting-list': typeof AuthenticatedAmsWaitingListRoute
   '/apply/$applicationId': typeof AuthenticatedApplyApplicationIdRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByTo {
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/ams/queue': typeof AuthenticatedAmsQueueRoute
+  '/ams/reports': typeof AuthenticatedAmsReportsRoute
   '/ams/seats': typeof AuthenticatedAmsSeatsRoute
   '/ams/waiting-list': typeof AuthenticatedAmsWaitingListRoute
   '/apply/$applicationId': typeof AuthenticatedApplyApplicationIdRoute
@@ -300,6 +308,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/ams/queue': typeof AuthenticatedAmsQueueRoute
+  '/_authenticated/ams/reports': typeof AuthenticatedAmsReportsRoute
   '/_authenticated/ams/seats': typeof AuthenticatedAmsSeatsRoute
   '/_authenticated/ams/waiting-list': typeof AuthenticatedAmsWaitingListRoute
   '/_authenticated/apply/$applicationId': typeof AuthenticatedApplyApplicationIdRoute
@@ -335,6 +344,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/users'
     | '/ams/queue'
+    | '/ams/reports'
     | '/ams/seats'
     | '/ams/waiting-list'
     | '/apply/$applicationId'
@@ -368,6 +378,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/users'
     | '/ams/queue'
+    | '/ams/reports'
     | '/ams/seats'
     | '/ams/waiting-list'
     | '/apply/$applicationId'
@@ -402,6 +413,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/audit'
     | '/_authenticated/admin/users'
     | '/_authenticated/ams/queue'
+    | '/_authenticated/ams/reports'
     | '/_authenticated/ams/seats'
     | '/_authenticated/ams/waiting-list'
     | '/_authenticated/apply/$applicationId'
@@ -613,6 +625,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAmsSeatsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ams/reports': {
+      id: '/_authenticated/ams/reports'
+      path: '/ams/reports'
+      fullPath: '/ams/reports'
+      preLoaderRoute: typeof AuthenticatedAmsReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ams/queue': {
       id: '/_authenticated/ams/queue'
       path: '/ams/queue'
@@ -672,6 +691,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAmsQueueRoute: typeof AuthenticatedAmsQueueRoute
+  AuthenticatedAmsReportsRoute: typeof AuthenticatedAmsReportsRoute
   AuthenticatedAmsSeatsRoute: typeof AuthenticatedAmsSeatsRoute
   AuthenticatedAmsWaitingListRoute: typeof AuthenticatedAmsWaitingListRoute
   AuthenticatedApplyApplicationIdRoute: typeof AuthenticatedApplyApplicationIdRoute
@@ -688,6 +708,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAmsQueueRoute: AuthenticatedAmsQueueRoute,
+  AuthenticatedAmsReportsRoute: AuthenticatedAmsReportsRoute,
   AuthenticatedAmsSeatsRoute: AuthenticatedAmsSeatsRoute,
   AuthenticatedAmsWaitingListRoute: AuthenticatedAmsWaitingListRoute,
   AuthenticatedApplyApplicationIdRoute: AuthenticatedApplyApplicationIdRoute,
