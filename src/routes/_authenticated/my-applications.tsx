@@ -16,8 +16,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { PageHero } from "@/components/site/PageHero";
 import { Button } from "@/components/ui/button";
+import { PortalLayout } from "@/features/auth/components/PortalLayout";
 import {
   deleteDraftApplicationFn,
   getMyApplications,
@@ -73,23 +73,21 @@ function MyApplicationsPage() {
   const { data: catalog } = useSuspenseQuery(catalogQuery);
 
   return (
-    <>
-      <PageHero
-        eyebrow="بوابة أولياء الأمور"
-        title="طلباتي"
-        description="تابع حالة كل طلب، أكمل المسودات، واطّلع على الملخص المالي ورقم التتبع."
-      >
-        <Button asChild variant="hero" size="lg">
+    <PortalLayout
+      title="طلباتي وتتبع الطلب"
+      description="تابع حالة كل طلب خطوة بخطوة، أكمل المسودات، واطّلع على الملخص المالي ورقم الطلب."
+    >
+      <div className="flex justify-end">
+        <Button asChild variant="hero">
           <Link to="/admissions">
             <FilePlus2 className="size-4" />
             طلب قبول جديد
           </Link>
         </Button>
-      </PageHero>
+      </div>
 
-      <section className="section-y">
-        <div className="mx-auto max-w-5xl px-4 md:px-8">
-          {apps.length === 0 ? (
+      <div>
+        {apps.length === 0 ? (
             <div className="rounded-[2.5rem] border border-dashed border-border bg-card/60 p-12 text-center">
               <p className="text-lg font-black text-foreground">لا توجد طلبات بعد</p>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -104,10 +102,13 @@ function MyApplicationsPage() {
               {apps.map((app) => {
                 const stage = catalog.stages.find((s) => s.id === app.stage_id);
                 const isDraft = app.status === "draft" || app.status === "needs_action";
+                const withdrawn = app.status === "withdrawn";
                 return (
                   <div
                     key={app.id}
-                    className="rounded-[2rem] bg-card p-7 shadow-soft"
+                    className={`rounded-[2rem] p-7 shadow-soft ${
+                      withdrawn ? "border border-destructive/30 bg-destructive/5" : "bg-card"
+                    }`}
                   >
                    <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -122,8 +123,7 @@ function MyApplicationsPage() {
                         <p className="font-black text-foreground">{stage?.name_ar ?? "طلب قبول"}</p>
                       </div>
                       <p className="mt-2 text-xs text-muted-foreground" dir="ltr">
-                        {app.application_number ?? "مسودة غير مرسلة"}
-                        {app.tracking_number ? ` • ${app.tracking_number}` : ""}
+                        {app.application_number ?? app.tracking_number ?? "مسودة غير مرسلة"}
                       </p>
                       {Number(app.grand_total) > 0 ? (
                         <p className="mt-2 text-sm font-bold text-primary">
@@ -133,7 +133,7 @@ function MyApplicationsPage() {
                     </div>
 
                     <div className="flex shrink-0 gap-2">
-                      {isDraft ? (
+                      {isDraft && !withdrawn ? (
                         <>
                           <Button asChild variant="hero">
                             <Link to="/apply/$applicationId" params={{ applicationId: app.id }}>
@@ -201,8 +201,7 @@ function MyApplicationsPage() {
               })}
             </div>
           )}
-        </div>
-      </section>
-    </>
+      </div>
+    </PortalLayout>
   );
 }
