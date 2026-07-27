@@ -174,7 +174,7 @@ export const APPLICATION_STATUS_COLORS: Record<string, string> = {
   needs_action: "bg-destructive/15 text-destructive",
   approved: "bg-mint text-foreground",
   rejected: "bg-destructive/15 text-destructive",
-  withdrawn: "bg-muted text-muted-foreground",
+  withdrawn: "bg-destructive text-destructive-foreground",
   principal_review: "bg-primary/10 text-primary",
   waitlisted: "bg-gold/40 text-foreground",
 };
