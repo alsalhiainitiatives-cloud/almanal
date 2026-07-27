@@ -67,7 +67,7 @@ export function StageCards({ withDetails = false }: { withDetails?: boolean }) {
             ) : null}
             <div className="mt-7 flex justify-center">
               <Button asChild variant="soft" size="default">
-                <Link to="/stages">
+                <Link to="/admissions">
                   اعرف المزيد
                   <ArrowLeft className="size-4" />
                 </Link>
