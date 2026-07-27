@@ -56,6 +56,52 @@ export function ageInMonths(birthDate: string | null | undefined, at: Date = new
   return months;
 }
 
+export type AgeParts = { years: number; months: number; days: number; totalMonths: number };
+
+/**
+ * Exact calendar age (years / months / days). Supports newborns: a child born
+ * yesterday resolves to 0y 0m 1d and still classifies into infant stages.
+ */
+export function ageParts(birthDate: string | null | undefined, at: Date = new Date()): AgeParts | null {
+  if (!birthDate) return null;
+  const dob = new Date(birthDate);
+  if (Number.isNaN(dob.getTime())) return null;
+  if (dob.getTime() > at.getTime()) return null;
+
+  let years = at.getFullYear() - dob.getFullYear();
+  let months = at.getMonth() - dob.getMonth();
+  let days = at.getDate() - dob.getDate();
+
+  if (days < 0) {
+    months -= 1;
+    const prevMonth = new Date(at.getFullYear(), at.getMonth(), 0).getDate();
+    days += prevMonth;
+  }
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+  return { years, months, days, totalMonths: years * 12 + months };
+}
+
+const unit = (n: number, one: string, two: string, few: string, many: string) => {
+  if (n === 1) return one;
+  if (n === 2) return two;
+  if (n >= 3 && n <= 10) return `${n} ${few}`;
+  return `${n} ${many}`;
+};
+
+/** "سنتان و 4 أشهر و 12 يومًا" — professional, RTL-friendly age rendering. */
+export function formatAgeDetailed(parts: AgeParts | null): string {
+  if (!parts) return "—";
+  const chunks: string[] = [];
+  if (parts.years > 0) chunks.push(unit(parts.years, "سنة واحدة", "سنتان", "سنوات", "سنة"));
+  if (parts.months > 0) chunks.push(unit(parts.months, "شهر واحد", "شهران", "أشهر", "شهرًا"));
+  if (parts.days > 0 && parts.years === 0) chunks.push(unit(parts.days, "يوم واحد", "يومان", "أيام", "يومًا"));
+  if (!chunks.length) return "أقل من يوم";
+  return chunks.join(" و ");
+}
+
 export function formatAge(months: number | null): string {
   if (months === null || months < 0) return "—";
   const y = Math.floor(months / 12);

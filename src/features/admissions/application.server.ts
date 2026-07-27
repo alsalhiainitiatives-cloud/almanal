@@ -173,17 +173,52 @@ export async function saveDraft(
   return { ok: true as const, savedAt: new Date().toISOString() };
 }
 
-export async function checkDuplicateChild(supabase: Db, userId: string, nationalId: string) {
+export type DuplicateCheck = {
+  duplicate: boolean;
+  applicationNumber: string | null;
+  status: string | null;
+  isMine: boolean;
+};
+
+/**
+ * A child may only hold one live application per academic year. The current
+ * draft is excluded so re-editing an in-progress application never self-flags.
+ */
+export async function checkDuplicateChild(
+  supabase: Db,
+  userId: string,
+  input: { nationalId: string; excludeApplicationId?: string | null },
+): Promise<DuplicateCheck> {
   const { data } = await supabase
     .from("application_children")
-    .select("id, application_id, applications!inner(status, parent_id, academic_year)")
-    .eq("national_id", nationalId);
+    .select(
+      "id, application_id, applications!inner(status, parent_id, academic_year, application_number)",
+    )
+    .eq("national_id", input.nationalId);
 
-  const conflict = (data ?? []).some((row) => {
-    const app = row.applications as unknown as { status: string; academic_year: string };
+  const hit = (data ?? []).find((row) => {
+    if (input.excludeApplicationId && row.application_id === input.excludeApplicationId) return false;
+    const app = row.applications as unknown as {
+      status: string;
+      academic_year: string;
+      parent_id: string;
+    };
     return app.academic_year === ACADEMIC_YEAR && !["withdrawn", "rejected"].includes(app.status);
   });
-  return { duplicate: conflict };
+
+  if (!hit) return { duplicate: false, applicationNumber: null, status: null, isMine: false };
+
+  const app = hit.applications as unknown as {
+    status: string;
+    parent_id: string;
+    application_number: string | null;
+  };
+  return {
+    duplicate: true,
+    applicationNumber: app.application_number,
+    status: app.status,
+    isMine: app.parent_id === userId,
+  };
 }
 
 export async function saveChildren(
@@ -201,7 +236,7 @@ export async function saveChildren(
     national_id: c.nationalId,
     gender: c.gender,
     birth_date: c.birthDate,
-    nationality: c.nationality,
+    nationality: c.nationality || (c.nationalId.startsWith("1") ? "سعودي" : c.country || "مقيم"),
     birth_place: c.birthPlace || null,
     photo_url: c.photoUrl || null,
     blood_type: c.bloodType || null,
@@ -213,6 +248,9 @@ export async function saveChildren(
     vaccination_status: c.vaccinationStatus || null,
     stage_id: c.stageId || app.stage_id,
     classroom_id: c.classroomId || app.classroom_id,
+    preference_1_classroom_id: c.classroomId || app.classroom_id,
+    preference_2_classroom_id: c.preference2 || null,
+    preference_3_classroom_id: c.preference3 || null,
   }));
 
   const { error } = await supabase.from("application_children").insert(rows);
@@ -282,14 +320,26 @@ export async function saveServices(
 export async function recordDocument(
   supabase: Db,
   userId: string,
-  input: { id: string; slug: string; filePath: string; fileName: string; fileSize: number },
+  input: {
+    id: string;
+    slug: string;
+    filePath: string;
+    fileName: string;
+    fileSize: number;
+    childIndex?: number | null;
+  },
 ) {
   await loadApplicationRow(supabase, input.id, userId);
-  await supabase
+  const childIndex = input.childIndex ?? null;
+
+  // Replace any previous upload for the same slot (parent slot = null index).
+  let del = supabase
     .from("application_documents")
     .delete()
     .eq("application_id", input.id)
     .eq("document_type_slug", input.slug);
+  del = childIndex === null ? del.is("child_index", null) : del.eq("child_index", childIndex);
+  await del;
 
   const { error } = await supabase.from("application_documents").insert({
     application_id: input.id,
@@ -297,6 +347,7 @@ export async function recordDocument(
     file_path: input.filePath,
     file_name: input.fileName,
     file_size: input.fileSize,
+    child_index: childIndex,
   });
   if (error) throw new Error("تعذّر تسجيل المستند.");
   return { ok: true as const };

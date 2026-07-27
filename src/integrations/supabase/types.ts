@@ -32,6 +32,9 @@ export type Database = {
           national_id: string | null
           nationality: string | null
           photo_url: string | null
+          preference_1_classroom_id: string | null
+          preference_2_classroom_id: string | null
+          preference_3_classroom_id: string | null
           previous_school: string | null
           special_needs: string | null
           stage_id: string | null
@@ -55,6 +58,9 @@ export type Database = {
           national_id?: string | null
           nationality?: string | null
           photo_url?: string | null
+          preference_1_classroom_id?: string | null
+          preference_2_classroom_id?: string | null
+          preference_3_classroom_id?: string | null
           previous_school?: string | null
           special_needs?: string | null
           stage_id?: string | null
@@ -78,6 +84,9 @@ export type Database = {
           national_id?: string | null
           nationality?: string | null
           photo_url?: string | null
+          preference_1_classroom_id?: string | null
+          preference_2_classroom_id?: string | null
+          preference_3_classroom_id?: string | null
           previous_school?: string | null
           special_needs?: string | null
           stage_id?: string | null
@@ -100,6 +109,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "application_children_preference_1_classroom_id_fkey"
+            columns: ["preference_1_classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_children_preference_2_classroom_id_fkey"
+            columns: ["preference_2_classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_children_preference_3_classroom_id_fkey"
+            columns: ["preference_3_classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "application_children_stage_id_fkey"
             columns: ["stage_id"]
             isOneToOne: false
@@ -111,6 +141,7 @@ export type Database = {
       application_documents: {
         Row: {
           application_id: string
+          child_index: number | null
           created_at: string
           document_type_slug: string
           file_name: string | null
@@ -123,6 +154,7 @@ export type Database = {
         }
         Insert: {
           application_id: string
+          child_index?: number | null
           created_at?: string
           document_type_slug: string
           file_name?: string | null
@@ -135,6 +167,7 @@ export type Database = {
         }
         Update: {
           application_id?: string
+          child_index?: number | null
           created_at?: string
           document_type_slug?: string
           file_name?: string | null
@@ -250,6 +283,8 @@ export type Database = {
           parent_id: string
           parent_national_id: string | null
           parent_nationality: string | null
+          parent_relationship: string | null
+          parent_relationship_other: string | null
           review_note: string | null
           reviewed_at: string | null
           services_total: number
@@ -274,6 +309,8 @@ export type Database = {
           parent_id: string
           parent_national_id?: string | null
           parent_nationality?: string | null
+          parent_relationship?: string | null
+          parent_relationship_other?: string | null
           review_note?: string | null
           reviewed_at?: string | null
           services_total?: number
@@ -298,6 +335,8 @@ export type Database = {
           parent_id?: string
           parent_national_id?: string | null
           parent_nationality?: string | null
+          parent_relationship?: string | null
+          parent_relationship_other?: string | null
           review_note?: string | null
           reviewed_at?: string | null
           services_total?: number
@@ -492,6 +531,7 @@ export type Database = {
           name_ar: string
           requires_medical: boolean
           requires_service_slug: string | null
+          scope: string
           slug: string
           sort_order: number
           updated_at: string
@@ -507,6 +547,7 @@ export type Database = {
           name_ar: string
           requires_medical?: boolean
           requires_service_slug?: string | null
+          scope?: string
           slug: string
           sort_order?: number
           updated_at?: string
@@ -522,6 +563,7 @@ export type Database = {
           name_ar?: string
           requires_medical?: boolean
           requires_service_slug?: string | null
+          scope?: string
           slug?: string
           sort_order?: number
           updated_at?: string
