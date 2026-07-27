@@ -4,14 +4,17 @@ import { z } from "zod";
 
 import type { Database } from "@/integrations/supabase/types";
 
-const numberSchema = z
-  .string()
-  .trim()
-  .min(4, "رقم الطلب غير صحيح")
-  .max(40, "رقم الطلب غير صحيح");
+const inputSchema = z.object({
+  number: z.string().trim().min(4, "رقم الطلب غير صحيح").max(40, "رقم الطلب غير صحيح"),
+  token: z
+    .string()
+    .trim()
+    .min(16, "رمز التحقق غير صحيح")
+    .max(120, "رمز التحقق غير صحيح"),
+});
 
 export const publicTrackApplication = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => numberSchema.parse(data))
+  .inputValidator((data: unknown) => inputSchema.parse(data))
   .handler(async ({ data }) => {
     const supabase = createClient<Database>(
       process.env.SUPABASE_URL!,
@@ -19,9 +22,11 @@ export const publicTrackApplication = createServerFn({ method: "POST" })
       { auth: { persistSession: false, autoRefreshToken: false } },
     );
 
-    const [summary, events] = await Promise.all([
-      supabase.rpc("track_application_public", { _application_number: data }),
-      supabase.rpc("track_application_events_public", { _application_number: data }),
+    const args = { _application_number: data.number, _token: data.token };
+    const [summary, events, documents] = await Promise.all([
+      supabase.rpc("track_application_public", args),
+      supabase.rpc("track_application_events_public", args),
+      supabase.rpc("track_application_documents_public", args),
     ]);
 
     if (summary.error) {
@@ -36,5 +41,6 @@ export const publicTrackApplication = createServerFn({ method: "POST" })
       found: true as const,
       application: row,
       events: events.data ?? [],
+      documentRequests: documents.data ?? [],
     };
   });
