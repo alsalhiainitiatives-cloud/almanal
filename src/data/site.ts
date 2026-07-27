@@ -37,19 +37,7 @@ export const workingHours = [
 export const navLinks = [
   { label: "الرئيسية", to: "/" },
   { label: "عن المنال", to: "/about" },
-  {
-    label: "المراحل والتسجيل",
-    to: "/admissions",
-    children: [
-      {
-        label: "المراحل والتسجيل",
-        to: "/admissions",
-        desc: "تعرّف على المراحل وابدأ تسجيل طفلك",
-      },
-      { label: "الروضة", to: "/kindergarten", desc: "المنهج والأنشطة الأسبوعية" },
-      { label: "الابتدائي", to: "/primary", desc: "الصف الأول حتى السادس" },
-    ],
-  },
+  { label: "المراحل والتسجيل", to: "/admissions" },
   { label: "الحياة المدرسية", to: "/school-life" },
   { label: "الأخبار", to: "/news" },
   { label: "المعرض", to: "/gallery" },
