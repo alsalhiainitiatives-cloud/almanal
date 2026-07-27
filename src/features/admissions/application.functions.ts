@@ -6,6 +6,7 @@ import { childrenSchema, qurraSchema } from "./schemas";
 import {
   checkDuplicateChild,
   continueWithoutQurra,
+  deleteDraftApplication,
   getApplicationBundle,
   listMyApplications,
   recordDocument,
@@ -123,3 +124,8 @@ export const continueWithoutQurraFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((id: unknown) => z.string().uuid().parse(id))
   .handler(async ({ data, context }) => continueWithoutQurra(context.supabase, context.userId, data));
+
+export const deleteDraftApplicationFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((id: unknown) => z.string().uuid().parse(id))
+  .handler(async ({ data, context }) => deleteDraftApplication(context.supabase, context.userId, data));
