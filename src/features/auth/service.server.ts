@@ -4,7 +4,6 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database } from "@/integrations/supabase/types";
 import type { AppRole } from "./rbac";
 import type { ProfileInput, SignInInput } from "./schemas";
