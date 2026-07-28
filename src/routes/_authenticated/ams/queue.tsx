@@ -122,10 +122,25 @@ function QueuePage() {
 
   const bulkAssign = useMutation({
     mutationFn: async (officerId: string) => {
+      const previous = all
+        .filter((row) => selected.includes(row.id))
+        .map((row) => ({ id: row.id, officerId: row.officer_id ?? null }));
       for (const id of selected) await assign({ data: { id, officerId } });
+      return previous;
     },
-    onSuccess: () => {
-      toast.success("تم إسناد الطلبات المحددة");
+    onSuccess: (previous) => {
+      toast.success(`تم إسناد ${previous.length} طلب`, {
+        action: {
+          label: "تراجع",
+          onClick: async () => {
+            for (const item of previous) {
+              if (item.officerId) await assign({ data: { id: item.id, officerId: item.officerId } });
+            }
+            toast.success("تم التراجع عن الإسناد");
+            queryClient.invalidateQueries({ queryKey: ["ams"] });
+          },
+        },
+      });
       setSelected([]);
       setBulkOfficer("");
       queryClient.invalidateQueries({ queryKey: ["ams"] });
@@ -135,10 +150,23 @@ function QueuePage() {
 
   const bulkPriorityMutation = useMutation({
     mutationFn: async (level: string) => {
+      const previous = all
+        .filter((row) => selected.includes(row.id))
+        .map((row) => ({ id: row.id, priority: row.priority }));
       for (const id of selected) await priority({ data: { id, priority: level } });
+      return previous;
     },
-    onSuccess: () => {
-      toast.success("تم تحديث أولوية الطلبات المحددة");
+    onSuccess: (previous) => {
+      toast.success(`تم تحديث أولوية ${previous.length} طلب`, {
+        action: {
+          label: "تراجع",
+          onClick: async () => {
+            for (const item of previous) await priority({ data: { id: item.id, priority: item.priority } });
+            toast.success("تمت استعادة الأولويات السابقة");
+            queryClient.invalidateQueries({ queryKey: ["ams"] });
+          },
+        },
+      });
       setSelected([]);
       setBulkPriority("");
       queryClient.invalidateQueries({ queryKey: ["ams"] });
