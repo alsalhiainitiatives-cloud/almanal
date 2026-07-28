@@ -120,6 +120,7 @@ function QueuePage() {
     queryFn: () => amsQueue({ data: filters }),
   });
   const { data: staff } = useQuery({ queryKey: ["ams", "staff"], queryFn: () => amsStaff() });
+  const { data: stages } = useQuery({ queryKey: ["stages", "list"], queryFn: () => listStages() });
 
   const togglePin = useServerFn(amsTogglePin);
   const assign = useServerFn(amsAssignOfficer);
@@ -194,10 +195,45 @@ function QueuePage() {
   const rows = useMemo(() => {
     const needle = term.trim().toLowerCase();
     const filtered = all.filter(
-      (row) => (!search.status || row.status === search.status) && matchesTerm(row, needle),
+      (row) =>
+        (!search.status || row.status === search.status) &&
+        (!search.stageId || rowStageId(row) === search.stageId) &&
+        matchesTerm(row, needle),
     );
     return sortRows(filtered, sort);
-  }, [all, term, search.status, sort]);
+  }, [all, term, search.status, search.stageId, sort]);
+
+  // Stage buckets: صغار المنال / كبار المنال (مونتيسوري) / ابتدائي / غير محددة.
+  const stageTabs = useMemo(() => {
+    const list = (stages ?? []).map((stage) => ({ id: stage.id as string, label: stage.name_ar as string }));
+    const statusScoped = all.filter((row) => !search.status || row.status === search.status);
+    const counts: Record<string, number> = {};
+    for (const row of statusScoped) {
+      const key = rowStageId(row) ?? "unassigned";
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+    const tabs = list.map((stage) => ({ ...stage, count: counts[stage.id] ?? 0 }));
+    if (counts.unassigned) tabs.push({ id: "unassigned", label: "غير محددة المرحلة", count: counts.unassigned });
+    return tabs;
+  }, [stages, all, search.status]);
+
+  const groupedRows = useMemo(() => {
+    if (search.stageId) return null;
+    const labels = new Map(stageTabs.map((tab) => [tab.id, tab.label]));
+    const order = stageTabs.map((tab) => tab.id);
+    const buckets = new Map<string, typeof rows>();
+    for (const row of rows) {
+      const key = rowStageId(row) ?? "unassigned";
+      buckets.set(key, [...(buckets.get(key) ?? []), row]);
+    }
+    return order
+      .filter((key) => (buckets.get(key)?.length ?? 0) > 0)
+      .map((key) => ({
+        id: key,
+        label: labels.get(key) ?? "غير محددة المرحلة",
+        rows: buckets.get(key)!,
+      }));
+  }, [rows, stageTabs, search.stageId]);
 
   const setFilter = (key: keyof QueueSearch, value: string) =>
     navigate({ search: { ...search, [key]: value === ALL ? undefined : value } });
