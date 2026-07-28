@@ -207,6 +207,16 @@ export function SeatBoard() {
                       toast.error("الفصل قيد التعديل من موظف آخر الآن.");
                       return;
                     }
+                    const child =
+                      (data.unplaced as SeatChild[]).find((item) => item.id === childId) ??
+                      (data.classrooms.flatMap((c) => c.children) as SeatChild[]).find((item) => item.id === childId);
+                    if (!child) return;
+                    const check = validatePlacement(child, asRule(classroom));
+                    if (!check.ok) {
+                      toast.error(check.message ?? "لا يمكن تنفيذ هذا التسكين.");
+                      return;
+                    }
+                    check.warnings.forEach((warning) => toast.warning(warning));
                     assign.mutate({ childId, classroomId: classroom.id });
                   }}
                   className="rounded-3xl border border-border/60 bg-card p-4 shadow-sm"
