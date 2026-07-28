@@ -13,6 +13,7 @@ import { createApplication } from "@/features/admissions/application.functions";
 import { seatsLeft } from "@/features/admissions/eligibility";
 import { stageGallery } from "@/features/admissions/media";
 import { supabase } from "@/integrations/supabase/client";
+import { useClassroomMediaUrls } from "@/lib/classroom-media";
 
 const stageQuery = (slug: string) =>
   queryOptions({
@@ -70,17 +71,34 @@ function ClassroomDetailPage() {
   const [busy, setBusy] = useState(false);
 
   const classroom = data?.classrooms.find((c) => c.slug === classroomSlug);
-  if (!data || !classroom) return <ClassroomMissing />;
-
-  const stage = data.stage;
-  const left = seatsLeft(classroom);
-  const gallery = stageGallery(classroom.slug);
-  const teamList = (Array.isArray(classroom.teachers) ? classroom.teachers : []) as {
+  const cover = (classroom as { cover_image?: string | null } | undefined)?.cover_image ?? null;
+  const activityShots = ((classroom as { gallery?: unknown } | undefined)?.gallery ?? []) as {
+    path: string;
+    caption?: string | null;
+  }[];
+  const teamListRaw = (Array.isArray(classroom?.teachers) ? classroom!.teachers : []) as {
     name: string;
     title?: string;
     qualification?: string;
     experience?: string;
+    photo_url?: string | null;
+    cv_url?: string | null;
+    cv_name?: string | null;
   }[];
+  const mediaUrls = useClassroomMediaUrls([
+    cover,
+    ...activityShots.map((g) => g.path),
+    ...teamListRaw.flatMap((t) => [t.photo_url, t.cv_url]),
+  ]);
+
+  if (!data || !classroom) return <ClassroomMissing />;
+
+  const stage = data.stage;
+  const left = seatsLeft(classroom);
+  const gallery = activityShots.length
+    ? activityShots.map((g) => ({ src: mediaUrls[g.path], alt: g.caption || `نشاط في ${classroom.name_ar}` }))
+    : stageGallery(classroom.slug);
+  const teamList = teamListRaw;
   const daySlots = (Array.isArray(classroom.daily_schedule) ? classroom.daily_schedule : []) as {
     time: string;
     activity: string;
@@ -112,6 +130,16 @@ function ClassroomDetailPage() {
   return (
     <>
       <PageHero eyebrow={stage.name_ar} title={classroom.name_ar} description={classroom.description_ar ?? ""} />
+
+      {cover && mediaUrls[cover] ? (
+        <section className="mx-auto max-w-5xl px-4 md:px-8">
+          <img
+            src={mediaUrls[cover]}
+            alt={`غلاف ${classroom.name_ar}`}
+            className="h-64 w-full rounded-[2.5rem] object-cover shadow-card md:h-80"
+          />
+        </section>
+      ) : null}
 
       <section className="section-y">
         <div className="mx-auto max-w-5xl px-4 md:px-8">
@@ -182,12 +210,34 @@ function ClassroomDetailPage() {
                     ) : null}
                     {teamList.map((t, i) => (
                       <li key={`${t.name}-${i}`} className="rounded-2xl bg-card p-4 shadow-soft">
-                        <p className="text-sm font-black text-foreground">{t.name}</p>
-                        {t.title ? <p className="text-xs font-bold text-secondary">{t.title}</p> : null}
+                        <div className="flex items-center gap-3">
+                          {t.photo_url && mediaUrls[t.photo_url] ? (
+                            <img
+                              src={mediaUrls[t.photo_url]}
+                              alt={t.name}
+                              loading="lazy"
+                              className="size-14 rounded-full object-cover ring-2 ring-border"
+                            />
+                          ) : null}
+                          <div>
+                            <p className="text-sm font-black text-foreground">{t.name}</p>
+                            {t.title ? <p className="text-xs font-bold text-secondary">{t.title}</p> : null}
+                          </div>
+                        </div>
                         {t.qualification ? (
                           <p className="mt-2 text-xs text-muted-foreground">{t.qualification}</p>
                         ) : null}
                         {t.experience ? <p className="mt-1 text-xs text-muted-foreground">{t.experience}</p> : null}
+                        {t.cv_url && mediaUrls[t.cv_url] ? (
+                          <a
+                            href={mediaUrls[t.cv_url]}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-3 inline-flex items-center gap-1 rounded-2xl bg-background/80 px-3 py-1.5 text-[11px] font-black text-primary"
+                          >
+                            عرض السيرة الذاتية / الشهادة
+                          </a>
+                        ) : null}
                       </li>
                     ))}
                   </ul>
