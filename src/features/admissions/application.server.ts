@@ -394,9 +394,10 @@ export async function submitApplication(supabase: Db, userId: string, id: string
   const grandTotal = admissionFee + tuition + servicesTotal - discount;
 
   // One unified number is used for both the application and its tracking page.
-  const applicationNumber = `MN-${ACADEMIC_YEAR}-${randomCode(5)}`;
-  const trackingNumber = applicationNumber;
   const wasCorrection = app.status === "needs_action";
+  // Keep the original number when the parent resubmits after corrections.
+  const applicationNumber = app.application_number ?? `MN-${ACADEMIC_YEAR}-${randomCode(5)}`;
+  const trackingNumber = applicationNumber;
 
   const { error } = await supabase
     .from("applications")
