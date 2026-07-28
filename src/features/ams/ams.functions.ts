@@ -96,6 +96,11 @@ export const amsReviewDocument = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => reviewDocument(context.supabase, context.userId, data));
 
+export const amsDocumentUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ id: uuid, documentId: uuid }).parse(data))
+  .handler(async ({ data, context }) => documentSignedUrl(context.supabase, context.userId, data));
+
 export const amsRequestDocuments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
