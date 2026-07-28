@@ -33,6 +33,7 @@ const NAV = [
   { to: "/ams/queue", label: "قائمة الطلبات", icon: Inbox, exact: false },
   { to: "/ams/seats", label: "إدارة المقاعد", icon: Armchair, exact: false },
   { to: "/ams/waiting-list", label: "قائمة الانتظار", icon: ListOrdered, exact: false },
+  { to: "/ams/activity", label: "الحركة اللحظية", icon: Activity, exact: false },
   { to: "/ams/reports", label: "التقارير", icon: BarChart3, exact: false },
 ] as const;
 
