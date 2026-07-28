@@ -577,11 +577,13 @@ export type Database = {
           color_hex: string
           color_label: string | null
           created_at: string
+          daily_schedule: Json
           description_ar: string | null
           id: string
           is_active: boolean
           learning_style_ar: string | null
           max_age_months: number
+          max_waiting: number
           min_age_months: number
           name_ar: string
           schedule_ar: string | null
@@ -589,8 +591,11 @@ export type Database = {
           sort_order: number
           stage_id: string
           taken_seats: number
+          teacher_experience: string | null
           teacher_name: string | null
+          teacher_qualification: string | null
           teacher_title: string | null
+          teachers: Json
           updated_at: string
         }
         Insert: {
@@ -598,11 +603,13 @@ export type Database = {
           color_hex?: string
           color_label?: string | null
           created_at?: string
+          daily_schedule?: Json
           description_ar?: string | null
           id?: string
           is_active?: boolean
           learning_style_ar?: string | null
           max_age_months?: number
+          max_waiting?: number
           min_age_months?: number
           name_ar: string
           schedule_ar?: string | null
@@ -610,8 +617,11 @@ export type Database = {
           sort_order?: number
           stage_id: string
           taken_seats?: number
+          teacher_experience?: string | null
           teacher_name?: string | null
+          teacher_qualification?: string | null
           teacher_title?: string | null
+          teachers?: Json
           updated_at?: string
         }
         Update: {
@@ -619,11 +629,13 @@ export type Database = {
           color_hex?: string
           color_label?: string | null
           created_at?: string
+          daily_schedule?: Json
           description_ar?: string | null
           id?: string
           is_active?: boolean
           learning_style_ar?: string | null
           max_age_months?: number
+          max_waiting?: number
           min_age_months?: number
           name_ar?: string
           schedule_ar?: string | null
@@ -631,8 +643,11 @@ export type Database = {
           sort_order?: number
           stage_id?: string
           taken_seats?: number
+          teacher_experience?: string | null
           teacher_name?: string | null
+          teacher_qualification?: string | null
           teacher_title?: string | null
+          teachers?: Json
           updated_at?: string
         }
         Relationships: [
