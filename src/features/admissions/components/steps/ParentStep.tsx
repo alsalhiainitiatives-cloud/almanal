@@ -369,11 +369,17 @@ export function ParentStep({
               {showQurraDetails ? (
                 <>
                   {isOtherGuardian ? (
+                    <>
                     <TextField
                       label="رقم هوية الأم"
                       value={value.motherNationalId ?? ""}
                       onChange={(v) => onChange({ motherNationalId: v.replace(/\D/g, "").slice(0, 10) })}
-                      error={errors.motherNationalId}
+                      error={
+                        errors.motherNationalId ??
+                        ((value.motherNationalId ?? "").length > 0 && !(value.motherNationalId ?? "").startsWith("1")
+                          ? "رقم هوية الأم يجب أن يبدأ بالرقم 1 للدلالة على أنها سعودية — دعم قرة متاح للأم السعودية فقط"
+                          : undefined)
+                      }
                       dir="ltr"
                       inputMode="numeric"
                       maxLength={10}
@@ -381,6 +387,10 @@ export function ParentStep({
                       required
                       icon={IdCard}
                     />
+                    <p className="md:col-span-2 -mt-2 text-xs text-muted-foreground">
+                      يبدأ رقم هوية المواطنة السعودية بالرقم 1.
+                    </p>
+                    </>
                   ) : null}
                   <TextField
                     label={isOtherGuardian ? "جهة عمل الأم" : "جهة العمل"}
