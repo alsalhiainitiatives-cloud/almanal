@@ -780,6 +780,17 @@ function WizardPage() {
             ) : null}
 
             {step === 9 ? <FinancialStep data={financials} /> : null}
+
+            <StepCustomFields
+              stepKey={configuredSteps.find((s) => s.id === step)?.key ?? ""}
+              stepLabel={configuredSteps.find((s) => s.id === step)?.label ?? ""}
+              fields={customFieldsByStep.get(configuredSteps.find((s) => s.id === step)?.key ?? "") ?? []}
+              values={custom[configuredSteps.find((s) => s.id === step)?.key ?? ""] ?? {}}
+              errors={errors}
+              onChange={(stepKey, key, value) =>
+                setCustom((prev) => ({ ...prev, [stepKey]: { ...(prev[stepKey] ?? {}), [key]: value } }))
+              }
+            />
           </motion.div>
         </AnimatePresence>
       </WizardShell>
