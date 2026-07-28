@@ -1,17 +1,18 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Armchair,
   BadgeCheck,
+  BellRing,
   CheckCircle2,
   ChevronsUpDown,
   CircleSlash,
+  Eye,
   FileCheck2,
   FileWarning,
   ListOrdered,
-  Sparkles,
+  Lock,
   Undo2,
-  UserCog,
   Wallet,
 } from "lucide-react";
 import { useState } from "react";
@@ -29,37 +30,39 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { ageInMonths, detectNationality, formatAge } from "@/features/admissions/eligibility";
 import {
-  amsAssignOfficer,
   amsDecide,
   amsManageSeat,
   amsMoveToWaitingList,
+  amsNudgePrincipal,
   amsRecommend,
   amsRequestDocuments,
   amsRequestCorrections,
   amsSetPayment,
   amsSetPriority,
-  amsStaff,
   amsStartReview,
   amsUpdateQurra,
 } from "../../ams.functions";
 import { can } from "../../roles";
-import { documentCompletion, recommendationsFor } from "../../recommendations";
+import { documentCompletion } from "../../recommendations";
 import { DocumentReview } from "./DocumentReview";
 import type { WorkspaceData } from "../../types";
 import type { AppRole } from "@/features/auth/rbac";
+
 type DialogKind =
   | null
-  | "assign"
   | "request"
   | "corrections"
   | "recommend"
+  | "nudge"
   | "approve"
   | "reject"
   | "seat"
   | "waitlist"
   | "qurra"
   | "payment";
+
 const CORRECTION_OPTIONS = [
   { value: "parent", label: "بيانات ولي الأمر" },
   { value: "children", label: "بيانات الأبناء" },
@@ -69,22 +72,8 @@ const CORRECTION_OPTIONS = [
 ] as const;
 type CorrectionSection = (typeof CORRECTION_OPTIONS)[number]["value"];
 
-const TONE_STYLES = {
-  green: "border-mint bg-mint/30",
-  yellow: "border-gold/50 bg-gold/12",
-  red: "border-destructive/25 bg-destructive/6",
-} as const;
-
 /** One numbered stage of the official review workflow. */
-function Stage({
-  index,
-  title,
-  children,
-}: {
-  index: number;
-  title: string;
-  children: React.ReactNode;
-}) {
+function Stage({ index, title, hint, children }: { index: number; title: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="mt-3 rounded-2xl border border-border/60 bg-muted/20 p-2.5">
       <p className="mb-2 flex items-center gap-1.5 text-[11px] font-extrabold text-muted-foreground">
@@ -93,35 +82,53 @@ function Stage({
         </span>
         {title}
       </p>
+      {hint ? <p className="mb-2 text-[10px] font-bold text-muted-foreground/80">{hint}</p> : null}
       <div className="grid grid-cols-2 gap-2">{children}</div>
     </div>
   );
 }
+
+function Notice({ tone = "muted", children }: { tone?: "muted" | "warn" | "ok"; children: React.ReactNode }) {
+  return (
+    <p
+      className={cn(
+        "mt-3 rounded-2xl border px-3 py-2 text-[11px] font-bold leading-5",
+        tone === "warn" && "border-gold/50 bg-gold/12 text-foreground",
+        tone === "ok" && "border-mint bg-mint/30 text-foreground",
+        tone === "muted" && "border-border/60 bg-muted/25 text-muted-foreground",
+      )}
+    >
+      {children}
+    </p>
+  );
+}
+
 export function ActionCenter({ data }: { data: WorkspaceData }) {
   const queryClient = useQueryClient();
   const roles = (data.roles ?? []) as AppRole[];
   const id = data.application.id;
   const [dialog, setDialog] = useState<DialogKind>(null);
   const [note, setNote] = useState("");
-  const [officerId, setOfficerId] = useState<string>("");
   const [classroomId, setClassroomId] = useState<string>("");
+  const [childIdx, setChildIdx] = useState(0);
   const [signature, setSignature] = useState("");
   const [qurraStatus, setQurraStatus] = useState(data.qurra?.status ?? "not_requested");
   const [paymentStatus, setPaymentStatus] = useState(data.application.payment_status);
   const [requested, setRequested] = useState<string[]>([]);
   const [sections, setSections] = useState<CorrectionSection[]>([]);
-  const { data: staff } = useQuery({ queryKey: ["ams", "staff"], queryFn: () => amsStaff() });
-  const assign = useServerFn(amsAssignOfficer);
-  const priority = useServerFn(amsSetPriority);
+
   const startReview = useServerFn(amsStartReview);
+  const priority = useServerFn(amsSetPriority);
   const requestDocs = useServerFn(amsRequestDocuments);
   const requestCorrections = useServerFn(amsRequestCorrections);
   const recommend = useServerFn(amsRecommend);
+  const nudge = useServerFn(amsNudgePrincipal);
   const decide = useServerFn(amsDecide);
   const seat = useServerFn(amsManageSeat);
   const waitlist = useServerFn(amsMoveToWaitingList);
   const qurra = useServerFn(amsUpdateQurra);
   const payment = useServerFn(amsSetPayment);
+
   const run = useMutation({
     mutationFn: async (task: () => Promise<unknown>) => task(),
     onSuccess: () => {
@@ -135,6 +142,59 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
   });
   const busy = run.isPending;
   const close = () => setDialog(null);
+
+  /* ---------------------------------------------------------- role & state */
+  const status = data.application.status as string;
+  const canDecide = can(roles, "decide");
+  const isPrincipalOnly = canDecide && !roles.includes("admin") && !roles.includes("registration_officer");
+  const isViewerOnly = !can(roles, "review") && !canDecide && !can(roles, "payments");
+  const showOfficerActions = can(roles, "review") && !isPrincipalOnly;
+
+  const reviewStarted = !["draft", "submitted"].includes(status);
+  const raised = status === "principal_review";
+  const decided = ["approved", "rejected", "withdrawn"].includes(status);
+
+  const openRequests = data.documentRequests.filter((r) => !r.fulfilled_at).length;
+  const openCorrections = status === "needs_action" || (data.application.correction_sections ?? []).length > 0;
+  const readyToRaise = openRequests === 0 && !openCorrections;
+
+  /* -------------------------------------------------------------- children */
+  const child = data.children[Math.min(childIdx, Math.max(0, data.children.length - 1))] ?? null;
+  const childMonths = ageInMonths(child?.birth_date ?? null);
+  const preferences = [
+    child?.preference_1_classroom_id ?? null,
+    child?.preference_2_classroom_id ?? null,
+    child?.preference_3_classroom_id ?? null,
+  ];
+
+  const classroomState = (classroom: WorkspaceData["classrooms"][number]) => {
+    const free = Math.max(0, classroom.capacity - classroom.taken_seats);
+    const ageOk =
+      childMonths === null
+        ? true
+        : childMonths >= classroom.min_age_months && childMonths <= classroom.max_age_months;
+    return {
+      free,
+      ageOk,
+      full: free <= 0,
+      disabled: !ageOk || free <= 0,
+      reason: !ageOk
+        ? `خارج النطاق العمري (${classroom.min_age_months}–${classroom.max_age_months} شهرًا)`
+        : free <= 0
+          ? "الفصل مكتمل العدد"
+          : `متاح ${free} مقعدًا`,
+    };
+  };
+
+  /* ----------------------------------------------------------------- qurra */
+  const parentIdentity = detectNationality(data.application.parent_national_id ?? "");
+  const motherId = data.qurra?.mother_national_id ?? null;
+  const motherSaudi = motherId ? detectNationality(motherId) === "saudi" : null;
+  const qurraAgeOk = childMonths === null ? true : childMonths < 72;
+  const qurraEligible =
+    (parentIdentity === "saudi" || motherSaudi === true) && qurraAgeOk;
+
+  /* ------------------------------------------------------------- documents */
   const missingDocs = [
     ...documentCompletion(data, null).missing.map((slug) => ({ slug, childIndex: null as number | null })),
     ...data.children.flatMap((_, index) =>
@@ -143,116 +203,197 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
   ];
   const docLabel = (slug: string) => data.documentTypes.find((t) => t.slug === slug)?.name_ar ?? slug;
   const keyOf = (item: { slug: string; childIndex: number | null }) => `${item.childIndex ?? "p"}:${item.slug}`;
+
+  /* ------------------------------------------------------------ view-only */
+  if (isViewerOnly) {
+    return (
+      <div className="rounded-3xl border border-border/60 bg-card p-4">
+        <p className="flex items-center gap-1.5 text-sm font-extrabold text-foreground">
+          <Eye className="size-4 text-primary" /> وضع الاطلاع فقط
+        </p>
+        <Notice>
+          صلاحيتك الحالية (مشرف) تتيح استعراض الطلب كاملًا ومتابعة الإحصائيات والتقارير، دون اتخاذ أي إجراء تشغيلي عليه.
+        </Notice>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       <div className="rounded-3xl border border-border/60 bg-card p-4">
-        <p className="flex items-center gap-1.5 text-sm font-extrabold text-foreground">
-          <Sparkles className="size-4 text-primary" /> توصيات النظام
-        </p>
-        <ul className="mt-3 space-y-2">
-          {recommendationsFor(data).map((item, index) => (
-            <li key={index} className={cn("rounded-2xl border px-3 py-2", TONE_STYLES[item.tone])}>
-              <p className="text-[11px] font-extrabold text-foreground">{item.title}</p>
-              {item.detail ? <p className="mt-0.5 text-[11px] text-muted-foreground">{item.detail}</p> : null}
-            </li>
-          ))}
-          {recommendationsFor(data).length === 0 ? (
-            <li className="rounded-2xl border border-mint bg-mint/30 px-3 py-2 text-[11px] font-extrabold">
-              لا توجد ملاحظات — الطلب مكتمل.
-            </li>
-          ) : null}
-        </ul>
-      </div>
-      <div className="rounded-3xl border border-border/60 bg-card p-4">
         <p className="text-sm font-extrabold text-foreground">مركز الإجراءات</p>
         <p className="mt-1 text-[11px] font-bold text-muted-foreground">
-          الإجراءات مرتبة حسب مراحل المعالجة الرسمية للطلب.
+          {decided
+            ? "تم اتخاذ القرار النهائي — الإجراءات مغلقة."
+            : reviewStarted
+              ? "الإجراءات مرتبة حسب مراحل المعالجة الرسمية للطلب."
+              : "ابدأ المراجعة أولًا؛ يُسند الطلب لك تلقائيًا وتُفتح بقية الإجراءات."}
         </p>
 
-        <Stage index={1} title="الفرز والإسناد">
-          {can(roles, "assign") ? (
-            <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("assign")}>
-              <UserCog className="size-3.5" /> إسناد
-            </Button>
-          ) : null}
-          {can(roles, "review") ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-2xl text-xs font-bold"
-              disabled={busy}
-              onClick={() => run.mutate(() => startReview({ data: { id } }))}
+        {decided ? (
+          <Notice tone="ok">
+            <Lock className="me-1 inline size-3.5" />
+            الطلب في حالة {status === "approved" ? "مقبول" : status === "rejected" ? "مرفوض" : "منسحب"} — لا يمكن تكرار
+            القرار.
+          </Notice>
+        ) : null}
+
+        {/* ---------------------------------------------- stage 1: start */}
+        {!reviewStarted && !decided ? (
+          <>
+            <Stage index={1} title="بدء المعالجة" hint="يُسجَّل بدء المراجعة في مسار الطلب ويُشعر ولي الأمر بأن طلبه قيد المعالجة.">
+              {showOfficerActions ? (
+                <Button
+                  size="sm"
+                  className="col-span-2 rounded-2xl text-xs font-bold"
+                  disabled={busy}
+                  onClick={() => run.mutate(() => startReview({ data: { id } }))}
+                >
+                  <FileCheck2 className="size-3.5" /> بدء المراجعة
+                </Button>
+              ) : (
+                <p className="col-span-2 text-[11px] font-bold text-muted-foreground">
+                  بانتظار بدء المراجعة من موظف التسجيل.
+                </p>
+              )}
+            </Stage>
+          </>
+        ) : null}
+
+        {/* ------------------------------- officer stages after start */}
+        {reviewStarted && !decided && showOfficerActions ? (
+          <>
+            <Stage index={1} title="مراجعة البيانات والمستندات" hint="اطلب المستندات الناقصة أو تصحيح خطوة محددة بملاحظات دقيقة.">
+              <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("request")}>
+                <FileWarning className="size-3.5" /> طلب مستندات
+              </Button>
+              <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("corrections")}>
+                <Undo2 className="size-3.5" /> طلب تعديل خطوة
+              </Button>
+            </Stage>
+
+            <Stage index={2} title="المقعد وقائمة الانتظار" hint="لا تظهر إلا الفصول المطابقة لعمر الطفل والتي بها مقاعد شاغرة.">
+              {can(roles, "seats") ? (
+                <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("seat")}>
+                  <Armchair className="size-3.5" /> المقعد
+                </Button>
+              ) : null}
+              {can(roles, "waitlist") ? (
+                <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("waitlist")}>
+                  <ListOrdered className="size-3.5" /> قائمة الانتظار
+                </Button>
+              ) : null}
+            </Stage>
+
+            <Stage index={3} title="دعم قرة" hint={qurraEligible ? "حدّث حالة المتابعة مع برنامج قرة." : undefined}>
+              {can(roles, "qurra") ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="col-span-2 rounded-2xl text-xs font-bold"
+                  disabled={!qurraEligible}
+                  onClick={() => setDialog("qurra")}
+                >
+                  <BadgeCheck className="size-3.5" /> حالة قرة
+                </Button>
+              ) : null}
+              {!qurraEligible ? (
+                <p className="col-span-2 text-[11px] font-bold text-muted-foreground">
+                  لا تنطبق شروط دعم قرة على هذا الطلب
+                  {parentIdentity !== "saudi" && motherSaudi !== true ? " (ولي الأمر/الأم غير سعوديين)" : ""}
+                  {!qurraAgeOk ? " (عمر الطفل 6 سنوات فأكثر)" : ""}.
+                </p>
+              ) : null}
+            </Stage>
+
+            <Stage
+              index={4}
+              title="إنهاء المراجعة"
+              hint={
+                raised
+                  ? "الطلب لدى المدير — يمكنك إرسال تذكير أو رفع الأولوية."
+                  : readyToRaise
+                    ? "اكتملت الملاحظات — يمكن رفع الطلب لاعتماد المدير."
+                    : "أغلق كل الملاحظات المفتوحة قبل الرفع للمدير."
+              }
             >
-              <FileCheck2 className="size-3.5" /> بدء المراجعة
-            </Button>
-          ) : null}
-        </Stage>
+              {!raised ? (
+                <Button
+                  size="sm"
+                  className="col-span-2 rounded-2xl text-xs font-bold"
+                  disabled={!readyToRaise}
+                  onClick={() => setDialog("recommend")}
+                >
+                  <ChevronsUpDown className="size-3.5" /> رفع لاعتماد المدير
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="col-span-2 rounded-2xl text-xs font-bold"
+                  onClick={() => setDialog("nudge")}
+                >
+                  <BellRing className="size-3.5" /> تذكير المدير / متابعة
+                </Button>
+              )}
+              {!readyToRaise && !raised ? (
+                <p className="col-span-2 text-[11px] font-bold text-muted-foreground">
+                  ملاحظات مفتوحة: {openRequests > 0 ? `${openRequests} طلب مستندات` : ""}
+                  {openRequests > 0 && openCorrections ? " · " : ""}
+                  {openCorrections ? "طلب تعديل بانتظار ولي الأمر" : ""}
+                </p>
+              ) : null}
+            </Stage>
+          </>
+        ) : null}
 
-        <Stage index={2} title="مراجعة البيانات والمستندات">
-          {can(roles, "review") ? (
-            <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("request")}>
-              <FileWarning className="size-3.5" /> طلب مستندات
+        {/* ------------------------------------------- principal actions */}
+        {canDecide && reviewStarted ? (
+          <Stage
+            index={showOfficerActions ? 5 : 1}
+            title="قرار مدير المدرسة"
+            hint={decided ? "تم اتخاذ القرار — الأزرار معطّلة." : "اعتمد القبول أو الرفض، أو أعد الطلب لطلب معلومات إضافية."}
+          >
+            <Button size="sm" className="rounded-2xl text-xs font-bold" disabled={decided} onClick={() => setDialog("approve")}>
+              <CheckCircle2 className="size-3.5" /> قبول
             </Button>
-          ) : null}
-          {can(roles, "review") ? (
-            <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("corrections")}>
-              <Undo2 className="size-3.5" /> طلب تصحيح
+            <Button
+              size="sm"
+              variant="destructive"
+              className="rounded-2xl text-xs font-bold"
+              disabled={decided}
+              onClick={() => setDialog("reject")}
+            >
+              <CircleSlash className="size-3.5" /> رفض
             </Button>
-          ) : null}
-          {can(roles, "qurra") ? (
-            <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("qurra")}>
-              <BadgeCheck className="size-3.5" /> حالة قرة
-            </Button>
-          ) : null}
-        </Stage>
-
-        <Stage index={3} title="التوصية والقرار">
-          {can(roles, "review") ? (
             <Button
               variant="outline"
               size="sm"
               className="col-span-2 rounded-2xl text-xs font-bold"
-              onClick={() => setDialog("recommend")}
+              disabled={decided}
+              onClick={() => setDialog("corrections")}
             >
-              <ChevronsUpDown className="size-3.5" /> رفع لاعتماد المدير
+              <Undo2 className="size-3.5" /> طلب معلومات إضافية / تعديل
             </Button>
-          ) : null}
-          {can(roles, "decide") ? (
-            <>
-              <Button size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("approve")}>
-                <CheckCircle2 className="size-3.5" /> قبول
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                className="rounded-2xl text-xs font-bold"
-                onClick={() => setDialog("reject")}
-              >
-                <CircleSlash className="size-3.5" /> رفض
-              </Button>
-            </>
-          ) : null}
-        </Stage>
+          </Stage>
+        ) : null}
 
-        <Stage index={4} title="المقعد والسداد">
-          {can(roles, "seats") ? (
-            <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("seat")}>
-              <Armchair className="size-3.5" /> المقعد
+        {/* --------------------------------------------------- payments */}
+        {can(roles, "payments") && reviewStarted ? (
+          <Stage index={99} title="السداد">
+            <Button
+              variant="outline"
+              size="sm"
+              className="col-span-2 rounded-2xl text-xs font-bold"
+              onClick={() => setDialog("payment")}
+            >
+              <Wallet className="size-3.5" /> حالة السداد
             </Button>
-          ) : null}
-          {can(roles, "seats") ? (
-            <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("waitlist")}>
-              <ListOrdered className="size-3.5" /> قائمة الانتظار
-            </Button>
-          ) : null}
-          {can(roles, "payments") ? (
-            <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("payment")}>
-              <Wallet className="size-3.5" /> السداد
-            </Button>
-          ) : null}
-        </Stage>
+          </Stage>
+        ) : null}
 
-        {can(roles, "assign") ? (
+        {/* --------------------------------------------------- priority */}
+        {reviewStarted && !decided && (showOfficerActions || canDecide) ? (
           <div className="mt-3">
             <p className="mb-1.5 text-[11px] font-bold text-muted-foreground">الأولوية</p>
             <div className="grid grid-cols-4 gap-1.5">
@@ -272,49 +413,15 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
           </div>
         ) : null}
       </div>
-      {can(roles, "review") ? <DocumentReview data={data} /> : null}
-      <Dialog open={dialog === "assign"} onOpenChange={(open) => (open ? null : close())}>
-        <DialogContent dir="rtl">
-          <DialogHeader>
-            <DialogTitle>إسناد الطلب</DialogTitle>
-            <DialogDescription>اختر مسؤول التسجيل المسؤول عن متابعة هذا الطلب.</DialogDescription>
-          </DialogHeader>
-          <Select value={officerId} onValueChange={setOfficerId}>
-            <SelectTrigger className="rounded-2xl">
-              <SelectValue placeholder="اختر مسؤولًا" />
-            </SelectTrigger>
-            <SelectContent>
-              {(staff ?? []).map((person) => (
-                <SelectItem key={person.id} value={person.id}>
-                  {person.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              className="rounded-2xl"
-              disabled={busy}
-              onClick={() => run.mutate(() => assign({ data: { id, officerId: null } }))}
-            >
-              إلغاء الإسناد
-            </Button>
-            <Button
-              className="rounded-2xl"
-              disabled={!officerId || busy}
-              onClick={() => run.mutate(() => assign({ data: { id, officerId } }))}
-            >
-              إسناد
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+      {can(roles, "documents") && reviewStarted ? <DocumentReview data={data} /> : null}
+
+      {/* ------------------------------------------------------- dialogs */}
       <Dialog open={dialog === "request"} onOpenChange={(open) => (open ? null : close())}>
         <DialogContent dir="rtl">
           <DialogHeader>
             <DialogTitle>طلب مستندات ناقصة</DialogTitle>
-            <DialogDescription>حدّد المستندات المطلوبة وسيصل إشعار لولي الأمر.</DialogDescription>
+            <DialogDescription>حدّد المستندات المطلوبة واكتب ملاحظة دقيقة تصل لولي الأمر.</DialogDescription>
           </DialogHeader>
           <div className="max-h-64 space-y-1.5 overflow-y-auto">
             {missingDocs.map((item) => {
@@ -344,20 +451,20 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
           <Textarea
             value={note}
             onChange={(event) => setNote(event.target.value)}
-            placeholder="رسالة لولي الأمر (اختياري)"
-            className="rounded-2xl text-xs"
+            placeholder="اكتب المطلوب بدقة: نوع المستند، وضوح الصورة، تاريخ السريان…"
+            className="min-h-24 rounded-2xl text-xs"
           />
           <DialogFooter>
             <Button
               className="rounded-2xl"
-              disabled={requested.length === 0 || busy}
+              disabled={requested.length === 0 || note.trim().length < 5 || busy}
               onClick={() =>
                 run.mutate(() =>
                   requestDocs({
                     data: {
                       id,
                       items: missingDocs.filter((item) => requested.includes(keyOf(item))),
-                      note: note || undefined,
+                      note: note.trim(),
                     },
                   }),
                 )
@@ -368,12 +475,13 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       <Dialog open={dialog === "corrections"} onOpenChange={(open) => (open ? null : close())}>
         <DialogContent dir="rtl">
           <DialogHeader>
-            <DialogTitle>طلب تصحيح محدد</DialogTitle>
+            <DialogTitle>طلب تعديل خطوة محددة</DialogTitle>
             <DialogDescription>
-              حدّد الأقسام المطلوب تصحيحها — سيُفتح لولي الأمر التعديل على هذه الأقسام فقط.
+              حدّد خطوات نموذج التسجيل المطلوب تعديلها — سيُفتح لولي الأمر التعديل على هذه الخطوات فقط.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-wrap gap-1.5">
@@ -385,9 +493,7 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
                   type="button"
                   onClick={() =>
                     setSections((prev) =>
-                      prev.includes(option.value)
-                        ? prev.filter((s) => s !== option.value)
-                        : [...prev, option.value],
+                      prev.includes(option.value) ? prev.filter((s) => s !== option.value) : [...prev, option.value],
                     )
                   }
                   className={cn(
@@ -404,26 +510,25 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
             value={note}
             onChange={(event) => setNote(event.target.value)}
             className="min-h-28 rounded-2xl text-xs"
-            placeholder="وضّح المطلوب إصلاحه بدقة…"
+            placeholder="وضّح بدقة الحقل المطلوب تعديله وسبب الإعادة…"
           />
           <DialogFooter>
             <Button
               className="rounded-2xl"
               disabled={note.trim().length < 5 || sections.length === 0 || busy}
-              onClick={() =>
-                run.mutate(() => requestCorrections({ data: { id, sections, note: note.trim() } }))
-              }
+              onClick={() => run.mutate(() => requestCorrections({ data: { id, sections, note: note.trim() } }))}
             >
-              إرسال طلب التصحيح
+              إرسال لولي الأمر
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       <Dialog open={dialog === "recommend"} onOpenChange={(open) => (open ? null : close())}>
         <DialogContent dir="rtl">
           <DialogHeader>
             <DialogTitle>رفع الطلب لاعتماد المدير</DialogTitle>
-            <DialogDescription>اكتب توصية مسؤول التسجيل.</DialogDescription>
+            <DialogDescription>اكتب توصية مسؤول التسجيل بعد إغلاق كل الملاحظات.</DialogDescription>
           </DialogHeader>
           <Textarea
             value={note}
@@ -442,10 +547,28 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Dialog
-        open={dialog === "approve" || dialog === "reject"}
-        onOpenChange={(open) => (open ? null : close())}
-      >
+
+      <Dialog open={dialog === "nudge"} onOpenChange={(open) => (open ? null : close())}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تذكير المدير</DialogTitle>
+            <DialogDescription>يُسجَّل التذكير في مسار الطلب ويظهر للمدير كمتابعة عاجلة.</DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            className="min-h-24 rounded-2xl text-xs"
+            placeholder="سبب الاستعجال (اختياري)…"
+          />
+          <DialogFooter>
+            <Button className="rounded-2xl" disabled={busy} onClick={() => run.mutate(() => nudge({ data: { id, note: note.trim() || undefined } }))}>
+              إرسال التذكير
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={dialog === "approve" || dialog === "reject"} onOpenChange={(open) => (open ? null : close())}>
         <DialogContent dir="rtl">
           <DialogHeader>
             <DialogTitle>{dialog === "approve" ? "اعتماد قبول الطلب" : "رفض الطلب"}</DialogTitle>
@@ -467,7 +590,7 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
             <Button
               className="rounded-2xl"
               variant={dialog === "reject" ? "destructive" : "default"}
-              disabled={note.trim().length < 3 || busy}
+              disabled={note.trim().length < 3 || busy || decided}
               onClick={() =>
                 run.mutate(() =>
                   decide({
@@ -486,22 +609,43 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       <Dialog open={dialog === "seat"} onOpenChange={(open) => (open ? null : close())}>
         <DialogContent dir="rtl">
           <DialogHeader>
             <DialogTitle>إدارة المقعد</DialogTitle>
-            <DialogDescription>احجز أو حرّر أو انقل المقعد بين الفصول.</DialogDescription>
+            <DialogDescription>
+              الفصول غير المطابقة لعمر الطفل أو المكتملة العدد معطّلة تلقائيًا.
+              {child ? ` عمر ${child.name_ar}: ${formatAge(childMonths)}.` : ""}
+            </DialogDescription>
           </DialogHeader>
+          {data.children.length > 1 ? (
+            <Select value={String(childIdx)} onValueChange={(value) => setChildIdx(Number(value))}>
+              <SelectTrigger className="rounded-2xl">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {data.children.map((c, index) => (
+                  <SelectItem key={c.id} value={String(index)}>
+                    {c.name_ar}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
           <Select value={classroomId} onValueChange={setClassroomId}>
             <SelectTrigger className="rounded-2xl">
               <SelectValue placeholder="اختر الفصل" />
             </SelectTrigger>
             <SelectContent>
-              {data.classrooms.map((classroom) => (
-                <SelectItem key={classroom.id} value={classroom.id}>
-                  {classroom.name_ar} — متاح {Math.max(0, classroom.capacity - classroom.taken_seats)}
-                </SelectItem>
-              ))}
+              {data.classrooms.map((classroom) => {
+                const state = classroomState(classroom);
+                return (
+                  <SelectItem key={classroom.id} value={classroom.id} disabled={state.disabled}>
+                    {classroom.name_ar} — {state.reason}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
           <DialogFooter className="gap-2">
@@ -531,40 +675,71 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       <Dialog open={dialog === "waitlist"} onOpenChange={(open) => (open ? null : close())}>
         <DialogContent dir="rtl">
           <DialogHeader>
-            <DialogTitle>النقل إلى قائمة الانتظار</DialogTitle>
-            <DialogDescription>سيُضاف الطلب لقائمة انتظار الفصل المحدد.</DialogDescription>
+            <DialogTitle>قائمة الانتظار حسب رغبات ولي الأمر</DialogTitle>
+            <DialogDescription>
+              يوضّح النظام حالة كل رغبة، ويصل لولي الأمر بيان دقيق بسبب الانتظار والرغبة التي يمكن قبول الطفل فيها فورًا.
+            </DialogDescription>
           </DialogHeader>
-          <Select value={classroomId} onValueChange={setClassroomId}>
-            <SelectTrigger className="rounded-2xl">
-              <SelectValue placeholder="اختر الفصل" />
-            </SelectTrigger>
-            <SelectContent>
-              {data.classrooms.map((classroom) => (
-                <SelectItem key={classroom.id} value={classroom.id}>
-                  {classroom.name_ar}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="space-y-1.5">
+            {preferences.map((prefId, index) => {
+              const classroom = data.classrooms.find((c) => c.id === prefId);
+              if (!classroom) {
+                return (
+                  <p key={index} className="rounded-2xl border border-border/60 bg-muted/20 px-3 py-2 text-[11px] font-bold text-muted-foreground">
+                    الرغبة {index + 1}: غير محددة
+                  </p>
+                );
+              }
+              const state = classroomState(classroom);
+              return (
+                <button
+                  key={classroom.id}
+                  type="button"
+                  onClick={() => setClassroomId(classroom.id)}
+                  className={cn(
+                    "w-full rounded-2xl border px-3 py-2 text-start text-[11px] font-bold",
+                    classroomId === classroom.id ? "border-primary bg-primary/10 text-primary" : "border-border/60 bg-muted/20",
+                  )}
+                >
+                  الرغبة {index + 1}: {classroom.name_ar}
+                  <span className="ms-1 text-[10px] font-bold text-muted-foreground">
+                    · {!state.ageOk ? "غير مطابق للعمر" : state.full ? "مكتمل — انتظار" : `متاح فورًا (${state.free})`}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <Textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder="رسالة توضيحية لولي الأمر عن ترتيب الانتظار والبديل المتاح…"
+            className="min-h-20 rounded-2xl text-xs"
+          />
           <DialogFooter>
             <Button
               className="rounded-2xl"
               disabled={busy}
-              onClick={() => run.mutate(() => waitlist({ data: { id, classroomId: classroomId || null } }))}
+              onClick={() =>
+                run.mutate(() =>
+                  waitlist({ data: { id, classroomId: classroomId || null, note: note.trim() || undefined } }),
+                )
+              }
             >
               نقل لقائمة الانتظار
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       <Dialog open={dialog === "qurra"} onOpenChange={(open) => (open ? null : close())}>
         <DialogContent dir="rtl">
           <DialogHeader>
-            <DialogTitle>تحديث حالة دعم قرة</DialogTitle>
-            <DialogDescription>حدّث حالة الطلب لدى برنامج قرة.</DialogDescription>
+            <DialogTitle>حالة المتابعة مع برنامج قرة</DialogTitle>
+            <DialogDescription>حدّد مرحلة متابعة الطلب لدى برنامج قرة؛ تظهر الحالة لولي الأمر مباشرة.</DialogDescription>
           </DialogHeader>
           <Select value={qurraStatus} onValueChange={(value) => setQurraStatus(value as typeof qurraStatus)}>
             <SelectTrigger className="rounded-2xl">
@@ -597,6 +772,7 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       <Dialog open={dialog === "payment"} onOpenChange={(open) => (open ? null : close())}>
         <DialogContent dir="rtl">
           <DialogHeader>
@@ -619,11 +795,7 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
               className="rounded-2xl"
               disabled={busy}
               onClick={() =>
-                run.mutate(() =>
-                  payment({
-                    data: { id, status: paymentStatus as "unpaid" | "partial" | "paid" | "waived" },
-                  }),
-                )
+                run.mutate(() => payment({ data: { id, status: paymentStatus as "unpaid" | "partial" | "paid" | "waived" } }))
               }
             >
               حفظ
