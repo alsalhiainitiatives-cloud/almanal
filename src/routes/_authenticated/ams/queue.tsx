@@ -397,7 +397,7 @@ function QueuePage() {
               size="sm"
               className="rounded-2xl text-xs font-bold"
               disabled={!bulkOfficer || bulkAssign.isPending}
-              onClick={() => bulkAssign.mutate(bulkOfficer)}
+              onClick={() => setConfirm({ kind: "assign", value: bulkOfficer })}
             >
               <Users className="size-3.5" /> إسناد
             </Button>
@@ -418,7 +418,7 @@ function QueuePage() {
               variant="outline"
               className="rounded-2xl text-xs font-bold"
               disabled={!bulkPriority || bulkPriorityMutation.isPending}
-              onClick={() => bulkPriorityMutation.mutate(bulkPriority)}
+              onClick={() => setConfirm({ kind: "priority", value: bulkPriority })}
             >
               <Flag className="size-3.5" /> تطبيق
             </Button>
