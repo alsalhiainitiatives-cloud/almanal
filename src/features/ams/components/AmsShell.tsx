@@ -9,6 +9,7 @@ import {
   ListOrdered,
   LogOut,
   Search,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -35,6 +36,12 @@ const NAV = [
   { to: "/ams/waiting-list", label: "قائمة الانتظار", icon: ListOrdered, exact: false },
   { to: "/ams/activity", label: "الحركة اللحظية", icon: Activity, exact: false },
   { to: "/ams/reports", label: "التقارير", icon: BarChart3, exact: false },
+  {
+    to: "/ams/form-builder",
+    label: "إدارة وتخصيص نظام التسجيل",
+    icon: SlidersHorizontal,
+    exact: false,
+  },
 ] as const;
 
 export function AmsShell({
