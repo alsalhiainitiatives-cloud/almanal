@@ -420,7 +420,7 @@ export function ParentStep({
               />
               <span className="text-sm leading-relaxed text-foreground">
                 أقر بصحة البيانات المدخلة، وأعلم أن الموافقة على الدعم تصدر من الجهة المختصة، وأن
-                المدرسة غير مسؤولة عن قرار الرفض.
+                إدارة الروضة غير مسؤولة عن قرار الرفض.
               </span>
             </label>
             ) : null}
