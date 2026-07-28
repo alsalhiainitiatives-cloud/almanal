@@ -124,7 +124,7 @@ function QueuePage() {
     mutationFn: async (officerId: string) => {
       const previous = all
         .filter((row) => selected.includes(row.id))
-        .map((row) => ({ id: row.id, officerId: row.officer_id ?? null }));
+        .map((row) => ({ id: row.id, officerId: row.assigned_officer_id ?? null }));
       for (const id of selected) await assign({ data: { id, officerId } });
       return previous;
     },
