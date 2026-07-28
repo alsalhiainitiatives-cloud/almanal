@@ -380,7 +380,7 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
 
         {/* --------------------------------------------------- payments */}
         {can(roles, "payments") && reviewStarted ? (
-          <Stage index={99} title="السداد">
+          <Stage index={showOfficerActions ? 6 : canDecide ? 2 : 1} title="السداد">
             <Button
               variant="outline"
               size="sm"
