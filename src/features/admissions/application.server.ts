@@ -396,6 +396,7 @@ export async function submitApplication(supabase: Db, userId: string, id: string
   // One unified number is used for both the application and its tracking page.
   const applicationNumber = `MN-${ACADEMIC_YEAR}-${randomCode(5)}`;
   const trackingNumber = applicationNumber;
+  const wasCorrection = app.status === "needs_action";
 
   const { error } = await supabase
     .from("applications")
@@ -410,6 +411,9 @@ export async function submitApplication(supabase: Db, userId: string, id: string
       grand_total: grandTotal,
       current_step: 10,
       submitted_at: new Date().toISOString(),
+      correction_sections: [],
+      correction_note: null,
+      correction_requested_at: null,
     })
     .eq("id", id);
 
@@ -419,8 +423,10 @@ export async function submitApplication(supabase: Db, userId: string, id: string
     supabase,
     id,
     userId,
-    "application.submitted",
-    "تم إرسال الطلب إلى قائمة مراجعة مسؤول التسجيل",
+    wasCorrection ? "application.corrections_submitted" : "application.submitted",
+    wasCorrection
+      ? "أرسل ولي الأمر التصحيحات المطلوبة"
+      : "تم إرسال الطلب إلى قائمة مراجعة مسؤول التسجيل",
     `رقم الطلب ${applicationNumber}`,
     { qurraStatus: qurra?.status ?? "not_requested" },
   );
