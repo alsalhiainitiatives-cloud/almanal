@@ -9,6 +9,7 @@ import { studentNames } from "../../queue-view";
 import type { QueueRow } from "../../types";
 import { PriorityPill, StatusPill, formatDateTime } from "../atoms";
 import { Avatar, DocsMeter, SlaChip } from "./QueueBits";
+import { useRowKeyboardNav } from "./useRowKeyboardNav";
 
 export function QueueCards({
   rows,
@@ -21,18 +22,23 @@ export function QueueCards({
   onToggle: (id: string, checked: boolean) => void;
   onPin: (row: QueueRow) => void;
 }) {
+  const { containerRef, rowProps } = useRowKeyboardNav({ rows, selected, onToggle, columns: 2 });
   return (
-    <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+    <div
+      ref={containerRef as React.RefObject<HTMLDivElement>}
+      className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3"
+    >
       {rows.map((row, index) => {
         const checked = selected.includes(row.id);
         return (
           <motion.article
             key={row.id}
+            {...rowProps(index)}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, delay: Math.min(index * 0.02, 0.2) }}
             className={cn(
-              "flex flex-col gap-3 rounded-3xl border bg-card p-4 shadow-sm transition",
+              "flex flex-col gap-3 rounded-3xl border bg-card p-4 shadow-sm transition outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
               checked ? "border-primary/60 ring-2 ring-primary/20" : "border-border/60 hover:shadow-card",
             )}
           >

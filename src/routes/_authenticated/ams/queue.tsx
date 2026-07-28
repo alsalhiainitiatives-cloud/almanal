@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  CheckSquare,
   Download,
   Flag,
   Inbox,
@@ -17,6 +18,14 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QURRA_STATUS_LABELS } from "@/features/admissions/eligibility";
@@ -84,6 +93,7 @@ function QueuePage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkOfficer, setBulkOfficer] = useState("");
   const [bulkPriority, setBulkPriority] = useState("");
+  const [confirm, setConfirm] = useState<{ kind: "assign" | "priority"; value: string } | null>(null);
   const [view, setView] = useState<ViewMode>("table");
   const [compact, setCompact] = useState(false);
   const [sort, setSort] = useState<SortKey>("recent");
@@ -113,10 +123,25 @@ function QueuePage() {
 
   const bulkAssign = useMutation({
     mutationFn: async (officerId: string) => {
+      const previous = all
+        .filter((row) => selected.includes(row.id))
+        .map((row) => ({ id: row.id, officerId: row.assigned_officer_id ?? null }));
       for (const id of selected) await assign({ data: { id, officerId } });
+      return previous;
     },
-    onSuccess: () => {
-      toast.success("تم إسناد الطلبات المحددة");
+    onSuccess: (previous) => {
+      toast.success(`تم إسناد ${previous.length} طلب`, {
+        action: {
+          label: "تراجع",
+          onClick: async () => {
+            for (const item of previous) {
+              if (item.officerId) await assign({ data: { id: item.id, officerId: item.officerId } });
+            }
+            toast.success("تم التراجع عن الإسناد");
+            queryClient.invalidateQueries({ queryKey: ["ams"] });
+          },
+        },
+      });
       setSelected([]);
       setBulkOfficer("");
       queryClient.invalidateQueries({ queryKey: ["ams"] });
@@ -126,10 +151,23 @@ function QueuePage() {
 
   const bulkPriorityMutation = useMutation({
     mutationFn: async (level: string) => {
+      const previous = all
+        .filter((row) => selected.includes(row.id))
+        .map((row) => ({ id: row.id, priority: row.priority }));
       for (const id of selected) await priority({ data: { id, priority: level } });
+      return previous;
     },
-    onSuccess: () => {
-      toast.success("تم تحديث أولوية الطلبات المحددة");
+    onSuccess: (previous) => {
+      toast.success(`تم تحديث أولوية ${previous.length} طلب`, {
+        action: {
+          label: "تراجع",
+          onClick: async () => {
+            for (const item of previous) await priority({ data: { id: item.id, priority: item.priority } });
+            toast.success("تمت استعادة الأولويات السابقة");
+            queryClient.invalidateQueries({ queryKey: ["ams"] });
+          },
+        },
+      });
       setSelected([]);
       setBulkPriority("");
       queryClient.invalidateQueries({ queryKey: ["ams"] });
@@ -174,6 +212,16 @@ function QueuePage() {
       description={`${rows.length} طلب معروض من إجمالي ${all.length}`}
       actions={
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            className="rounded-2xl text-xs font-bold"
+            onClick={() =>
+              setSelected((prev) => (prev.length === rows.length ? [] : rows.map((row) => row.id)))
+            }
+          >
+            <CheckSquare className="size-3.5" />
+            {selected.length === rows.length && rows.length > 0 ? "إلغاء تحديد الكل" : "تحديد الكل"}
+          </Button>
           <div className="flex items-center rounded-2xl border border-border/60 bg-card p-0.5">
             <button
               type="button"
@@ -349,7 +397,7 @@ function QueuePage() {
               size="sm"
               className="rounded-2xl text-xs font-bold"
               disabled={!bulkOfficer || bulkAssign.isPending}
-              onClick={() => bulkAssign.mutate(bulkOfficer)}
+              onClick={() => setConfirm({ kind: "assign", value: bulkOfficer })}
             >
               <Users className="size-3.5" /> إسناد
             </Button>
@@ -370,7 +418,7 @@ function QueuePage() {
               variant="outline"
               className="rounded-2xl text-xs font-bold"
               disabled={!bulkPriority || bulkPriorityMutation.isPending}
-              onClick={() => bulkPriorityMutation.mutate(bulkPriority)}
+              onClick={() => setConfirm({ kind: "priority", value: bulkPriority })}
             >
               <Flag className="size-3.5" /> تطبيق
             </Button>
@@ -412,6 +460,41 @@ function QueuePage() {
           />
         )}
       </div>
+
+      <Dialog open={!!confirm} onOpenChange={(open) => (open ? null : setConfirm(null))}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تأكيد الإجراء الجماعي</DialogTitle>
+            <DialogDescription>
+              {confirm?.kind === "assign"
+                ? `سيتم إسناد ${selected.length} طلب إلى ${
+                    (staff ?? []).find((person) => person.id === confirm.value)?.name ?? "المسؤول المحدد"
+                  }.`
+                : `سيتم تغيير أولوية ${selected.length} طلب إلى «${
+                    PRIORITY_LABELS[confirm?.value ?? ""] ?? ""
+                  }».`}{" "}
+              يمكنك التراجع مباشرة بعد التنفيذ.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" className="rounded-2xl text-xs" onClick={() => setConfirm(null)}>
+              إلغاء
+            </Button>
+            <Button
+              className="rounded-2xl text-xs font-bold"
+              disabled={bulkAssign.isPending || bulkPriorityMutation.isPending}
+              onClick={() => {
+                if (!confirm) return;
+                if (confirm.kind === "assign") bulkAssign.mutate(confirm.value);
+                else bulkPriorityMutation.mutate(confirm.value);
+                setConfirm(null);
+              }}
+            >
+              تنفيذ
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AmsShell>
   );
 }

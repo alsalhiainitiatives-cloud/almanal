@@ -8,6 +8,7 @@ import { studentNames } from "../../queue-view";
 import type { QueueRow } from "../../types";
 import { PriorityPill, StatusPill, formatDateTime } from "../atoms";
 import { Avatar, DocsMeter, SlaChip } from "./QueueBits";
+import { useRowKeyboardNav } from "./useRowKeyboardNav";
 
 export function QueueTable({
   rows,
@@ -26,9 +27,16 @@ export function QueueTable({
 }) {
   const allChecked = rows.length > 0 && rows.every((row) => selected.includes(row.id));
   const pad = compact ? "px-3 py-2" : "px-3 py-3.5";
+  const { containerRef, rowProps } = useRowKeyboardNav({ rows, selected, onToggle });
 
   return (
-    <div className="overflow-x-auto rounded-3xl border border-border/60 bg-card shadow-sm">
+    <div
+      ref={containerRef as React.RefObject<HTMLDivElement>}
+      className="overflow-x-auto rounded-3xl border border-border/60 bg-card shadow-sm"
+    >
+      <p className="sr-only">
+        استخدم الأسهم للتنقل بين الطلبات، ومسافة للتحديد، وEnter لفتح الطلب.
+      </p>
       <table className="w-full min-w-[1180px] text-start text-xs">
         <thead className="sticky top-0 z-10 bg-muted/60 text-[11px] font-extrabold text-muted-foreground backdrop-blur">
           <tr>
@@ -55,13 +63,14 @@ export function QueueTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => {
+          {rows.map((row, index) => {
             const checked = selected.includes(row.id);
             return (
               <tr
                 key={row.id}
+                {...rowProps(index)}
                 className={cn(
-                  "border-t border-border/50 transition-colors",
+                  "border-t border-border/50 transition-colors outline-none focus-visible:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/40",
                   checked ? "bg-primary/5" : "hover:bg-accent/40",
                 )}
               >
