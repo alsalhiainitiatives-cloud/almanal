@@ -243,7 +243,6 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
             تم قبول الطلب 
           </Notice>
         ) : null}
-        ) : null}
 
         {/* ---------------------------------------------- stage 1: start */}
         {!reviewStarted && !decided ? (
