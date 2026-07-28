@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Armchair, GripVertical, Pencil, Search, Trash2, UserPlus } from "lucide-react";
+import { Armchair, CalendarClock, GripVertical, Pencil, RotateCcw, Search, Trash2, TriangleAlert, UserPlus, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { amsSeatAssign, amsSeatBoard, amsSeatRemove, amsSeatUpdateChild } from "@/features/ams/ams.functions";
 import { useClassroomLocks } from "@/features/ams/classroom-lock";
 import { EmptyState, SkeletonRows } from "@/features/ams/components/atoms";
 import { ClassroomLockBadge } from "@/features/ams/components/seats/ClassroomLockBadge";
-import { validatePlacement, type SeatChild, type SeatClassroom } from "@/features/ams/seat-rules";
+import { validatePlacement, type PlacementCheck, type SeatChild, type SeatClassroom } from "@/features/ams/seat-rules";
 import { ageInMonths, formatAge } from "@/features/admissions/eligibility";
 
 type Board = Awaited<ReturnType<typeof amsSeatBoard>>;
@@ -14,6 +14,66 @@ type BoardClassroom = Board["classrooms"][number];
 
 function asRule(classroom: BoardClassroom): SeatClassroom {
   return classroom as unknown as SeatClassroom;
+}
+
+/** Formatted Arabic rejection card (age condition and other rules) with a retry button. */
+function RejectionCard({
+  child,
+  check,
+  onRetry,
+  onDismiss,
+  busy,
+}: {
+  child: SeatChild;
+  check: PlacementCheck;
+  onRetry: () => void;
+  onDismiss: () => void;
+  busy?: boolean;
+}) {
+  return (
+    <div className="mt-3 rounded-2xl border border-destructive/40 bg-destructive/5 p-3">
+      <div className="flex items-start gap-2">
+        <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-extrabold text-destructive">
+            {check.code === "age_mismatch" ? "شرط العمر لا ينطبق" : "تعذّر تنفيذ التسكين"}
+          </p>
+          {check.age ? (
+            <>
+              <p className="mt-1 text-[11px] font-bold text-foreground">
+                الطالب «{child.name_ar}» عمره <span className="text-destructive">{check.age.childAgeLabel}</span>، بينما فصل «
+                {check.age.classroomName}» يقبل من {check.age.minLabel} إلى {check.age.maxLabel}.
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] font-extrabold">
+                <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-1 text-destructive">
+                  <CalendarClock className="size-3" /> {check.age.childAgeLabel}
+                </span>
+                <span className="text-muted-foreground">مقابل</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-muted-foreground">
+                  {check.age.rangeLabel}
+                </span>
+              </div>
+            </>
+          ) : (
+            <p className="mt-1 text-[11px] font-bold text-foreground">{check.message}</p>
+          )}
+        </div>
+        <button type="button" onClick={onDismiss} title="إخفاء" className="rounded-lg p-1 text-muted-foreground hover:text-foreground">
+          <X className="size-3.5" />
+        </button>
+      </div>
+      <div className="mt-3 flex justify-end">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onRetry}
+          className="inline-flex items-center gap-1.5 rounded-2xl border border-destructive/40 px-3 py-1.5 text-[11px] font-extrabold text-destructive disabled:opacity-60"
+        >
+          <RotateCcw className="size-3.5" /> إعادة المحاولة
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function ChildChip({
