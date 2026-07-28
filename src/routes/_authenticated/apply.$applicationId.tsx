@@ -139,6 +139,14 @@ const STEPS: WizardStep[] = [
   },
 ];
 
+const SECTION_LABELS: Record<string, string> = {
+  parent: "بيانات ولي الأمر",
+  children: "بيانات الأبناء",
+  qurra: "برنامج قرة",
+  services: "الخدمات الإضافية",
+  documents: "المستندات",
+};
+
 const emptyParent = (): ParentInfoInput => ({
   nationalId: "",
   nationality: "saudi",
@@ -211,7 +219,29 @@ function WizardPage() {
     qurra?: Partial<QurraInput>;
   };
 
-  const [step, setStep] = useState(() => Math.min(Math.max(bundle.application.current_step, 3), 9));
+  /* Correction mode: staff asked for fixes in specific sections only. */
+  const correctionSections = ((bundle.application as { correction_sections?: string[] | null })
+    .correction_sections ?? []) as string[];
+  const correctionNote = (bundle.application as { correction_note?: string | null }).correction_note ?? null;
+  const correctionMode =
+    bundle.application.status === "needs_action" && correctionSections.length > 0;
+  const SECTION_STEP: Record<string, number> = {
+    parent: 3,
+    children: 4,
+    qurra: 5,
+    services: 6,
+    documents: 7,
+  };
+  const allowedStepIds = correctionMode
+    ? new Set([...correctionSections.map((s) => SECTION_STEP[s]).filter(Boolean), 8, 9])
+    : new Set(STEPS.map((s) => s.id));
+  const visibleSteps = STEPS.filter((s) => allowedStepIds.has(s.id));
+  const firstStepId = visibleSteps[0]?.id ?? 3;
+  const lastStepId = visibleSteps[visibleSteps.length - 1]?.id ?? 9;
+
+  const [step, setStep] = useState(() =>
+    correctionMode ? firstStepId : Math.min(Math.max(bundle.application.current_step, 3), 9),
+  );
   const [parent, setParent] = useState<ParentInfoInput>(() => ({ ...emptyParent(), ...draft.parent }));
   const [children, setChildren] = useState<ChildInput[]>(() =>
     draft.children?.length ? draft.children : [emptyChild()],
@@ -426,7 +456,10 @@ function WizardPage() {
       await saveDraft({
         data: { id: applicationId, step: step + 1, draft: { parent, children, qurra } },
       });
-      setStep((s) => Math.min(s + 1, 9));
+      setStep((s) => {
+        const idx = visibleSteps.findIndex((v) => v.id === s);
+        return visibleSteps[Math.min(idx + 1, visibleSteps.length - 1)]?.id ?? s;
+      });
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "حدث خطأ غير متوقع");
@@ -550,12 +583,12 @@ function WizardPage() {
     );
   }
 
-  const activeIndex = STEPS.findIndex((s) => s.id === step);
+  const activeIndex = visibleSteps.findIndex((s) => s.id === step);
 
   return (
     <>
       <WizardShell
-        steps={STEPS}
+        steps={visibleSteps}
         activeIndex={activeIndex}
         stageName={stage?.name_ar ?? ""}
         saving={saving}
@@ -569,9 +602,12 @@ function WizardPage() {
             <Button
               type="button"
               variant="soft"
-              disabled={step === 3 || busy}
+              disabled={step === firstStepId || busy}
               onClick={() => {
-                setStep((s) => Math.max(3, s - 1));
+                setStep((s) => {
+                  const idx = visibleSteps.findIndex((v) => v.id === s);
+                  return visibleSteps[Math.max(idx - 1, 0)]?.id ?? s;
+                });
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
             >
@@ -579,7 +615,7 @@ function WizardPage() {
               السابق
             </Button>
 
-            {step < 9 ? (
+            {step !== lastStepId ? (
               <Button type="button" variant="hero" size="lg" disabled={busy} onClick={goNext}>
                 {busy ? <Loader2 className="size-4 animate-spin" /> : null}
                 التالي
@@ -588,12 +624,23 @@ function WizardPage() {
             ) : (
               <Button type="button" variant="hero" size="lg" disabled={busy} onClick={handleSubmit}>
                 {busy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-                إرسال الطلب
+                {correctionMode ? "إرسال التصحيحات" : "إرسال الطلب"}
               </Button>
             )}
           </div>
         }
       >
+        {correctionMode ? (
+          <div className="mb-5 rounded-3xl border border-gold/50 bg-gold/12 p-4">
+            <p className="text-sm font-black text-foreground">مطلوب تصحيح من إدارة القبول</p>
+            <p className="mt-1 text-xs font-bold text-muted-foreground">
+              الأقسام المفتوحة للتعديل: {correctionSections.map((s) => SECTION_LABELS[s] ?? s).join("، ")}
+            </p>
+            {correctionNote ? (
+              <p className="mt-2 text-xs leading-relaxed whitespace-pre-wrap text-foreground">{correctionNote}</p>
+            ) : null}
+          </div>
+        ) : null}
         <AnimatePresence mode="wait">
           <motion.div
             key={step}

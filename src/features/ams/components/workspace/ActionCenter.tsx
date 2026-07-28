@@ -36,7 +36,7 @@ import {
   amsMoveToWaitingList,
   amsRecommend,
   amsRequestDocuments,
-  amsReturnToParent,
+  amsRequestCorrections,
   amsSetPayment,
   amsSetPriority,
   amsStaff,
@@ -52,7 +52,7 @@ type DialogKind =
   | null
   | "assign"
   | "request"
-  | "return"
+  | "corrections"
   | "recommend"
   | "approve"
   | "reject"
@@ -60,6 +60,15 @@ type DialogKind =
   | "waitlist"
   | "qurra"
   | "payment";
+const CORRECTION_OPTIONS = [
+  { value: "parent", label: "بيانات ولي الأمر" },
+  { value: "children", label: "بيانات الأبناء" },
+  { value: "qurra", label: "برنامج قرة" },
+  { value: "services", label: "الخدمات الإضافية" },
+  { value: "documents", label: "المستندات" },
+] as const;
+type CorrectionSection = (typeof CORRECTION_OPTIONS)[number]["value"];
+
 const TONE_STYLES = {
   green: "border-mint bg-mint/30",
   yellow: "border-gold/50 bg-gold/12",
@@ -100,12 +109,13 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
   const [qurraStatus, setQurraStatus] = useState(data.qurra?.status ?? "not_requested");
   const [paymentStatus, setPaymentStatus] = useState(data.application.payment_status);
   const [requested, setRequested] = useState<string[]>([]);
+  const [sections, setSections] = useState<CorrectionSection[]>([]);
   const { data: staff } = useQuery({ queryKey: ["ams", "staff"], queryFn: () => amsStaff() });
   const assign = useServerFn(amsAssignOfficer);
   const priority = useServerFn(amsSetPriority);
   const startReview = useServerFn(amsStartReview);
   const requestDocs = useServerFn(amsRequestDocuments);
-  const returnToParent = useServerFn(amsReturnToParent);
+  const requestCorrections = useServerFn(amsRequestCorrections);
   const recommend = useServerFn(amsRecommend);
   const decide = useServerFn(amsDecide);
   const seat = useServerFn(amsManageSeat);
@@ -185,8 +195,8 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
             </Button>
           ) : null}
           {can(roles, "review") ? (
-            <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("return")}>
-              <Undo2 className="size-3.5" /> إعادة لولي الأمر
+            <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("corrections")}>
+              <Undo2 className="size-3.5" /> طلب تصحيح
             </Button>
           ) : null}
           {can(roles, "qurra") ? (
@@ -358,25 +368,53 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Dialog open={dialog === "return"} onOpenChange={(open) => (open ? null : close())}>
+      <Dialog open={dialog === "corrections"} onOpenChange={(open) => (open ? null : close())}>
         <DialogContent dir="rtl">
           <DialogHeader>
-            <DialogTitle>إعادة الطلب لولي الأمر</DialogTitle>
-            <DialogDescription>وضّح سبب الإعادة والإجراء المطلوب.</DialogDescription>
+            <DialogTitle>طلب تصحيح محدد</DialogTitle>
+            <DialogDescription>
+              حدّد الأقسام المطلوب تصحيحها — سيُفتح لولي الأمر التعديل على هذه الأقسام فقط.
+            </DialogDescription>
           </DialogHeader>
+          <div className="flex flex-wrap gap-1.5">
+            {CORRECTION_OPTIONS.map((option) => {
+              const active = sections.includes(option.value);
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() =>
+                    setSections((prev) =>
+                      prev.includes(option.value)
+                        ? prev.filter((s) => s !== option.value)
+                        : [...prev, option.value],
+                    )
+                  }
+                  className={cn(
+                    "rounded-full border px-3 py-1.5 text-[11px] font-bold transition-colors",
+                    active ? "border-primary bg-primary/10 text-primary" : "border-border/60 bg-muted/20",
+                  )}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
           <Textarea
             value={note}
             onChange={(event) => setNote(event.target.value)}
             className="min-h-28 rounded-2xl text-xs"
-            placeholder="سبب الإعادة…"
+            placeholder="وضّح المطلوب إصلاحه بدقة…"
           />
           <DialogFooter>
             <Button
               className="rounded-2xl"
-              disabled={note.trim().length < 5 || busy}
-              onClick={() => run.mutate(() => returnToParent({ data: { id, note: note.trim() } }))}
+              disabled={note.trim().length < 5 || sections.length === 0 || busy}
+              onClick={() =>
+                run.mutate(() => requestCorrections({ data: { id, sections, note: note.trim() } }))
+              }
             >
-              إعادة الطلب
+              إرسال طلب التصحيح
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -17,7 +17,7 @@ import {
   moveToWaitingList,
   recommendToPrincipal,
   requestDocuments,
-  returnToParent,
+  requestCorrections,
   reviewDocument,
   setPaymentStatus,
   setPriority,
@@ -117,12 +117,21 @@ export const amsRequestDocuments = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => requestDocuments(context.supabase, context.userId, data));
 
-export const amsReturnToParent = createServerFn({ method: "POST" })
+export const amsRequestCorrections = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ id: uuid, note: z.string().trim().min(5).max(1000) }).parse(data),
+    z
+      .object({
+        id: uuid,
+        sections: z
+          .array(z.enum(["parent", "children", "qurra", "services", "documents"]))
+          .min(1)
+          .max(5),
+        note: z.string().trim().min(5).max(1000),
+      })
+      .parse(data),
   )
-  .handler(async ({ data, context }) => returnToParent(context.supabase, context.userId, data));
+  .handler(async ({ data, context }) => requestCorrections(context.supabase, context.userId, data));
 
 export const amsRecommend = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
