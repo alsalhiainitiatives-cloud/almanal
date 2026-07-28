@@ -75,6 +75,16 @@ function ClassroomDetailPage() {
   const stage = data.stage;
   const left = seatsLeft(classroom);
   const gallery = stageGallery(classroom.slug);
+  const teamList = (Array.isArray(classroom.teachers) ? classroom.teachers : []) as {
+    name: string;
+    title?: string;
+    qualification?: string;
+    experience?: string;
+  }[];
+  const daySlots = (Array.isArray(classroom.daily_schedule) ? classroom.daily_schedule : []) as {
+    time: string;
+    activity: string;
+  }[];
 
   async function handleStart() {
     if (!classroom) return;
