@@ -184,7 +184,7 @@ export async function listStaff(supabase: Db, userId: string) {
 export async function getOverview(supabase: Db, userId: string) {
   await guard(supabase, userId, "view");
 
-  const [apps, events, classrooms, stages, waitlist] = await Promise.all([
+  const [apps, allApps, events, classrooms, stages, waitlist] = await Promise.all([
     supabase
       .from("applications")
       .select(
@@ -192,6 +192,7 @@ export async function getOverview(supabase: Db, userId: string) {
       )
       .in("status", LIVE_STATUSES)
       .limit(1000),
+    supabase.from("applications").select("id, status, created_at, archived_at").limit(2000),
     supabase
       .from("application_events")
       .select("id, application_id, event_type, title_ar, body_ar, created_at, actor_id")
@@ -203,17 +204,19 @@ export async function getOverview(supabase: Db, userId: string) {
   ]);
 
   const rows = (apps.data ?? []).filter((a) => !a.archived_at);
+  const everything = (allApps.data ?? []).filter((a) => !a.archived_at);
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const weekAgo = now.getTime() - 7 * 864e5;
   const at = (v: string | null) => (v ? new Date(v).getTime() : 0);
 
   const qurraOf = (row: { qurra_requests: unknown }) =>
     ((row.qurra_requests as { status: string }[] | null)?.[0]?.status ?? "not_requested");
 
   const kpis = {
+    total: everything.length,
+    active: rows.filter((r) => !["approved", "rejected"].includes(r.status)).length,
+    drafts: everything.filter((r) => r.status === "draft").length,
     today: rows.filter((r) => at(r.submitted_at ?? r.created_at) >= startOfToday).length,
-    week: rows.filter((r) => at(r.submitted_at ?? r.created_at) >= weekAgo).length,
     pendingReview: rows.filter((r) => r.status === "submitted" || r.status === "under_review").length,
     principalReview: rows.filter((r) => r.status === "principal_review").length,
     approved: rows.filter((r) => r.status === "approved").length,
@@ -222,6 +225,8 @@ export async function getOverview(supabase: Db, userId: string) {
     waitlisted: rows.filter((r) => r.status === "waitlisted").length,
     qurra: rows.filter((r) => !["not_requested", "rejected"].includes(qurraOf(r))).length,
     unassigned: rows.filter((r) => !r.assigned_officer_id).length,
+    seatsCapacity: (classrooms.data ?? []).reduce((sum, c) => sum + c.capacity, 0),
+    seatsTaken: (classrooms.data ?? []).reduce((sum, c) => sum + c.taken_seats, 0),
     seatsAvailable: (classrooms.data ?? []).reduce(
       (sum, c) => sum + Math.max(0, c.capacity - c.taken_seats),
       0,
@@ -232,22 +237,50 @@ export async function getOverview(supabase: Db, userId: string) {
 
   const actors = await profileMap(supabase, (events.data ?? []).map((e) => e.actor_id));
 
+  const classroomRows = (classrooms.data ?? []).map((c) => ({
+    ...c,
+    waiting: (waitlist.data ?? []).filter((w) => w.classroom_id === c.id).length,
+  }));
+
   return {
     kpis,
     activity: (events.data ?? []).map((e) => ({
       ...e,
       actorName: e.actor_id ? (actors[e.actor_id]?.fullName ?? "النظام") : "النظام",
     })),
-    classrooms: (classrooms.data ?? []).map((c) => ({
-      ...c,
-      waiting: (waitlist.data ?? []).filter((w) => w.classroom_id === c.id).length,
-    })),
+    classrooms: classroomRows,
     stages: stages.data ?? [],
+    occupancyByStage: (stages.data ?? []).map((stage) => {
+      const items = classroomRows.filter((c) => c.stage_id === stage.id);
+      return {
+        id: stage.id,
+        name_ar: stage.name_ar,
+        capacity: items.reduce((s, c) => s + c.capacity, 0),
+        taken: items.reduce((s, c) => s + c.taken_seats, 0),
+        waiting: items.reduce((s, c) => s + c.waiting, 0),
+        classrooms: items,
+      };
+    }),
     statusBreakdown: LIVE_STATUSES.map((status) => ({
       status,
       count: rows.filter((r) => r.status === status).length,
     })),
   };
+}
+
+/** Full activity log for the dedicated activity tab. */
+export async function listActivity(supabase: Db, userId: string, limit = 200) {
+  await guard(supabase, userId, "view");
+  const { data } = await supabase
+    .from("application_events")
+    .select("id, application_id, event_type, title_ar, body_ar, created_at, actor_id")
+    .order("created_at", { ascending: false })
+    .limit(Math.min(Math.max(limit, 20), 500));
+  const actors = await profileMap(supabase, (data ?? []).map((e) => e.actor_id));
+  return (data ?? []).map((e) => ({
+    ...e,
+    actorName: e.actor_id ? (actors[e.actor_id]?.fullName ?? "النظام") : "النظام",
+  }));
 }
 
 export async function getWorkspace(supabase: Db, userId: string, id: string) {
