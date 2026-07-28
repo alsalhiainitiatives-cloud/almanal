@@ -925,6 +925,56 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          actor_id: string | null
+          application_id: string | null
+          body_ar: string | null
+          created_at: string
+          id: string
+          kind: string
+          link: string | null
+          read_at: string | null
+          severity: string
+          title_ar: string
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          application_id?: string | null
+          body_ar?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          link?: string | null
+          read_at?: string | null
+          severity?: string
+          title_ar: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          application_id?: string | null
+          body_ar?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string | null
+          read_at?: string | null
+          severity?: string
+          title_ar?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           category: string
@@ -1467,6 +1517,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      dispatch_notification: {
+        Args: {
+          _application_id?: string
+          _body_ar?: string
+          _kind: string
+          _link?: string
+          _roles: Database["public"]["Enums"]["app_role"][]
+          _severity?: string
+          _title_ar: string
+          _user_ids: string[]
+        }
+        Returns: number
+      }
       has_permission: {
         Args: { _permission: string; _user_id: string }
         Returns: boolean
@@ -1479,6 +1542,7 @@ export type Database = {
         Returns: boolean
       }
       is_school_staff: { Args: { _user_id: string }; Returns: boolean }
+      mark_notifications_read: { Args: { _ids: string[] }; Returns: number }
       my_permissions: {
         Args: never
         Returns: {
