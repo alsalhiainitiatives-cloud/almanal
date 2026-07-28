@@ -46,6 +46,7 @@ import {
 } from "../../ams.functions";
 import { can } from "../../roles";
 import { documentCompletion, recommendationsFor } from "../../recommendations";
+import { DocumentReview } from "./DocumentReview";
 import type { WorkspaceData } from "../../types";
 import type { AppRole } from "@/features/auth/rbac";
 type DialogKind =
