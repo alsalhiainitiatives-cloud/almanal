@@ -75,6 +75,16 @@ function ClassroomDetailPage() {
   const stage = data.stage;
   const left = seatsLeft(classroom);
   const gallery = stageGallery(classroom.slug);
+  const teamList = (Array.isArray(classroom.teachers) ? classroom.teachers : []) as {
+    name: string;
+    title?: string;
+    qualification?: string;
+    experience?: string;
+  }[];
+  const daySlots = (Array.isArray(classroom.daily_schedule) ? classroom.daily_schedule : []) as {
+    time: string;
+    activity: string;
+  }[];
 
   async function handleStart() {
     if (!classroom) return;
@@ -151,6 +161,55 @@ function ClassroomDetailPage() {
                   />
                 ))}
               </div>
+
+              {(classroom.teacher_qualification || classroom.teacher_experience || teamList.length > 0) && (
+                <div className="mt-10 rounded-3xl bg-background/70 p-6">
+                  <h2 className="text-base font-black text-foreground">المعلمات ومؤهلاتهن</h2>
+                  <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {classroom.teacher_name ? (
+                      <li className="rounded-2xl bg-card p-4 shadow-soft">
+                        <p className="text-sm font-black text-foreground">{classroom.teacher_name}</p>
+                        <p className="text-xs font-bold text-secondary">
+                          {classroom.teacher_title ?? "معلمة الفصل"}
+                        </p>
+                        {classroom.teacher_qualification ? (
+                          <p className="mt-2 text-xs text-muted-foreground">{classroom.teacher_qualification}</p>
+                        ) : null}
+                        {classroom.teacher_experience ? (
+                          <p className="mt-1 text-xs text-muted-foreground">{classroom.teacher_experience}</p>
+                        ) : null}
+                      </li>
+                    ) : null}
+                    {teamList.map((t, i) => (
+                      <li key={`${t.name}-${i}`} className="rounded-2xl bg-card p-4 shadow-soft">
+                        <p className="text-sm font-black text-foreground">{t.name}</p>
+                        {t.title ? <p className="text-xs font-bold text-secondary">{t.title}</p> : null}
+                        {t.qualification ? (
+                          <p className="mt-2 text-xs text-muted-foreground">{t.qualification}</p>
+                        ) : null}
+                        {t.experience ? <p className="mt-1 text-xs text-muted-foreground">{t.experience}</p> : null}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {daySlots.length > 0 && (
+                <div className="mt-6 rounded-3xl bg-background/70 p-6">
+                  <h2 className="text-base font-black text-foreground">اليوم الدراسي بالتفصيل</h2>
+                  <ol className="mt-4 space-y-2">
+                    {daySlots.map((slot, i) => (
+                      <li
+                        key={`${slot.time}-${i}`}
+                        className="flex items-center gap-3 rounded-2xl bg-card px-4 py-3 shadow-soft"
+                      >
+                        <span className="min-w-24 text-xs font-black text-primary">{slot.time}</span>
+                        <span className="text-sm text-foreground">{slot.activity}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
 
               <div className="mt-10 flex flex-wrap gap-3">
                 <Button variant="hero" size="lg" onClick={handleStart} disabled={busy || left <= 0}>

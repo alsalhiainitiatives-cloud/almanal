@@ -1,11 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Armchair, CalendarClock, GripVertical, Pencil, RotateCcw, Search, Trash2, TriangleAlert, UserPlus, X } from "lucide-react";
+import { Armchair, CalendarClock, GripVertical, Pencil, Plus, RotateCcw, Search, Settings2, Trash2, TriangleAlert, UserPlus, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { amsSeatAssign, amsSeatBoard, amsSeatRemove, amsSeatUpdateChild } from "@/features/ams/ams.functions";
+import {
+  amsClassroomDelete,
+  amsClassroomSave,
+  amsSeatAssign,
+  amsSeatBoard,
+  amsSeatRemove,
+  amsSeatUpdateChild,
+} from "@/features/ams/ams.functions";
 import { useClassroomLocks } from "@/features/ams/classroom-lock";
 import { EmptyState, SkeletonRows } from "@/features/ams/components/atoms";
 import { ClassroomLockBadge } from "@/features/ams/components/seats/ClassroomLockBadge";
+import {
+  ClassroomDialog,
+  emptyClassroom,
+  toDraft,
+  type ClassroomDraft,
+} from "@/features/ams/components/seats/ClassroomDialog";
 import { validatePlacement, type PlacementCheck, type SeatChild, type SeatClassroom } from "@/features/ams/seat-rules";
 import { ageInMonths, formatAge } from "@/features/admissions/eligibility";
 
@@ -135,6 +148,8 @@ export function SeatBoard() {
   const [editing, setEditing] = useState<SeatChild | null>(null);
   const [removing, setRemoving] = useState<SeatChild | null>(null);
   const [rejection, setRejection] = useState<{ classroomId: string; child: SeatChild; check: PlacementCheck } | null>(null);
+  const [classroomDraft, setClassroomDraft] = useState<ClassroomDraft | null>(null);
+  const [deletingClassroom, setDeletingClassroom] = useState<BoardClassroom | null>(null);
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["ams", "seat-board"] });
@@ -182,6 +197,26 @@ export function SeatBoard() {
       toast.success("تم تحديث بيانات الطالب");
       result.warnings?.forEach((warning: string) => toast.warning(warning));
       setEditing(null);
+      refresh();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const saveClassroomMutation = useMutation({
+    mutationFn: (draft: ClassroomDraft) => amsClassroomSave({ data: draft as never }),
+    onSuccess: (result: { created: boolean }) => {
+      toast.success(result.created ? "تم إنشاء الفصل" : "تم حفظ إعدادات الفصل");
+      setClassroomDraft(null);
+      refresh();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const deleteClassroomMutation = useMutation({
+    mutationFn: (id: string) => amsClassroomDelete({ data: { id } }),
+    onSuccess: () => {
+      toast.success("تم حذف الفصل");
+      setDeletingClassroom(null);
       refresh();
     },
     onError: (err: Error) => toast.error(err.message),
@@ -262,7 +297,16 @@ export function SeatBoard() {
 
       {stages.map((stage) => (
         <section key={stage.id} className="space-y-3">
-          <h2 className="text-sm font-extrabold text-foreground">{stage.name_ar}</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-extrabold text-foreground">{stage.name_ar}</h2>
+            <button
+              type="button"
+              onClick={() => setClassroomDraft(emptyClassroom(stage.id))}
+              className="inline-flex items-center gap-1 rounded-2xl border border-border/60 bg-card px-3 py-1.5 text-[11px] font-extrabold text-primary hover:bg-muted/40"
+            >
+              <Plus className="size-3.5" /> فصل جديد في هذه المرحلة
+            </button>
+          </div>
           <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
             {stage.classrooms.map((classroom) => {
               const percent = classroom.capacity
@@ -305,6 +349,23 @@ export function SeatBoard() {
                     >
                       <Armchair className="size-3" /> {left} متاح
                     </span>
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setClassroomDraft(toDraft(classroom as unknown as Record<string, unknown>))}
+                      className="inline-flex items-center gap-1 rounded-xl border border-border/60 px-2.5 py-1 text-[11px] font-bold text-foreground hover:bg-muted/40"
+                    >
+                      <Settings2 className="size-3" /> إعدادات الفصل
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeletingClassroom(classroom)}
+                      className="inline-flex items-center gap-1 rounded-xl border border-destructive/40 px-2.5 py-1 text-[11px] font-bold text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="size-3" /> حذف الفصل
+                    </button>
                   </div>
 
                   <div className="mt-2 empty:hidden">
@@ -355,6 +416,7 @@ export function SeatBoard() {
         <MoveDialog
           child={moving}
           classrooms={data.classrooms}
+          key="move-dialog"
           busy={assign.isPending}
           onClose={() => setMoving(null)}
           onConfirm={(classroomId) => {
@@ -365,12 +427,63 @@ export function SeatBoard() {
       ) : null}
 
       {editing ? (
+        <>
         <EditDialog
           child={editing}
           busy={update.isPending}
           onClose={() => setEditing(null)}
           onConfirm={(patch) => update.mutate({ childId: editing.id, ...patch })}
         />
+        </>
+      ) : null}
+
+      {classroomDraft ? (
+        <ClassroomDialog
+          initial={classroomDraft}
+          stages={data.stages.map((s) => ({ id: s.id, name_ar: s.name_ar }))}
+          busy={saveClassroomMutation.isPending}
+          onClose={() => setClassroomDraft(null)}
+          onSubmit={(draft) => saveClassroomMutation.mutate(draft)}
+        />
+      ) : null}
+
+      {deletingClassroom ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-4">
+          <div className="w-full max-w-md rounded-3xl bg-card p-6 shadow-xl">
+            <h3 className="text-sm font-extrabold text-foreground">حذف فصل «{deletingClassroom.name_ar}»</h3>
+            <p className="mt-2 text-xs font-bold text-muted-foreground">
+              الحذف نهائي ولا يمكن التراجع عنه. لا يمكن حذف الفصل إذا كان فيه طلاب مسكَّنون أو قائمة انتظار — انقلهم إلى
+              فصل آخر أو أزلهم أولًا.
+            </p>
+            {deletingClassroom.enrolled > 0 || deletingClassroom.waiting > 0 ? (
+              <p className="mt-3 rounded-2xl bg-destructive/10 px-3 py-2 text-[11px] font-extrabold text-destructive">
+                الفصل يحتوي على {deletingClassroom.enrolled} طالبًا مسكَّنًا و{deletingClassroom.waiting} في قائمة
+                الانتظار.
+              </p>
+            ) : null}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeletingClassroom(null)}
+                className="rounded-2xl border border-border/60 px-4 py-2 text-xs font-bold"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                disabled={
+                  deleteClassroomMutation.isPending ||
+                  deletingClassroom.enrolled > 0 ||
+                  deletingClassroom.waiting > 0
+                }
+                onClick={() => deleteClassroomMutation.mutate(deletingClassroom.id)}
+                className="rounded-2xl bg-destructive px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-60"
+              >
+                حذف نهائي
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {removing ? (

@@ -7,6 +7,7 @@ import {
   archiveApplication,
   assignOfficer,
   decideApplication,
+  deleteClassroom,
   documentSignedUrl,
   getOverview,
   getWorkspace,
@@ -21,6 +22,7 @@ import {
   requestDocuments,
   requestCorrections,
   reviewDocument,
+  saveClassroom,
   seatAssignChild,
   seatRemoveChild,
   seatUpdateChild,
@@ -270,3 +272,49 @@ export const amsTogglePin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ id: uuid, pinned: z.boolean() }).parse(data))
   .handler(async ({ data, context }) => togglePin(context.supabase, context.userId, data));
+const classroomInput = z.object({
+  id: uuid.nullish(),
+  stage_id: uuid,
+  slug: z.string().max(60).nullish(),
+  name_ar: z.string().trim().min(2).max(80),
+  color_hex: z.string().regex(/^#[0-9a-fA-F]{6}$/, "اللون غير صالح"),
+  color_label: z.string().max(60).nullish(),
+  teacher_name: z.string().max(120).nullish(),
+  teacher_title: z.string().max(120).nullish(),
+  teacher_qualification: z.string().max(300).nullish(),
+  teacher_experience: z.string().max(800).nullish(),
+  teachers: z
+    .array(
+      z.object({
+        name: z.string().trim().max(120),
+        title: z.string().max(120).optional(),
+        qualification: z.string().max(300).optional(),
+        experience: z.string().max(800).optional(),
+      }),
+    )
+    .max(12)
+    .optional(),
+  capacity: z.number().int().min(1).max(200),
+  max_waiting: z.number().int().min(0).max(200),
+  min_age_months: z.number().int().min(0).max(300),
+  max_age_months: z.number().int().min(1).max(300),
+  description_ar: z.string().max(1000).nullish(),
+  learning_style_ar: z.string().max(300).nullish(),
+  schedule_ar: z.string().max(300).nullish(),
+  daily_schedule: z
+    .array(z.object({ time: z.string().max(60), activity: z.string().max(200) }))
+    .max(24)
+    .optional(),
+  sort_order: z.number().int().min(0).max(999).nullish(),
+  is_active: z.boolean().optional(),
+});
+
+export const amsClassroomSave = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => classroomInput.parse(data))
+  .handler(async ({ data, context }) => saveClassroom(context.supabase, context.userId, data));
+
+export const amsClassroomDelete = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ id: uuid }).parse(data))
+  .handler(async ({ data, context }) => deleteClassroom(context.supabase, context.userId, data));
