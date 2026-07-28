@@ -17,6 +17,14 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QURRA_STATUS_LABELS } from "@/features/admissions/eligibility";
@@ -84,6 +92,7 @@ function QueuePage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkOfficer, setBulkOfficer] = useState("");
   const [bulkPriority, setBulkPriority] = useState("");
+  const [confirm, setConfirm] = useState<{ kind: "assign" | "priority"; value: string } | null>(null);
   const [view, setView] = useState<ViewMode>("table");
   const [compact, setCompact] = useState(false);
   const [sort, setSort] = useState<SortKey>("recent");
