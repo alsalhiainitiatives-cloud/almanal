@@ -22,6 +22,7 @@ import {
   financeOverviewGet,
   installmentRemind,
   installmentSetStatus,
+  overdueNotifyAll,
   receiptReview,
   receiptSignedUrl,
 } from "@/features/finance/finance.functions";
@@ -42,6 +43,7 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
   const review = useServerFn(receiptReview);
   const setStatus = useServerFn(installmentSetStatus);
   const remind = useServerFn(installmentRemind);
+  const notifyAll = useServerFn(overdueNotifyAll);
   const sign = useServerFn(receiptSignedUrl);
   const queryClient = useQueryClient();
 
@@ -129,6 +131,25 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs font-bold text-muted-foreground">
+          تنبيه فوري داخل النظام لكل ولي أمر لديه دفعة متأخرة، إضافة إلى زر واتساب بجانب كل دفعة.
+        </p>
+        <Button
+          size="sm"
+          className="rounded-xl"
+          disabled={busy || !canManage || kpis.overdueCount === 0}
+          onClick={() =>
+            run(async () => {
+              const res = await notifyAll();
+              toast.info(`تم إرسال ${res.sent} تنبيهًا`);
+            }, "تم تنبيه أولياء الأمور المتأخرين")
+          }
+        >
+          <TriangleAlert className="size-3.5" /> تنبيه جميع المتأخرين ({kpis.overdueCount})
+        </Button>
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi label="إجمالي المفوتر" value={money(kpis.billed)} icon={Wallet} />
         <Kpi label="المحصّل" value={money(kpis.collected)} hint={`نسبة التحصيل ${kpis.rate}%`} icon={BadgeCheck} tone="mint" />

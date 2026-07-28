@@ -12,6 +12,7 @@ import {
   Plus,
   Settings2,
   Trash2,
+  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,6 +43,7 @@ import {
 import { FieldDialog } from "./FieldDialog";
 import { StepDialog } from "./StepDialog";
 import { DocTypeDialog } from "./DocTypeDialog";
+import { FinanceSettings } from "../finance/FinanceSettings";
 
 export type DocTypeRow = {
   id: string;
@@ -203,7 +205,14 @@ export function FormBuilder() {
         <TabsTrigger value="docs" className="rounded-xl text-xs font-bold">
           <FileText className="ms-1 size-4" /> أنواع المستندات
         </TabsTrigger>
+        <TabsTrigger value="finance" className="rounded-xl text-xs font-bold">
+          <Wallet className="ms-1 size-4" /> الإعدادات المالية والخدمات
+        </TabsTrigger>
       </TabsList>
+
+      <TabsContent value="finance" className="m-0">
+        <FinanceSettings />
+      </TabsContent>
 
       <TabsContent value="steps" className="m-0">
         <div className="grid gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
