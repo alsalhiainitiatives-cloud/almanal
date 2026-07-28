@@ -211,6 +211,16 @@ function QueuePage() {
       description={`${rows.length} طلب معروض من إجمالي ${all.length}`}
       actions={
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            className="rounded-2xl text-xs font-bold"
+            onClick={() =>
+              setSelected((prev) => (prev.length === rows.length ? [] : rows.map((row) => row.id)))
+            }
+          >
+            <CheckSquare className="size-3.5" />
+            {selected.length === rows.length && rows.length > 0 ? "إلغاء تحديد الكل" : "تحديد الكل"}
+          </Button>
           <div className="flex items-center rounded-2xl border border-border/60 bg-card p-0.5">
             <button
               type="button"
