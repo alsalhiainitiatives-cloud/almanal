@@ -1040,3 +1040,127 @@ export async function seatUpdateChild(
   await logEvent(supabase, child.application_id, userId, "child.updated", "تم تحديث بيانات الطالب", warnings.join(" · ") || null);
   return { ok: true as const, warnings };
 }
+/* ------------------------------------------------------------------ */
+/* Classroom settings (create / update / delete)                       */
+/* ------------------------------------------------------------------ */
+
+export type ClassroomInput = {
+  id?: string | null;
+  stage_id: string;
+  slug?: string | null;
+  name_ar: string;
+  color_hex: string;
+  color_label?: string | null;
+  teacher_name?: string | null;
+  teacher_title?: string | null;
+  teacher_qualification?: string | null;
+  teacher_experience?: string | null;
+  teachers?: { name: string; title?: string; qualification?: string; experience?: string }[];
+  capacity: number;
+  max_waiting: number;
+  min_age_months: number;
+  max_age_months: number;
+  description_ar?: string | null;
+  learning_style_ar?: string | null;
+  schedule_ar?: string | null;
+  daily_schedule?: { time: string; activity: string }[];
+  sort_order?: number | null;
+  is_active?: boolean;
+};
+
+function slugify(value: string, fallback: string) {
+  const base = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
+  return base || fallback;
+}
+
+export async function saveClassroom(supabase: Db, userId: string, input: ClassroomInput) {
+  await guard(supabase, userId, "seats");
+
+  if (input.min_age_months >= input.max_age_months) {
+    throw new Error("الحد الأدنى للعمر يجب أن يكون أقل من الحد الأعلى.");
+  }
+
+  const payload = {
+    stage_id: input.stage_id,
+    name_ar: input.name_ar.trim(),
+    color_hex: input.color_hex,
+    color_label: input.color_label?.trim() || null,
+    teacher_name: input.teacher_name?.trim() || null,
+    teacher_title: input.teacher_title?.trim() || null,
+    teacher_qualification: input.teacher_qualification?.trim() || null,
+    teacher_experience: input.teacher_experience?.trim() || null,
+    teachers: (input.teachers ?? []).filter((t) => t.name?.trim()) as never,
+    capacity: input.capacity,
+    max_waiting: input.max_waiting,
+    min_age_months: input.min_age_months,
+    max_age_months: input.max_age_months,
+    description_ar: input.description_ar?.trim() || null,
+    learning_style_ar: input.learning_style_ar?.trim() || null,
+    schedule_ar: input.schedule_ar?.trim() || null,
+    daily_schedule: (input.daily_schedule ?? []).filter((d) => d.time?.trim() || d.activity?.trim()) as never,
+    sort_order: input.sort_order ?? 0,
+    is_active: input.is_active ?? true,
+  };
+
+  if (input.id) {
+    const current = await supabase
+      .from("classrooms")
+      .select("id, capacity, taken_seats")
+      .eq("id", input.id)
+      .maybeSingle();
+    if (!current.data) throw new Error("الفصل غير موجود.");
+    if (payload.capacity < current.data.taken_seats) {
+      throw new Error(
+        `لا يمكن تقليل السعة إلى ${payload.capacity} لأن عدد المسجلين حاليًا ${current.data.taken_seats}.`,
+      );
+    }
+    const { error } = await supabase.from("classrooms").update(payload).eq("id", input.id);
+    if (error) throw new Error(error.message);
+    return { id: input.id, created: false };
+  }
+
+  const slug = slugify(input.slug || input.name_ar, `class-${Date.now()}`);
+  const { data, error } = await supabase
+    .from("classrooms")
+    .insert({ ...payload, slug, taken_seats: 0 })
+    .select("id")
+    .single();
+  if (error) {
+    throw new Error(
+      error.code === "23505" ? "يوجد فصل آخر بنفس المعرّف (slug) — غيّر اسم الفصل." : error.message,
+    );
+  }
+  return { id: data.id, created: true };
+}
+
+export async function deleteClassroom(supabase: Db, userId: string, input: { id: string }) {
+  await guard(supabase, userId, "seats");
+
+  const [children, waiting] = await Promise.all([
+    supabase.from("application_children").select("id", { count: "exact", head: true }).eq("classroom_id", input.id),
+    supabase
+      .from("waiting_list_entries")
+      .select("id", { count: "exact", head: true })
+      .eq("classroom_id", input.id)
+      .eq("status", "waiting"),
+  ]);
+
+  const placed = children.count ?? 0;
+  const queued = waiting.count ?? 0;
+  if (placed > 0) {
+    throw new Error(
+      `لا يمكن حذف الفصل: يوجد ${placed} طالبًا مسكَّنًا فيه. انقلهم إلى فصل آخر أو أزلهم من الفصل أولًا.`,
+    );
+  }
+  if (queued > 0) {
+    throw new Error(`لا يمكن حذف الفصل: يوجد ${queued} في قائمة الانتظار. عالِج القائمة أولًا.`);
+  }
+
+  const { error } = await supabase.from("classrooms").delete().eq("id", input.id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
