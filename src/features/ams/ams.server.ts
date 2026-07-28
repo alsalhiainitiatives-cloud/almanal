@@ -184,7 +184,7 @@ export async function listStaff(supabase: Db, userId: string) {
 export async function getOverview(supabase: Db, userId: string) {
   await guard(supabase, userId, "view");
 
-  const [apps, events, classrooms, stages, waitlist] = await Promise.all([
+  const [apps, allApps, events, classrooms, stages, waitlist] = await Promise.all([
     supabase
       .from("applications")
       .select(
@@ -192,6 +192,7 @@ export async function getOverview(supabase: Db, userId: string) {
       )
       .in("status", LIVE_STATUSES)
       .limit(1000),
+    supabase.from("applications").select("id, status, created_at, archived_at").limit(2000),
     supabase
       .from("application_events")
       .select("id, application_id, event_type, title_ar, body_ar, created_at, actor_id")
@@ -203,17 +204,19 @@ export async function getOverview(supabase: Db, userId: string) {
   ]);
 
   const rows = (apps.data ?? []).filter((a) => !a.archived_at);
+  const everything = (allApps.data ?? []).filter((a) => !a.archived_at);
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const weekAgo = now.getTime() - 7 * 864e5;
   const at = (v: string | null) => (v ? new Date(v).getTime() : 0);
 
   const qurraOf = (row: { qurra_requests: unknown }) =>
     ((row.qurra_requests as { status: string }[] | null)?.[0]?.status ?? "not_requested");
 
   const kpis = {
+    total: everything.length,
+    active: rows.filter((r) => !["approved", "rejected"].includes(r.status)).length,
+    drafts: everything.filter((r) => r.status === "draft").length,
     today: rows.filter((r) => at(r.submitted_at ?? r.created_at) >= startOfToday).length,
-    week: rows.filter((r) => at(r.submitted_at ?? r.created_at) >= weekAgo).length,
     pendingReview: rows.filter((r) => r.status === "submitted" || r.status === "under_review").length,
     principalReview: rows.filter((r) => r.status === "principal_review").length,
     approved: rows.filter((r) => r.status === "approved").length,
@@ -222,6 +225,8 @@ export async function getOverview(supabase: Db, userId: string) {
     waitlisted: rows.filter((r) => r.status === "waitlisted").length,
     qurra: rows.filter((r) => !["not_requested", "rejected"].includes(qurraOf(r))).length,
     unassigned: rows.filter((r) => !r.assigned_officer_id).length,
+    seatsCapacity: (classrooms.data ?? []).reduce((sum, c) => sum + c.capacity, 0),
+    seatsTaken: (classrooms.data ?? []).reduce((sum, c) => sum + c.taken_seats, 0),
     seatsAvailable: (classrooms.data ?? []).reduce(
       (sum, c) => sum + Math.max(0, c.capacity - c.taken_seats),
       0,
@@ -232,22 +237,50 @@ export async function getOverview(supabase: Db, userId: string) {
 
   const actors = await profileMap(supabase, (events.data ?? []).map((e) => e.actor_id));
 
+  const classroomRows = (classrooms.data ?? []).map((c) => ({
+    ...c,
+    waiting: (waitlist.data ?? []).filter((w) => w.classroom_id === c.id).length,
+  }));
+
   return {
     kpis,
     activity: (events.data ?? []).map((e) => ({
       ...e,
       actorName: e.actor_id ? (actors[e.actor_id]?.fullName ?? "النظام") : "النظام",
     })),
-    classrooms: (classrooms.data ?? []).map((c) => ({
-      ...c,
-      waiting: (waitlist.data ?? []).filter((w) => w.classroom_id === c.id).length,
-    })),
+    classrooms: classroomRows,
     stages: stages.data ?? [],
+    occupancyByStage: (stages.data ?? []).map((stage) => {
+      const items = classroomRows.filter((c) => c.stage_id === stage.id);
+      return {
+        id: stage.id,
+        name_ar: stage.name_ar,
+        capacity: items.reduce((s, c) => s + c.capacity, 0),
+        taken: items.reduce((s, c) => s + c.taken_seats, 0),
+        waiting: items.reduce((s, c) => s + c.waiting, 0),
+        classrooms: items,
+      };
+    }),
     statusBreakdown: LIVE_STATUSES.map((status) => ({
       status,
       count: rows.filter((r) => r.status === status).length,
     })),
   };
+}
+
+/** Full activity log for the dedicated activity tab. */
+export async function listActivity(supabase: Db, userId: string, limit = 200) {
+  await guard(supabase, userId, "view");
+  const { data } = await supabase
+    .from("application_events")
+    .select("id, application_id, event_type, title_ar, body_ar, created_at, actor_id")
+    .order("created_at", { ascending: false })
+    .limit(Math.min(Math.max(limit, 20), 500));
+  const actors = await profileMap(supabase, (data ?? []).map((e) => e.actor_id));
+  return (data ?? []).map((e) => ({
+    ...e,
+    actorName: e.actor_id ? (actors[e.actor_id]?.fullName ?? "النظام") : "النظام",
+  }));
 }
 
 export async function getWorkspace(supabase: Db, userId: string, id: string) {
@@ -755,4 +788,255 @@ export async function listWaitingList(supabase: Db, userId: string) {
     .select("*, applications(application_number, parent_id, status), classrooms(name_ar, capacity, taken_seats)")
     .order("position");
   return data ?? [];
+}
+
+/* ------------------------------------------------------------------ */
+/* Seat board                                                          */
+/* ------------------------------------------------------------------ */
+
+const SEAT_ACTIVE: Status[] = [
+  "submitted",
+  "under_review",
+  "needs_action",
+  "principal_review",
+  "waitlisted",
+  "approved",
+];
+
+type ChildRow = {
+  id: string;
+  name_ar: string;
+  birth_date: string | null;
+  national_id: string | null;
+  nationality: string | null;
+  gender: string | null;
+  classroom_id: string | null;
+  stage_id: string | null;
+  application_id: string;
+  applications: {
+    id: string;
+    application_number: string | null;
+    status: Status;
+    archived_at: string | null;
+    qurra_requests: { status: string; requested: boolean; mother_employment_status: string | null }[] | null;
+  } | null;
+};
+
+function toSeatChild(row: ChildRow) {
+  const qurra = row.applications?.qurra_requests?.[0] ?? null;
+  return {
+    id: row.id,
+    name_ar: row.name_ar,
+    birth_date: row.birth_date,
+    national_id: row.national_id,
+    nationality: row.nationality,
+    gender: row.gender,
+    classroom_id: row.classroom_id,
+    stage_id: row.stage_id,
+    application_id: row.application_id,
+    application_number: row.applications?.application_number ?? null,
+    application_status: row.applications?.status ?? "submitted",
+    qurra_requested: Boolean(qurra?.requested),
+    qurra_status: qurra?.status ?? null,
+    mother_employment_status: qurra?.mother_employment_status ?? null,
+  };
+}
+
+async function seatChildren(supabase: Db) {
+  const { data } = await supabase
+    .from("application_children")
+    .select(
+      "id, name_ar, birth_date, national_id, nationality, gender, classroom_id, stage_id, application_id, applications!inner ( id, application_number, status, archived_at, qurra_requests ( status, requested, mother_employment_status ) )",
+    )
+    .in("applications.status", SEAT_ACTIVE)
+    .limit(2000);
+  return ((data ?? []) as unknown as ChildRow[]).filter((row) => !row.applications?.archived_at);
+}
+
+/** Recomputes `taken_seats` for the given classrooms from real placements. */
+async function recountSeats(supabase: Db, classroomIds: (string | null | undefined)[]) {
+  const ids = [...new Set(classroomIds.filter(Boolean) as string[])];
+  if (!ids.length) return;
+  const rows = await seatChildren(supabase);
+  for (const id of ids) {
+    const taken = rows.filter((r) => r.classroom_id === id).length;
+    await supabase.from("classrooms").update({ taken_seats: taken }).eq("id", id);
+  }
+}
+
+export async function getSeatBoard(supabase: Db, userId: string) {
+  await guard(supabase, userId, "view");
+
+  const [stagesRes, classroomsRes, waitlistRes, childRows] = await Promise.all([
+    supabase.from("stages").select("id, slug, name_ar, age_label").eq("is_active", true).order("sort_order"),
+    supabase.from("classrooms").select("*").eq("is_active", true).order("sort_order"),
+    supabase
+      .from("waiting_list_entries")
+      .select("id, classroom_id, application_id, position, status")
+      .eq("status", "waiting")
+      .order("position"),
+    seatChildren(supabase),
+  ]);
+
+  const children = childRows.map(toSeatChild);
+  const waiting = waitlistRes.data ?? [];
+
+  const classrooms = (classroomsRes.data ?? []).map((c) => {
+    const placed = children.filter((child) => child.classroom_id === c.id);
+    return {
+      id: c.id,
+      stage_id: c.stage_id,
+      name_ar: c.name_ar,
+      color_hex: c.color_hex,
+      teacher_name: c.teacher_name,
+      capacity: c.capacity,
+      min_age_months: c.min_age_months,
+      max_age_months: c.max_age_months,
+      enrolled: placed.length,
+      waiting: waiting.filter((w) => w.classroom_id === c.id).length,
+      children: placed,
+    };
+  });
+
+  return {
+    stages: (stagesRes.data ?? []).map((stage) => ({
+      ...stage,
+      classrooms: classrooms.filter((c) => c.stage_id === stage.id),
+    })),
+    classrooms,
+    unplaced: children.filter((child) => !child.classroom_id),
+    totals: {
+      capacity: classrooms.reduce((s, c) => s + c.capacity, 0),
+      enrolled: classrooms.reduce((s, c) => s + c.enrolled, 0),
+      available: classrooms.reduce((s, c) => s + Math.max(0, c.capacity - c.enrolled), 0),
+      unplaced: children.filter((child) => !child.classroom_id).length,
+      waiting: waiting.length,
+    },
+  };
+}
+
+export async function seatAssignChild(
+  supabase: Db,
+  userId: string,
+  input: { childId: string; classroomId: string },
+) {
+  await guard(supabase, userId, "seats");
+  const { validatePlacement } = await import("./seat-rules");
+
+  const board = await getSeatBoard(supabase, userId);
+  const classroom = board.classrooms.find((c) => c.id === input.classroomId);
+  if (!classroom) throw new Error("الفصل غير موجود أو غير مفعّل.");
+
+  const child =
+    board.unplaced.find((c) => c.id === input.childId) ??
+    board.classrooms.flatMap((c) => c.children).find((c) => c.id === input.childId);
+  if (!child) throw new Error("الطالب غير موجود ضمن الطلبات النشطة.");
+
+  const check = validatePlacement(child, classroom);
+  if (!check.ok) throw new Error(check.message ?? "لا يمكن تنفيذ هذا التسكين.");
+
+  const previous = child.classroom_id;
+  const { error } = await supabase
+    .from("application_children")
+    .update({ classroom_id: classroom.id, stage_id: classroom.stage_id })
+    .eq("id", child.id);
+  if (error) throw new Error("تعذّر تسكين الطالب في الفصل.");
+
+  const siblings = board.classrooms
+    .flatMap((c) => c.children)
+    .concat(board.unplaced)
+    .filter((c) => c.application_id === child.application_id);
+  if (siblings.length <= 1) {
+    await touch(supabase, child.application_id, {
+      classroom_id: classroom.id,
+      stage_id: classroom.stage_id,
+      seat_status: "reserved",
+    });
+  }
+
+  await recountSeats(supabase, [previous, classroom.id]);
+  await logEvent(
+    supabase,
+    child.application_id,
+    userId,
+    previous ? "seat.transferred" : "seat.assigned",
+    previous ? `تم نقل ${child.name_ar} إلى فصل ${classroom.name_ar}` : `تم تسكين ${child.name_ar} في فصل ${classroom.name_ar}`,
+    check.warnings.join(" · ") || null,
+  );
+
+  return { ok: true as const, warnings: check.warnings };
+}
+
+export async function seatRemoveChild(supabase: Db, userId: string, input: { childId: string; note?: string }) {
+  await guard(supabase, userId, "seats");
+
+  const { data: child } = await supabase
+    .from("application_children")
+    .select("id, name_ar, classroom_id, application_id")
+    .eq("id", input.childId)
+    .maybeSingle();
+  if (!child) throw new Error("الطالب غير موجود.");
+  if (!child.classroom_id) throw new Error("الطالب غير مسكَّن في أي فصل.");
+
+  const previous = child.classroom_id;
+  const { error } = await supabase
+    .from("application_children")
+    .update({ classroom_id: null })
+    .eq("id", child.id);
+  if (error) throw new Error("تعذّر إزالة الطالب من الفصل.");
+
+  await touch(supabase, child.application_id, { seat_status: "released" });
+  await recountSeats(supabase, [previous]);
+  await logEvent(
+    supabase,
+    child.application_id,
+    userId,
+    "seat.released",
+    `تمت إزالة ${child.name_ar} من الفصل`,
+    input.note ?? null,
+  );
+  return { ok: true as const };
+}
+
+export async function seatUpdateChild(
+  supabase: Db,
+  userId: string,
+  input: {
+    childId: string;
+    name_ar?: string;
+    birth_date?: string | null;
+    national_id?: string | null;
+    nationality?: string | null;
+    gender?: string | null;
+  },
+) {
+  await guard(supabase, userId, "seats");
+  const { childId, ...patch } = input;
+
+  const { data: child } = await supabase
+    .from("application_children")
+    .select("id, application_id, classroom_id")
+    .eq("id", childId)
+    .maybeSingle();
+  if (!child) throw new Error("الطالب غير موجود.");
+
+  const { error } = await supabase.from("application_children").update(patch).eq("id", childId);
+  if (error) throw new Error("تعذّر تحديث بيانات الطالب.");
+
+  // A data change can break the classroom's age window — re-check and report.
+  const warnings: string[] = [];
+  if (child.classroom_id) {
+    const { validatePlacement, identityIssues, qurraIssues } = await import("./seat-rules");
+    const board = await getSeatBoard(supabase, userId);
+    const classroom = board.classrooms.find((c) => c.id === child.classroom_id);
+    const updated = board.classrooms.flatMap((c) => c.children).find((c) => c.id === childId);
+    if (classroom && updated) {
+      warnings.push(...identityIssues(updated), ...qurraIssues(updated));
+      const check = validatePlacement({ ...updated, classroom_id: null }, { ...classroom, enrolled: classroom.enrolled - 1 });
+      if (!check.ok && check.message) warnings.push(check.message);
+    }
+  }
+
+  await logEvent(supabase, child.application_id, userId, "child.updated", "تم تحديث بيانات الطالب", warnings.join(" · ") || null);
+  return { ok: true as const, warnings };
 }

@@ -10,6 +10,8 @@ import {
   documentSignedUrl,
   getOverview,
   getWorkspace,
+  getSeatBoard,
+  listActivity,
   listQueue,
   listStaff,
   listWaitingList,
@@ -19,6 +21,9 @@ import {
   requestDocuments,
   requestCorrections,
   reviewDocument,
+  seatAssignChild,
+  seatRemoveChild,
+  seatUpdateChild,
   setPaymentStatus,
   setPriority,
   startReview,
@@ -53,6 +58,40 @@ export const amsStaff = createServerFn({ method: "GET" })
 export const amsOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => getOverview(context.supabase, context.userId));
+
+export const amsActivity = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => listActivity(context.supabase, context.userId));
+
+export const amsSeatBoard = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => getSeatBoard(context.supabase, context.userId));
+
+export const amsSeatAssign = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ childId: uuid, classroomId: uuid }).parse(data))
+  .handler(async ({ data, context }) => seatAssignChild(context.supabase, context.userId, data));
+
+export const amsSeatRemove = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ childId: uuid, note: z.string().max(500).optional() }).parse(data))
+  .handler(async ({ data, context }) => seatRemoveChild(context.supabase, context.userId, data));
+
+export const amsSeatUpdateChild = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        childId: uuid,
+        name_ar: z.string().trim().min(2).max(120).optional(),
+        birth_date: z.string().trim().min(8).max(20).nullable().optional(),
+        national_id: z.string().trim().max(20).nullable().optional(),
+        nationality: z.string().trim().max(60).nullable().optional(),
+        gender: z.string().trim().max(20).nullable().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => seatUpdateChild(context.supabase, context.userId, data));
 
 export const amsWorkspace = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
