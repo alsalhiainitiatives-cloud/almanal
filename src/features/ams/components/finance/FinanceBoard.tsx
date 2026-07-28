@@ -22,6 +22,7 @@ import {
   financeOverviewGet,
   installmentRemind,
   installmentSetStatus,
+  overdueNotifyAll,
   receiptReview,
   receiptSignedUrl,
 } from "@/features/finance/finance.functions";
@@ -42,6 +43,7 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
   const review = useServerFn(receiptReview);
   const setStatus = useServerFn(installmentSetStatus);
   const remind = useServerFn(installmentRemind);
+  const notifyAll = useServerFn(overdueNotifyAll);
   const sign = useServerFn(receiptSignedUrl);
   const queryClient = useQueryClient();
 
