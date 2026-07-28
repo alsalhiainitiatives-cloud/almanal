@@ -151,7 +151,8 @@ export function FormBuilder() {
           applies_to_nationality: (v.patch.applies_to_nationality ?? "all") as
             | "all"
             | "saudi"
-            | "non_saudi",
+            | "non_saudi"
+            | "resident",
           is_required: v.patch.is_required,
           is_active: v.patch.is_active,
         },
