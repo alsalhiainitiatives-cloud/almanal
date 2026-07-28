@@ -2,7 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { Armchair } from "lucide-react";
 import { amsOverview } from "@/features/ams/ams.functions";
+import { useClassroomLocks } from "@/features/ams/classroom-lock";
 import { AmsShell } from "@/features/ams/components/AmsShell";
+import { ClassroomLockBadge } from "@/features/ams/components/seats/ClassroomLockBadge";
 import { EmptyState, SkeletonRows } from "@/features/ams/components/atoms";
 export const Route = createFileRoute("/_authenticated/ams/seats")({
   head: () => ({
@@ -16,6 +18,7 @@ export const Route = createFileRoute("/_authenticated/ams/seats")({
 });
 function SeatsPage() {
   const { data, isLoading, error } = useQuery({ queryKey: ["ams", "overview"], queryFn: () => amsOverview() });
+  const { lockedBy, isMine } = useClassroomLocks();
   return (
     <AmsShell title="إدارة المقاعد" description="سعة الفصول والإشغال وقوائم الانتظار">
       {error ? (
@@ -43,6 +46,9 @@ function SeatsPage() {
                 <p className="mt-1 text-[11px] font-bold text-muted-foreground">
                   {classroom.teacher_name ?? "—"} · قائمة الانتظار: {classroom.waiting}
                 </p>
+                <div className="mt-2 empty:hidden">
+                  <ClassroomLockBadge lock={lockedBy(classroom.id)} mine={isMine(classroom.id)} />
+                </div>
                 <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-muted">
                   <div
                     className={percent >= 100 ? "h-full bg-destructive" : percent >= 80 ? "h-full bg-gold" : "h-full bg-primary"}
