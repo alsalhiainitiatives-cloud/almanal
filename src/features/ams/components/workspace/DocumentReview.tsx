@@ -184,7 +184,7 @@ export function DocumentReview({ data }: { data: WorkspaceData }) {
                     <Tool icon={<Download className="size-3" />} label="تنزيل" onClick={() => download(doc)} disabled={busy} />
                     <Tool
                       icon={<CheckCircle2 className="size-3" />}
-                      label="اعتماد"
+                      label="اعتمد"
                       active={doc.status === "approved"}
                       disabled={busy}
                       onClick={() => review.mutate({ documentId: doc.id, status: "approved" })}
