@@ -23,7 +23,6 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useAuth } from "@/features/auth/AuthProvider";
-import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { ROLE_COLORS, ROLE_LABELS } from "@/features/auth/rbac";
 import { cn } from "@/lib/utils";
 import { amsQueue } from "../ams.functions";
@@ -178,7 +177,6 @@ export function AmsShell({
               {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
             </div>
             <div className="flex items-center gap-2">
-              <NotificationBell />
               <Button
                 variant="outline"
                 className="rounded-2xl text-xs font-bold"
