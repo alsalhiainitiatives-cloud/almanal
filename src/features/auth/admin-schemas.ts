@@ -18,3 +18,18 @@ export const roleAssignmentSchema = z.object({
 });
 
 export type RoleAssignmentInput = z.infer<typeof roleAssignmentSchema>;
+
+export const rolePermissionSchema = z.object({
+  role: z.enum([
+    "parent",
+    "registration_officer",
+    "accountant",
+    "principal",
+    "supervisor",
+    "admin",
+  ]),
+  permissionKey: z.string().min(1).max(120),
+  granted: z.boolean(),
+});
+
+export type RolePermissionInput = z.infer<typeof rolePermissionSchema>;
