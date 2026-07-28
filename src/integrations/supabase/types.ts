@@ -576,9 +576,11 @@ export type Database = {
           capacity: number
           color_hex: string
           color_label: string | null
+          cover_image: string | null
           created_at: string
           daily_schedule: Json
           description_ar: string | null
+          gallery: Json
           id: string
           is_active: boolean
           learning_style_ar: string | null
@@ -602,9 +604,11 @@ export type Database = {
           capacity?: number
           color_hex?: string
           color_label?: string | null
+          cover_image?: string | null
           created_at?: string
           daily_schedule?: Json
           description_ar?: string | null
+          gallery?: Json
           id?: string
           is_active?: boolean
           learning_style_ar?: string | null
@@ -628,9 +632,11 @@ export type Database = {
           capacity?: number
           color_hex?: string
           color_label?: string | null
+          cover_image?: string | null
           created_at?: string
           daily_schedule?: Json
           description_ar?: string | null
+          gallery?: Json
           id?: string
           is_active?: boolean
           learning_style_ar?: string | null
