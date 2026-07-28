@@ -8,6 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { AppRole } from "@/features/auth/rbac";
 import type { Database } from "@/integrations/supabase/types";
+import { DECIDERS, notify } from "@/features/notifications/notifications.server";
 import { can, type Capability } from "./roles";
 
 type Db = SupabaseClient<Database>;
@@ -66,6 +67,28 @@ async function profileMap(supabase: Db, ids: (string | null | undefined)[]) {
   }
   return map;
 }
+
+/** Parent + officer + reference number used to address internal notifications. */
+async function appMeta(supabase: Db, id: string) {
+  const { data } = await supabase
+    .from("applications")
+    .select("parent_id, assigned_officer_id, application_number")
+    .eq("id", id)
+    .maybeSingle();
+  return {
+    parentId: data?.parent_id ?? null,
+    officerId: data?.assigned_officer_id ?? null,
+    number: data?.application_number ?? "طلب",
+    link: `/ams/applications/${id}`,
+  };
+}
+
+const PRIORITY_LABELS: Record<string, string> = {
+  low: "منخفضة",
+  normal: "عادية",
+  high: "عالية",
+  urgent: "عاجلة",
+};
 
 type QueueChild = {
   id: string;
@@ -397,6 +420,20 @@ export async function setPriority(supabase: Db, userId: string, input: { id: str
   await guard(supabase, userId, "review");
   await touch(supabase, input.id, { priority: input.priority });
   await logEvent(supabase, input.id, userId, "application.priority", `تم تغيير الأولوية إلى ${input.priority}`);
+  const meta = await appMeta(supabase, input.id);
+  const label = PRIORITY_LABELS[input.priority] ?? input.priority;
+  await notify(supabase, {
+    userIds: [meta.officerId],
+    roles: ["high", "urgent"].includes(input.priority) ? DECIDERS : [],
+    kind: "application.priority",
+    title: `تغيير أولوية الطلب ${meta.number} إلى ${label}`,
+    body: ["high", "urgent"].includes(input.priority)
+      ? "الطلب يحتاج معالجة سريعة حسب الأولوية الجديدة."
+      : null,
+    applicationId: input.id,
+    link: meta.link,
+    severity: input.priority === "urgent" ? "urgent" : input.priority === "high" ? "warning" : "info",
+  });
   return { ok: true as const };
 }
 
@@ -407,6 +444,15 @@ export async function startReview(supabase: Db, userId: string, input: { id: str
     assigned_officer_id: userId,
   });
   await logEvent(supabase, input.id, userId, "application.review_started", "بدأت مراجعة الطلب", input.note);
+  const meta = await appMeta(supabase, input.id);
+  await notify(supabase, {
+    userIds: [meta.parentId],
+    kind: "application.review_started",
+    title: `بدأت مراجعة طلبك ${meta.number}`,
+    body: "تم إسناد الطلب لموظف التسجيل وسيتم إشعارك بأي مستندات أو تعديلات مطلوبة.",
+    applicationId: input.id,
+    link: "/my-applications",
+  });
   return { ok: true as const };
 }
 
@@ -488,6 +534,16 @@ export async function requestDocuments(
       (input.note ? `${input.note}\n\n` : "") +
       `المستندات المطلوبة: ${input.items.map((i) => i.slug).join("، ")}`,
   });
+  const docMeta = await appMeta(supabase, input.id);
+  await notify(supabase, {
+    userIds: [docMeta.parentId],
+    kind: "documents.requested",
+    title: `مستندات مطلوبة في الطلب ${docMeta.number}`,
+    body: input.note ?? `عدد المستندات المطلوبة: ${input.items.length}`,
+    applicationId: input.id,
+    link: "/my-applications",
+    severity: "warning",
+  });
   return { ok: true as const };
 }
 
@@ -538,6 +594,16 @@ export async function requestCorrections(
     visibility: "parent",
     body: `الأقسام المطلوب تصحيحها: ${labels}\n\n${input.note}`,
   });
+  const corrMeta = await appMeta(supabase, input.id);
+  await notify(supabase, {
+    userIds: [corrMeta.parentId],
+    kind: "application.corrections_requested",
+    title: `مطلوب تعديل في الطلب ${corrMeta.number}`,
+    body: `الأقسام: ${labels}`,
+    applicationId: input.id,
+    link: "/my-applications",
+    severity: "warning",
+  });
   return { ok: true as const };
 }
 
@@ -583,6 +649,24 @@ export async function recommendToPrincipal(
     "تم رفع الطلب لاعتماد مدير المدرسة",
     input.recommendation,
   );
+  const meta = await appMeta(supabase, input.id);
+  await notify(supabase, {
+    roles: DECIDERS,
+    kind: "application.recommended",
+    title: `طلب جديد بانتظار اعتمادك: ${meta.number}`,
+    body: input.recommendation,
+    applicationId: input.id,
+    link: meta.link,
+    severity: "warning",
+  });
+  await notify(supabase, {
+    userIds: [meta.parentId],
+    kind: "application.recommended",
+    title: `طلبك ${meta.number} رُفع لاعتماد مدير المدرسة`,
+    body: "اكتملت مراجعة الطلب من موظف التسجيل، وهو الآن بانتظار القرار النهائي.",
+    applicationId: input.id,
+    link: "/my-applications",
+  });
   return { ok: true as const };
 }
 
@@ -597,6 +681,16 @@ export async function nudgePrincipal(supabase: Db, userId: string, input: { id: 
     "تم إرسال تذكير لمدير المدرسة باعتماد الطلب",
     input.note,
   );
+  const meta = await appMeta(supabase, input.id);
+  await notify(supabase, {
+    roles: DECIDERS,
+    kind: "application.nudge",
+    title: `تذكير باعتماد الطلب ${meta.number}`,
+    body: input.note ?? "أرسل موظف التسجيل تذكيرًا لاستعجال القرار.",
+    applicationId: input.id,
+    link: meta.link,
+    severity: "urgent",
+  });
   return { ok: true as const };
 }
 
@@ -647,6 +741,25 @@ export async function decideApplication(
     input.note,
     { signature: input.signature ?? null },
   );
+  const meta = await appMeta(supabase, input.id);
+  await notify(supabase, {
+    userIds: [meta.parentId],
+    kind: approved ? "application.approved" : "application.rejected",
+    title: approved ? `تم قبول الطلب ${meta.number}` : `تم رفض الطلب ${meta.number}`,
+    body: input.note,
+    applicationId: input.id,
+    link: "/my-applications",
+    severity: approved ? "success" : "warning",
+  });
+  await notify(supabase, {
+    userIds: [meta.officerId],
+    kind: "application.decided",
+    title: `صدر قرار المدير على الطلب ${meta.number}: ${approved ? "قبول" : "رفض"}`,
+    body: input.note,
+    applicationId: input.id,
+    link: meta.link,
+    severity: approved ? "success" : "info",
+  });
   return { ok: true as const };
 }
 
@@ -725,6 +838,16 @@ export async function moveToWaitingList(
   });
   await touch(supabase, input.id, { status: "waitlisted" as Status, seat_status: "waitlisted" });
   await logEvent(supabase, input.id, userId, "waitlist.added", "تم نقل الطلب إلى قائمة الانتظار", input.note);
+  const meta = await appMeta(supabase, input.id);
+  await notify(supabase, {
+    userIds: [meta.parentId],
+    kind: "waitlist.added",
+    title: `الطلب ${meta.number} على قائمة الانتظار`,
+    body: input.note ?? "سيتم إشعارك فور توفّر مقعد مطابق.",
+    applicationId: input.id,
+    link: "/my-applications",
+    severity: "warning",
+  });
   return { ok: true as const };
 }
 
