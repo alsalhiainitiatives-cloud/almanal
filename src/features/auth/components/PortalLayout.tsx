@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { useAuth } from "../AuthProvider";
 import { P, ROLE_COLORS, ROLE_LABELS } from "../rbac";
 
