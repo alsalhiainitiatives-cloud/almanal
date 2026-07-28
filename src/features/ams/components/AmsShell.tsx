@@ -42,6 +42,13 @@ const NAV: NavItem[] = [
   { to: "/ams/queue", label: "قائمة الطلبات", icon: Inbox, exact: false },
   { to: "/ams/seats", label: "إدارة  الفصول والمقاعد", icon: Armchair, exact: false },
   { to: "/ams/waiting-list", label: "قائمة الانتظار", icon: ListOrdered, exact: false },
+  {
+    to: "/ams/finance",
+    label: "الإدارة المالية",
+    icon: Wallet,
+    exact: false,
+    roles: ["accountant", "admin", "principal", "supervisor", "registration_officer"],
+  },
   { to: "/ams/activity", label: "الحركة اللحظية", icon: Activity, exact: false },
   { to: "/ams/reports", label: "التقارير", icon: BarChart3, exact: false },
   {
