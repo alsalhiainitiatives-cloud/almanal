@@ -263,42 +263,7 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
           </div>
         ) : null}
       </div>
-      {can(roles, "review") ? (
-        <div className="rounded-3xl border border-border/60 bg-card p-4">
-          <p className="text-sm font-extrabold text-foreground">مراجعة المستندات</p>
-          <ul className="mt-3 space-y-2">
-            {data.documents.map((doc) => (
-              <li key={doc.id} className="rounded-2xl border border-border/60 bg-muted/20 p-2.5">
-                <p className="text-[11px] font-extrabold text-foreground">
-                  {docLabel(doc.document_type_slug)}
-                  <span className="ms-1 font-bold text-muted-foreground">
-                    {doc.child_index === null
-                      ? "· ولي الأمر"
-                      : `· ${data.children[doc.child_index]?.name_ar ?? `الطالب ${doc.child_index + 1}`}`}
-                  </span>
-                </p>
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {(["approved", "rejected", "replace"] as const).map((status) => (
-                    <Button
-                      key={status}
-                      size="sm"
-                      variant={doc.status === status ? "default" : "outline"}
-                      className="rounded-xl px-2.5 text-[10px] font-bold"
-                      disabled={busy}
-                      onClick={() => run.mutate(() => reviewDoc({ data: { id, documentId: doc.id, status } }))}
-                    >
-                      {status === "approved" ? "اعتماد" : status === "rejected" ? "رفض" : "طلب بديل"}
-                    </Button>
-                  ))}
-                </div>
-              </li>
-            ))}
-            {data.documents.length === 0 ? (
-              <li className="text-[11px] font-bold text-muted-foreground">لم يرفع ولي الأمر أي مستند بعد.</li>
-            ) : null}
-          </ul>
-        </div>
-      ) : null}
+      {can(roles, "review") ? <DocumentReview data={data} /> : null}
       <Dialog open={dialog === "assign"} onOpenChange={(open) => (open ? null : close())}>
         <DialogContent dir="rtl">
           <DialogHeader>
