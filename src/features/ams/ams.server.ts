@@ -920,11 +920,19 @@ export async function togglePin(supabase: Db, userId: string, input: { id: strin
 
 export async function listWaitingList(supabase: Db, userId: string) {
   await guard(supabase, userId, "view");
-  const { data } = await supabase
-    .from("waiting_list_entries")
-    .select("*, applications(application_number, parent_id, status), classrooms(name_ar, capacity, taken_seats)")
-    .order("position");
-  return data ?? [];
+  const [entries, classrooms] = await Promise.all([
+    supabase
+      .from("waiting_list_entries")
+      .select(
+        "*, applications(application_number, parent_id, status, application_children(id, name_ar, birth_date, preference_1_classroom_id, preference_2_classroom_id, preference_3_classroom_id)), classrooms(id, name_ar, capacity, taken_seats, min_age_months, max_age_months, max_waiting, is_active)",
+      )
+      .order("position"),
+    supabase
+      .from("classrooms")
+      .select("id, name_ar, capacity, taken_seats, min_age_months, max_age_months, max_waiting, is_active")
+      .order("sort_order"),
+  ]);
+  return { entries: entries.data ?? [], classrooms: classrooms.data ?? [] };
 }
 
 /* ------------------------------------------------------------------ */
