@@ -1,11 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Armchair, CalendarClock, GripVertical, Pencil, RotateCcw, Search, Trash2, TriangleAlert, UserPlus, X } from "lucide-react";
+import { Armchair, CalendarClock, GripVertical, Pencil, Plus, RotateCcw, Search, Settings2, Trash2, TriangleAlert, UserPlus, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { amsSeatAssign, amsSeatBoard, amsSeatRemove, amsSeatUpdateChild } from "@/features/ams/ams.functions";
+import {
+  amsClassroomDelete,
+  amsClassroomSave,
+  amsSeatAssign,
+  amsSeatBoard,
+  amsSeatRemove,
+  amsSeatUpdateChild,
+} from "@/features/ams/ams.functions";
 import { useClassroomLocks } from "@/features/ams/classroom-lock";
 import { EmptyState, SkeletonRows } from "@/features/ams/components/atoms";
 import { ClassroomLockBadge } from "@/features/ams/components/seats/ClassroomLockBadge";
+import {
+  ClassroomDialog,
+  emptyClassroom,
+  toDraft,
+  type ClassroomDraft,
+} from "@/features/ams/components/seats/ClassroomDialog";
 import { validatePlacement, type PlacementCheck, type SeatChild, type SeatClassroom } from "@/features/ams/seat-rules";
 import { ageInMonths, formatAge } from "@/features/admissions/eligibility";
 
@@ -135,6 +148,8 @@ export function SeatBoard() {
   const [editing, setEditing] = useState<SeatChild | null>(null);
   const [removing, setRemoving] = useState<SeatChild | null>(null);
   const [rejection, setRejection] = useState<{ classroomId: string; child: SeatChild; check: PlacementCheck } | null>(null);
+  const [classroomDraft, setClassroomDraft] = useState<ClassroomDraft | null>(null);
+  const [deletingClassroom, setDeletingClassroom] = useState<BoardClassroom | null>(null);
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["ams", "seat-board"] });
@@ -182,6 +197,26 @@ export function SeatBoard() {
       toast.success("تم تحديث بيانات الطالب");
       result.warnings?.forEach((warning: string) => toast.warning(warning));
       setEditing(null);
+      refresh();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const saveClassroomMutation = useMutation({
+    mutationFn: (draft: ClassroomDraft) => amsClassroomSave({ data: draft as never }),
+    onSuccess: (result: { created: boolean }) => {
+      toast.success(result.created ? "تم إنشاء الفصل" : "تم حفظ إعدادات الفصل");
+      setClassroomDraft(null);
+      refresh();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const deleteClassroomMutation = useMutation({
+    mutationFn: (id: string) => amsClassroomDelete({ data: { id } }),
+    onSuccess: () => {
+      toast.success("تم حذف الفصل");
+      setDeletingClassroom(null);
       refresh();
     },
     onError: (err: Error) => toast.error(err.message),
