@@ -895,6 +895,8 @@ export async function getSeatBoard(supabase: Db, userId: string) {
       teacher_qualification: c.teacher_qualification,
       teacher_experience: c.teacher_experience,
       teachers: c.teachers,
+      cover_image: c.cover_image,
+      gallery: c.gallery,
       description_ar: c.description_ar,
       learning_style_ar: c.learning_style_ar,
       schedule_ar: c.schedule_ar,
@@ -1067,7 +1069,17 @@ export type ClassroomInput = {
   teacher_title?: string | null;
   teacher_qualification?: string | null;
   teacher_experience?: string | null;
-  teachers?: { name: string; title?: string; qualification?: string; experience?: string }[];
+  teachers?: {
+    name: string;
+    title?: string;
+    qualification?: string;
+    experience?: string;
+    photo_url?: string | null;
+    cv_url?: string | null;
+    cv_name?: string | null;
+  }[];
+  cover_image?: string | null;
+  gallery?: { path: string; caption?: string | null }[];
   capacity: number;
   max_waiting: number;
   min_age_months: number;
@@ -1106,6 +1118,8 @@ export async function saveClassroom(supabase: Db, userId: string, input: Classro
     teacher_qualification: input.teacher_qualification?.trim() || null,
     teacher_experience: input.teacher_experience?.trim() || null,
     teachers: (input.teachers ?? []).filter((t) => t.name?.trim()) as never,
+    cover_image: input.cover_image?.trim() || null,
+    gallery: (input.gallery ?? []).filter((g) => g.path?.trim()) as never,
     capacity: input.capacity,
     max_waiting: input.max_waiting,
     min_age_months: input.min_age_months,

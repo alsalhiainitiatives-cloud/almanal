@@ -290,9 +290,17 @@ const classroomInput = z.object({
         title: z.string().max(120).optional(),
         qualification: z.string().max(300).optional(),
         experience: z.string().max(800).optional(),
+        photo_url: z.string().max(400).nullish(),
+        cv_url: z.string().max(400).nullish(),
+        cv_name: z.string().max(200).nullish(),
       }),
     )
     .max(12)
+    .optional(),
+  cover_image: z.string().max(400).nullish(),
+  gallery: z
+    .array(z.object({ path: z.string().min(1).max(400), caption: z.string().max(200).nullish() }))
+    .max(24)
     .optional(),
   capacity: z.number().int().min(1).max(200),
   max_waiting: z.number().int().min(0).max(200),
