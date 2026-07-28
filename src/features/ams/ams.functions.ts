@@ -7,6 +7,7 @@ import {
   archiveApplication,
   assignOfficer,
   decideApplication,
+  documentSignedUrl,
   getOverview,
   getWorkspace,
   listQueue,
