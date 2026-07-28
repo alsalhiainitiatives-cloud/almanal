@@ -427,12 +427,63 @@ export function SeatBoard() {
       ) : null}
 
       {editing ? (
+        <>
         <EditDialog
           child={editing}
           busy={update.isPending}
           onClose={() => setEditing(null)}
           onConfirm={(patch) => update.mutate({ childId: editing.id, ...patch })}
         />
+        </>
+      ) : null}
+
+      {classroomDraft ? (
+        <ClassroomDialog
+          initial={classroomDraft}
+          stages={data.stages.map((s) => ({ id: s.id, name_ar: s.name_ar }))}
+          busy={saveClassroomMutation.isPending}
+          onClose={() => setClassroomDraft(null)}
+          onSubmit={(draft) => saveClassroomMutation.mutate(draft)}
+        />
+      ) : null}
+
+      {deletingClassroom ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-4">
+          <div className="w-full max-w-md rounded-3xl bg-card p-6 shadow-xl">
+            <h3 className="text-sm font-extrabold text-foreground">حذف فصل «{deletingClassroom.name_ar}»</h3>
+            <p className="mt-2 text-xs font-bold text-muted-foreground">
+              الحذف نهائي ولا يمكن التراجع عنه. لا يمكن حذف الفصل إذا كان فيه طلاب مسكَّنون أو قائمة انتظار — انقلهم إلى
+              فصل آخر أو أزلهم أولًا.
+            </p>
+            {deletingClassroom.enrolled > 0 || deletingClassroom.waiting > 0 ? (
+              <p className="mt-3 rounded-2xl bg-destructive/10 px-3 py-2 text-[11px] font-extrabold text-destructive">
+                الفصل يحتوي على {deletingClassroom.enrolled} طالبًا مسكَّنًا و{deletingClassroom.waiting} في قائمة
+                الانتظار.
+              </p>
+            ) : null}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeletingClassroom(null)}
+                className="rounded-2xl border border-border/60 px-4 py-2 text-xs font-bold"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                disabled={
+                  deleteClassroomMutation.isPending ||
+                  deletingClassroom.enrolled > 0 ||
+                  deletingClassroom.waiting > 0
+                }
+                onClick={() => deleteClassroomMutation.mutate(deletingClassroom.id)}
+                className="rounded-2xl bg-destructive px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-60"
+              >
+                حذف نهائي
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {removing ? (
