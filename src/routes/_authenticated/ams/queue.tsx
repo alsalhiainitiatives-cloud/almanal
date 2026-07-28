@@ -513,7 +513,11 @@ function QueuePage() {
         ) : null}
 
         {error ? (
-          <EmptyState title="تعذّر تحميل الطلبات" description={(error as Error).message} />
+          isAuthorizationError(error) ? (
+            <AccessNotice message={(error as Error).message} />
+          ) : (
+            <EmptyState title="تعذّر تحميل الطلبات" description={(error as Error).message} />
+          )
         ) : isLoading ? (
           <SkeletonRows rows={8} />
         ) : rows.length === 0 ? (
@@ -522,26 +526,60 @@ function QueuePage() {
             title="لا توجد طلبات مطابقة"
             description="جرّب تغيير التبويب أو الفلاتر أو كلمة البحث."
           />
-        ) : view === "table" ? (
-          <QueueTable
-            rows={rows}
-            selected={selected}
-            compact={compact}
-            onToggle={(id, checked) =>
-              setSelected((prev) => (checked ? [...prev, id] : prev.filter((value) => value !== id)))
-            }
-            onToggleAll={(checked) => setSelected(checked ? rows.map((row) => row.id) : [])}
-            onPin={(row) => pinMutation.mutate({ id: row.id, pinned: !row.pinned })}
-          />
         ) : (
-          <QueueCards
-            rows={rows}
-            selected={selected}
-            onToggle={(id, checked) =>
-              setSelected((prev) => (checked ? [...prev, id] : prev.filter((value) => value !== id)))
-            }
-            onPin={(row) => pinMutation.mutate({ id: row.id, pinned: !row.pinned })}
-          />
+          (groupedRows ?? [{ id: search.stageId ?? "all", label: "", rows }]).map((group) => (
+            <section key={group.id} className="space-y-2">
+              {group.label ? (
+                <div className="flex items-center gap-2 px-1">
+                  <h3 className="text-xs font-black text-foreground">{group.label}</h3>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-extrabold text-muted-foreground">
+                    {group.rows.length} طلب
+                  </span>
+                  <span className="h-px flex-1 bg-border/60" />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelected((prev) =>
+                        group.rows.every((row) => prev.includes(row.id))
+                          ? prev.filter((id) => !group.rows.some((row) => row.id === id))
+                          : [...new Set([...prev, ...group.rows.map((row) => row.id)])],
+                      )
+                    }
+                    className="rounded-2xl border border-border/60 px-2.5 py-1 text-[10px] font-extrabold text-muted-foreground"
+                  >
+                    تحديد المرحلة
+                  </button>
+                </div>
+              ) : null}
+              {view === "table" ? (
+                <QueueTable
+                  rows={group.rows}
+                  selected={selected}
+                  compact={compact}
+                  onToggle={(id, checked) =>
+                    setSelected((prev) => (checked ? [...prev, id] : prev.filter((value) => value !== id)))
+                  }
+                  onToggleAll={(checked) =>
+                    setSelected((prev) =>
+                      checked
+                        ? [...new Set([...prev, ...group.rows.map((row) => row.id)])]
+                        : prev.filter((id) => !group.rows.some((row) => row.id === id)),
+                    )
+                  }
+                  onPin={(row) => pinMutation.mutate({ id: row.id, pinned: !row.pinned })}
+                />
+              ) : (
+                <QueueCards
+                  rows={group.rows}
+                  selected={selected}
+                  onToggle={(id, checked) =>
+                    setSelected((prev) => (checked ? [...prev, id] : prev.filter((value) => value !== id)))
+                  }
+                  onPin={(row) => pinMutation.mutate({ id: row.id, pinned: !row.pinned })}
+                />
+              )}
+            </section>
+          ))
         )}
       </div>
 
