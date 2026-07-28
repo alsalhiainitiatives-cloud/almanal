@@ -37,6 +37,7 @@ import { Route as AuthenticatedAmsWaitingListRouteImport } from './routes/_authe
 import { Route as AuthenticatedAmsSeatsRouteImport } from './routes/_authenticated/ams/seats'
 import { Route as AuthenticatedAmsReportsRouteImport } from './routes/_authenticated/ams/reports'
 import { Route as AuthenticatedAmsQueueRouteImport } from './routes/_authenticated/ams/queue'
+import { Route as AuthenticatedAmsFormBuilderRouteImport } from './routes/_authenticated/ams/form-builder'
 import { Route as AuthenticatedAmsActivityRouteImport } from './routes/_authenticated/ams/activity'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
@@ -188,6 +189,12 @@ const AuthenticatedAmsQueueRoute = AuthenticatedAmsQueueRouteImport.update({
   path: '/ams/queue',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAmsFormBuilderRoute =
+  AuthenticatedAmsFormBuilderRouteImport.update({
+    id: '/ams/form-builder',
+    path: '/ams/form-builder',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAmsActivityRoute =
   AuthenticatedAmsActivityRouteImport.update({
     id: '/ams/activity',
@@ -252,6 +259,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/ams/activity': typeof AuthenticatedAmsActivityRoute
+  '/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
   '/ams/queue': typeof AuthenticatedAmsQueueRoute
   '/ams/reports': typeof AuthenticatedAmsReportsRoute
   '/ams/seats': typeof AuthenticatedAmsSeatsRoute
@@ -288,6 +296,7 @@ export interface FileRoutesByTo {
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/ams/activity': typeof AuthenticatedAmsActivityRoute
+  '/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
   '/ams/queue': typeof AuthenticatedAmsQueueRoute
   '/ams/reports': typeof AuthenticatedAmsReportsRoute
   '/ams/seats': typeof AuthenticatedAmsSeatsRoute
@@ -326,6 +335,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/ams/activity': typeof AuthenticatedAmsActivityRoute
+  '/_authenticated/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
   '/_authenticated/ams/queue': typeof AuthenticatedAmsQueueRoute
   '/_authenticated/ams/reports': typeof AuthenticatedAmsReportsRoute
   '/_authenticated/ams/seats': typeof AuthenticatedAmsSeatsRoute
@@ -364,6 +374,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/users'
     | '/ams/activity'
+    | '/ams/form-builder'
     | '/ams/queue'
     | '/ams/reports'
     | '/ams/seats'
@@ -400,6 +411,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/users'
     | '/ams/activity'
+    | '/ams/form-builder'
     | '/ams/queue'
     | '/ams/reports'
     | '/ams/seats'
@@ -437,6 +449,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/audit'
     | '/_authenticated/admin/users'
     | '/_authenticated/ams/activity'
+    | '/_authenticated/ams/form-builder'
     | '/_authenticated/ams/queue'
     | '/_authenticated/ams/reports'
     | '/_authenticated/ams/seats'
@@ -672,6 +685,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAmsQueueRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ams/form-builder': {
+      id: '/_authenticated/ams/form-builder'
+      path: '/ams/form-builder'
+      fullPath: '/ams/form-builder'
+      preLoaderRoute: typeof AuthenticatedAmsFormBuilderRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ams/activity': {
       id: '/_authenticated/ams/activity'
       path: '/ams/activity'
@@ -731,6 +751,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAmsActivityRoute: typeof AuthenticatedAmsActivityRoute
+  AuthenticatedAmsFormBuilderRoute: typeof AuthenticatedAmsFormBuilderRoute
   AuthenticatedAmsQueueRoute: typeof AuthenticatedAmsQueueRoute
   AuthenticatedAmsReportsRoute: typeof AuthenticatedAmsReportsRoute
   AuthenticatedAmsSeatsRoute: typeof AuthenticatedAmsSeatsRoute
@@ -749,6 +770,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAmsActivityRoute: AuthenticatedAmsActivityRoute,
+  AuthenticatedAmsFormBuilderRoute: AuthenticatedAmsFormBuilderRoute,
   AuthenticatedAmsQueueRoute: AuthenticatedAmsQueueRoute,
   AuthenticatedAmsReportsRoute: AuthenticatedAmsReportsRoute,
   AuthenticatedAmsSeatsRoute: AuthenticatedAmsSeatsRoute,

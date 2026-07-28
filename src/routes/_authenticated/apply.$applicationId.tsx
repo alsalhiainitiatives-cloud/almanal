@@ -53,6 +53,15 @@ import {
   type QurraInput,
 } from "@/features/admissions/schemas";
 import { WizardShell, type WizardStep } from "@/features/admissions/components/WizardShell";
+import { CustomFields } from "@/features/admissions/components/CustomFields";
+import {
+  BUILTIN_STEP_IDS,
+  stepIcon,
+  useFormConfig,
+  validateCustomFields,
+  type CustomValues,
+  type FormFieldRow,
+} from "@/features/admissions/form-config";
 import { ChildrenStep } from "@/features/admissions/components/steps/ChildrenStep";
 import { DocumentsStep } from "@/features/admissions/components/steps/DocumentsStep";
 import {
@@ -87,9 +96,12 @@ export const Route = createFileRoute("/_authenticated/apply/$applicationId")({
   component: WizardPage,
 });
 
-const STEPS: WizardStep[] = [
+type WizardStepWithKey = WizardStep & { key: string };
+
+const STEPS: WizardStepWithKey[] = [
   {
     id: 3,
+    key: "parent",
     label: "بيانات ولي الأمر",
     short: "ولي الأمر",
     description: "الهوية والجنسية وبيانات التواصل والعنوان الوطني.",
@@ -97,6 +109,7 @@ const STEPS: WizardStep[] = [
   },
   {
     id: 4,
+    key: "children",
     label: "بيانات الأبناء",
     short: "الأبناء",
     description: "بيانات كل طفل مع حساب العمر وتحديد المرحلة والفصول المفضلة.",
@@ -104,6 +117,7 @@ const STEPS: WizardStep[] = [
   },
   {
     id: 5,
+    key: "qurra",
     label: "برنامج قرة",
     short: "قرة",
     description: "تأكيد طلب دعم قرة للأمهات السعوديات العاملات.",
@@ -111,6 +125,7 @@ const STEPS: WizardStep[] = [
   },
   {
     id: 6,
+    key: "services",
     label: "الخدمات الإضافية",
     short: "الخدمات",
     description: "اختر النقل والوجبات والأنشطة التي تناسب أسرتك.",
@@ -118,6 +133,7 @@ const STEPS: WizardStep[] = [
   },
   {
     id: 7,
+    key: "documents",
     label: "المستندات المطلوبة",
     short: "المستندات",
     description: "مستندات ولي الأمر ومستندات مستقلة لكل طفل.",
@@ -125,6 +141,7 @@ const STEPS: WizardStep[] = [
   },
   {
     id: 8,
+    key: "review",
     label: "مراجعة الطلب",
     short: "المراجعة",
     description: "راجع كل البيانات وعدّل ما تحتاجه قبل الإرسال.",
@@ -132,6 +149,7 @@ const STEPS: WizardStep[] = [
   },
   {
     id: 9,
+    key: "financial",
     label: "الملخص المالي",
     short: "المالية",
     description: "تفاصيل الرسوم والخصومات والمبلغ الإجمالي.",
@@ -181,6 +199,46 @@ const emptyQurra = (): QurraInput => ({
   notes: "",
 });
 
+/** Admin-defined fields attached to the active wizard step. */
+function StepCustomFields({
+  stepKey,
+  stepLabel,
+  fields,
+  values,
+  errors,
+  onChange,
+}: {
+  stepKey: string;
+  stepLabel: string;
+  fields: FormFieldRow[];
+  values: Record<string, unknown>;
+  errors: Record<string, string>;
+  onChange: (stepKey: string, key: string, value: unknown) => void;
+}) {
+  const builtin = stepKey in BUILTIN_STEP_IDS;
+
+  if (!fields.length) {
+    if (builtin) return null;
+    return (
+      <div className="rounded-3xl border-2 border-dashed border-border/70 bg-card p-10 text-center">
+        <p className="text-sm font-bold text-muted-foreground">
+          لم تُضف إدارة القبول حقولًا لهذه المرحلة بعد.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <CustomFields
+      title={builtin ? "معلومات إضافية" : stepLabel}
+      fields={fields}
+      values={values}
+      errors={errors}
+      onChange={(key, value) => onChange(stepKey, key, value)}
+    />
+  );
+}
+
 function WizardPage() {
   const { applicationId } = Route.useParams();
   const navigate = useNavigate();
@@ -217,7 +275,36 @@ function WizardPage() {
     parent?: Partial<ParentInfoInput>;
     children?: ChildInput[];
     qurra?: Partial<QurraInput>;
+    custom?: CustomValues;
   };
+
+  /* Live registration-form configuration (steps + custom fields). */
+  const { data: formConfig } = useFormConfig();
+  const configuredSteps: WizardStepWithKey[] = useMemo(() => {
+    const rows = formConfig?.steps ?? [];
+    if (!rows.length) return STEPS;
+    return rows.map((row, index) => ({
+      id: BUILTIN_STEP_IDS[row.key] ?? 100 + index,
+      key: row.key,
+      label: row.name_ar,
+      short: row.short_ar,
+      description: row.description_ar ?? "",
+      icon: stepIcon(row.icon),
+    }));
+  }, [formConfig]);
+
+  const customFieldsByStep = useMemo(() => {
+    const map = new Map<string, FormFieldRow[]>();
+    const rows = formConfig?.fields ?? [];
+    const stepKeyById = new Map((formConfig?.steps ?? []).map((s) => [s.id, s.key]));
+    for (const field of rows) {
+      if (field.is_system || !field.is_visible) continue;
+      const key = stepKeyById.get(field.step_id);
+      if (!key) continue;
+      map.set(key, [...(map.get(key) ?? []), field]);
+    }
+    return map;
+  }, [formConfig]);
 
   /* Correction mode: staff asked for fixes in specific sections only. */
   const correctionSections = ((bundle.application as { correction_sections?: string[] | null })
@@ -234,8 +321,8 @@ function WizardPage() {
   };
   const allowedStepIds = correctionMode
     ? new Set([...correctionSections.map((s) => SECTION_STEP[s]).filter(Boolean), 8, 9])
-    : new Set(STEPS.map((s) => s.id));
-  const visibleSteps = STEPS.filter((s) => allowedStepIds.has(s.id));
+    : new Set(configuredSteps.map((s) => s.id));
+  const visibleSteps = configuredSteps.filter((s) => allowedStepIds.has(s.id));
   const firstStepId = visibleSteps[0]?.id ?? 3;
   const lastStepId = visibleSteps[visibleSteps.length - 1]?.id ?? 9;
 
@@ -247,6 +334,7 @@ function WizardPage() {
     draft.children?.length ? draft.children : [emptyChild()],
   );
   const [qurra, setQurra] = useState<QurraInput>(() => ({ ...emptyQurra(), ...draft.qurra }));
+  const [custom, setCustom] = useState<CustomValues>(() => draft.custom ?? {});
   const [services, setServices] = useState<string[]>(() => bundle.services);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [duplicates, setDuplicates] = useState<Record<number, string>>({});
@@ -255,6 +343,14 @@ function WizardPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ applicationNumber: string; trackingNumber: string } | null>(null);
+
+  /* Keep the active step valid when staff enable/disable steps live. */
+  useEffect(() => {
+    if (!visibleSteps.length) return;
+    if (!visibleSteps.some((s) => s.id === step)) {
+      setStep(visibleSteps[0].id);
+    }
+  }, [visibleSteps, step]);
 
   const stage =
     catalog.stages.find((s) => s.id === bundle.application.stage_id) ??
@@ -390,6 +486,17 @@ function WizardPage() {
     setBusy(true);
     setErrors({});
     try {
+      const stepKey = configuredSteps.find((s) => s.id === step)?.key ?? "";
+      const customErrors = validateCustomFields(
+        customFieldsByStep.get(stepKey) ?? [],
+        custom[stepKey],
+      );
+      if (Object.keys(customErrors).length) {
+        setErrors(customErrors);
+        toast.error("يرجى تعبئة الحقول المطلوبة");
+        return;
+      }
+
       if (step === 3) {
         const parsed = parentInfoSchema.safeParse(parent);
         if (!parsed.success) {
@@ -454,7 +561,7 @@ function WizardPage() {
       }
 
       await saveDraft({
-        data: { id: applicationId, step: step + 1, draft: { parent, children, qurra } },
+        data: { id: applicationId, step: step + 1, draft: { parent, children, qurra, custom } },
       });
       setStep((s) => {
         const idx = visibleSteps.findIndex((v) => v.id === s);
@@ -721,6 +828,17 @@ function WizardPage() {
             ) : null}
 
             {step === 9 ? <FinancialStep data={financials} /> : null}
+
+            <StepCustomFields
+              stepKey={configuredSteps.find((s) => s.id === step)?.key ?? ""}
+              stepLabel={configuredSteps.find((s) => s.id === step)?.label ?? ""}
+              fields={customFieldsByStep.get(configuredSteps.find((s) => s.id === step)?.key ?? "") ?? []}
+              values={custom[configuredSteps.find((s) => s.id === step)?.key ?? ""] ?? {}}
+              errors={errors}
+              onChange={(stepKey, key, value) =>
+                setCustom((prev) => ({ ...prev, [stepKey]: { ...(prev[stepKey] ?? {}), [key]: value } }))
+              }
+            />
           </motion.div>
         </AnimatePresence>
       </WizardShell>
