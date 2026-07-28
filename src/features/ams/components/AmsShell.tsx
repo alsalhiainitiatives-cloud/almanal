@@ -29,9 +29,9 @@ import { useAmsRealtime } from "../useAmsRealtime";
 import { StatusPill } from "./atoms";
 
 const NAV = [
-  { to: "/ams", label: "لوحة القيادة", icon: LayoutDashboard, exact: true },
+  { to: "/ams", label: "لوحة المتابعة", icon: LayoutDashboard, exact: true },
   { to: "/ams/queue", label: "قائمة الطلبات", icon: Inbox, exact: false },
-  { to: "/ams/seats", label: "إدارة المقاعد", icon: Armchair, exact: false },
+  { to: "/ams/seats", label: "إدارة  الفصول والمقاعد", icon: Armchair, exact: false },
   { to: "/ams/waiting-list", label: "قائمة الانتظار", icon: ListOrdered, exact: false },
   { to: "/ams/activity", label: "الحركة اللحظية", icon: Activity, exact: false },
   { to: "/ams/reports", label: "التقارير", icon: BarChart3, exact: false },
