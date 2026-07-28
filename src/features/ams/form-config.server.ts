@@ -57,7 +57,8 @@ async function guardAdmin(supabase: Db, userId: string) {
 }
 
 export async function getFormConfig(supabase: Db, userId: string) {
-  await guardAdmin(supabase, userId);
+  // Reading the form configuration must stay open to every signed-in user:
+  // the public admission wizard renders from this exact config.
   const [steps, fields, docs] = await Promise.all([
     supabase.from("form_steps").select("*").order("sort_order"),
     supabase.from("form_fields").select("*").order("sort_order"),
