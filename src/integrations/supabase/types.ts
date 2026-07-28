@@ -355,6 +355,9 @@ export type Database = {
           archived_at: string | null
           assigned_officer_id: string | null
           classroom_id: string | null
+          correction_note: string | null
+          correction_requested_at: string | null
+          correction_sections: string[]
           created_at: string
           current_step: number
           decided_at: string | null
@@ -392,6 +395,9 @@ export type Database = {
           archived_at?: string | null
           assigned_officer_id?: string | null
           classroom_id?: string | null
+          correction_note?: string | null
+          correction_requested_at?: string | null
+          correction_sections?: string[]
           created_at?: string
           current_step?: number
           decided_at?: string | null
@@ -429,6 +435,9 @@ export type Database = {
           archived_at?: string | null
           assigned_officer_id?: string | null
           classroom_id?: string | null
+          correction_note?: string | null
+          correction_requested_at?: string | null
+          correction_sections?: string[]
           created_at?: string
           current_step?: number
           decided_at?: string | null
