@@ -438,6 +438,17 @@ function WizardPage() {
     setBusy(true);
     setErrors({});
     try {
+      const stepKey = configuredSteps.find((s) => s.id === step)?.key ?? "";
+      const customErrors = validateCustomFields(
+        customFieldsByStep.get(stepKey) ?? [],
+        custom[stepKey],
+      );
+      if (Object.keys(customErrors).length) {
+        setErrors(customErrors);
+        toast.error("يرجى تعبئة الحقول المطلوبة");
+        return;
+      }
+
       if (step === 3) {
         const parsed = parentInfoSchema.safeParse(parent);
         if (!parsed.success) {
@@ -502,7 +513,7 @@ function WizardPage() {
       }
 
       await saveDraft({
-        data: { id: applicationId, step: step + 1, draft: { parent, children, qurra } },
+        data: { id: applicationId, step: step + 1, draft: { parent, children, qurra, custom } },
       });
       setStep((s) => {
         const idx = visibleSteps.findIndex((v) => v.id === s);
