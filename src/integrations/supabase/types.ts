@@ -533,6 +533,44 @@ export type Database = {
         }
         Relationships: []
       }
+      classroom_locks: {
+        Row: {
+          acquired_at: string
+          classroom_id: string
+          created_at: string
+          expires_at: string
+          updated_at: string
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          acquired_at?: string
+          classroom_id: string
+          created_at?: string
+          expires_at?: string
+          updated_at?: string
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          acquired_at?: string
+          classroom_id?: string
+          created_at?: string
+          expires_at?: string
+          updated_at?: string
+          user_id?: string
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classroom_locks_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: true
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classrooms: {
         Row: {
           capacity: number
@@ -1222,6 +1260,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acquire_classroom_lock: {
+        Args: { _classroom_id: string; _ttl_seconds?: number }
+        Returns: {
+          acquired: boolean
+          acquired_at: string
+          classroom_id: string
+          expires_at: string
+          user_id: string
+          user_name: string
+        }[]
+      }
+      active_classroom_locks: {
+        Args: never
+        Returns: {
+          acquired_at: string
+          classroom_id: string
+          expires_at: string
+          user_id: string
+          user_name: string
+        }[]
+      }
       admin_set_user_roles: {
         Args: {
           _roles: Database["public"]["Enums"]["app_role"][]
@@ -1247,6 +1306,11 @@ export type Database = {
           permission_key: string
         }[]
       }
+      release_classroom_lock: {
+        Args: { _classroom_id: string }
+        Returns: boolean
+      }
+      release_my_classroom_locks: { Args: never; Returns: number }
       revoke_my_other_sessions: {
         Args: { _ip: string; _user_agent: string }
         Returns: number
