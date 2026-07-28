@@ -128,6 +128,19 @@ export async function buildSecurityContext(supabase: Db, userId: string): Promis
     permissions = [...new Set((permRows ?? []).map((p) => p.permission_key))];
   }
 
+  // Per-user overrides win over the role defaults.
+  const { data: overrideRows } = await (supabase as any)
+    .from("user_permissions")
+    .select("permission_key, granted")
+    .eq("user_id", userId);
+  for (const row of (overrideRows ?? []) as Array<{ permission_key: string; granted: boolean }>) {
+    if (row.granted) {
+      if (!permissions.includes(row.permission_key)) permissions.push(row.permission_key);
+    } else {
+      permissions = permissions.filter((key) => key !== row.permission_key);
+    }
+  }
+
   return {
     profile: profile
       ? {
@@ -298,4 +311,37 @@ export async function setRolePermission(
     meta: getRequestMeta(),
   });
   return { ok: true as const };
+}
+
+export async function listUserPermissionOverrides(supabase: Db) {
+  const { data } = await (supabase as any)
+    .from("user_permissions")
+    .select("user_id, permission_key, granted");
+  return ((data ?? []) as Array<{ user_id: string; permission_key: string; granted: boolean }>).map(
+    (row) => ({ userId: row.user_id, key: row.permission_key, granted: row.granted }),
+  );
+}
+
+export async function bulkSetUserPermissions(
+  supabase: Db,
+  actorId: string,
+  userIds: string[],
+  permissionKeys: string[],
+  action: "grant" | "revoke" | "reset",
+) {
+  const { data, error } = await (supabase as any).rpc("admin_bulk_set_user_permissions", {
+    _user_ids: userIds,
+    _permission_keys: permissionKeys,
+    _action: action,
+  });
+  if (error) throw new Error("تعذّر تنفيذ الإجراء الجماعي على الصلاحيات.");
+
+  await recordAudit({
+    userId: actorId,
+    action: `permissions.bulk.${action}`,
+    entity: "user_permissions",
+    metadata: { userIds, permissionKeys, action, affected: data ?? 0 },
+    meta: getRequestMeta(),
+  });
+  return { ok: true as const, affected: (data as number) ?? 0 };
 }
