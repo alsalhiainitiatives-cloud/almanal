@@ -240,9 +240,9 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
         {decided ? (
           <Notice tone="ok">
             <Lock className="me-1 inline size-3.5" />
-            الطلب في حالة {status === "approved" ? "مقبول" : status === "rejected" ? "مرفوض" : "منسحب"} — لا يمكن تكرار
-            القرار.
+            تم قبول الطلب 
           </Notice>
+        ) : null}
         ) : null}
 
         {/* ---------------------------------------------- stage 1: start */}
