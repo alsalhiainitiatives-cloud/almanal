@@ -1,11 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { Link, createFileRoute } from "@tanstack/react-router";
-import { Armchair } from "lucide-react";
-import { amsOverview } from "@/features/ams/ams.functions";
-import { useClassroomLocks } from "@/features/ams/classroom-lock";
+import { createFileRoute } from "@tanstack/react-router";
 import { AmsShell } from "@/features/ams/components/AmsShell";
-import { ClassroomLockBadge } from "@/features/ams/components/seats/ClassroomLockBadge";
-import { EmptyState, SkeletonRows } from "@/features/ams/components/atoms";
+import { SeatBoard } from "@/features/ams/components/seats/SeatBoard";
 export const Route = createFileRoute("/_authenticated/ams/seats")({
   head: () => ({
     meta: [
