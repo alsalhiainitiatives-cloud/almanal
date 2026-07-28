@@ -29,6 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QURRA_STATUS_LABELS } from "@/features/admissions/eligibility";
+import { listStages } from "@/features/admissions/catalog.functions";
 import {
   amsAssignOfficer,
   amsQueue,
@@ -38,6 +39,7 @@ import {
 } from "@/features/ams/ams.functions";
 import { AmsShell } from "@/features/ams/components/AmsShell";
 import { EmptyState, STATUS_LABELS, SkeletonRows } from "@/features/ams/components/atoms";
+import { AccessNotice, isAuthorizationError } from "@/features/ams/components/AccessNotice";
 import { QueueCards } from "@/features/ams/components/queue/QueueCards";
 import { QueueTable } from "@/features/ams/components/queue/QueueTable";
 import {
@@ -51,7 +53,13 @@ import {
 import { PAYMENT_STATUS_LABELS, PRIORITY_LABELS } from "@/features/ams/roles";
 import { cn } from "@/lib/utils";
 
-type QueueSearch = { status?: string; officerId?: string; payment?: string; qurra?: string };
+type QueueSearch = {
+  status?: string;
+  officerId?: string;
+  payment?: string;
+  qurra?: string;
+  stageId?: string;
+};
 
 export const Route = createFileRoute("/_authenticated/ams/queue")({
   validateSearch: (search: Record<string, unknown>): QueueSearch => ({
@@ -59,6 +67,7 @@ export const Route = createFileRoute("/_authenticated/ams/queue")({
     officerId: typeof search.officerId === "string" ? search.officerId : undefined,
     payment: typeof search.payment === "string" ? search.payment : undefined,
     qurra: typeof search.qurra === "string" ? search.qurra : undefined,
+    stageId: typeof search.stageId === "string" ? search.stageId : undefined,
   }),
   head: () => ({
     meta: [
