@@ -124,7 +124,7 @@ export const formDocTypeSave = createServerFn({ method: "POST" })
         name_ar: z.string().trim().min(2).max(120),
         description_ar: z.string().trim().max(400).nullish(),
         scope: z.enum(["parent", "child"]),
-        applies_to_nationality: z.enum(["all", "saudi", "non_saudi"]).optional(),
+        applies_to_nationality: z.enum(["all", "saudi", "non_saudi", "resident"]).optional(),
         is_required: z.boolean().optional(),
         is_active: z.boolean().optional(),
       })

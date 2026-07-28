@@ -151,7 +151,8 @@ export function FormBuilder() {
           applies_to_nationality: (v.patch.applies_to_nationality ?? "all") as
             | "all"
             | "saudi"
-            | "non_saudi",
+            | "non_saudi"
+            | "resident",
           is_required: v.patch.is_required,
           is_active: v.patch.is_active,
         },
@@ -477,7 +478,7 @@ export function FormBuilder() {
                     {doc.scope === "child" ? "مستند لكل طفل" : "مستند ولي الأمر"} ·{" "}
                     {doc.applies_to_nationality === "saudi"
                       ? "السعوديون"
-                      : doc.applies_to_nationality === "non_saudi"
+                      : (doc.applies_to_nationality === "non_saudi" || doc.applies_to_nationality === "resident")
                         ? "غير السعوديين"
                         : "الجميع"}{" "}
                     · <span dir="ltr">{doc.slug}</span>
