@@ -344,6 +344,14 @@ function WizardPage() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ applicationNumber: string; trackingNumber: string } | null>(null);
 
+  /* Keep the active step valid when staff enable/disable steps live. */
+  useEffect(() => {
+    if (!visibleSteps.length) return;
+    if (!visibleSteps.some((s) => s.id === step)) {
+      setStep(visibleSteps[0].id);
+    }
+  }, [visibleSteps, step]);
+
   const stage =
     catalog.stages.find((s) => s.id === bundle.application.stage_id) ??
     catalog.stages.find(
