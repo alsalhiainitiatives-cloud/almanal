@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { navLinks, school } from "@/data/site";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { Logo } from "./Logo";
 
 export function Header() {
@@ -72,12 +73,15 @@ export function Header() {
 
         <div className="flex shrink-0 items-center gap-2">
           {isAuthenticated ? (
+            <>
+            <NotificationBell />
             <Button variant="hero" size="default" className="hidden sm:inline-flex" asChild>
               <Link to="/dashboard">
                 <LayoutDashboard className="size-4" />
                 {profile?.fullName?.split(" ")[0] ?? "لوحتي"}
               </Link>
             </Button>
+            </>
           ) : (
             <Button variant="hero" size="default" className="hidden sm:inline-flex" asChild>
               <Link to="/auth">
