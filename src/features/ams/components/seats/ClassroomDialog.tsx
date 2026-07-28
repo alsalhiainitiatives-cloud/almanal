@@ -402,6 +402,8 @@ export function ClassroomDialog({
           </Row>
         </div>
 
+        <MediaSection draft={draft} set={set} />
+
         <div className="mt-5 rounded-3xl border border-border/60 p-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-extrabold text-foreground">المعلمة الأساسية</p>
