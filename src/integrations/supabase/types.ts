@@ -794,6 +794,110 @@ export type Database = {
         }
         Relationships: []
       }
+      form_fields: {
+        Row: {
+          applies_to: string
+          created_at: string
+          field_type: string
+          help_ar: string | null
+          id: string
+          is_required: boolean
+          is_system: boolean
+          is_visible: boolean
+          key: string
+          label_ar: string
+          options: Json
+          placeholder_ar: string | null
+          sort_order: number
+          step_id: string
+          updated_at: string
+        }
+        Insert: {
+          applies_to?: string
+          created_at?: string
+          field_type?: string
+          help_ar?: string | null
+          id?: string
+          is_required?: boolean
+          is_system?: boolean
+          is_visible?: boolean
+          key: string
+          label_ar: string
+          options?: Json
+          placeholder_ar?: string | null
+          sort_order?: number
+          step_id: string
+          updated_at?: string
+        }
+        Update: {
+          applies_to?: string
+          created_at?: string
+          field_type?: string
+          help_ar?: string | null
+          id?: string
+          is_required?: boolean
+          is_system?: boolean
+          is_visible?: boolean
+          key?: string
+          label_ar?: string
+          options?: Json
+          placeholder_ar?: string | null
+          sort_order?: number
+          step_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_fields_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "form_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_steps: {
+        Row: {
+          created_at: string
+          description_ar: string | null
+          icon: string
+          id: string
+          is_active: boolean
+          is_system: boolean
+          key: string
+          name_ar: string
+          short_ar: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description_ar?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          key: string
+          name_ar: string
+          short_ar: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description_ar?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          key?: string
+          name_ar?: string
+          short_ar?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       login_attempts: {
         Row: {
           created_at: string
