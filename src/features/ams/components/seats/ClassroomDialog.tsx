@@ -477,6 +477,12 @@ export function ClassroomDialog({
                     <Trash2 className="size-3.5" />
                   </button>
                 </div>
+                <TeacherMedia
+                  teacher={teacher}
+                  onChange={(patch) =>
+                    set("teachers", draft.teachers.map((t, i) => (i === index ? { ...t, ...patch } : t)))
+                  }
+                />
               </div>
             ))}
             {draft.teachers.length === 0 ? (
