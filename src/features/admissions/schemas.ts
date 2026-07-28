@@ -62,7 +62,10 @@ export const parentInfoSchema = z.object({
   motherNationalId: z
     .string()
     .trim()
-    .regex(/^1\d{9}$/, "رقم هوية الأم يجب أن يكون 10 أرقام ويبدأ بـ 1")
+    .regex(
+      /^1\d{9}$/,
+      "رقم هوية الأم يجب أن يكون 10 أرقام ويبدأ بالرقم 1 للدلالة على أنها سعودية",
+    )
     .optional()
     .or(z.literal("")),
   motherEmployer: z.string().trim().max(120).optional().or(z.literal("")),
@@ -103,6 +106,13 @@ export const parentInfoSchema = z.object({
         if (v.motherIsWorking === "yes") {
           if (!v.motherNationalId?.trim()) {
             ctx.addIssue({ code: "custom", path: ["motherNationalId"], message: "أدخل رقم هوية الأم" });
+          } else if (!/^1\d{9}$/.test(v.motherNationalId.trim())) {
+            ctx.addIssue({
+              code: "custom",
+              path: ["motherNationalId"],
+              message:
+                "رقم هوية الأم يجب أن يبدأ بالرقم 1 للدلالة على أنها سعودية — دعم قرة متاح للأم السعودية فقط",
+            });
           }
           if (!v.motherEmployer?.trim()) {
             ctx.addIssue({ code: "custom", path: ["motherEmployer"], message: "أدخل جهة عمل الأم" });
