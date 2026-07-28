@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ArrowLeft, FileText, Loader2, Sparkles, Upload, Wallet } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, Printer, Sparkles, Upload, Wallet } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PortalLayout } from "@/features/auth/components/PortalLayout";
@@ -10,6 +10,7 @@ import { myFinanceGet, receiptSignedUrl } from "@/features/finance/finance.funct
 import { BankCard } from "@/features/finance/components/BankCard";
 import { ReceiptDialog } from "@/features/finance/components/ReceiptDialog";
 import { ScheduleList, type InstallmentRow } from "@/features/finance/components/ScheduleList";
+import { printVoucher } from "@/features/finance/components/PaymentVoucher";
 import { RECEIPT_STATUS_LABELS, dateAr, money, type BankAccountRow } from "@/features/finance/pricing";
 
 export const Route = createFileRoute("/_authenticated/payments")({
@@ -130,22 +131,43 @@ function PaymentsPage() {
                         rows={rows}
                         lateAfterDays={lateAfter}
                         actions={(row) =>
-                          row.status === "due" ? (
+                          <div className="flex items-center gap-1.5">
                             <Button
                               size="sm"
+                              variant="outline"
                               className="rounded-xl"
                               onClick={() =>
-                                setDialog({
-                                  invoiceId: invoice.id,
-                                  installmentId: row.id,
+                                printVoucher({
+                                  bank: bank ?? null,
+                                  applicationNumber: app?.application_number ?? null,
+                                  seq: row.seq,
                                   amount: Number(row.amount),
+                                  dueDate: row.due_date,
+                                  academicYear: invoice.academic_year,
+                                  paid: row.status === "paid",
                                 })
                               }
                             >
-                              <Upload className="size-3.5" />
-                              رفع الإيصال
+                              <Printer className="size-3.5" />
+                              طباعة النموذج
                             </Button>
-                          ) : null
+                            {row.status === "due" ? (
+                              <Button
+                                size="sm"
+                                className="rounded-xl"
+                                onClick={() =>
+                                  setDialog({
+                                    invoiceId: invoice.id,
+                                    installmentId: row.id,
+                                    amount: Number(row.amount),
+                                  })
+                                }
+                              >
+                                <Upload className="size-3.5" />
+                                رفع الإيصال
+                              </Button>
+                            ) : null}
+                          </div>
                         }
                       />
                     </div>
