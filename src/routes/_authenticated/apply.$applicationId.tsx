@@ -139,6 +139,14 @@ const STEPS: WizardStep[] = [
   },
 ];
 
+const SECTION_LABELS: Record<string, string> = {
+  parent: "بيانات ولي الأمر",
+  children: "بيانات الأبناء",
+  qurra: "برنامج قرة",
+  services: "الخدمات الإضافية",
+  documents: "المستندات",
+};
+
 const emptyParent = (): ParentInfoInput => ({
   nationalId: "",
   nationality: "saudi",
