@@ -42,6 +42,11 @@ export function ParentStep({
   const detected = detectNationality(value.nationalId);
   const impliedGender = relationshipGender(value.relationship);
   const isSaudiMother = value.relationship === "mother" && detected === "saudi";
+  const isOtherGuardian = value.relationship !== "mother";
+  // Non-mother guardians can still apply on behalf of a working Saudi mother.
+  const showSpouseQurra = isOtherGuardian && value.motherIsSaudi === "yes";
+  const showQurraDetails = (isSaudiMother || showSpouseQurra) && value.motherIsWorking === "yes";
+  const showQurraBlock = isSaudiMother || isOtherGuardian;
 
   return (
     <div className="space-y-6">
@@ -130,7 +135,9 @@ export function ParentStep({
                 relationship: v as ParentInfoInput["relationship"],
                 ...(gender ? { gender } : {}),
                 ...(v === "other" ? {} : { relationshipOther: "" }),
-                ...(v === "mother" ? {} : { motherIsWorking: undefined, motherDeclaration: false }),
+                ...(v === "mother"
+                  ? { motherIsSaudi: undefined, motherNationalId: "" }
+                  : { motherIsWorking: undefined, motherDeclaration: false }),
               });
             }}
             options={RELATIONSHIPS.map((r) => ({ value: r.value, label: r.label }))}
