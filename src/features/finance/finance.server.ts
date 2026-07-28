@@ -51,12 +51,15 @@ async function admin() {
 /* ------------------------------------------------------------------ */
 
 export async function getFinanceConfig(supabase: Db) {
-  const [plans, settings, discounts, banks, general] = await Promise.all([
+  const [plans, settings, discounts, banks, general, stages, classrooms, services] = await Promise.all([
     supabase.from("fee_plans").select("*").order("created_at"),
     supabase.from("payment_plan_settings").select("*").eq("academic_year", ACADEMIC_YEAR).maybeSingle(),
     supabase.from("discount_rules").select("*").order("sort_order"),
     supabase.from("bank_accounts").select("*").order("created_at"),
     supabase.from("finance_settings").select("*").limit(1).maybeSingle(),
+    supabase.from("stages").select("id, name_ar, slug, sort_order").order("sort_order"),
+    supabase.from("classrooms").select("id, name_ar, stage_id, sort_order").order("sort_order"),
+    supabase.from("services").select("*").order("sort_order"),
   ]);
   return {
     feePlans: plans.data ?? [],
@@ -64,7 +67,91 @@ export async function getFinanceConfig(supabase: Db) {
     discountRules: discounts.data ?? [],
     bankAccounts: banks.data ?? [],
     settings: general.data ?? null,
+    stages: stages.data ?? [],
+    classrooms: classrooms.data ?? [],
+    services: services.data ?? [],
   };
+}
+
+export async function saveService(
+  supabase: Db,
+  userId: string,
+  input: {
+    id?: string | null;
+    slug: string;
+    name_ar: string;
+    description_ar?: string | null;
+    category: Database["public"]["Enums"]["service_category"];
+    price: number;
+    price_note?: string | null;
+    is_required?: boolean;
+    sort_order?: number;
+    is_active?: boolean;
+  },
+) {
+  await guardFinance(supabase, userId);
+  const payload = {
+    slug: input.slug,
+    name_ar: input.name_ar,
+    description_ar: input.description_ar ?? null,
+    category: input.category,
+    price: input.price,
+    price_note: input.price_note ?? null,
+    is_required: input.is_required ?? false,
+    sort_order: input.sort_order ?? 0,
+    is_active: input.is_active ?? true,
+  };
+  const query = input.id
+    ? supabase.from("services").update(payload).eq("id", input.id)
+    : supabase.from("services").insert(payload);
+  const { error } = await query;
+  if (error) throw new Error("تعذّر حفظ الخدمة الإضافية.");
+  return { ok: true };
+}
+
+export async function deleteService(supabase: Db, userId: string, id: string) {
+  await guardFinance(supabase, userId);
+  const { error } = await supabase.from("services").delete().eq("id", id);
+  if (error) throw new Error("تعذّر حذف الخدمة — قد تكون مرتبطة بطلبات قائمة.");
+  return { ok: true };
+}
+
+/** Notifies every parent with an overdue (or soon-due) installment. */
+export async function notifyOverdue(supabase: Db, userId: string) {
+  await guardFinance(supabase, userId);
+  const db = await admin();
+  const { data: settings } = await db
+    .from("payment_plan_settings")
+    .select("late_after_days")
+    .eq("academic_year", ACADEMIC_YEAR)
+    .maybeSingle();
+  const lateAfter = Number(settings?.late_after_days ?? 0);
+  const limit = new Date();
+  limit.setDate(limit.getDate() - lateAfter);
+
+  const { data: rows } = await db
+    .from("installments")
+    .select("id, seq, amount, due_date, status, invoices(parent_id, application_id)")
+    .in("status", ["due", "pending_review"])
+    .lte("due_date", limit.toISOString().slice(0, 10));
+
+  let sent = 0;
+  for (const row of rows ?? []) {
+    const invoice = (row as unknown as { invoices: { parent_id: string; application_id: string } })
+      .invoices;
+    if (!invoice) continue;
+    await notify(supabase, {
+      userIds: [invoice.parent_id],
+      kind: "finance.payment_overdue",
+      title: `تأخر سداد الدفعة رقم ${row.seq}`,
+      body: `المبلغ ${Math.round(Number(row.amount))} ر.س — كان تاريخ الاستحقاق ${row.due_date}`,
+      applicationId: invoice.application_id,
+      link: "/payments",
+      severity: "urgent",
+    });
+    sent += 1;
+  }
+  return { sent };
 }
 
 export async function saveFeePlan(
