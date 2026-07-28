@@ -27,6 +27,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TrackIndexRouteImport } from './routes/track.index'
 import { Route as AdmissionsIndexRouteImport } from './routes/admissions.index'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
 import { Route as AuthenticatedMyApplicationsRouteImport } from './routes/_authenticated/my-applications'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAmsIndexRouteImport } from './routes/_authenticated/ams/index'
@@ -134,6 +135,11 @@ const AdmissionsIndexRoute = AdmissionsIndexRouteImport.update({
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPaymentsRoute = AuthenticatedPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMyApplicationsRoute =
@@ -260,6 +266,7 @@ export interface FileRoutesByFullPath {
   '/stages': typeof StagesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
+  '/payments': typeof AuthenticatedPaymentsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/admissions/': typeof AdmissionsIndexRoute
   '/track/': typeof TrackIndexRoute
@@ -298,6 +305,7 @@ export interface FileRoutesByTo {
   '/stages': typeof StagesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
+  '/payments': typeof AuthenticatedPaymentsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/admissions': typeof AdmissionsIndexRoute
   '/track': typeof TrackIndexRoute
@@ -338,6 +346,7 @@ export interface FileRoutesById {
   '/stages': typeof StagesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/my-applications': typeof AuthenticatedMyApplicationsRoute
+  '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/admissions/': typeof AdmissionsIndexRoute
   '/track/': typeof TrackIndexRoute
@@ -378,6 +387,7 @@ export interface FileRouteTypes {
     | '/stages'
     | '/dashboard'
     | '/my-applications'
+    | '/payments'
     | '/profile'
     | '/admissions/'
     | '/track/'
@@ -416,6 +426,7 @@ export interface FileRouteTypes {
     | '/stages'
     | '/dashboard'
     | '/my-applications'
+    | '/payments'
     | '/profile'
     | '/admissions'
     | '/track'
@@ -455,6 +466,7 @@ export interface FileRouteTypes {
     | '/stages'
     | '/_authenticated/dashboard'
     | '/_authenticated/my-applications'
+    | '/_authenticated/payments'
     | '/_authenticated/profile'
     | '/admissions/'
     | '/track/'
@@ -628,6 +640,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/payments': {
+      id: '/_authenticated/payments'
+      path: '/payments'
+      fullPath: '/payments'
+      preLoaderRoute: typeof AuthenticatedPaymentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/my-applications': {
       id: '/_authenticated/my-applications'
       path: '/my-applications'
@@ -767,6 +786,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedMyApplicationsRoute: typeof AuthenticatedMyApplicationsRoute
+  AuthenticatedPaymentsRoute: typeof AuthenticatedPaymentsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminPermissionsRoute: typeof AuthenticatedAdminPermissionsRoute
@@ -787,6 +807,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedMyApplicationsRoute: AuthenticatedMyApplicationsRoute,
+  AuthenticatedPaymentsRoute: AuthenticatedPaymentsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminPermissionsRoute: AuthenticatedAdminPermissionsRoute,
