@@ -18,6 +18,7 @@ import {
   listWaitingList,
   manageSeat,
   moveToWaitingList,
+  nudgePrincipal,
   recommendToPrincipal,
   requestDocuments,
   requestCorrections,
@@ -180,6 +181,13 @@ export const amsRecommend = createServerFn({ method: "POST" })
     z.object({ id: uuid, recommendation: z.string().trim().min(5).max(1000) }).parse(data),
   )
   .handler(async ({ data, context }) => recommendToPrincipal(context.supabase, context.userId, data));
+
+export const amsNudgePrincipal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ id: uuid, note: z.string().trim().max(500).optional() }).parse(data),
+  )
+  .handler(async ({ data, context }) => nudgePrincipal(context.supabase, context.userId, data));
 
 export const amsDecide = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

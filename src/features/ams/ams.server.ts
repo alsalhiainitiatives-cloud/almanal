@@ -586,6 +586,20 @@ export async function recommendToPrincipal(
   return { ok: true as const };
 }
 
+/** Officer nudges the principal to act on a pending approval. */
+export async function nudgePrincipal(supabase: Db, userId: string, input: { id: string; note?: string }) {
+  await guard(supabase, userId, "recommend");
+  await logEvent(
+    supabase,
+    input.id,
+    userId,
+    "application.nudge",
+    "تم إرسال تذكير لمدير المدرسة باعتماد الطلب",
+    input.note,
+  );
+  return { ok: true as const };
+}
+
 function studentNumber(year: string) {
   const chars = "0123456789";
   const bytes = crypto.getRandomValues(new Uint8Array(4));
