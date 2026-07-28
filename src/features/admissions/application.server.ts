@@ -18,7 +18,11 @@ async function loadApplicationRow(supabase: Db, id: string, userId: string) {
     .eq("id", id)
     .maybeSingle();
   if (error || !data) throw new Error("لم يتم العثور على الطلب.");
-  if (data.parent_id !== userId) throw new Error("غير مصرح بالوصول لهذا الطلب.");
+  if (data.parent_id !== userId) {
+    // School staff (officer, principal, supervisor, admin) may open any application.
+    const { data: isStaff } = await supabase.rpc("is_school_staff", { _user_id: userId });
+    if (!isStaff) throw new Error("غير مصرح بالوصول لهذا الطلب.");
+  }
   return data;
 }
 
