@@ -107,6 +107,207 @@ function Row({ title, children }: { title: string; children: React.ReactNode }) 
   );
 }
 
+function UploadButton({
+  title,
+  accept,
+  folder,
+  multiple,
+  icon: Icon = Upload,
+  onUploaded,
+}: {
+  title: string;
+  accept: string;
+  folder: string;
+  multiple?: boolean;
+  icon?: typeof Upload;
+  onUploaded: (files: { path: string; name: string }[]) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function handle(list: FileList | null) {
+    if (!list?.length) return;
+    setBusy(true);
+    try {
+      const done: { path: string; name: string }[] = [];
+      for (const file of Array.from(list)) {
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`${file.name}: الحجم يتجاوز 10 ميجابايت`);
+          continue;
+        }
+        done.push({ path: await uploadClassroomMedia(file, folder), name: file.name });
+      }
+      if (done.length) onUploaded(done);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذّر رفع الملف");
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => inputRef.current?.click()}
+        className="inline-flex items-center gap-1 rounded-2xl border border-border/60 px-3 py-1.5 text-[11px] font-extrabold text-primary disabled:opacity-60"
+      >
+        {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Icon className="size-3.5" />} {title}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        multiple={multiple}
+        hidden
+        onChange={(e) => handle(e.target.files)}
+      />
+    </>
+  );
+}
+
+function MediaSection({
+  draft,
+  set,
+}: {
+  draft: ClassroomDraft;
+  set: <K extends keyof ClassroomDraft>(key: K, value: ClassroomDraft[K]) => void;
+}) {
+  const urls = useClassroomMediaUrls([draft.cover_image, ...draft.gallery.map((g) => g.path)]);
+
+  return (
+    <div className="mt-5 rounded-3xl border border-border/60 p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-extrabold text-foreground">صورة الغلاف وصور الأنشطة</p>
+        <UploadButton
+          title="صورة غلاف"
+          accept="image/*"
+          folder="covers"
+          icon={ImagePlus}
+          onUploaded={(files) => set("cover_image", files[0].path)}
+        />
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-start gap-3">
+        {draft.cover_image ? (
+          <div className="relative">
+            <img
+              src={urls[draft.cover_image]}
+              alt="غلاف الفصل"
+              className="h-28 w-44 rounded-2xl border border-border/60 object-cover"
+            />
+            <button
+              type="button"
+              onClick={() => set("cover_image", null)}
+              className="absolute -top-2 -left-2 rounded-full bg-card p-1 text-destructive shadow"
+            >
+              <Trash2 className="size-3.5" />
+            </button>
+          </div>
+        ) : (
+          <p className="text-[11px] font-bold text-muted-foreground">لم تُرفع صورة غلاف بعد.</p>
+        )}
+      </div>
+
+      <div className="mt-4 flex items-center justify-between">
+        <p className="text-[11px] font-extrabold text-foreground">صور الأنشطة الفصلية</p>
+        <UploadButton
+          title="إضافة صور"
+          accept="image/*"
+          folder="gallery"
+          multiple
+          icon={ImagePlus}
+          onUploaded={(files) => set("gallery", [...draft.gallery, ...files.map((f) => ({ path: f.path, caption: "" }))])}
+        />
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        {draft.gallery.map((item, index) => (
+          <div key={item.path} className="rounded-2xl border border-border/60 p-2">
+            <div className="relative">
+              <img src={urls[item.path]} alt={item.caption ?? "نشاط"} className="h-24 w-full rounded-xl object-cover" />
+              <button
+                type="button"
+                onClick={() => set("gallery", draft.gallery.filter((_, i) => i !== index))}
+                className="absolute -top-2 -left-2 rounded-full bg-card p-1 text-destructive shadow"
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            </div>
+            <input
+              value={item.caption ?? ""}
+              placeholder="وصف الصورة"
+              onChange={(e) =>
+                set("gallery", draft.gallery.map((g, i) => (i === index ? { ...g, caption: e.target.value } : g)))
+              }
+              className={`${field} mt-2`}
+            />
+          </div>
+        ))}
+        {draft.gallery.length === 0 ? (
+          <p className="text-[11px] font-bold text-muted-foreground">لا توجد صور أنشطة بعد.</p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function TeacherMedia({
+  teacher,
+  onChange,
+}: {
+  teacher: ClassroomTeacher;
+  onChange: (patch: Partial<ClassroomTeacher>) => void;
+}) {
+  const urls = useClassroomMediaUrls([teacher.photo_url]);
+  const photo = teacher.photo_url ? urls[teacher.photo_url] : undefined;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 sm:col-span-4">
+      {photo ? (
+        <img src={photo} alt={teacher.name} className="size-12 rounded-full border border-border/60 object-cover" />
+      ) : (
+        <span className="grid size-12 place-items-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
+          بلا صورة
+        </span>
+      )}
+      <UploadButton
+        title={teacher.photo_url ? "تغيير الصورة" : "صورة المعلمة"}
+        accept="image/*"
+        folder="teachers/photos"
+        icon={ImagePlus}
+        onUploaded={(files) => onChange({ photo_url: files[0].path })}
+      />
+      <UploadButton
+        title={teacher.cv_url ? "تغيير السيرة/الشهادة" : "سيرة ذاتية أو شهادة"}
+        accept="application/pdf,image/*"
+        folder="teachers/docs"
+        icon={FileText}
+        onUploaded={(files) => onChange({ cv_url: files[0].path, cv_name: files[0].name })}
+      />
+      {teacher.cv_url ? (
+        <span className="inline-flex items-center gap-1 rounded-2xl bg-muted/50 px-2 py-1 text-[11px] font-bold text-muted-foreground">
+          <FileText className="size-3.5" />
+          {teacher.cv_name ?? "ملف مرفق"}
+          <button type="button" onClick={() => onChange({ cv_url: null, cv_name: null })} className="text-destructive">
+            <Trash2 className="size-3" />
+          </button>
+        </span>
+      ) : null}
+      {teacher.photo_url ? (
+        <button
+          type="button"
+          onClick={() => onChange({ photo_url: null })}
+          className="text-[11px] font-bold text-destructive"
+        >
+          حذف الصورة
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export function ClassroomDialog({
   initial,
   stages,
