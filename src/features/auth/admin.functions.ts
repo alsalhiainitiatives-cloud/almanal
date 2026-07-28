@@ -1,11 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { rolePermissionSchema, roleAssignmentSchema } from "./admin-schemas";
+import {
+  bulkUserPermissionSchema,
+  rolePermissionSchema,
+  roleAssignmentSchema,
+} from "./admin-schemas";
 import {
   assertAdmin,
+  bulkSetUserPermissions,
   listAuditEntries,
   listRolePermissionMatrix,
+  listUserPermissionOverrides,
   listUsersWithRoles,
   replaceUserRoles,
   setRolePermission,
@@ -36,6 +42,27 @@ export const adminListAuditLogs = createServerFn({ method: "GET" })
 export const getRolePermissionMatrix = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => listRolePermissionMatrix(context.supabase));
+
+export const adminListUserPermissionOverrides = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    return listUserPermissionOverrides(context.supabase);
+  });
+
+export const adminBulkSetUserPermissions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => bulkUserPermissionSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    return bulkSetUserPermissions(
+      context.supabase,
+      context.userId,
+      data.userIds,
+      data.permissionKeys,
+      data.action,
+    );
+  });
 
 export const adminSetRolePermission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
