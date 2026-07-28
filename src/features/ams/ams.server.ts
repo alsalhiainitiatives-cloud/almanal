@@ -454,6 +454,41 @@ export async function returnToParent(supabase: Db, userId: string, input: { id: 
   return { ok: true as const };
 }
 
+/** Short-lived signed URL so staff can preview/download an uploaded document. */
+export async function documentSignedUrl(
+  supabase: Db,
+  userId: string,
+  input: { id: string; documentId: string },
+) {
+  await guard(supabase, userId, "documents");
+  const { data: doc, error } = await supabase
+    .from("application_documents")
+    .select("file_path, file_name")
+    .eq("id", input.documentId)
+    .eq("application_id", input.id)
+    .maybeSingle();
+  if (error || !doc) throw new Error("تعذّر العثور على المستند.");
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: signed, error: signError } = await supabaseAdmin.storage
+    .from("admission-documents")
+    .createSignedUrl(doc.file_path, 300);
+  if (signError || !signed?.signedUrl) throw new Error("تعذّر إنشاء رابط المعاينة.");
+  return { url: signed.signedUrl, fileName: doc.file_name ?? "document" };
+}
+
+async function _returnToParentLegacy(supabase: Db, userId: string, input: { id: string; note: string }) {
+  await touch(supabase, input.id, { status: "needs_action" as Status, review_note: input.note });
+  await logEvent(supabase, input.id, userId, "application.returned", "تمت إعادة الطلب لولي الأمر لاستكمال البيانات", input.note);
+  await supabase.from("application_notes").insert({
+    application_id: input.id,
+    author_id: userId,
+    visibility: "parent",
+    body: input.note,
+  });
+  return { ok: true as const };
+}
+
 export async function recommendToPrincipal(
   supabase: Db,
   userId: string,
