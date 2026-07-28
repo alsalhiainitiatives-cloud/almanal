@@ -184,6 +184,8 @@ const emptyParent = (): ParentInfoInput => ({
   district: "",
   mapUrl: "",
   motherIsWorking: undefined,
+  motherIsSaudi: undefined,
+  motherNationalId: "",
   motherEmployer: "",
   motherJobTitle: "",
   motherDeclaration: false,
@@ -372,25 +374,29 @@ function WizardPage() {
     .filter((m): m is number => m !== null)
     .sort((a, b) => a - b)[0];
 
-  const qurraEligible =
-    parent.relationship === "mother" &&
-    parent.nationality === "saudi" &&
-    youngestMonths !== undefined &&
-    youngestMonths < 72;
+  const childUnderSix = youngestMonths !== undefined && youngestMonths < 72;
+  // The mother herself, or any other guardian applying on behalf of a working
+  // Saudi mother (relative, employee, guardian…).
+  const motherIsSaudiWorking =
+    parent.relationship === "mother"
+      ? parent.nationality === "saudi"
+      : parent.motherIsSaudi === "yes" && parent.motherIsWorking === "yes";
 
-  const qurraReason =
-    parent.relationship !== "mother"
-      ? "دعم «قرة» يُقدَّم من الأم مباشرة. إذا كنتِ الأم، عدّلي صلة القرابة في خطوة ولي الأمر."
-      : parent.nationality !== "saudi"
-        ? "دعم «قرة» متاح للأمهات السعوديات فقط."
-        : "دعم «قرة» مخصص للأطفال دون سن السادسة.";
+  const qurraEligible = motherIsSaudiWorking && childUnderSix;
+
+  const qurraReason = !motherIsSaudiWorking
+    ? parent.relationship === "mother"
+      ? "دعم «قرة» متاح للأمهات السعوديات فقط."
+      : "دعم «قرة» يتطلب أن تكون والدة الطفل سعودية وعاملة — حدّث بيانات الأم في خطوة ولي الأمر."
+    : "دعم «قرة» مخصص للأطفال دون سن السادسة.";
 
   useEffect(() => {
     if (!qurraEligible) return;
     setQurra((prev) => {
       const next: QurraInput = {
         ...prev,
-        motherNationalId: parent.nationalId,
+        motherNationalId:
+          parent.relationship === "mother" ? parent.nationalId : (parent.motherNationalId ?? ""),
         motherEmploymentStatus:
           parent.motherIsWorking === "yes"
             ? "working"
@@ -410,6 +416,8 @@ function WizardPage() {
   }, [
     qurraEligible,
     parent.nationalId,
+    parent.relationship,
+    parent.motherNationalId,
     parent.motherIsWorking,
     parent.motherEmployer,
     parent.motherJobTitle,
