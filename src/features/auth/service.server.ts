@@ -275,3 +275,27 @@ export async function listRolePermissionMatrix(supabase: Db) {
     })),
   };
 }
+export async function setRolePermission(
+  supabase: Db,
+  actorId: string,
+  role: AppRole,
+  permissionKey: string,
+  granted: boolean,
+) {
+  const { error } = await (supabase as any).rpc("admin_set_role_permission", {
+    _role: role,
+    _permission_key: permissionKey,
+    _granted: granted,
+  });
+  if (error) throw new Error("تعذّر تحديث الصلاحية.");
+
+  await recordAudit({
+    userId: actorId,
+    action: granted ? "permissions.grant" : "permissions.revoke",
+    entity: "role_permissions",
+    entityId: `${role}:${permissionKey}`,
+    metadata: { role, permissionKey, granted },
+    meta: getRequestMeta(),
+  });
+  return { ok: true as const };
+}
