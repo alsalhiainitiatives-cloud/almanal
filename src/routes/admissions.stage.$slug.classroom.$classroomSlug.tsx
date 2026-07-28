@@ -13,6 +13,7 @@ import { createApplication } from "@/features/admissions/application.functions";
 import { seatsLeft } from "@/features/admissions/eligibility";
 import { stageGallery } from "@/features/admissions/media";
 import { supabase } from "@/integrations/supabase/client";
+import { useClassroomMediaUrls } from "@/lib/classroom-media";
 
 const stageQuery = (slug: string) =>
   queryOptions({
@@ -70,17 +71,34 @@ function ClassroomDetailPage() {
   const [busy, setBusy] = useState(false);
 
   const classroom = data?.classrooms.find((c) => c.slug === classroomSlug);
-  if (!data || !classroom) return <ClassroomMissing />;
-
-  const stage = data.stage;
-  const left = seatsLeft(classroom);
-  const gallery = stageGallery(classroom.slug);
-  const teamList = (Array.isArray(classroom.teachers) ? classroom.teachers : []) as {
+  const cover = (classroom as { cover_image?: string | null } | undefined)?.cover_image ?? null;
+  const activityShots = ((classroom as { gallery?: unknown } | undefined)?.gallery ?? []) as {
+    path: string;
+    caption?: string | null;
+  }[];
+  const teamListRaw = (Array.isArray(classroom?.teachers) ? classroom!.teachers : []) as {
     name: string;
     title?: string;
     qualification?: string;
     experience?: string;
+    photo_url?: string | null;
+    cv_url?: string | null;
+    cv_name?: string | null;
   }[];
+  const mediaUrls = useClassroomMediaUrls([
+    cover,
+    ...activityShots.map((g) => g.path),
+    ...teamListRaw.flatMap((t) => [t.photo_url, t.cv_url]),
+  ]);
+
+  if (!data || !classroom) return <ClassroomMissing />;
+
+  const stage = data.stage;
+  const left = seatsLeft(classroom);
+  const gallery = activityShots.length
+    ? activityShots.map((g) => ({ src: mediaUrls[g.path], alt: g.caption || `نشاط في ${classroom.name_ar}` }))
+    : stageGallery(classroom.slug);
+  const teamList = teamListRaw;
   const daySlots = (Array.isArray(classroom.daily_schedule) ? classroom.daily_schedule : []) as {
     time: string;
     activity: string;
