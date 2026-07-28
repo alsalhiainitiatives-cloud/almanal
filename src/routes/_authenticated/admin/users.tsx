@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ShieldAlert, ShieldCheck, UserCog } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -218,8 +218,8 @@ function PermissionMatrix({ canManage }: { canManage: boolean }) {
             </thead>
             <tbody>
               {Object.entries(groups).map(([category, items]) => (
-                <>
-                  <tr key={`cat-${category}`} className="border-t border-border/60 bg-accent/30">
+                <Fragment key={category}>
+                  <tr className="border-t border-border/60 bg-accent/30">
                     <td
                       colSpan={ALL_ROLES.length + 1}
                       className="px-5 py-2 text-xs font-extrabold text-foreground"
@@ -260,7 +260,7 @@ function PermissionMatrix({ canManage }: { canManage: boolean }) {
                       })}
                     </tr>
                   ))}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
