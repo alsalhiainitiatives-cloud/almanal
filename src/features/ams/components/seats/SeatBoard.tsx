@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Armchair, GripVertical, Pencil, Search, Trash2, UserPlus } from "lucide-react";
+import { Armchair, CalendarClock, GripVertical, Pencil, RotateCcw, Search, Trash2, TriangleAlert, UserPlus, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { amsSeatAssign, amsSeatBoard, amsSeatRemove, amsSeatUpdateChild } from "@/features/ams/ams.functions";
 import { useClassroomLocks } from "@/features/ams/classroom-lock";
 import { EmptyState, SkeletonRows } from "@/features/ams/components/atoms";
 import { ClassroomLockBadge } from "@/features/ams/components/seats/ClassroomLockBadge";
-import { validatePlacement, type SeatChild, type SeatClassroom } from "@/features/ams/seat-rules";
+import { validatePlacement, type PlacementCheck, type SeatChild, type SeatClassroom } from "@/features/ams/seat-rules";
 import { ageInMonths, formatAge } from "@/features/admissions/eligibility";
 
 type Board = Awaited<ReturnType<typeof amsSeatBoard>>;
@@ -14,6 +14,66 @@ type BoardClassroom = Board["classrooms"][number];
 
 function asRule(classroom: BoardClassroom): SeatClassroom {
   return classroom as unknown as SeatClassroom;
+}
+
+/** Formatted Arabic rejection card (age condition and other rules) with a retry button. */
+function RejectionCard({
+  child,
+  check,
+  onRetry,
+  onDismiss,
+  busy,
+}: {
+  child: SeatChild;
+  check: PlacementCheck;
+  onRetry: () => void;
+  onDismiss: () => void;
+  busy?: boolean;
+}) {
+  return (
+    <div className="mt-3 rounded-2xl border border-destructive/40 bg-destructive/5 p-3">
+      <div className="flex items-start gap-2">
+        <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-extrabold text-destructive">
+            {check.code === "age_mismatch" ? "شرط العمر لا ينطبق" : "تعذّر تنفيذ التسكين"}
+          </p>
+          {check.age ? (
+            <>
+              <p className="mt-1 text-[11px] font-bold text-foreground">
+                الطالب «{child.name_ar}» عمره <span className="text-destructive">{check.age.childAgeLabel}</span>، بينما فصل «
+                {check.age.classroomName}» يقبل من {check.age.minLabel} إلى {check.age.maxLabel}.
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] font-extrabold">
+                <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-1 text-destructive">
+                  <CalendarClock className="size-3" /> {check.age.childAgeLabel}
+                </span>
+                <span className="text-muted-foreground">مقابل</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-muted-foreground">
+                  {check.age.rangeLabel}
+                </span>
+              </div>
+            </>
+          ) : (
+            <p className="mt-1 text-[11px] font-bold text-foreground">{check.message}</p>
+          )}
+        </div>
+        <button type="button" onClick={onDismiss} title="إخفاء" className="rounded-lg p-1 text-muted-foreground hover:text-foreground">
+          <X className="size-3.5" />
+        </button>
+      </div>
+      <div className="mt-3 flex justify-end">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onRetry}
+          className="inline-flex items-center gap-1.5 rounded-2xl border border-destructive/40 px-3 py-1.5 text-[11px] font-extrabold text-destructive disabled:opacity-60"
+        >
+          <RotateCcw className="size-3.5" /> إعادة المحاولة
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function ChildChip({
@@ -74,6 +134,7 @@ export function SeatBoard() {
   const [moving, setMoving] = useState<SeatChild | null>(null);
   const [editing, setEditing] = useState<SeatChild | null>(null);
   const [removing, setRemoving] = useState<SeatChild | null>(null);
+  const [rejection, setRejection] = useState<{ classroomId: string; child: SeatChild; check: PlacementCheck } | null>(null);
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["ams", "seat-board"] });
@@ -86,10 +147,24 @@ export function SeatBoard() {
       toast.success("تم تحديث تسكين الطالب");
       result.warnings?.forEach((warning: string) => toast.warning(warning));
       setMoving(null);
+      setRejection(null);
       refresh();
     },
     onError: (err: Error) => toast.error(err.message),
   });
+
+  /** Age (in months) + rules are always verified locally before any server call. */
+  const tryAssign = (child: SeatChild, classroom: BoardClassroom) => {
+    const check = validatePlacement(child, asRule(classroom));
+    if (!check.ok) {
+      setRejection({ classroomId: classroom.id, child, check });
+      return false;
+    }
+    setRejection(null);
+    check.warnings.forEach((warning) => toast.warning(warning));
+    assign.mutate({ childId: child.id, classroomId: classroom.id });
+    return true;
+  };
 
   const remove = useMutation({
     mutationFn: (input: { childId: string }) => amsSeatRemove({ data: input }),
@@ -211,13 +286,7 @@ export function SeatBoard() {
                       (data.unplaced as SeatChild[]).find((item) => item.id === childId) ??
                       (data.classrooms.flatMap((c) => c.children) as SeatChild[]).find((item) => item.id === childId);
                     if (!child) return;
-                    const check = validatePlacement(child, asRule(classroom));
-                    if (!check.ok) {
-                      toast.error(check.message ?? "لا يمكن تنفيذ هذا التسكين.");
-                      return;
-                    }
-                    check.warnings.forEach((warning) => toast.warning(warning));
-                    assign.mutate({ childId, classroomId: classroom.id });
+                    tryAssign(child, classroom);
                   }}
                   className="rounded-3xl border border-border/60 bg-card p-4 shadow-sm"
                   style={{ borderTop: `4px solid ${classroom.color_hex}` }}
@@ -241,6 +310,16 @@ export function SeatBoard() {
                   <div className="mt-2 empty:hidden">
                     <ClassroomLockBadge lock={locked} mine={isMine(classroom.id)} />
                   </div>
+
+                  {rejection && rejection.classroomId === classroom.id ? (
+                    <RejectionCard
+                      child={rejection.child}
+                      check={rejection.check}
+                      busy={assign.isPending}
+                      onDismiss={() => setRejection(null)}
+                      onRetry={() => tryAssign(rejection.child, classroom)}
+                    />
+                  ) : null}
 
                   <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-muted">
                     <div className="h-full rounded-full" style={{ width: `${percent}%`, background: classroom.color_hex }} />
@@ -278,7 +357,10 @@ export function SeatBoard() {
           classrooms={data.classrooms}
           busy={assign.isPending}
           onClose={() => setMoving(null)}
-          onConfirm={(classroomId) => assign.mutate({ childId: moving.id, classroomId })}
+          onConfirm={(classroomId) => {
+            const classroom = data.classrooms.find((item) => item.id === classroomId);
+            if (classroom) tryAssign(moving, classroom);
+          }}
         />
       ) : null}
 
@@ -336,6 +418,7 @@ function MoveDialog({
   onConfirm: (classroomId: string) => void;
 }) {
   const options = classrooms.map((classroom) => ({ classroom, check: validatePlacement(child, asRule(classroom)) }));
+  const [attempted, setAttempted] = useState<string | null>(null);
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-4">
       <div className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-card p-6 shadow-xl">
@@ -348,9 +431,10 @@ function MoveDialog({
             <li key={classroom.id}>
               <button
                 type="button"
-                disabled={!check.ok || busy}
-                onClick={() => onConfirm(classroom.id)}
+                disabled={busy}
+                onClick={() => (check.ok ? onConfirm(classroom.id) : setAttempted(classroom.id))}
                 className="w-full rounded-2xl border border-border/60 p-3 text-start transition-colors enabled:hover:border-primary disabled:opacity-60"
+                aria-disabled={!check.ok}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-extrabold text-foreground">{classroom.name_ar}</span>
@@ -360,6 +444,17 @@ function MoveDialog({
                 </div>
                 {check.ok ? (
                   <p className="mt-1 text-[11px] font-bold text-primary">مطابق للشروط — اضغط للنقل</p>
+                ) : check.age ? (
+                  <div className="mt-1.5 rounded-2xl border border-destructive/40 bg-destructive/5 p-2.5">
+                    <p className="text-[11px] font-extrabold text-destructive">شرط العمر لا ينطبق</p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[10px] font-extrabold">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-1 text-destructive">
+                        <CalendarClock className="size-3" /> {check.age.childAgeLabel}
+                      </span>
+                      <span className="text-muted-foreground">مقابل</span>
+                      <span className="rounded-full bg-muted px-2 py-1 text-muted-foreground">{check.age.rangeLabel}</span>
+                    </div>
+                  </div>
                 ) : (
                   <p className="mt-1 text-[11px] font-bold text-destructive">{check.message}</p>
                 )}
@@ -369,6 +464,22 @@ function MoveDialog({
                   </p>
                 ))}
               </button>
+              {!check.ok && attempted === classroom.id ? (
+                <div className="mt-1 flex justify-end">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      const fresh = validatePlacement(child, asRule(classroom));
+                      if (fresh.ok) onConfirm(classroom.id);
+                      else setAttempted(classroom.id);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-2xl border border-destructive/40 px-3 py-1.5 text-[11px] font-extrabold text-destructive disabled:opacity-60"
+                  >
+                    <RotateCcw className="size-3.5" /> إعادة المحاولة
+                  </button>
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>

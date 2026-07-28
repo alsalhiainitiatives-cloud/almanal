@@ -34,7 +34,24 @@ export type SeatClassroom = {
   max_age_months: number;
 };
 
-export type PlacementCheck = { ok: boolean; message?: string; warnings: string[] };
+export type PlacementCode = "ok" | "same_classroom" | "missing_birth_date" | "age_mismatch" | "full";
+
+export type AgeDetail = {
+  childAgeLabel: string;
+  childAgeMonths: number;
+  rangeLabel: string;
+  minLabel: string;
+  maxLabel: string;
+  classroomName: string;
+};
+
+export type PlacementCheck = {
+  ok: boolean;
+  code: PlacementCode;
+  message?: string;
+  age?: AgeDetail;
+  warnings: string[];
+};
 
 const SAUDI_WORDS = ["سعود", "saudi", "sa"];
 
@@ -75,20 +92,34 @@ export function validatePlacement(child: SeatChild, classroom: SeatClassroom): P
   const warnings = [...identityIssues(child), ...qurraIssues(child)];
 
   if (child.classroom_id === classroom.id) {
-    return { ok: false, message: "الطالب مسكَّن بالفعل في هذا الفصل.", warnings };
+    return { ok: false, code: "same_classroom", message: "الطالب مسكَّن بالفعل في هذا الفصل.", warnings };
   }
 
   const months = ageInMonths(child.birth_date);
   if (months === null) {
-    return { ok: false, message: "تاريخ ميلاد الطالب غير مسجّل — لا يمكن التحقق من شرط العمر.", warnings };
+    return {
+      ok: false,
+      code: "missing_birth_date",
+      message: "تاريخ ميلاد الطالب غير مسجّل — لا يمكن التحقق من شرط العمر.",
+      warnings,
+    };
   }
 
   if (months < classroom.min_age_months || months > classroom.max_age_months) {
+    const minLabel = formatAge(classroom.min_age_months);
+    const maxLabel = formatAge(classroom.max_age_months);
     return {
       ok: false,
-      message: `شرط العمر لا ينطبق: عمر الطالب ${formatAge(months)} بينما فصل «${classroom.name_ar}» يقبل من ${formatAge(
-        classroom.min_age_months,
-      )} إلى ${formatAge(classroom.max_age_months)}.`,
+      code: "age_mismatch",
+      message: `شرط العمر لا ينطبق: عمر الطالب ${formatAge(months)} بينما فصل «${classroom.name_ar}» يقبل من ${minLabel} إلى ${maxLabel}.`,
+      age: {
+        childAgeLabel: formatAge(months),
+        childAgeMonths: months,
+        rangeLabel: `${minLabel} – ${maxLabel}`,
+        minLabel,
+        maxLabel,
+        classroomName: classroom.name_ar,
+      },
       warnings,
     };
   }
@@ -96,10 +127,11 @@ export function validatePlacement(child: SeatChild, classroom: SeatClassroom): P
   if (classroom.enrolled >= classroom.capacity) {
     return {
       ok: false,
+      code: "full",
       message: `فصل «${classroom.name_ar}» مكتمل العدد (${classroom.enrolled}/${classroom.capacity}) — استخدم قائمة الانتظار.`,
       warnings,
     };
   }
 
-  return { ok: true, warnings };
+  return { ok: true, code: "ok", warnings };
 }
