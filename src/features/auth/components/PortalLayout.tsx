@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { FileClock, Inbox, LayoutDashboard, LogOut, ShieldCheck, UserCog, Users } from "lucide-react";
+import { FileClock, Inbox, KeyRound, LayoutDashboard, LogOut, ShieldCheck, UserCog, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -13,6 +13,7 @@ const NAV = [
   { to: "/ams", label: "نظام إدارة القبول", icon: Inbox, permission: P.applicationsReview },
   { to: "/profile", label: "ملفي الشخصي", icon: UserCog, permission: P.profileEdit },
   { to: "/admin/users", label: "المستخدمون والأدوار", icon: Users, permission: P.usersView },
+  { to: "/admin/permissions", label: "مصفوفة الصلاحيات", icon: KeyRound, permission: P.usersView },
   { to: "/admin/audit", label: "سجل العمليات", icon: ShieldCheck, permission: P.auditView },
 ] as const;
 

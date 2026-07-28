@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, ShieldAlert, ShieldCheck, UserCog } from "lucide-react";
-import { Fragment, useState } from "react";
+import { KeyRound, Loader2, ShieldAlert, UserCog } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,9 @@ import {
 import { useAuth } from "@/features/auth/AuthProvider";
 import { PortalLayout } from "@/features/auth/components/PortalLayout";
 import {
+  adminBulkSetUserPermissions,
   adminListUsers,
-  adminSetRolePermission,
+  adminListUserPermissionOverrides,
   adminSetUserRoles,
   getRolePermissionMatrix,
 } from "@/features/auth/admin.functions";
@@ -52,13 +53,31 @@ type AdminUser = Awaited<ReturnType<typeof adminListUsers>>[number];
 function AdminUsersPage() {
   const { hasPermission, loadingContext } = useAuth();
   const canManageRoles = hasPermission(P.rolesManage);
+  const canManagePermissions = hasPermission(P.permissionsManage) || canManageRoles;
   const [editing, setEditing] = useState<AdminUser | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin", "users"],
     queryFn: () => adminListUsers(),
     enabled: hasPermission(P.usersView),
   });
+
+  const { data: overrides } = useQuery({
+    queryKey: ["admin", "user-permission-overrides"],
+    queryFn: () => adminListUserPermissionOverrides(),
+    enabled: canManagePermissions,
+  });
+
+  const overrideCount = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const row of overrides ?? []) map.set(row.userId, (map.get(row.userId) ?? 0) + 1);
+    return map;
+  }, [overrides]);
+
+  const users = data ?? [];
+  const allSelected = users.length > 0 && selected.length === users.length;
 
   if (!loadingContext && !hasPermission(P.usersView)) {
     return <NoAccess />;
@@ -69,6 +88,36 @@ function AdminUsersPage() {
       title="المستخدمون والأدوار"
       description="اعرض حسابات البوابة ووزّع الأدوار. كل تغيير يُسجَّل في سجل العمليات مع الجهاز وعنوان الإنترنت."
     >
+      {canManagePermissions && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-border/60 bg-card/80 px-5 py-4 shadow-soft">
+          <p className="text-sm font-bold text-foreground">
+            {selected.length > 0
+              ? `تم اختيار ${selected.length} مستخدم`
+              : "اختر مستخدمين لتنفيذ إجراء جماعي على الصلاحيات"}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-xl font-bold"
+              disabled={selected.length === 0}
+              onClick={() => setSelected([])}
+            >
+              إلغاء التحديد
+            </Button>
+            <Button
+              size="sm"
+              className="rounded-xl font-bold"
+              disabled={selected.length === 0}
+              onClick={() => setBulkOpen(true)}
+            >
+              <KeyRound className="size-4" />
+              إجراء جماعي على الصلاحيات
+            </Button>
+          </div>
+        </div>
+      )}
+
       <section className="overflow-hidden rounded-[2rem] border border-border/60 bg-card shadow-soft">
         {isLoading ? (
           <div className="flex items-center justify-center gap-2 p-10 text-sm font-semibold text-muted-foreground">
@@ -80,60 +129,95 @@ function AdminUsersPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-start text-sm">
+            <table className="w-full min-w-[720px] text-start text-sm">
               <thead className="bg-muted/60 text-xs font-bold text-muted-foreground">
                 <tr>
+                  <th className="px-4 py-3 text-start">
+                    {canManagePermissions && (
+                      <Checkbox
+                        checked={allSelected}
+                        aria-label="تحديد الكل"
+                        onCheckedChange={(value) =>
+                          setSelected(value === true ? users.map((u) => u.id) : [])
+                        }
+                      />
+                    )}
+                  </th>
                   <th className="px-5 py-3 text-start">المستخدم</th>
                   <th className="px-5 py-3 text-start">الأدوار</th>
+                  <th className="px-5 py-3 text-start">استثناءات</th>
                   <th className="px-5 py-3 text-start">آخر دخول</th>
                   <th className="px-5 py-3 text-start" />
                 </tr>
               </thead>
               <tbody>
-                {(data ?? []).map((user) => (
-                  <tr key={user.id} className="border-t border-border/60">
-                    <td className="px-5 py-4">
-                      <p className="font-bold text-foreground">{user.fullName}</p>
-                      <p className="text-xs text-muted-foreground" dir="ltr">
-                        {user.email ?? user.phone ?? "—"}
-                      </p>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex flex-wrap gap-1.5">
-                        {user.roles.length === 0 && (
-                          <span className="text-xs text-muted-foreground">بدون دور</span>
+                {users.map((user) => {
+                  const checked = selected.includes(user.id);
+                  return (
+                    <tr key={user.id} className="border-t border-border/60">
+                      <td className="px-4 py-4">
+                        {canManagePermissions && (
+                          <Checkbox
+                            checked={checked}
+                            aria-label={`تحديد ${user.fullName}`}
+                            onCheckedChange={(value) =>
+                              setSelected((prev) =>
+                                value === true
+                                  ? [...prev, user.id]
+                                  : prev.filter((id) => id !== user.id),
+                              )
+                            }
+                          />
                         )}
-                        {user.roles.map((role) => (
-                          <span
-                            key={role}
-                            className={`rounded-full px-3 py-1 text-[11px] font-bold ${ROLE_COLORS[role]}`}
-                          >
-                            {ROLE_LABELS[role]}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-xs font-semibold text-muted-foreground">
-                      {user.lastLoginAt
-                        ? new Intl.DateTimeFormat("ar-SA", { dateStyle: "medium" }).format(
-                            new Date(user.lastLoginAt),
-                          )
-                        : "—"}
-                    </td>
-                    <td className="px-5 py-4 text-end">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={!canManageRoles}
-                        onClick={() => setEditing(user)}
-                        className="rounded-xl font-bold"
-                      >
-                        <UserCog className="size-4" />
-                        الأدوار
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-5 py-4">
+                        <p className="font-bold text-foreground">{user.fullName}</p>
+                        <p className="text-xs text-muted-foreground" dir="ltr">
+                          {user.email ?? user.phone ?? "—"}
+                        </p>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex flex-wrap gap-1.5">
+                          {user.roles.length === 0 && (
+                            <span className="text-xs text-muted-foreground">بدون دور</span>
+                          )}
+                          {user.roles.map((role) => (
+                            <span
+                              key={role}
+                              className={`rounded-full px-3 py-1 text-[11px] font-bold ${ROLE_COLORS[role]}`}
+                            >
+                              {ROLE_LABELS[role]}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-xs font-bold text-muted-foreground">
+                        {overrideCount.get(user.id)
+                          ? `${overrideCount.get(user.id)} استثناء`
+                          : "—"}
+                      </td>
+                      <td className="px-5 py-4 text-xs font-semibold text-muted-foreground">
+                        {user.lastLoginAt
+                          ? new Intl.DateTimeFormat("ar-SA", { dateStyle: "medium" }).format(
+                              new Date(user.lastLoginAt),
+                            )
+                          : "—"}
+                      </td>
+                      <td className="px-5 py-4 text-end">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={!canManageRoles}
+                          onClick={() => setEditing(user)}
+                          className="rounded-xl font-bold"
+                        >
+                          <UserCog className="size-4" />
+                          الأدوار
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -141,132 +225,151 @@ function AdminUsersPage() {
       </section>
 
       <RoleDialog user={editing} onClose={() => setEditing(null)} />
-
-      <PermissionMatrix canManage={hasPermission(P.permissionsManage) || canManageRoles} />
+      <BulkPermissionDialog
+        open={bulkOpen}
+        userIds={selected}
+        onClose={() => setBulkOpen(false)}
+        onDone={() => {
+          setBulkOpen(false);
+          setSelected([]);
+        }}
+      />
     </PortalLayout>
   );
 }
 
-function PermissionMatrix({ canManage }: { canManage: boolean }) {
+function BulkPermissionDialog({
+  open,
+  userIds,
+  onClose,
+  onDone,
+}: {
+  open: boolean;
+  userIds: string[];
+  onClose: () => void;
+  onDone: () => void;
+}) {
   const queryClient = useQueryClient();
-  const [pending, setPending] = useState<string | null>(null);
+  const [keys, setKeys] = useState<string[]>([]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "permission-matrix"],
     queryFn: () => getRolePermissionMatrix(),
-  });
-
-  const mutation = useMutation({
-    mutationFn: (input: { role: AppRole; permissionKey: string; granted: boolean }) =>
-      adminSetRolePermission({ data: input }),
-    onSuccess: async (_result, input) => {
-      await queryClient.invalidateQueries({ queryKey: ["admin", "permission-matrix"] });
-      toast.success(input.granted ? "تم منح الصلاحية" : "تم سحب الصلاحية");
-    },
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "تعذّر تحديث الصلاحية."),
-    onSettled: () => setPending(null),
+    enabled: open,
   });
 
   const permissions = data?.permissions ?? [];
-  const granted = new Set((data?.rolePermissions ?? []).map((r) => `${r.role}:${r.key}`));
-
   const groups = permissions.reduce<Record<string, typeof permissions>>((acc, permission) => {
     const category = permission.category ?? "general";
     (acc[category] ??= []).push(permission);
     return acc;
   }, {});
 
-  return (
-    <section className="mt-8 overflow-hidden rounded-[2rem] border border-border/60 bg-card shadow-soft">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 bg-muted/40 px-6 py-5">
-        <div>
-          <h2 className="flex items-center gap-2 text-base font-extrabold text-foreground">
-            <ShieldCheck className="size-5 text-primary" />
-            مصفوفة الأدوار والصلاحيات
-          </h2>
-          <p className="mt-1 text-xs font-semibold text-muted-foreground">
-            فعّل أو ألغِ الصلاحية لكل دور بالضغط على المربّع — التغيير يُطبَّق فورًا على كل
-            المستخدمين المرتبطين بالدور ويُسجَّل في سجل العمليات.
-          </p>
-        </div>
-        {!canManage && (
-          <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-bold text-muted-foreground">
-            عرض فقط
-          </span>
-        )}
-      </header>
+  const mutation = useMutation({
+    mutationFn: (action: "grant" | "revoke" | "reset") =>
+      adminBulkSetUserPermissions({ data: { userIds, permissionKeys: keys, action } }),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["admin", "user-permission-overrides"] });
+      toast.success(`تم تطبيق الإجراء على ${result.affected} سجل صلاحية`);
+      setKeys([]);
+      onDone();
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "تعذّر تنفيذ الإجراء الجماعي."),
+  });
 
-      {isLoading ? (
-        <div className="flex items-center justify-center gap-2 p-10 text-sm font-semibold text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" /> جارِ تحميل المصفوفة…
+  return (
+    <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto rounded-[2rem] sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle className="text-start text-lg font-extrabold">
+            إجراء جماعي على الصلاحيات
+          </DialogTitle>
+          <DialogDescription className="text-start text-sm">
+            اختر الصلاحيات ثم امنحها أو اسحبها من {userIds.length} مستخدم دفعة واحدة. المنح والسحب
+            استثناء شخصي يتجاوز صلاحيات الدور، و«إرجاع للدور» يحذف الاستثناء.
+          </DialogDescription>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2 py-10 text-sm font-semibold text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" /> جارِ التحميل…
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {Object.entries(groups).map(([category, items]) => (
+              <div key={category} className="rounded-2xl border border-border/60 p-4">
+                <p className="text-xs font-extrabold text-foreground">
+                  {PERMISSION_CATEGORY_LABELS[category] ?? category}
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {items.map((permission) => {
+                    const checked = keys.includes(permission.key);
+                    return (
+                      <label
+                        key={permission.key}
+                        className={`flex cursor-pointer items-start gap-2 rounded-xl border p-3 text-start transition-colors ${
+                          checked
+                            ? "border-primary/50 bg-primary/5"
+                            : "border-border/60 hover:bg-accent/50"
+                        }`}
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(value) =>
+                            setKeys((prev) =>
+                              value === true
+                                ? [...prev, permission.key]
+                                : prev.filter((k) => k !== permission.key),
+                            )
+                          }
+                          className="mt-0.5"
+                        />
+                        <span>
+                          <span className="block text-xs font-bold text-foreground">
+                            {permission.description_ar}
+                          </span>
+                          <span className="block text-[10px] text-muted-foreground" dir="ltr">
+                            {permission.key}
+                          </span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          <Button
+            className="flex-1 rounded-2xl font-bold"
+            disabled={mutation.isPending || keys.length === 0}
+            onClick={() => mutation.mutate("grant")}
+          >
+            {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
+            منح الصلاحيات
+          </Button>
+          <Button
+            variant="destructive"
+            className="flex-1 rounded-2xl font-bold"
+            disabled={mutation.isPending || keys.length === 0}
+            onClick={() => mutation.mutate("revoke")}
+          >
+            سحب الصلاحيات
+          </Button>
+          <Button
+            variant="outline"
+            className="flex-1 rounded-2xl font-bold"
+            disabled={mutation.isPending || keys.length === 0}
+            onClick={() => mutation.mutate("reset")}
+          >
+            إرجاع للدور
+          </Button>
         </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] text-start text-sm">
-            <thead className="bg-muted/60 text-xs font-bold text-muted-foreground">
-              <tr>
-                <th className="px-5 py-3 text-start">الصلاحية</th>
-                {ALL_ROLES.map((role) => (
-                  <th key={role} className="px-3 py-3 text-center">
-                    <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${ROLE_COLORS[role]}`}>
-                      {ROLE_LABELS[role]}
-                    </span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(groups).map(([category, items]) => (
-                <Fragment key={category}>
-                  <tr className="border-t border-border/60 bg-accent/30">
-                    <td
-                      colSpan={ALL_ROLES.length + 1}
-                      className="px-5 py-2 text-xs font-extrabold text-foreground"
-                    >
-                      {PERMISSION_CATEGORY_LABELS[category] ?? category}
-                    </td>
-                  </tr>
-                  {items.map((permission) => (
-                    <tr key={permission.key} className="border-t border-border/60">
-                      <td className="px-5 py-3">
-                        <p className="text-sm font-bold text-foreground">
-                          {permission.description_ar}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground" dir="ltr">
-                          {permission.key}
-                        </p>
-                      </td>
-                      {ALL_ROLES.map((role) => {
-                        const id = `${role}:${permission.key}`;
-                        const checked = granted.has(id);
-                        return (
-                          <td key={id} className="px-3 py-3 text-center">
-                            <Checkbox
-                              checked={checked}
-                              disabled={!canManage || pending === id}
-                              aria-label={`${ROLE_LABELS[role]} — ${permission.description_ar}`}
-                              onCheckedChange={(value) => {
-                                setPending(id);
-                                mutation.mutate({
-                                  role,
-                                  permissionKey: permission.key,
-                                  granted: value === true,
-                                });
-                              }}
-                            />
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -281,8 +384,7 @@ function RoleDialog({ user, onClose }: { user: AdminUser | null; onClose: () => 
   }
 
   const mutation = useMutation({
-    mutationFn: (roles: AppRole[]) =>
-      adminSetUserRoles({ data: { userId: user!.id, roles } }),
+    mutationFn: (roles: AppRole[]) => adminSetUserRoles({ data: { userId: user!.id, roles } }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       toast.success("تم تحديث الأدوار");
