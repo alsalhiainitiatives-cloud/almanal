@@ -477,18 +477,6 @@ export async function documentSignedUrl(
   return { url: signed.signedUrl, fileName: doc.file_name ?? "document" };
 }
 
-async function _returnToParentLegacy(supabase: Db, userId: string, input: { id: string; note: string }) {
-  await touch(supabase, input.id, { status: "needs_action" as Status, review_note: input.note });
-  await logEvent(supabase, input.id, userId, "application.returned", "تمت إعادة الطلب لولي الأمر لاستكمال البيانات", input.note);
-  await supabase.from("application_notes").insert({
-    application_id: input.id,
-    author_id: userId,
-    visibility: "parent",
-    body: input.note,
-  });
-  return { ok: true as const };
-}
-
 export async function recommendToPrincipal(
   supabase: Db,
   userId: string,
