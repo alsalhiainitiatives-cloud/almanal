@@ -297,7 +297,16 @@ export function SeatBoard() {
 
       {stages.map((stage) => (
         <section key={stage.id} className="space-y-3">
-          <h2 className="text-sm font-extrabold text-foreground">{stage.name_ar}</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-extrabold text-foreground">{stage.name_ar}</h2>
+            <button
+              type="button"
+              onClick={() => setClassroomDraft(emptyClassroom(stage.id))}
+              className="inline-flex items-center gap-1 rounded-2xl border border-border/60 bg-card px-3 py-1.5 text-[11px] font-extrabold text-primary hover:bg-muted/40"
+            >
+              <Plus className="size-3.5" /> فصل جديد في هذه المرحلة
+            </button>
+          </div>
           <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
             {stage.classrooms.map((classroom) => {
               const percent = classroom.capacity
@@ -340,6 +349,23 @@ export function SeatBoard() {
                     >
                       <Armchair className="size-3" /> {left} متاح
                     </span>
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setClassroomDraft(toDraft(classroom as unknown as Record<string, unknown>))}
+                      className="inline-flex items-center gap-1 rounded-xl border border-border/60 px-2.5 py-1 text-[11px] font-bold text-foreground hover:bg-muted/40"
+                    >
+                      <Settings2 className="size-3" /> إعدادات الفصل
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeletingClassroom(classroom)}
+                      className="inline-flex items-center gap-1 rounded-xl border border-destructive/40 px-2.5 py-1 text-[11px] font-bold text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="size-3" /> حذف الفصل
+                    </button>
                   </div>
 
                   <div className="mt-2 empty:hidden">
