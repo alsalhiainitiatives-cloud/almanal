@@ -53,6 +53,15 @@ import {
   type QurraInput,
 } from "@/features/admissions/schemas";
 import { WizardShell, type WizardStep } from "@/features/admissions/components/WizardShell";
+import { CustomFields } from "@/features/admissions/components/CustomFields";
+import {
+  BUILTIN_STEP_IDS,
+  stepIcon,
+  useFormConfig,
+  validateCustomFields,
+  type CustomValues,
+  type FormFieldRow,
+} from "@/features/admissions/form-config";
 import { ChildrenStep } from "@/features/admissions/components/steps/ChildrenStep";
 import { DocumentsStep } from "@/features/admissions/components/steps/DocumentsStep";
 import {
@@ -87,9 +96,12 @@ export const Route = createFileRoute("/_authenticated/apply/$applicationId")({
   component: WizardPage,
 });
 
-const STEPS: WizardStep[] = [
+type WizardStepWithKey = WizardStep & { key: string };
+
+const STEPS: WizardStepWithKey[] = [
   {
     id: 3,
+    key: "parent",
     label: "بيانات ولي الأمر",
     short: "ولي الأمر",
     description: "الهوية والجنسية وبيانات التواصل والعنوان الوطني.",
@@ -97,6 +109,7 @@ const STEPS: WizardStep[] = [
   },
   {
     id: 4,
+    key: "children",
     label: "بيانات الأبناء",
     short: "الأبناء",
     description: "بيانات كل طفل مع حساب العمر وتحديد المرحلة والفصول المفضلة.",
@@ -104,6 +117,7 @@ const STEPS: WizardStep[] = [
   },
   {
     id: 5,
+    key: "qurra",
     label: "برنامج قرة",
     short: "قرة",
     description: "تأكيد طلب دعم قرة للأمهات السعوديات العاملات.",
@@ -111,6 +125,7 @@ const STEPS: WizardStep[] = [
   },
   {
     id: 6,
+    key: "services",
     label: "الخدمات الإضافية",
     short: "الخدمات",
     description: "اختر النقل والوجبات والأنشطة التي تناسب أسرتك.",
@@ -118,6 +133,7 @@ const STEPS: WizardStep[] = [
   },
   {
     id: 7,
+    key: "documents",
     label: "المستندات المطلوبة",
     short: "المستندات",
     description: "مستندات ولي الأمر ومستندات مستقلة لكل طفل.",
@@ -125,6 +141,7 @@ const STEPS: WizardStep[] = [
   },
   {
     id: 8,
+    key: "review",
     label: "مراجعة الطلب",
     short: "المراجعة",
     description: "راجع كل البيانات وعدّل ما تحتاجه قبل الإرسال.",
@@ -132,6 +149,7 @@ const STEPS: WizardStep[] = [
   },
   {
     id: 9,
+    key: "financial",
     label: "الملخص المالي",
     short: "المالية",
     description: "تفاصيل الرسوم والخصومات والمبلغ الإجمالي.",
