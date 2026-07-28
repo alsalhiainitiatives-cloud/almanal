@@ -398,6 +398,23 @@ export async function reviewDocument(
   const label =
     input.status === "approved" ? "تم اعتماد مستند" : input.status === "rejected" ? "تم رفض مستند" : "طُلب استبدال مستند";
   await logEvent(supabase, input.id, userId, `document.${input.status}`, label, input.note);
+
+  // Auto-log the milestone once every uploaded document is approved.
+  if (input.status === "approved") {
+    const { data: docs } = await supabase
+      .from("application_documents")
+      .select("status")
+      .eq("application_id", input.id);
+    if ((docs ?? []).length > 0 && (docs ?? []).every((d) => d.status === "approved")) {
+      await logEvent(
+        supabase,
+        input.id,
+        userId,
+        "documents.all_approved",
+        "تم اعتماد جميع المستندات المرفوعة",
+      );
+    }
+  }
   return { ok: true as const };
 }
 
