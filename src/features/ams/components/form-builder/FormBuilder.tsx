@@ -477,7 +477,7 @@ export function FormBuilder() {
                     {doc.scope === "child" ? "مستند لكل طفل" : "مستند ولي الأمر"} ·{" "}
                     {doc.applies_to_nationality === "saudi"
                       ? "السعوديون"
-                      : doc.applies_to_nationality === "non_saudi"
+                      : (doc.applies_to_nationality === "non_saudi" || doc.applies_to_nationality === "resident")
                         ? "غير السعوديين"
                         : "الجميع"}{" "}
                     · <span dir="ltr">{doc.slug}</span>

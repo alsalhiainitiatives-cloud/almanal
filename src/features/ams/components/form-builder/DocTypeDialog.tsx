@@ -36,7 +36,7 @@ export function DocTypeDialog({
     name_ar: "",
     description_ar: "",
     scope: "parent" as "parent" | "child",
-    applies_to_nationality: "all" as "all" | "saudi" | "non_saudi",
+    applies_to_nationality: "all" as "all" | "saudi" | "resident",
     is_required: false,
     is_active: true,
   });
@@ -48,7 +48,10 @@ export function DocTypeDialog({
       name_ar: doc?.name_ar ?? "",
       description_ar: doc?.description_ar ?? "",
       scope: (doc?.scope as "parent" | "child") ?? "parent",
-      applies_to_nationality: (doc?.applies_to_nationality as "all" | "saudi" | "non_saudi") ?? "all",
+      applies_to_nationality:
+        doc?.applies_to_nationality === "non_saudi"
+          ? "resident"
+          : ((doc?.applies_to_nationality as "all" | "saudi" | "resident") ?? "all"),
       is_required: doc?.is_required ?? false,
       is_active: doc?.is_active ?? true,
     });
@@ -121,14 +124,14 @@ export function DocTypeDialog({
                 onChange={(e) =>
                   setForm((f) => ({
                     ...f,
-                    applies_to_nationality: e.target.value as "all" | "saudi" | "non_saudi",
+                    applies_to_nationality: e.target.value as "all" | "saudi" | "resident",
                   }))
                 }
                 className="h-10 rounded-xl border-2 border-border bg-background px-3 text-sm font-bold"
               >
                 <option value="all">الجميع</option>
                 <option value="saudi">السعوديون</option>
-                <option value="non_saudi">غير السعوديين</option>
+                <option value="resident">غير السعوديين (مقيمون)</option>
               </select>
             </div>
           </div>
