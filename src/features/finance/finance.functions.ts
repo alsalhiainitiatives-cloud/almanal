@@ -7,9 +7,11 @@ import {
   deleteBankAccount,
   deleteDiscountRule,
   deleteFeePlan,
+  deleteService,
   financeOverview,
   getFinanceConfig,
   myFinance,
+  notifyOverdue,
   quoteApplication,
   receiptUploadPath,
   recordReceipt,
@@ -20,6 +22,7 @@ import {
   saveFeePlan,
   saveFinanceSettings,
   savePlanSettings,
+  saveService,
   setInstallmentStatus,
   signReceiptUrl,
 } from "./finance.server";
@@ -239,3 +242,44 @@ export const installmentRemind = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ installmentId: uuid }).parse(data))
   .handler(async ({ data, context }) => remindInstallment(context.supabase, context.userId, data));
+
+export const serviceSave = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        id: uuid.nullish(),
+        slug: z
+          .string()
+          .trim()
+          .min(2)
+          .max(60)
+          .regex(/^[a-z0-9_-]+$/, "المعرّف بالإنجليزية فقط"),
+        name_ar: z.string().trim().min(2).max(120),
+        description_ar: z.string().trim().max(400).nullish(),
+        category: z.enum([
+          "transportation",
+          "uniform",
+          "books",
+          "meals",
+          "activities",
+          "other",
+        ]),
+        price: z.number().min(0).max(1_000_000),
+        price_note: z.string().trim().max(120).nullish(),
+        is_required: z.boolean().optional(),
+        sort_order: z.number().int().min(0).max(100).optional(),
+        is_active: z.boolean().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => saveService(context.supabase, context.userId, data));
+
+export const serviceDelete = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ id: uuid }).parse(data))
+  .handler(async ({ data, context }) => deleteService(context.supabase, context.userId, data.id));
+
+export const overdueNotifyAll = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => notifyOverdue(context.supabase, context.userId));
