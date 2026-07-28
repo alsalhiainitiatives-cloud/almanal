@@ -47,6 +47,8 @@ import {
 import { can } from "../../roles";
 import { documentCompletion } from "../../recommendations";
 import { DocumentReview } from "./DocumentReview";
+import { WorkflowProgress } from "./WorkflowProgress";
+import { WAITLIST_REASONS, evaluatePreferences, waitlistSummary } from "../../waitlist-reasons";
 import type { WorkspaceData } from "../../types";
 import type { AppRole } from "@/features/auth/rbac";
 
@@ -207,19 +209,23 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
   /* ------------------------------------------------------------ view-only */
   if (isViewerOnly) {
     return (
-      <div className="rounded-3xl border border-border/60 bg-card p-4">
+      <div className="space-y-3">
+        <WorkflowProgress data={data} />
+        <div className="rounded-3xl border border-border/60 bg-card p-4">
         <p className="flex items-center gap-1.5 text-sm font-extrabold text-foreground">
           <Eye className="size-4 text-primary" /> وضع الاطلاع فقط
         </p>
         <Notice>
           صلاحيتك الحالية (مشرف) تتيح استعراض الطلب كاملًا ومتابعة الإحصائيات والتقارير، دون اتخاذ أي إجراء تشغيلي عليه.
         </Notice>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
+      <WorkflowProgress data={data} />
       <div className="rounded-3xl border border-border/60 bg-card p-4">
         <p className="text-sm font-extrabold text-foreground">مركز الإجراءات</p>
         <p className="mt-1 text-[11px] font-bold text-muted-foreground">
