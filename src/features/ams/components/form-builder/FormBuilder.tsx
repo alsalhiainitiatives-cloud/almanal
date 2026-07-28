@@ -16,11 +16,8 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { CustomField } from "@/features/admissions/components/CustomFields";
 import {
   FIELD_TYPE_LABELS,
@@ -543,5 +540,3 @@ export function FormBuilder() {
     </Tabs>
   );
 }
-
-export { Input, Label, Textarea };
