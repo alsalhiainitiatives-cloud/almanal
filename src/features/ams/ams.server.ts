@@ -441,15 +441,52 @@ export async function requestDocuments(
   return { ok: true as const };
 }
 
-export async function returnToParent(supabase: Db, userId: string, input: { id: string; note: string }) {
+/** Correction sections map 1:1 to the parent wizard steps. */
+export const CORRECTION_SECTIONS = ["parent", "children", "qurra", "services", "documents"] as const;
+export type CorrectionSection = (typeof CORRECTION_SECTIONS)[number];
+
+export const CORRECTION_LABELS: Record<CorrectionSection, string> = {
+  parent: "بيانات ولي الأمر",
+  children: "بيانات الأبناء",
+  qurra: "برنامج قرة",
+  services: "الخدمات الإضافية",
+  documents: "المستندات",
+};
+
+/**
+ * Ask the parent to fix specific sections. Only the requested sections are
+ * unlocked in the parent wizard; everything else stays read-only.
+ */
+export async function requestCorrections(
+  supabase: Db,
+  userId: string,
+  input: { id: string; sections: CorrectionSection[]; note: string },
+) {
   await guard(supabase, userId, "review");
-  await touch(supabase, input.id, { status: "needs_action" as Status, review_note: input.note });
-  await logEvent(supabase, input.id, userId, "application.returned", "تمت إعادة الطلب لولي الأمر لاستكمال البيانات", input.note);
+  if (!input.sections.length) throw new Error("اختر قسمًا واحدًا على الأقل للتصحيح.");
+
+  const labels = input.sections.map((s) => CORRECTION_LABELS[s]).join("، ");
+  await touch(supabase, input.id, {
+    status: "needs_action" as Status,
+    review_note: input.note,
+    correction_sections: input.sections,
+    correction_note: input.note,
+    correction_requested_at: new Date().toISOString(),
+  });
+  await logEvent(
+    supabase,
+    input.id,
+    userId,
+    "application.corrections_requested",
+    `طُلب تصحيح: ${labels}`,
+    input.note,
+    { sections: input.sections },
+  );
   await supabase.from("application_notes").insert({
     application_id: input.id,
     author_id: userId,
     visibility: "parent",
-    body: input.note,
+    body: `الأقسام المطلوب تصحيحها: ${labels}\n\n${input.note}`,
   });
   return { ok: true as const };
 }
