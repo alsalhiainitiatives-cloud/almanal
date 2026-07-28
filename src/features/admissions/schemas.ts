@@ -57,6 +57,14 @@ export const parentInfoSchema = z.object({
   mapUrl: z.string().trim().url("رابط الموقع غير صحيح").max(400).optional().or(z.literal("")),
   // Qurra data collected inline when the guardian is a Saudi mother.
   motherIsWorking: z.enum(["yes", "no"]).optional(),
+  // Asked when the applicant is NOT the mother: is the child's mother Saudi?
+  motherIsSaudi: z.enum(["yes", "no"]).optional(),
+  motherNationalId: z
+    .string()
+    .trim()
+    .regex(/^1\d{9}$/, "رقم هوية الأم يجب أن يكون 10 أرقام ويبدأ بـ 1")
+    .optional()
+    .or(z.literal("")),
   motherEmployer: z.string().trim().max(120).optional().or(z.literal("")),
   motherJobTitle: z.string().trim().max(120).optional().or(z.literal("")),
   motherDeclaration: z.boolean().optional(),
@@ -80,6 +88,32 @@ export const parentInfoSchema = z.object({
       }
       if (!v.motherDeclaration) {
         ctx.addIssue({ code: "custom", path: ["motherDeclaration"], message: "يجب الموافقة على الإقرار" });
+      }
+    }
+    // Any guardian other than the mother may still open a Qurra file for a
+    // working Saudi mother, so we collect her details here.
+    if (v.relationship !== "mother") {
+      if (!v.motherIsSaudi) {
+        ctx.addIssue({ code: "custom", path: ["motherIsSaudi"], message: "حدّد ما إذا كانت والدة الطفل سعودية" });
+      }
+      if (v.motherIsSaudi === "yes") {
+        if (!v.motherIsWorking) {
+          ctx.addIssue({ code: "custom", path: ["motherIsWorking"], message: "حدّد الحالة الوظيفية للأم" });
+        }
+        if (v.motherIsWorking === "yes") {
+          if (!v.motherNationalId?.trim()) {
+            ctx.addIssue({ code: "custom", path: ["motherNationalId"], message: "أدخل رقم هوية الأم" });
+          }
+          if (!v.motherEmployer?.trim()) {
+            ctx.addIssue({ code: "custom", path: ["motherEmployer"], message: "أدخل جهة عمل الأم" });
+          }
+          if (!v.motherJobTitle?.trim()) {
+            ctx.addIssue({ code: "custom", path: ["motherJobTitle"], message: "أدخل المسمى الوظيفي للأم" });
+          }
+          if (!v.motherDeclaration) {
+            ctx.addIssue({ code: "custom", path: ["motherDeclaration"], message: "يجب الموافقة على الإقرار" });
+          }
+        }
       }
     }
   });

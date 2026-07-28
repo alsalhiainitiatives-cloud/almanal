@@ -42,6 +42,11 @@ export function ParentStep({
   const detected = detectNationality(value.nationalId);
   const impliedGender = relationshipGender(value.relationship);
   const isSaudiMother = value.relationship === "mother" && detected === "saudi";
+  const isOtherGuardian = value.relationship !== "mother";
+  // Non-mother guardians can still apply on behalf of a working Saudi mother.
+  const showSpouseQurra = isOtherGuardian && value.motherIsSaudi === "yes";
+  const showQurraDetails = (isSaudiMother || showSpouseQurra) && value.motherIsWorking === "yes";
+  const showQurraBlock = isSaudiMother || isOtherGuardian;
 
   return (
     <div className="space-y-6">
@@ -130,7 +135,9 @@ export function ParentStep({
                 relationship: v as ParentInfoInput["relationship"],
                 ...(gender ? { gender } : {}),
                 ...(v === "other" ? {} : { relationshipOther: "" }),
-                ...(v === "mother" ? {} : { motherIsWorking: undefined, motherDeclaration: false }),
+                ...(v === "mother"
+                  ? { motherIsSaudi: undefined, motherNationalId: "" }
+                  : { motherIsWorking: undefined, motherDeclaration: false }),
               });
             }}
             options={RELATIONSHIPS.map((r) => ({ value: r.value, label: r.label }))}
@@ -293,10 +300,14 @@ export function ParentStep({
       </FormSection>
 
       {/* ---------------------------------------------------------------- */}
-      {isSaudiMother ? (
+      {showQurraBlock ? (
         <FormSection
           title="بيانات دعم قرة"
-          description="لأنك الأم وسعودية الجنسية، نجمع بيانات دعم «قرة» هنا مباشرة لتوفير خطوة عليك."
+          description={
+            isSaudiMother
+              ? "لأنك الأم وسعودية الجنسية، نجمع بيانات دعم «قرة» هنا مباشرة لتوفير خطوة عليك."
+              : "حتى لو لم تكن الأم هي المتقدمة، يمكن فتح ملف دعم «قرة» إذا كانت والدة الطفل سعودية وعاملة."
+          }
           icon={HeartHandshake}
           tone="accent"
         >
@@ -307,8 +318,37 @@ export function ParentStep({
             </StatusNote>
 
             <FieldGrid>
-              <ChoiceChips
-                label="الحالة الوظيفية"
+              {isOtherGuardian ? (
+                <ChoiceChips
+                  label="هل والدة الطفل سعودية الجنسية؟"
+                  value={value.motherIsSaudi ?? ""}
+                  onChange={(v) =>
+                    onChange({
+                      motherIsSaudi: v as "yes" | "no",
+                      ...(v === "no"
+                        ? {
+                            motherIsWorking: undefined,
+                            motherNationalId: "",
+                            motherEmployer: "",
+                            motherJobTitle: "",
+                            motherDeclaration: false,
+                          }
+                        : {}),
+                    })
+                  }
+                  options={[
+                    { value: "yes", label: "نعم، سعودية" },
+                    { value: "no", label: "غير سعودية" },
+                  ]}
+                  error={errors.motherIsSaudi}
+                  required
+                  className="md:col-span-2"
+                />
+              ) : null}
+
+              {isSaudiMother || showSpouseQurra ? (
+                <ChoiceChips
+                  label={isOtherGuardian ? "هل والدة الطفل عاملة؟" : "الحالة الوظيفية"}
                 value={value.motherIsWorking ?? ""}
                 onChange={(v) =>
                   onChange({
@@ -316,19 +356,34 @@ export function ParentStep({
                     ...(v === "no" ? { motherEmployer: "", motherJobTitle: "" } : {}),
                   })
                 }
-                options={[
-                  { value: "yes", label: "أعمل حاليًا" },
-                  { value: "no", label: "غير عاملة" },
-                ]}
+                  options={[
+                    { value: "yes", label: isOtherGuardian ? "نعم، تعمل" : "أعمل حاليًا" },
+                    { value: "no", label: "غير عاملة" },
+                  ]}
                 error={errors.motherIsWorking}
                 required
                 className="md:col-span-2"
-              />
+                />
+              ) : null}
 
-              {value.motherIsWorking === "yes" ? (
+              {showQurraDetails ? (
                 <>
+                  {isOtherGuardian ? (
+                    <TextField
+                      label="رقم هوية الأم"
+                      value={value.motherNationalId ?? ""}
+                      onChange={(v) => onChange({ motherNationalId: v.replace(/\D/g, "").slice(0, 10) })}
+                      error={errors.motherNationalId}
+                      dir="ltr"
+                      inputMode="numeric"
+                      maxLength={10}
+                      placeholder="1XXXXXXXXX"
+                      required
+                      icon={IdCard}
+                    />
+                  ) : null}
                   <TextField
-                    label="جهة العمل"
+                    label={isOtherGuardian ? "جهة عمل الأم" : "جهة العمل"}
                     value={value.motherEmployer ?? ""}
                     onChange={(v) => onChange({ motherEmployer: v })}
                     error={errors.motherEmployer}
@@ -346,6 +401,7 @@ export function ParentStep({
               ) : null}
             </FieldGrid>
 
+            {isSaudiMother || showQurraDetails ? (
             <label className="flex cursor-pointer items-start gap-3 rounded-2xl border-2 border-border bg-background p-5 transition hover:border-primary/40">
               <Checkbox
                 checked={Boolean(value.motherDeclaration)}
@@ -357,6 +413,7 @@ export function ParentStep({
                 المدرسة غير مسؤولة عن قرار الرفض.
               </span>
             </label>
+            ) : null}
             {errors.motherDeclaration ? (
               <p className="text-xs font-bold text-destructive">{errors.motherDeclaration}</p>
             ) : null}
