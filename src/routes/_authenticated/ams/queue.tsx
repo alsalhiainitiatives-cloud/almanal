@@ -350,6 +350,40 @@ function QueuePage() {
           })}
         </div>
 
+        {stageTabs.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-1.5 rounded-3xl border border-border/60 bg-card p-2">
+            <span className="px-2 text-[11px] font-extrabold text-muted-foreground">المرحلة:</span>
+            {[{ id: undefined as string | undefined, label: "كل المراحل", count: rows.length }, ...stageTabs].map(
+              (tab) => {
+                const active = (search.stageId ?? undefined) === tab.id;
+                return (
+                  <button
+                    key={tab.id ?? "all"}
+                    type="button"
+                    onClick={() => navigate({ search: { ...search, stageId: tab.id } })}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-2xl px-3 py-1.5 text-[11px] font-extrabold transition",
+                      active
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-accent/60",
+                    )}
+                  >
+                    {tab.label}
+                    <span
+                      className={cn(
+                        "rounded-full px-1.5 text-[10px]",
+                        active ? "bg-background/25" : "bg-muted",
+                      )}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              },
+            )}
+          </div>
+        ) : null}
+
         <div className="grid gap-2.5 rounded-3xl border border-border/60 bg-card p-3 lg:grid-cols-[minmax(0,1fr)_auto]">
           <div className="relative">
             <Search className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
