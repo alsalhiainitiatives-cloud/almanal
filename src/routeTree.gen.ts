@@ -40,6 +40,7 @@ import { Route as AuthenticatedAmsQueueRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAmsFormBuilderRouteImport } from './routes/_authenticated/ams/form-builder'
 import { Route as AuthenticatedAmsActivityRouteImport } from './routes/_authenticated/ams/activity'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
+import { Route as AuthenticatedAdminPermissionsRouteImport } from './routes/_authenticated/admin/permissions'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
 import { Route as AdmissionsStageSlugIndexRouteImport } from './routes/admissions.stage.$slug.index'
 import { Route as AdmissionsStageSlugClassroomsRouteImport } from './routes/admissions.stage.$slug.classrooms'
@@ -206,6 +207,12 @@ const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   path: '/admin/users',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminPermissionsRoute =
+  AuthenticatedAdminPermissionsRouteImport.update({
+    id: '/admin/permissions',
+    path: '/admin/permissions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminAuditRoute = AuthenticatedAdminAuditRouteImport.update({
   id: '/admin/audit',
   path: '/admin/audit',
@@ -257,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/admissions/': typeof AdmissionsIndexRoute
   '/track/': typeof TrackIndexRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
+  '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/ams/activity': typeof AuthenticatedAmsActivityRoute
   '/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
@@ -294,6 +302,7 @@ export interface FileRoutesByTo {
   '/admissions': typeof AdmissionsIndexRoute
   '/track': typeof TrackIndexRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
+  '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/ams/activity': typeof AuthenticatedAmsActivityRoute
   '/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
@@ -333,6 +342,7 @@ export interface FileRoutesById {
   '/admissions/': typeof AdmissionsIndexRoute
   '/track/': typeof TrackIndexRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
+  '/_authenticated/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/ams/activity': typeof AuthenticatedAmsActivityRoute
   '/_authenticated/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
@@ -372,6 +382,7 @@ export interface FileRouteTypes {
     | '/admissions/'
     | '/track/'
     | '/admin/audit'
+    | '/admin/permissions'
     | '/admin/users'
     | '/ams/activity'
     | '/ams/form-builder'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/admissions'
     | '/track'
     | '/admin/audit'
+    | '/admin/permissions'
     | '/admin/users'
     | '/ams/activity'
     | '/ams/form-builder'
@@ -447,6 +459,7 @@ export interface FileRouteTypes {
     | '/admissions/'
     | '/track/'
     | '/_authenticated/admin/audit'
+    | '/_authenticated/admin/permissions'
     | '/_authenticated/admin/users'
     | '/_authenticated/ams/activity'
     | '/_authenticated/ams/form-builder'
@@ -706,6 +719,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/permissions': {
+      id: '/_authenticated/admin/permissions'
+      path: '/admin/permissions'
+      fullPath: '/admin/permissions'
+      preLoaderRoute: typeof AuthenticatedAdminPermissionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/audit': {
       id: '/_authenticated/admin/audit'
       path: '/admin/audit'
@@ -749,6 +769,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMyApplicationsRoute: typeof AuthenticatedMyApplicationsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
+  AuthenticatedAdminPermissionsRoute: typeof AuthenticatedAdminPermissionsRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAmsActivityRoute: typeof AuthenticatedAmsActivityRoute
   AuthenticatedAmsFormBuilderRoute: typeof AuthenticatedAmsFormBuilderRoute
@@ -768,6 +789,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMyApplicationsRoute: AuthenticatedMyApplicationsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
+  AuthenticatedAdminPermissionsRoute: AuthenticatedAdminPermissionsRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAmsActivityRoute: AuthenticatedAmsActivityRoute,
   AuthenticatedAmsFormBuilderRoute: AuthenticatedAmsFormBuilderRoute,
