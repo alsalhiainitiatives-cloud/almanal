@@ -575,12 +575,12 @@ function WizardPage() {
     );
   }
 
-  const activeIndex = STEPS.findIndex((s) => s.id === step);
+  const activeIndex = visibleSteps.findIndex((s) => s.id === step);
 
   return (
     <>
       <WizardShell
-        steps={STEPS}
+        steps={visibleSteps}
         activeIndex={activeIndex}
         stageName={stage?.name_ar ?? ""}
         saving={saving}
@@ -594,9 +594,12 @@ function WizardPage() {
             <Button
               type="button"
               variant="soft"
-              disabled={step === 3 || busy}
+              disabled={step === firstStepId || busy}
               onClick={() => {
-                setStep((s) => Math.max(3, s - 1));
+                setStep((s) => {
+                  const idx = visibleSteps.findIndex((v) => v.id === s);
+                  return visibleSteps[Math.max(idx - 1, 0)]?.id ?? s;
+                });
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
             >
@@ -604,7 +607,7 @@ function WizardPage() {
               السابق
             </Button>
 
-            {step < 9 ? (
+            {step !== lastStepId ? (
               <Button type="button" variant="hero" size="lg" disabled={busy} onClick={goNext}>
                 {busy ? <Loader2 className="size-4 animate-spin" /> : null}
                 التالي
@@ -613,12 +616,23 @@ function WizardPage() {
             ) : (
               <Button type="button" variant="hero" size="lg" disabled={busy} onClick={handleSubmit}>
                 {busy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-                إرسال الطلب
+                {correctionMode ? "إرسال التصحيحات" : "إرسال الطلب"}
               </Button>
             )}
           </div>
         }
       >
+        {correctionMode ? (
+          <div className="mb-5 rounded-3xl border border-gold/50 bg-gold/12 p-4">
+            <p className="text-sm font-black text-foreground">مطلوب تصحيح من إدارة القبول</p>
+            <p className="mt-1 text-xs font-bold text-muted-foreground">
+              الأقسام المفتوحة للتعديل: {correctionSections.map((s) => SECTION_LABELS[s] ?? s).join("، ")}
+            </p>
+            {correctionNote ? (
+              <p className="mt-2 text-xs leading-relaxed whitespace-pre-wrap text-foreground">{correctionNote}</p>
+            ) : null}
+          </div>
+        ) : null}
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
