@@ -169,6 +169,10 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
     child?.preference_3_classroom_id ?? null,
   ];
 
+  /** Reason-coded verdict for each preference + the parent-facing summary. */
+  const verdicts = evaluatePreferences(preferences, data.classrooms, childMonths);
+  const parentSummary = waitlistSummary(verdicts, child?.name_ar ?? "الطفل");
+
   const classroomState = (classroom: WorkspaceData["classrooms"][number]) => {
     const free = Math.max(0, classroom.capacity - classroom.taken_seats);
     const ageOk =
@@ -683,41 +687,66 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
       </Dialog>
 
       <Dialog open={dialog === "waitlist"} onOpenChange={(open) => (open ? null : close())}>
-        <DialogContent dir="rtl">
+        <DialogContent dir="rtl" className="max-h-[88vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>قائمة الانتظار حسب رغبات ولي الأمر</DialogTitle>
             <DialogDescription>
-              يوضّح النظام حالة كل رغبة، ويصل لولي الأمر بيان دقيق بسبب الانتظار والرغبة التي يمكن قبول الطفل فيها فورًا.
+              يقيّم النظام كل رغبة مقابل عمر الطفل وسعة الفصل، ويمنحها كود سبب واضح يظهر للموظف ولولي الأمر.
+              {child ? ` عمر ${child.name_ar}: ${formatAge(childMonths)}.` : ""}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
-            {preferences.map((prefId, index) => {
-              const classroom = data.classrooms.find((c) => c.id === prefId);
-              if (!classroom) {
-                return (
-                  <p key={index} className="rounded-2xl border border-border/60 bg-muted/20 px-3 py-2 text-[11px] font-bold text-muted-foreground">
-                    الرغبة {index + 1}: غير محددة
-                  </p>
-                );
-              }
-              const state = classroomState(classroom);
+            {verdicts.map((verdict) => {
+              const reason = WAITLIST_REASONS[verdict.code];
+              const classroom = verdict.classroom;
               return (
                 <button
-                  key={classroom.id}
+                  key={`${verdict.index}-${classroom?.id ?? "none"}`}
                   type="button"
-                  onClick={() => setClassroomId(classroom.id)}
+                  disabled={!classroom}
+                  onClick={() => classroom && setClassroomId(classroom.id)}
                   className={cn(
-                    "w-full rounded-2xl border px-3 py-2 text-start text-[11px] font-bold",
-                    classroomId === classroom.id ? "border-primary bg-primary/10 text-primary" : "border-border/60 bg-muted/20",
+                    "w-full rounded-2xl border px-3 py-2.5 text-start transition-colors disabled:opacity-70",
+                    classroom && classroomId === classroom.id
+                      ? "border-primary bg-primary/10"
+                      : reason.tone === "ok"
+                        ? "border-mint bg-mint/25"
+                        : reason.tone === "warn"
+                          ? "border-gold/50 bg-gold/10"
+                          : "border-border/60 bg-muted/20",
                   )}
                 >
-                  الرغبة {index + 1}: {classroom.name_ar}
-                  <span className="ms-1 text-[10px] font-bold text-muted-foreground">
-                    · {!state.ageOk ? "غير مطابق للعمر" : state.full ? "مكتمل — انتظار" : `متاح فورًا (${state.free})`}
-                  </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[12px] font-extrabold text-foreground">
+                      الرغبة {verdict.index + 1}: {classroom?.name_ar ?? "غير محددة"}
+                    </p>
+                    <span className="rounded-full bg-background/70 px-2 py-0.5 text-[10px] font-extrabold text-foreground" dir="ltr">
+                      {verdict.code}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] font-extrabold text-foreground">{reason.label}</p>
+                  <p className="mt-0.5 text-[10px] font-bold leading-4 text-muted-foreground">
+                    {reason.detail}
+                    {classroom
+                      ? ` (السعة ${classroom.capacity} · المشغول ${classroom.taken_seats} · الشاغر ${verdict.free} · النطاق ${classroom.min_age_months}–${classroom.max_age_months} شهرًا)`
+                      : ""}
+                  </p>
                 </button>
               );
             })}
+          </div>
+          <div className="rounded-2xl border border-border/60 bg-muted/25 px-3 py-2">
+            <p className="text-[11px] font-extrabold text-foreground">الخلاصة التي تصل لولي الأمر</p>
+            <p className="mt-1 text-[11px] font-bold leading-5 text-muted-foreground">{parentSummary}</p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="mt-1 rounded-xl text-[10px] font-bold text-primary"
+              onClick={() => setNote(parentSummary)}
+            >
+              إدراج الخلاصة في الرسالة
+            </Button>
           </div>
           <Textarea
             value={note}
