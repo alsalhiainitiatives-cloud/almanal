@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { amsArchive, amsTogglePin, amsWorkspace } from "@/features/ams/ams.functions";
 import { AmsShell } from "@/features/ams/components/AmsShell";
 import { EmptyState, PriorityPill, SkeletonRows, StatusPill } from "@/features/ams/components/atoms";
+import { AccessNotice, isAuthorizationError } from "@/features/ams/components/AccessNotice";
 import { ActionCenter } from "@/features/ams/components/workspace/ActionCenter";
 import { ApplicantPanel } from "@/features/ams/components/workspace/ApplicantPanel";
 import { InsightBar } from "@/features/ams/components/workspace/InsightBar";
@@ -79,7 +80,11 @@ function WorkspacePage() {
       }
     >
       {error ? (
-        <EmptyState title="تعذّر فتح الطلب" description={(error as Error).message} />
+        isAuthorizationError(error) ? (
+          <AccessNotice message={(error as Error).message} />
+        ) : (
+          <EmptyState title="تعذّر فتح الطلب" description={(error as Error).message} />
+        )
       ) : isLoading || !data ? (
         <SkeletonRows rows={10} />
       ) : (

@@ -29,6 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QURRA_STATUS_LABELS } from "@/features/admissions/eligibility";
+import { listStages } from "@/features/admissions/catalog.functions";
 import {
   amsAssignOfficer,
   amsQueue,
@@ -38,6 +39,7 @@ import {
 } from "@/features/ams/ams.functions";
 import { AmsShell } from "@/features/ams/components/AmsShell";
 import { EmptyState, STATUS_LABELS, SkeletonRows } from "@/features/ams/components/atoms";
+import { AccessNotice, isAuthorizationError } from "@/features/ams/components/AccessNotice";
 import { QueueCards } from "@/features/ams/components/queue/QueueCards";
 import { QueueTable } from "@/features/ams/components/queue/QueueTable";
 import {
@@ -51,7 +53,13 @@ import {
 import { PAYMENT_STATUS_LABELS, PRIORITY_LABELS } from "@/features/ams/roles";
 import { cn } from "@/lib/utils";
 
-type QueueSearch = { status?: string; officerId?: string; payment?: string; qurra?: string };
+type QueueSearch = {
+  status?: string;
+  officerId?: string;
+  payment?: string;
+  qurra?: string;
+  stageId?: string;
+};
 
 export const Route = createFileRoute("/_authenticated/ams/queue")({
   validateSearch: (search: Record<string, unknown>): QueueSearch => ({
@@ -59,6 +67,7 @@ export const Route = createFileRoute("/_authenticated/ams/queue")({
     officerId: typeof search.officerId === "string" ? search.officerId : undefined,
     payment: typeof search.payment === "string" ? search.payment : undefined,
     qurra: typeof search.qurra === "string" ? search.qurra : undefined,
+    stageId: typeof search.stageId === "string" ? search.stageId : undefined,
   }),
   head: () => ({
     meta: [
@@ -71,6 +80,11 @@ export const Route = createFileRoute("/_authenticated/ams/queue")({
 });
 
 const ALL = "all";
+
+/** Stage of an application: falls back to the first child's stage. */
+function rowStageId(row: { stage_id: string | null; children: { stage_id: string | null }[] }) {
+  return row.stage_id ?? row.children.find((child) => child.stage_id)?.stage_id ?? null;
+}
 
 const TABS: { key: string | undefined; label: string }[] = [
   { key: undefined, label: "الكل" },
@@ -111,6 +125,7 @@ function QueuePage() {
     queryFn: () => amsQueue({ data: filters }),
   });
   const { data: staff } = useQuery({ queryKey: ["ams", "staff"], queryFn: () => amsStaff() });
+  const { data: stages } = useQuery({ queryKey: ["stages", "list"], queryFn: () => listStages() });
 
   const togglePin = useServerFn(amsTogglePin);
   const assign = useServerFn(amsAssignOfficer);
@@ -185,10 +200,45 @@ function QueuePage() {
   const rows = useMemo(() => {
     const needle = term.trim().toLowerCase();
     const filtered = all.filter(
-      (row) => (!search.status || row.status === search.status) && matchesTerm(row, needle),
+      (row) =>
+        (!search.status || row.status === search.status) &&
+        (!search.stageId || rowStageId(row) === search.stageId) &&
+        matchesTerm(row, needle),
     );
     return sortRows(filtered, sort);
-  }, [all, term, search.status, sort]);
+  }, [all, term, search.status, search.stageId, sort]);
+
+  // Stage buckets: صغار المنال / كبار المنال (مونتيسوري) / ابتدائي / غير محددة.
+  const stageTabs = useMemo(() => {
+    const list = (stages ?? []).map((stage) => ({ id: stage.id as string, label: stage.name_ar as string }));
+    const statusScoped = all.filter((row) => !search.status || row.status === search.status);
+    const counts: Record<string, number> = {};
+    for (const row of statusScoped) {
+      const key = rowStageId(row) ?? "unassigned";
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+    const tabs = list.map((stage) => ({ ...stage, count: counts[stage.id] ?? 0 }));
+    if (counts.unassigned) tabs.push({ id: "unassigned", label: "غير محددة المرحلة", count: counts.unassigned });
+    return tabs;
+  }, [stages, all, search.status]);
+
+  const groupedRows = useMemo(() => {
+    if (search.stageId) return null;
+    const labels = new Map(stageTabs.map((tab) => [tab.id, tab.label]));
+    const order = stageTabs.map((tab) => tab.id);
+    const buckets = new Map<string, typeof rows>();
+    for (const row of rows) {
+      const key = rowStageId(row) ?? "unassigned";
+      buckets.set(key, [...(buckets.get(key) ?? []), row]);
+    }
+    return order
+      .filter((key) => (buckets.get(key)?.length ?? 0) > 0)
+      .map((key) => ({
+        id: key,
+        label: labels.get(key) ?? "غير محددة المرحلة",
+        rows: buckets.get(key)!,
+      }));
+  }, [rows, stageTabs, search.stageId]);
 
   const setFilter = (key: keyof QueueSearch, value: string) =>
     navigate({ search: { ...search, [key]: value === ALL ? undefined : value } });
@@ -299,6 +349,40 @@ function QueuePage() {
             );
           })}
         </div>
+
+        {stageTabs.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-1.5 rounded-3xl border border-border/60 bg-card p-2">
+            <span className="px-2 text-[11px] font-extrabold text-muted-foreground">المرحلة:</span>
+            {[{ id: undefined as string | undefined, label: "كل المراحل", count: rows.length }, ...stageTabs].map(
+              (tab) => {
+                const active = (search.stageId ?? undefined) === tab.id;
+                return (
+                  <button
+                    key={tab.id ?? "all"}
+                    type="button"
+                    onClick={() => navigate({ search: { ...search, stageId: tab.id } })}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-2xl px-3 py-1.5 text-[11px] font-extrabold transition",
+                      active
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-accent/60",
+                    )}
+                  >
+                    {tab.label}
+                    <span
+                      className={cn(
+                        "rounded-full px-1.5 text-[10px]",
+                        active ? "bg-background/25" : "bg-muted",
+                      )}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              },
+            )}
+          </div>
+        ) : null}
 
         <div className="grid gap-2.5 rounded-3xl border border-border/60 bg-card p-3 lg:grid-cols-[minmax(0,1fr)_auto]">
           <div className="relative">
@@ -429,7 +513,11 @@ function QueuePage() {
         ) : null}
 
         {error ? (
-          <EmptyState title="تعذّر تحميل الطلبات" description={(error as Error).message} />
+          isAuthorizationError(error) ? (
+            <AccessNotice message={(error as Error).message} />
+          ) : (
+            <EmptyState title="تعذّر تحميل الطلبات" description={(error as Error).message} />
+          )
         ) : isLoading ? (
           <SkeletonRows rows={8} />
         ) : rows.length === 0 ? (
@@ -438,26 +526,60 @@ function QueuePage() {
             title="لا توجد طلبات مطابقة"
             description="جرّب تغيير التبويب أو الفلاتر أو كلمة البحث."
           />
-        ) : view === "table" ? (
-          <QueueTable
-            rows={rows}
-            selected={selected}
-            compact={compact}
-            onToggle={(id, checked) =>
-              setSelected((prev) => (checked ? [...prev, id] : prev.filter((value) => value !== id)))
-            }
-            onToggleAll={(checked) => setSelected(checked ? rows.map((row) => row.id) : [])}
-            onPin={(row) => pinMutation.mutate({ id: row.id, pinned: !row.pinned })}
-          />
         ) : (
-          <QueueCards
-            rows={rows}
-            selected={selected}
-            onToggle={(id, checked) =>
-              setSelected((prev) => (checked ? [...prev, id] : prev.filter((value) => value !== id)))
-            }
-            onPin={(row) => pinMutation.mutate({ id: row.id, pinned: !row.pinned })}
-          />
+          (groupedRows ?? [{ id: search.stageId ?? "all", label: "", rows }]).map((group) => (
+            <section key={group.id} className="space-y-2">
+              {group.label ? (
+                <div className="flex items-center gap-2 px-1">
+                  <h3 className="text-xs font-black text-foreground">{group.label}</h3>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-extrabold text-muted-foreground">
+                    {group.rows.length} طلب
+                  </span>
+                  <span className="h-px flex-1 bg-border/60" />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelected((prev) =>
+                        group.rows.every((row) => prev.includes(row.id))
+                          ? prev.filter((id) => !group.rows.some((row) => row.id === id))
+                          : [...new Set([...prev, ...group.rows.map((row) => row.id)])],
+                      )
+                    }
+                    className="rounded-2xl border border-border/60 px-2.5 py-1 text-[10px] font-extrabold text-muted-foreground"
+                  >
+                    تحديد المرحلة
+                  </button>
+                </div>
+              ) : null}
+              {view === "table" ? (
+                <QueueTable
+                  rows={group.rows}
+                  selected={selected}
+                  compact={compact}
+                  onToggle={(id, checked) =>
+                    setSelected((prev) => (checked ? [...prev, id] : prev.filter((value) => value !== id)))
+                  }
+                  onToggleAll={(checked) =>
+                    setSelected((prev) =>
+                      checked
+                        ? [...new Set([...prev, ...group.rows.map((row) => row.id)])]
+                        : prev.filter((id) => !group.rows.some((row) => row.id === id)),
+                    )
+                  }
+                  onPin={(row) => pinMutation.mutate({ id: row.id, pinned: !row.pinned })}
+                />
+              ) : (
+                <QueueCards
+                  rows={group.rows}
+                  selected={selected}
+                  onToggle={(id, checked) =>
+                    setSelected((prev) => (checked ? [...prev, id] : prev.filter((value) => value !== id)))
+                  }
+                  onPin={(row) => pinMutation.mutate({ id: row.id, pinned: !row.pinned })}
+                />
+              )}
+            </section>
+          ))
         )}
       </div>
 
