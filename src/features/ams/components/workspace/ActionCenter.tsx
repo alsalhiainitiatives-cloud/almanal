@@ -37,7 +37,6 @@ import {
   amsRecommend,
   amsRequestDocuments,
   amsReturnToParent,
-  amsReviewDocument,
   amsSetPayment,
   amsSetPriority,
   amsStaff,
@@ -105,7 +104,6 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
   const assign = useServerFn(amsAssignOfficer);
   const priority = useServerFn(amsSetPriority);
   const startReview = useServerFn(amsStartReview);
-  const reviewDoc = useServerFn(amsReviewDocument);
   const requestDocs = useServerFn(amsRequestDocuments);
   const returnToParent = useServerFn(amsReturnToParent);
   const recommend = useServerFn(amsRecommend);
