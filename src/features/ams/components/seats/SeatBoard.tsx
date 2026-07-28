@@ -134,6 +134,7 @@ export function SeatBoard() {
   const [moving, setMoving] = useState<SeatChild | null>(null);
   const [editing, setEditing] = useState<SeatChild | null>(null);
   const [removing, setRemoving] = useState<SeatChild | null>(null);
+  const [rejection, setRejection] = useState<{ classroomId: string; child: SeatChild; check: PlacementCheck } | null>(null);
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["ams", "seat-board"] });
@@ -146,10 +147,24 @@ export function SeatBoard() {
       toast.success("تم تحديث تسكين الطالب");
       result.warnings?.forEach((warning: string) => toast.warning(warning));
       setMoving(null);
+      setRejection(null);
       refresh();
     },
     onError: (err: Error) => toast.error(err.message),
   });
+
+  /** Age (in months) + rules are always verified locally before any server call. */
+  const tryAssign = (child: SeatChild, classroom: BoardClassroom) => {
+    const check = validatePlacement(child, asRule(classroom));
+    if (!check.ok) {
+      setRejection({ classroomId: classroom.id, child, check });
+      return false;
+    }
+    setRejection(null);
+    check.warnings.forEach((warning) => toast.warning(warning));
+    assign.mutate({ childId: child.id, classroomId: classroom.id });
+    return true;
+  };
 
   const remove = useMutation({
     mutationFn: (input: { childId: string }) => amsSeatRemove({ data: input }),
@@ -271,13 +286,7 @@ export function SeatBoard() {
                       (data.unplaced as SeatChild[]).find((item) => item.id === childId) ??
                       (data.classrooms.flatMap((c) => c.children) as SeatChild[]).find((item) => item.id === childId);
                     if (!child) return;
-                    const check = validatePlacement(child, asRule(classroom));
-                    if (!check.ok) {
-                      toast.error(check.message ?? "لا يمكن تنفيذ هذا التسكين.");
-                      return;
-                    }
-                    check.warnings.forEach((warning) => toast.warning(warning));
-                    assign.mutate({ childId, classroomId: classroom.id });
+                    tryAssign(child, classroom);
                   }}
                   className="rounded-3xl border border-border/60 bg-card p-4 shadow-sm"
                   style={{ borderTop: `4px solid ${classroom.color_hex}` }}
@@ -301,6 +310,16 @@ export function SeatBoard() {
                   <div className="mt-2 empty:hidden">
                     <ClassroomLockBadge lock={locked} mine={isMine(classroom.id)} />
                   </div>
+
+                  {rejection && rejection.classroomId === classroom.id ? (
+                    <RejectionCard
+                      child={rejection.child}
+                      check={rejection.check}
+                      busy={assign.isPending}
+                      onDismiss={() => setRejection(null)}
+                      onRetry={() => tryAssign(rejection.child, classroom)}
+                    />
+                  ) : null}
 
                   <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-muted">
                     <div className="h-full rounded-full" style={{ width: `${percent}%`, background: classroom.color_hex }} />
@@ -338,7 +357,10 @@ export function SeatBoard() {
           classrooms={data.classrooms}
           busy={assign.isPending}
           onClose={() => setMoving(null)}
-          onConfirm={(classroomId) => assign.mutate({ childId: moving.id, classroomId })}
+          onConfirm={(classroomId) => {
+            const classroom = data.classrooms.find((item) => item.id === classroomId);
+            if (classroom) tryAssign(moving, classroom);
+          }}
         />
       ) : null}
 
