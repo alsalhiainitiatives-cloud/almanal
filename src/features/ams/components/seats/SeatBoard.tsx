@@ -416,6 +416,7 @@ export function SeatBoard() {
         <MoveDialog
           child={moving}
           classrooms={data.classrooms}
+          key="move-dialog"
           busy={assign.isPending}
           onClose={() => setMoving(null)}
           onConfirm={(classroomId) => {
