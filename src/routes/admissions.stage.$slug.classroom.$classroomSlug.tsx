@@ -131,6 +131,16 @@ function ClassroomDetailPage() {
     <>
       <PageHero eyebrow={stage.name_ar} title={classroom.name_ar} description={classroom.description_ar ?? ""} />
 
+      {cover && mediaUrls[cover] ? (
+        <section className="mx-auto max-w-5xl px-4 md:px-8">
+          <img
+            src={mediaUrls[cover]}
+            alt={`غلاف ${classroom.name_ar}`}
+            className="h-64 w-full rounded-[2.5rem] object-cover shadow-card md:h-80"
+          />
+        </section>
+      ) : null}
+
       <section className="section-y">
         <div className="mx-auto max-w-5xl px-4 md:px-8">
           <Reveal>
@@ -200,12 +210,34 @@ function ClassroomDetailPage() {
                     ) : null}
                     {teamList.map((t, i) => (
                       <li key={`${t.name}-${i}`} className="rounded-2xl bg-card p-4 shadow-soft">
-                        <p className="text-sm font-black text-foreground">{t.name}</p>
-                        {t.title ? <p className="text-xs font-bold text-secondary">{t.title}</p> : null}
+                        <div className="flex items-center gap-3">
+                          {t.photo_url && mediaUrls[t.photo_url] ? (
+                            <img
+                              src={mediaUrls[t.photo_url]}
+                              alt={t.name}
+                              loading="lazy"
+                              className="size-14 rounded-full object-cover ring-2 ring-border"
+                            />
+                          ) : null}
+                          <div>
+                            <p className="text-sm font-black text-foreground">{t.name}</p>
+                            {t.title ? <p className="text-xs font-bold text-secondary">{t.title}</p> : null}
+                          </div>
+                        </div>
                         {t.qualification ? (
                           <p className="mt-2 text-xs text-muted-foreground">{t.qualification}</p>
                         ) : null}
                         {t.experience ? <p className="mt-1 text-xs text-muted-foreground">{t.experience}</p> : null}
+                        {t.cv_url && mediaUrls[t.cv_url] ? (
+                          <a
+                            href={mediaUrls[t.cv_url]}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-3 inline-flex items-center gap-1 rounded-2xl bg-background/80 px-3 py-1.5 text-[11px] font-black text-primary"
+                          >
+                            عرض السيرة الذاتية / الشهادة
+                          </a>
+                        ) : null}
                       </li>
                     ))}
                   </ul>
