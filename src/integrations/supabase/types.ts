@@ -1406,6 +1406,14 @@ export type Database = {
           user_name: string
         }[]
       }
+      admin_set_role_permission: {
+        Args: {
+          _granted: boolean
+          _permission_key: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
       admin_set_user_roles: {
         Args: {
           _roles: Database["public"]["Enums"]["app_role"][]
