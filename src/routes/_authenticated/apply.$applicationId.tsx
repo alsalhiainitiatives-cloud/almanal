@@ -235,7 +235,36 @@ function WizardPage() {
     parent?: Partial<ParentInfoInput>;
     children?: ChildInput[];
     qurra?: Partial<QurraInput>;
+    custom?: CustomValues;
   };
+
+  /* Live registration-form configuration (steps + custom fields). */
+  const { data: formConfig } = useFormConfig();
+  const configuredSteps: WizardStepWithKey[] = useMemo(() => {
+    const rows = formConfig?.steps ?? [];
+    if (!rows.length) return STEPS;
+    return rows.map((row, index) => ({
+      id: BUILTIN_STEP_IDS[row.key] ?? 100 + index,
+      key: row.key,
+      label: row.name_ar,
+      short: row.short_ar,
+      description: row.description_ar ?? "",
+      icon: stepIcon(row.icon),
+    }));
+  }, [formConfig]);
+
+  const customFieldsByStep = useMemo(() => {
+    const map = new Map<string, FormFieldRow[]>();
+    const rows = formConfig?.fields ?? [];
+    const stepKeyById = new Map((formConfig?.steps ?? []).map((s) => [s.id, s.key]));
+    for (const field of rows) {
+      if (field.is_system || !field.is_visible) continue;
+      const key = stepKeyById.get(field.step_id);
+      if (!key) continue;
+      map.set(key, [...(map.get(key) ?? []), field]);
+    }
+    return map;
+  }, [formConfig]);
 
   /* Correction mode: staff asked for fixes in specific sections only. */
   const correctionSections = ((bundle.application as { correction_sections?: string[] | null })
@@ -252,8 +281,8 @@ function WizardPage() {
   };
   const allowedStepIds = correctionMode
     ? new Set([...correctionSections.map((s) => SECTION_STEP[s]).filter(Boolean), 8, 9])
-    : new Set(STEPS.map((s) => s.id));
-  const visibleSteps = STEPS.filter((s) => allowedStepIds.has(s.id));
+    : new Set(configuredSteps.map((s) => s.id));
+  const visibleSteps = configuredSteps.filter((s) => allowedStepIds.has(s.id));
   const firstStepId = visibleSteps[0]?.id ?? 3;
   const lastStepId = visibleSteps[visibleSteps.length - 1]?.id ?? 9;
 
@@ -265,6 +294,7 @@ function WizardPage() {
     draft.children?.length ? draft.children : [emptyChild()],
   );
   const [qurra, setQurra] = useState<QurraInput>(() => ({ ...emptyQurra(), ...draft.qurra }));
+  const [custom, setCustom] = useState<CustomValues>(() => draft.custom ?? {});
   const [services, setServices] = useState<string[]>(() => bundle.services);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [duplicates, setDuplicates] = useState<Record<number, string>>({});
