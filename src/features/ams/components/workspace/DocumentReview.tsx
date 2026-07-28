@@ -2,14 +2,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   CheckCircle2,
+  ChevronDown,
   Download,
   Eye,
   FileText,
   Image as ImageIcon,
   Printer,
   RefreshCcw,
-  Sparkles,
-  XCircle,
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
@@ -42,6 +41,7 @@ export function DocumentReview({ data }: { data: WorkspaceData }) {
   const [preview, setPreview] = useState<{ doc: WorkspaceDocument; url: string } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const docLabel = (slug: string) => data.documentTypes.find((t) => t.slug === slug)?.name_ar ?? slug;
   const ownerLabel = (doc: WorkspaceDocument) =>
@@ -103,16 +103,53 @@ export function DocumentReview({ data }: { data: WorkspaceData }) {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  /** Approves every document that isn't approved yet, in one click. */
+  const approveAll = useMutation({
+    mutationFn: async () => {
+      const pending = data.documents.filter((doc) => doc.status !== "approved");
+      for (const doc of pending) {
+        await reviewDoc({ data: { id, documentId: doc.id, status: "approved" } });
+      }
+      return pending.length;
+    },
+    onSuccess: (count) => {
+      toast.success(count > 0 ? `تم اعتماد ${count} مستندًا` : "جميع المستندات معتمدة بالفعل");
+      queryClient.invalidateQueries({ queryKey: ["ams"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const pendingCount = data.documents.filter((doc) => doc.status !== "approved").length;
+
   return (
     <div className="rounded-3xl border border-border/60 bg-card p-4">
-      <p className="text-sm font-extrabold text-foreground">مراجعة المستندات ({data.documents.length})</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-extrabold text-foreground">مراجعة المستندات ({data.documents.length})</p>
+        {data.documents.length > 0 ? (
+          <Button
+            size="sm"
+            className="rounded-xl text-[11px] font-extrabold"
+            disabled={pendingCount === 0 || approveAll.isPending}
+            onClick={() => approveAll.mutate()}
+          >
+            <CheckCircle2 className="size-3.5" />
+            {pendingCount === 0 ? "كل المستندات معتمدة" : `اعتماد الكل (${pendingCount})`}
+          </Button>
+        ) : null}
+      </div>
       <div className="mt-3 space-y-2.5">
         {data.documents.map((doc) => {
           const name = doc.file_name ?? "ملف";
-          const busy = busyId === doc.id || review.isPending;
+          const busy = busyId === doc.id || review.isPending || approveAll.isPending;
+          const expanded = openId === doc.id;
           return (
             <article key={doc.id} className="rounded-2xl border border-border/60 bg-muted/20 p-3">
-              <header className="flex items-start gap-2.5">
+              <button
+                type="button"
+                onClick={() => setOpenId(expanded ? null : doc.id)}
+                aria-expanded={expanded}
+                className="flex w-full items-start gap-2.5 text-start"
+              >
                 <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
                   {isImage(name) ? <ImageIcon className="size-4" /> : <FileText className="size-4" />}
                 </span>
@@ -132,65 +169,44 @@ export function DocumentReview({ data }: { data: WorkspaceData }) {
                 >
                   {DOC_STATUS_LABELS[doc.status] ?? doc.status}
                 </span>
-              </header>
+                <ChevronDown
+                  className={cn(
+                    "mt-1 size-4 shrink-0 text-muted-foreground transition-transform",
+                    expanded && "rotate-180",
+                  )}
+                />
+              </button>
 
-              <div className="mt-2.5 flex flex-wrap gap-1.5">
-                <Tool icon={<Eye className="size-3" />} label="معاينة" onClick={() => openPreview(doc)} disabled={busy} />
-                <Tool
-                  icon={<ZoomIn className="size-3" />}
-                  label="تكبير"
-                  onClick={async () => {
-                    await openPreview(doc);
-                    setZoom(1.6);
-                  }}
-                  disabled={busy}
-                />
-                <Tool icon={<Download className="size-3" />} label="تنزيل" onClick={() => download(doc)} disabled={busy} />
-                <Tool icon={<Printer className="size-3" />} label="طباعة" onClick={() => print(doc)} disabled={busy} />
-              </div>
+              {expanded ? (
+                <>
+                  <div className="mt-2.5 flex flex-wrap gap-1.5 border-t border-border/50 pt-2.5">
+                    <Tool icon={<Eye className="size-3" />} label="معاينة" onClick={() => openPreview(doc)} disabled={busy} />
+                    <Tool icon={<Download className="size-3" />} label="تنزيل" onClick={() => download(doc)} disabled={busy} />
+                    <Tool icon={<Printer className="size-3" />} label="طباعة" onClick={() => print(doc)} disabled={busy} />
+                    <Tool
+                      icon={<CheckCircle2 className="size-3" />}
+                      label="اعتماد"
+                      active={doc.status === "approved"}
+                      disabled={busy}
+                      onClick={() => review.mutate({ documentId: doc.id, status: "approved" })}
+                    />
+                    <Tool
+                      icon={<RefreshCcw className="size-3" />}
+                      label="طلب استبدال"
+                      active={doc.status === "replace"}
+                      disabled={busy}
+                      onClick={() =>
+                        review.mutate({ documentId: doc.id, status: "replace", note: "مطلوب استبدال المستند." })
+                      }
+                    />
+                  </div>
 
-              <div className="mt-2 flex flex-wrap gap-1.5 border-t border-border/50 pt-2">
-                <Tool
-                  icon={<CheckCircle2 className="size-3" />}
-                  label="اعتماد"
-                  active={doc.status === "approved"}
-                  disabled={busy}
-                  onClick={() => review.mutate({ documentId: doc.id, status: "approved" })}
-                />
-                <Tool
-                  icon={<XCircle className="size-3" />}
-                  label="رفض"
-                  active={doc.status === "rejected"}
-                  disabled={busy}
-                  onClick={() => review.mutate({ documentId: doc.id, status: "rejected" })}
-                />
-                <Tool
-                  icon={<RefreshCcw className="size-3" />}
-                  label="طلب استبدال"
-                  active={doc.status === "replace"}
-                  disabled={busy}
-                  onClick={() =>
-                    review.mutate({ documentId: doc.id, status: "replace", note: "مطلوب استبدال المستند." })
-                  }
-                />
-                <Tool
-                  icon={<Sparkles className="size-3" />}
-                  label="جودة أفضل"
-                  disabled={busy}
-                  onClick={() =>
-                    review.mutate({
-                      documentId: doc.id,
-                      status: "replace",
-                      note: "الصورة غير واضحة — يرجى رفع نسخة بجودة أعلى.",
-                    })
-                  }
-                />
-              </div>
-
-              {doc.note ? (
-                <p className="mt-2 rounded-xl bg-background px-2.5 py-1.5 text-[10px] font-bold text-muted-foreground">
-                  ملاحظة: {doc.note}
-                </p>
+                  {doc.note ? (
+                    <p className="mt-2 rounded-xl bg-background px-2.5 py-1.5 text-[10px] font-bold text-muted-foreground">
+                      ملاحظة: {doc.note}
+                    </p>
+                  ) : null}
+                </>
               ) : null}
             </article>
           );
