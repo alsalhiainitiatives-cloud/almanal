@@ -460,6 +460,41 @@ function QueuePage() {
           />
         )}
       </div>
+
+      <Dialog open={!!confirm} onOpenChange={(open) => (open ? null : setConfirm(null))}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تأكيد الإجراء الجماعي</DialogTitle>
+            <DialogDescription>
+              {confirm?.kind === "assign"
+                ? `سيتم إسناد ${selected.length} طلب إلى ${
+                    (staff ?? []).find((person) => person.id === confirm.value)?.name ?? "المسؤول المحدد"
+                  }.`
+                : `سيتم تغيير أولوية ${selected.length} طلب إلى «${
+                    PRIORITY_LABELS[confirm?.value ?? ""] ?? ""
+                  }».`}{" "}
+              يمكنك التراجع مباشرة بعد التنفيذ.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" className="rounded-2xl text-xs" onClick={() => setConfirm(null)}>
+              إلغاء
+            </Button>
+            <Button
+              className="rounded-2xl text-xs font-bold"
+              disabled={bulkAssign.isPending || bulkPriorityMutation.isPending}
+              onClick={() => {
+                if (!confirm) return;
+                if (confirm.kind === "assign") bulkAssign.mutate(confirm.value);
+                else bulkPriorityMutation.mutate(confirm.value);
+                setConfirm(null);
+              }}
+            >
+              تنفيذ
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AmsShell>
   );
 }
