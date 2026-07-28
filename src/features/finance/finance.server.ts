@@ -137,7 +137,7 @@ export async function savePlanSettings(
 export async function saveDiscountRule(
   supabase: Db,
   userId: string,
-  input: Partial<DiscountRuleRow> & { name_ar: string },
+  input: Partial<Omit<DiscountRuleRow, "id">> & { id?: string | null; name_ar: string },
 ) {
   await guardFinance(supabase, userId);
   const payload = {
