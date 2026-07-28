@@ -81,6 +81,11 @@ export const Route = createFileRoute("/_authenticated/ams/queue")({
 
 const ALL = "all";
 
+/** Stage of an application: falls back to the first child's stage. */
+function rowStageId(row: { stage_id: string | null; children: { stage_id: string | null }[] }) {
+  return row.stage_id ?? row.children.find((child) => child.stage_id)?.stage_id ?? null;
+}
+
 const TABS: { key: string | undefined; label: string }[] = [
   { key: undefined, label: "الكل" },
   { key: "submitted", label: STATUS_LABELS.submitted ?? "جديد" },
