@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { useAuth } from "../AuthProvider";
 import { P, ROLE_COLORS, ROLE_LABELS } from "../rbac";
 
@@ -109,7 +110,10 @@ export function PortalLayout({
         {/* Content */}
         <div>
           <header className="no-print rounded-[2rem] border border-border/60 bg-card/90 p-6 shadow-soft backdrop-blur sm:p-8">
-            <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">{title}</h1>
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">{title}</h1>
+              <NotificationBell />
+            </div>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
               {description}
             </p>
