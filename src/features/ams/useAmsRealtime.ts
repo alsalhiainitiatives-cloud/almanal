@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -11,9 +11,12 @@ const TABLES = ["applications", "application_events", "application_notes", "appl
  */
 export function useAmsRealtime(onChange?: () => void) {
   const queryClient = useQueryClient();
+  const instanceId = useId();
 
   useEffect(() => {
-    const channel = supabase.channel("ams-live");
+    // Unique channel per hook instance: reusing one name across simultaneously
+    // mounted components hits an already-subscribed channel.
+    const channel = supabase.channel(`ams-live:${instanceId}:${Math.random().toString(36).slice(2)}`);
     for (const table of TABLES) {
       channel.on("postgres_changes", { event: "*", schema: "public", table }, () => {
         queryClient.invalidateQueries({ queryKey: ["ams"] });
@@ -25,5 +28,5 @@ export function useAmsRealtime(onChange?: () => void) {
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryClient]);
+  }, [queryClient, instanceId]);
 }
