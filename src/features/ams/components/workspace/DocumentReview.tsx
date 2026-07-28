@@ -180,9 +180,8 @@ export function DocumentReview({ data }: { data: WorkspaceData }) {
               {expanded ? (
                 <>
                   <div className="mt-2.5 flex flex-wrap gap-1.5 border-t border-border/50 pt-2.5">
-                    <Tool icon={<Eye className="size-3" />} label="معاينة" onClick={() => openPreview(doc)} disabled={busy} />
+                    <Tool icon={<Eye className="size-3" />} label="معاينة وطباعة" onClick={() => openPreview(doc)} disabled={busy} />
                     <Tool icon={<Download className="size-3" />} label="تنزيل" onClick={() => download(doc)} disabled={busy} />
-                    <Tool icon={<Printer className="size-3" />} label="طباعة" onClick={() => print(doc)} disabled={busy} />
                     <Tool
                       icon={<CheckCircle2 className="size-3" />}
                       label="اعتماد"
@@ -224,6 +223,13 @@ export function DocumentReview({ data }: { data: WorkspaceData }) {
             </DialogTitle>
           </DialogHeader>
           <div className="flex items-center gap-1.5">
+            <Button
+              size="sm"
+              className="rounded-xl text-[11px] font-extrabold"
+              onClick={() => preview && print(preview.doc)}
+            >
+              <Printer className="size-3.5" /> طباعة
+            </Button>
             <Button
               size="sm"
               variant="outline"
