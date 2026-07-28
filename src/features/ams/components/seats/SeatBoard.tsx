@@ -418,6 +418,7 @@ function MoveDialog({
   onConfirm: (classroomId: string) => void;
 }) {
   const options = classrooms.map((classroom) => ({ classroom, check: validatePlacement(child, asRule(classroom)) }));
+  const [attempted, setAttempted] = useState<string | null>(null);
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-4">
       <div className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-card p-6 shadow-xl">
@@ -430,9 +431,10 @@ function MoveDialog({
             <li key={classroom.id}>
               <button
                 type="button"
-                disabled={!check.ok || busy}
-                onClick={() => onConfirm(classroom.id)}
+                disabled={busy}
+                onClick={() => (check.ok ? onConfirm(classroom.id) : setAttempted(classroom.id))}
                 className="w-full rounded-2xl border border-border/60 p-3 text-start transition-colors enabled:hover:border-primary disabled:opacity-60"
+                aria-disabled={!check.ok}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-extrabold text-foreground">{classroom.name_ar}</span>
@@ -442,6 +444,17 @@ function MoveDialog({
                 </div>
                 {check.ok ? (
                   <p className="mt-1 text-[11px] font-bold text-primary">مطابق للشروط — اضغط للنقل</p>
+                ) : check.age ? (
+                  <div className="mt-1.5 rounded-2xl border border-destructive/40 bg-destructive/5 p-2.5">
+                    <p className="text-[11px] font-extrabold text-destructive">شرط العمر لا ينطبق</p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[10px] font-extrabold">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-1 text-destructive">
+                        <CalendarClock className="size-3" /> {check.age.childAgeLabel}
+                      </span>
+                      <span className="text-muted-foreground">مقابل</span>
+                      <span className="rounded-full bg-muted px-2 py-1 text-muted-foreground">{check.age.rangeLabel}</span>
+                    </div>
+                  </div>
                 ) : (
                   <p className="mt-1 text-[11px] font-bold text-destructive">{check.message}</p>
                 )}
@@ -451,6 +464,22 @@ function MoveDialog({
                   </p>
                 ))}
               </button>
+              {!check.ok && attempted === classroom.id ? (
+                <div className="mt-1 flex justify-end">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      const fresh = validatePlacement(child, asRule(classroom));
+                      if (fresh.ok) onConfirm(classroom.id);
+                      else setAttempted(classroom.id);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-2xl border border-destructive/40 px-3 py-1.5 text-[11px] font-extrabold text-destructive disabled:opacity-60"
+                  >
+                    <RotateCcw className="size-3.5" /> إعادة المحاولة
+                  </button>
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>
