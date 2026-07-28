@@ -1,5 +1,20 @@
-import { useState } from "react";
-import { Plus, Trash2, X } from "lucide-react";
+import { useRef, useState } from "react";
+import { FileText, ImagePlus, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
+import { toast } from "sonner";
+
+import { uploadClassroomMedia, useClassroomMediaUrls } from "@/lib/classroom-media";
+
+export type ClassroomTeacher = {
+  name: string;
+  title?: string;
+  qualification?: string;
+  experience?: string;
+  photo_url?: string | null;
+  cv_url?: string | null;
+  cv_name?: string | null;
+};
+
+export type ClassroomGalleryItem = { path: string; caption?: string | null };
 
 export type ClassroomDraft = {
   id?: string | null;
@@ -11,7 +26,9 @@ export type ClassroomDraft = {
   teacher_title: string;
   teacher_qualification: string;
   teacher_experience: string;
-  teachers: { name: string; title?: string; qualification?: string; experience?: string }[];
+  teachers: ClassroomTeacher[];
+  cover_image: string | null;
+  gallery: ClassroomGalleryItem[];
   capacity: number;
   max_waiting: number;
   min_age_months: number;
@@ -35,6 +52,8 @@ export function emptyClassroom(stageId: string): ClassroomDraft {
     teacher_qualification: "",
     teacher_experience: "",
     teachers: [],
+    cover_image: null,
+    gallery: [],
     capacity: 20,
     max_waiting: 10,
     min_age_months: 36,
@@ -61,6 +80,8 @@ export function toDraft(c: Record<string, unknown>): ClassroomDraft {
     teacher_qualification: s(c.teacher_qualification),
     teacher_experience: s(c.teacher_experience),
     teachers: Array.isArray(c.teachers) ? (c.teachers as ClassroomDraft["teachers"]) : [],
+    cover_image: typeof c.cover_image === "string" ? c.cover_image : null,
+    gallery: Array.isArray(c.gallery) ? (c.gallery as ClassroomGalleryItem[]) : [],
     capacity: Number(c.capacity ?? 20),
     max_waiting: Number(c.max_waiting ?? 10),
     min_age_months: Number(c.min_age_months ?? 36),
