@@ -239,10 +239,10 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
 
         {decided ? (
           <Notice tone="ok">
-            تم قبول الطلب&nbsp;
-            تم قبول الطلب&nbsp;
-            تم قبول الطلب&nbsp;
-            تم قبول الطلب&nbsp;
+            <Lock className="me-1 inline size-3.5" />
+            تم قبول الطلب 
+          </Notice>
+        ) : null}
         ) : null}
 
         {/* ---------------------------------------------- stage 1: start */}
