@@ -199,6 +199,46 @@ const emptyQurra = (): QurraInput => ({
   notes: "",
 });
 
+/** Admin-defined fields attached to the active wizard step. */
+function StepCustomFields({
+  stepKey,
+  stepLabel,
+  fields,
+  values,
+  errors,
+  onChange,
+}: {
+  stepKey: string;
+  stepLabel: string;
+  fields: FormFieldRow[];
+  values: Record<string, unknown>;
+  errors: Record<string, string>;
+  onChange: (stepKey: string, key: string, value: unknown) => void;
+}) {
+  const builtin = stepKey in BUILTIN_STEP_IDS;
+
+  if (!fields.length) {
+    if (builtin) return null;
+    return (
+      <div className="rounded-3xl border-2 border-dashed border-border/70 bg-card p-10 text-center">
+        <p className="text-sm font-bold text-muted-foreground">
+          لم تُضف إدارة القبول حقولًا لهذه المرحلة بعد.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <CustomFields
+      title={builtin ? "معلومات إضافية" : stepLabel}
+      fields={fields}
+      values={values}
+      errors={errors}
+      onChange={(key, value) => onChange(stepKey, key, value)}
+    />
+  );
+}
+
 function WizardPage() {
   const { applicationId } = Route.useParams();
   const navigate = useNavigate();
