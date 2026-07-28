@@ -29,7 +29,15 @@ import { amsQueue } from "../ams.functions";
 import { useAmsRealtime } from "../useAmsRealtime";
 import { StatusPill } from "./atoms";
 
-const NAV = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  exact: boolean;
+  roles?: string[];
+};
+
+const NAV: NavItem[] = [
   { to: "/ams", label: "لوحة المتابعة", icon: LayoutDashboard, exact: true },
   { to: "/ams/queue", label: "قائمة الطلبات", icon: Inbox, exact: false },
   { to: "/ams/seats", label: "إدارة  الفصول والمقاعد", icon: Armchair, exact: false },
@@ -41,8 +49,9 @@ const NAV = [
     label: "إدارة وتخصيص نظام التسجيل",
     icon: SlidersHorizontal,
     exact: false,
+    roles: ["admin", "supervisor"],
   },
-] as const;
+];
 
 export function AmsShell({
   title,
@@ -59,6 +68,9 @@ export function AmsShell({
 }) {
   const { profile, roles, primaryRole, signOut } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navItems = NAV.filter(
+    (item) => !item.roles || item.roles.some((role) => (roles as string[]).includes(role)),
+  );
   const navigate = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
 
@@ -98,7 +110,7 @@ export function AmsShell({
               </div>
 
               <nav className="mt-4 space-y-1">
-                {NAV.map((item) => {
+                {navItems.map((item) => {
                   const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
                   return (
                     <Link
@@ -182,7 +194,7 @@ export function AmsShell({
 
           <div className="lg:hidden">
             <nav className="flex gap-2 overflow-x-auto pb-1">
-              {NAV.map((item) => (
+              {navItems.map((item) => (
                 <Link
                   key={item.to}
                   to={item.to}
