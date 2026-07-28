@@ -211,7 +211,29 @@ function WizardPage() {
     qurra?: Partial<QurraInput>;
   };
 
-  const [step, setStep] = useState(() => Math.min(Math.max(bundle.application.current_step, 3), 9));
+  /* Correction mode: staff asked for fixes in specific sections only. */
+  const correctionSections = ((bundle.application as { correction_sections?: string[] | null })
+    .correction_sections ?? []) as string[];
+  const correctionNote = (bundle.application as { correction_note?: string | null }).correction_note ?? null;
+  const correctionMode =
+    bundle.application.status === "needs_action" && correctionSections.length > 0;
+  const SECTION_STEP: Record<string, number> = {
+    parent: 3,
+    children: 4,
+    qurra: 5,
+    services: 6,
+    documents: 7,
+  };
+  const allowedStepIds = correctionMode
+    ? new Set([...correctionSections.map((s) => SECTION_STEP[s]).filter(Boolean), 8, 9])
+    : new Set(STEPS.map((s) => s.id));
+  const visibleSteps = STEPS.filter((s) => allowedStepIds.has(s.id));
+  const firstStepId = visibleSteps[0]?.id ?? 3;
+  const lastStepId = visibleSteps[visibleSteps.length - 1]?.id ?? 9;
+
+  const [step, setStep] = useState(() =>
+    correctionMode ? firstStepId : Math.min(Math.max(bundle.application.current_step, 3), 9),
+  );
   const [parent, setParent] = useState<ParentInfoInput>(() => ({ ...emptyParent(), ...draft.parent }));
   const [children, setChildren] = useState<ChildInput[]>(() =>
     draft.children?.length ? draft.children : [emptyChild()],
@@ -426,7 +448,10 @@ function WizardPage() {
       await saveDraft({
         data: { id: applicationId, step: step + 1, draft: { parent, children, qurra } },
       });
-      setStep((s) => Math.min(s + 1, 9));
+      setStep((s) => {
+        const idx = visibleSteps.findIndex((v) => v.id === s);
+        return visibleSteps[Math.min(idx + 1, visibleSteps.length - 1)]?.id ?? s;
+      });
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "حدث خطأ غير متوقع");
