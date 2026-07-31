@@ -1,11 +1,12 @@
 import { motion } from "motion/react";
 
-import { stats } from "@/data/site";
+import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 import { Counter } from "./Counter";
 import { staggerItem, StaggerGroup } from "./Reveal";
 import { WaveDivider } from "./Decor";
 
 export function StatsBand() {
+  const { stats } = useSiteContent();
   return (
     <section className="relative overflow-hidden gradient-burgundy pt-24 pb-24 md:pt-32 md:pb-32">
       <WaveDivider position="top" className="text-background" />

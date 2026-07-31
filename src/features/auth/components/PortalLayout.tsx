@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { FileClock, Inbox, KeyRound, LayoutDashboard, LogOut, ShieldCheck, UserCog, Users, Wallet } from "lucide-react";
+import { FileClock, Globe, Inbox, KeyRound, LayoutDashboard, LogOut, ShieldCheck, UserCog, Users, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -16,6 +16,7 @@ const NAV = [
   { to: "/admin/users", label: "المستخدمون والأدوار", icon: Users, permission: P.usersView },
   { to: "/admin/permissions", label: "مصفوفة الصلاحيات", icon: KeyRound, permission: P.usersView },
   { to: "/admin/audit", label: "سجل العمليات", icon: ShieldCheck, permission: P.auditView },
+  { to: "/admin/site-content", label: "إعدادات الموقع الإلكتروني", icon: Globe, permission: P.settingsManage },
 ] as const;
 
 export function PortalLayout({

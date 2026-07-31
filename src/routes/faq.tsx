@@ -5,6 +5,7 @@ import { FaqAccordion } from "@/components/site/FaqAccordion";
 import { PageHero } from "@/components/site/PageHero";
 import { Reveal } from "@/components/site/Reveal";
 import { faqs } from "@/data/site";
+import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 
 const title = "الأسئلة الشائعة | مدارس وروضة المنال";
 const description =
@@ -40,12 +41,17 @@ export const Route = createFileRoute("/faq")({
 });
 
 function FaqPage() {
+  const { pages } = useSiteContent();
+  const hero = pages.faq;
   return (
     <>
       <PageHero
-        eyebrow="الأسئلة الشائعة"
-        title="كل ما تحتاج معرفته قبل التسجيل"
-        description="جمعنا لكم أكثر الأسئلة التي تصلنا من الأسر، وإن لم تجدوا إجابتكم فنحن على بعد مكالمة."
+        eyebrow={hero?.eyebrow ?? "الأسئلة الشائعة"}
+        title={hero?.title ?? "كل ما تحتاج معرفته قبل التسجيل"}
+        description={
+          hero?.description ??
+          "جمعنا لكم أكثر الأسئلة التي تصلنا من الأسر، وإن لم تجدوا إجابتكم فنحن على بعد مكالمة."
+        }
       />
       <section className="section-y">
         <div className="mx-auto max-w-3xl px-4 md:px-8">

@@ -4,9 +4,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { faqs } from "@/data/site";
+import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 
 export function FaqAccordion({ limit }: { limit?: number }) {
+  const { faqs } = useSiteContent();
   const items = limit ? faqs.slice(0, limit) : faqs;
 
   return (

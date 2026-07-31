@@ -16,6 +16,8 @@ import { Footer } from "@/components/site/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import { school } from "@/data/site";
 import { AuthProvider } from "@/features/auth/AuthProvider";
+import { SiteContentProvider } from "@/features/site-content/SiteContentProvider";
+import { siteContentGet } from "@/features/site-content/site-content.functions";
 
 function NotFoundComponent() {
   return (
@@ -140,6 +142,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   }),
   shellComponent: RootShell,
   component: RootComponent,
+  loader: () => siteContentGet(),
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
@@ -160,6 +163,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const content = Route.useLoaderData();
 
   useEffect(() => {
     sessionStorage.removeItem("stale-chunk-reloaded");
@@ -167,7 +171,8 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+      <SiteContentProvider content={content}>
+        <AuthProvider>
         <div className="flex min-h-screen flex-col">
           <Header />
           <main className="flex-1">
@@ -177,7 +182,8 @@ function RootComponent() {
           <Footer />
         </div>
         <Toaster position="top-center" richColors />
-      </AuthProvider>
+        </AuthProvider>
+      </SiteContentProvider>
     </QueryClientProvider>
   );
 }

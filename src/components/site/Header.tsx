@@ -4,8 +4,8 @@ import { Clock, LayoutDashboard, LogIn, MapPin, Menu, Phone, X } from "lucide-re
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { navLinks, school } from "@/data/site";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { Logo } from "./Logo";
 
@@ -13,6 +13,8 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const { isAuthenticated, profile } = useAuth();
+  const { contact, nav } = useSiteContent();
+  const navItems = nav as { label: string; to: string }[];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16);
@@ -26,17 +28,17 @@ export function Header() {
       {/* Top contact strip */}
       <div className="gradient-burgundy text-primary-foreground">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2 text-xs font-semibold md:px-8">
-          <a href={`tel:${school.phoneIntl}`} className="inline-flex items-center gap-2">
+          <a href={`tel:${contact.phoneIntl}`} className="inline-flex items-center gap-2">
             <Phone className="size-3.5 text-gold" />
-            <span dir="ltr">{school.phone}</span>
+            <span dir="ltr">{contact.phone}</span>
           </a>
           <span className="inline-flex items-center gap-2 text-primary-foreground/85">
             <Clock className="size-3.5 text-gold" />
-            الأحد – الخميس · 7:00 ص – 12:30 م
+            {contact.hoursSummary}
           </span>
           <span className="hidden items-center gap-2 text-primary-foreground/85 sm:inline-flex">
             <MapPin className="size-3.5 text-gold" />
-            {school.address.district}، عنيزة
+            {contact.district}، {contact.city.replace(/\s*\d+$/, "")}
           </span>
         </div>
       </div>
@@ -59,10 +61,10 @@ export function Header() {
         </Link>
 
         <nav className="hidden min-w-0 items-center justify-center gap-0.5 rounded-full bg-accent/50 p-1.5 xl:flex xl:gap-1">
-          {navLinks.map((link) => (
+          {navItems.map((link) => (
             <Link
               key={link.to}
-              to={link.to}
+              to={link.to as "/"}
               activeOptions={{ exact: link.to === "/" }}
               className="whitespace-nowrap rounded-full px-2.5 py-2 text-[13px] font-bold text-muted-foreground transition-all hover:bg-card hover:text-primary hover:shadow-soft data-[status=active]:bg-card data-[status=active]:text-primary data-[status=active]:shadow-soft xl:px-3.5 xl:text-sm 2xl:px-4"
             >
@@ -113,11 +115,11 @@ export function Header() {
             className="overflow-hidden border-t border-border/70 bg-background/95 backdrop-blur-xl xl:hidden"
           >
             <nav className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4 md:px-8">
-              {navLinks.map((link) => (
+              {navItems.map((link) => (
                 <div key={link.to} className="flex flex-col">
                   <Link
                   key={link.to}
-                  to={link.to}
+                  to={link.to as "/"}
                   activeOptions={{ exact: link.to === "/" }}
                   onClick={() => setOpen(false)}
                   className="rounded-2xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-primary data-[status=active]:bg-accent data-[status=active]:text-primary"
