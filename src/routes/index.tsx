@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Compass, Heart, Sparkles, Target } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ContactBlock } from "@/components/site/ContactBlock";
@@ -14,7 +14,8 @@ import { StatsBand } from "@/components/site/StatsBand";
 import { Testimonials } from "@/components/site/Testimonials";
 import { ValueCards } from "@/components/site/ValueCards";
 import { galleryItems, images } from "@/data/gallery";
-import { school } from "@/data/site";
+import { useSiteContent } from "@/features/site-content/SiteContentProvider";
+import { siteIcon } from "@/features/site-content/icons";
 
 const title = "مدارس وروضة المنال | روضة ومدرسة ابتدائية في عنيزة";
 const description =
@@ -36,28 +37,12 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const missionCards = [
-  {
-    icon: Target,
-    title: "رسالتنا",
-    body: "تقديم تعليم نوعي يوازن بين المعرفة والقيم، ويجعل من كل طفل متعلمًا واثقًا محبًا للخير.",
-    tone: "bg-accent",
-  },
-  {
-    icon: Sparkles,
-    title: "رؤيتنا",
-    body: "أن نكون الخيار الأول للأسر في عنيزة في تعليم الطفولة المبكرة والمرحلة الابتدائية.",
-    tone: "bg-sky",
-  },
-  {
-    icon: Heart,
-    title: "قيمنا",
-    body: "الأمان، الرحمة، الإتقان، والشراكة الحقيقية مع الأسرة في كل خطوة.",
-    tone: "bg-mint",
-  },
-];
+const MISSION_TONES = ["bg-accent", "bg-sky", "bg-mint", "bg-lavender"];
 
 function Index() {
+  const { home } = useSiteContent();
+  const missionCards = home.missionCards;
+
   return (
     <>
       <Hero />
@@ -92,18 +77,20 @@ function Index() {
           <div>
             <SectionHeading
               align="start"
-              eyebrow="عن المنال"
-              title="مشروع تربوي تابع للجمعية الأهلية الصالحية بعنيزة"
-              description={school.description}
+              eyebrow={home.aboutEyebrow}
+              title={home.aboutTitle}
+              description={home.aboutDescription}
             />
             <div className="mt-8 space-y-4">
-              {missionCards.map((card, i) => (
+              {missionCards.map((card, i) => {
+                const Icon = siteIcon(card.icon);
+                return (
                 <Reveal key={card.title} delay={i * 0.08}>
                   <div className="flex gap-4 rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft transition-shadow hover:shadow-card">
                     <span
-                      className={`grid size-12 shrink-0 place-items-center rounded-[1.1rem] ${card.tone} text-primary`}
+                      className={`grid size-12 shrink-0 place-items-center rounded-[1.1rem] ${MISSION_TONES[i % MISSION_TONES.length]} text-primary`}
                     >
-                      <card.icon className="size-6" />
+                      <Icon className="size-6" />
                     </span>
                     <span>
                       <span className="block font-extrabold text-foreground">{card.title}</span>
@@ -113,7 +100,8 @@ function Index() {
                     </span>
                   </div>
                 </Reveal>
-              ))}
+                );
+              })}
             </div>
             <Reveal delay={0.3} className="mt-8">
               <Button asChild variant="hero" size="lg">
