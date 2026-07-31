@@ -1,16 +1,14 @@
 import { Link } from "@tanstack/react-router";
-import { Instagram, Mail, MapPin, Phone, Send, Twitter } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
 
-import { navLinks, school, workingHours } from "@/data/site";
+import { useSiteContent } from "@/features/site-content/SiteContentProvider";
+import { siteIcon } from "@/features/site-content/icons";
 import { Logo } from "./Logo";
 
-const socials = [
-  { label: "تويتر / إكس", icon: Twitter },
-  { label: "إنستقرام", icon: Instagram },
-  { label: "تلقرام", icon: Send },
-];
-
 export function Footer() {
+  const { brand, contact, socials, nav, workingHours } = useSiteContent();
+  const navItems = nav as { label: string; to: string }[];
+
   return (
     <footer data-site-footer className="mt-24 gradient-burgundy text-primary-foreground">
       <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 md:grid-cols-2 md:px-8 lg:grid-cols-4">
@@ -19,29 +17,41 @@ export function Footer() {
             <Logo inverted />
           </div>
           <p className="text-sm leading-relaxed text-primary-foreground/80">
-            {school.description}
+            {brand.description}
           </p>
           <div className="flex gap-2">
-            {socials.map(({ label, icon: Icon }) => (
-              <span
-                key={label}
-                title={label}
-                aria-label={label}
-                className="grid size-10 place-items-center rounded-full bg-primary-foreground/10 text-primary-foreground transition-colors hover:bg-primary-foreground/20"
-              >
-                <Icon className="size-4" />
-              </span>
-            ))}
+            {socials.map((social) => {
+              const Icon = siteIcon(social.icon);
+              const className =
+                "grid size-10 place-items-center rounded-full bg-primary-foreground/10 text-primary-foreground transition-colors hover:bg-primary-foreground/20";
+              return social.url ? (
+                <a
+                  key={social.label}
+                  href={social.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  title={social.label}
+                  aria-label={social.label}
+                  className={className}
+                >
+                  <Icon className="size-4" />
+                </a>
+              ) : (
+                <span key={social.label} title={social.label} aria-label={social.label} className={className}>
+                  <Icon className="size-4" />
+                </span>
+              );
+            })}
           </div>
         </div>
 
         <div>
           <h3 className="text-base font-extrabold text-primary-foreground">روابط سريعة</h3>
           <ul className="mt-5 space-y-3">
-            {navLinks.map((link) => (
+            {navItems.map((link) => (
               <li key={link.to}>
                 <Link
-                  to={link.to}
+                  to={link.to as "/"}
                   className="text-sm text-primary-foreground/80 transition-colors hover:text-primary-foreground"
                 >
                   {link.label}
@@ -57,21 +67,21 @@ export function Footer() {
             <li className="flex gap-3">
               <MapPin className="mt-0.5 size-4 shrink-0" />
               <span>
-                {school.address.line1}، {school.address.district}
+                {contact.line1}، {contact.district}
                 <br />
-                {school.address.city}، {school.address.country}
+                {contact.city}، {contact.country}
               </span>
             </li>
             <li className="flex gap-3">
               <Phone className="size-4 shrink-0" />
-              <a href={`tel:${school.phoneIntl}`} dir="ltr" className="hover:text-primary-foreground">
-                {school.phone}
+              <a href={`tel:${contact.phoneIntl}`} dir="ltr" className="hover:text-primary-foreground">
+                {contact.phone}
               </a>
             </li>
             <li className="flex gap-3">
               <Mail className="size-4 shrink-0" />
-              <a href={`mailto:${school.email}`} dir="ltr" className="hover:text-primary-foreground">
-                {school.email}
+              <a href={`mailto:${contact.email}`} dir="ltr" className="hover:text-primary-foreground">
+                {contact.email}
               </a>
             </li>
           </ul>
@@ -104,9 +114,9 @@ export function Footer() {
       <div className="border-t border-primary-foreground/15">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-primary-foreground/70 md:flex-row md:px-8">
           <p>
-            © {new Date().getFullYear()} {school.name} — جميع الحقوق محفوظة.
+            © {new Date().getFullYear()} {brand.name} — جميع الحقوق محفوظة.
           </p>
-          <p>{school.organization}</p>
+          <p>{brand.organization}</p>
         </div>
       </div>
     </footer>
