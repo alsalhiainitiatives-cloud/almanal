@@ -42,6 +42,7 @@ import { Route as AuthenticatedAmsFormBuilderRouteImport } from './routes/_authe
 import { Route as AuthenticatedAmsFinanceRouteImport } from './routes/_authenticated/ams/finance'
 import { Route as AuthenticatedAmsActivityRouteImport } from './routes/_authenticated/ams/activity'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
+import { Route as AuthenticatedAdminSiteContentRouteImport } from './routes/_authenticated/admin/site-content'
 import { Route as AuthenticatedAdminPermissionsRouteImport } from './routes/_authenticated/admin/permissions'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
 import { Route as AdmissionsStageSlugIndexRouteImport } from './routes/admissions.stage.$slug.index'
@@ -219,6 +220,12 @@ const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   path: '/admin/users',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminSiteContentRoute =
+  AuthenticatedAdminSiteContentRouteImport.update({
+    id: '/admin/site-content',
+    path: '/admin/site-content',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminPermissionsRoute =
   AuthenticatedAdminPermissionsRouteImport.update({
     id: '/admin/permissions',
@@ -278,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/track/': typeof TrackIndexRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
+  '/admin/site-content': typeof AuthenticatedAdminSiteContentRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/ams/activity': typeof AuthenticatedAmsActivityRoute
   '/ams/finance': typeof AuthenticatedAmsFinanceRoute
@@ -318,6 +326,7 @@ export interface FileRoutesByTo {
   '/track': typeof TrackIndexRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
+  '/admin/site-content': typeof AuthenticatedAdminSiteContentRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/ams/activity': typeof AuthenticatedAmsActivityRoute
   '/ams/finance': typeof AuthenticatedAmsFinanceRoute
@@ -360,6 +369,7 @@ export interface FileRoutesById {
   '/track/': typeof TrackIndexRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
+  '/_authenticated/admin/site-content': typeof AuthenticatedAdminSiteContentRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/ams/activity': typeof AuthenticatedAmsActivityRoute
   '/_authenticated/ams/finance': typeof AuthenticatedAmsFinanceRoute
@@ -402,6 +412,7 @@ export interface FileRouteTypes {
     | '/track/'
     | '/admin/audit'
     | '/admin/permissions'
+    | '/admin/site-content'
     | '/admin/users'
     | '/ams/activity'
     | '/ams/finance'
@@ -442,6 +453,7 @@ export interface FileRouteTypes {
     | '/track'
     | '/admin/audit'
     | '/admin/permissions'
+    | '/admin/site-content'
     | '/admin/users'
     | '/ams/activity'
     | '/ams/finance'
@@ -483,6 +495,7 @@ export interface FileRouteTypes {
     | '/track/'
     | '/_authenticated/admin/audit'
     | '/_authenticated/admin/permissions'
+    | '/_authenticated/admin/site-content'
     | '/_authenticated/admin/users'
     | '/_authenticated/ams/activity'
     | '/_authenticated/ams/finance'
@@ -757,6 +770,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/site-content': {
+      id: '/_authenticated/admin/site-content'
+      path: '/admin/site-content'
+      fullPath: '/admin/site-content'
+      preLoaderRoute: typeof AuthenticatedAdminSiteContentRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/permissions': {
       id: '/_authenticated/admin/permissions'
       path: '/admin/permissions'
@@ -809,6 +829,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminPermissionsRoute: typeof AuthenticatedAdminPermissionsRoute
+  AuthenticatedAdminSiteContentRoute: typeof AuthenticatedAdminSiteContentRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAmsActivityRoute: typeof AuthenticatedAmsActivityRoute
   AuthenticatedAmsFinanceRoute: typeof AuthenticatedAmsFinanceRoute
@@ -831,6 +852,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminPermissionsRoute: AuthenticatedAdminPermissionsRoute,
+  AuthenticatedAdminSiteContentRoute: AuthenticatedAdminSiteContentRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAmsActivityRoute: AuthenticatedAmsActivityRoute,
   AuthenticatedAmsFinanceRoute: AuthenticatedAmsFinanceRoute,

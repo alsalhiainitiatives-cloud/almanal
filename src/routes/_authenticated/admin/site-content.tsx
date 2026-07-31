@@ -21,10 +21,7 @@ function SiteContentPage() {
       {hasPermission(P.settingsManage) ? (
         <SiteSettings />
       ) : (
-        <AccessNotice
-          title="لا تملك صلاحية تعديل محتوى الموقع"
-          description="هذه الصفحة متاحة لمدير النظام ومدير المدرسة فقط."
-        />
+        <AccessNotice message="لا تملك صلاحية تعديل محتوى الموقع — هذه الصفحة متاحة لمدير النظام ومدير المدرسة فقط." />
       )}
     </PortalLayout>
   );
