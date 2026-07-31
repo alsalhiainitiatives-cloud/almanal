@@ -1,5 +1,6 @@
 import {
   BookOpenText,
+  Building2,
   Compass,
   Facebook,
   GraduationCap,
@@ -21,6 +22,7 @@ import {
 
 export const SITE_ICONS: Record<string, LucideIcon> = {
   BookOpenText,
+  Building2,
   Compass,
   Facebook,
   GraduationCap,
