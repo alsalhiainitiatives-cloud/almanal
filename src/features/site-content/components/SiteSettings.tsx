@@ -1,0 +1,669 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Loader2, Plus, RotateCcw, Save, Trash2, Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { uploadClassroomMedia, useClassroomMediaUrls } from "@/lib/classroom-media";
+import { DEFAULT_SITE_CONTENT, type SiteContent } from "../defaults";
+import { SITE_ICON_NAMES, siteIcon } from "../icons";
+import { siteContentGet, siteContentSave } from "../site-content.functions";
+
+/* ----------------------------------------------------------------- helpers */
+
+function Field({
+  label,
+  value,
+  onChange,
+  dir,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  dir?: "ltr" | "rtl";
+  placeholder?: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-bold text-muted-foreground">{label}</Label>
+      <Input
+        value={value}
+        dir={dir}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded-2xl"
+      />
+    </div>
+  );
+}
+
+function AreaField({
+  label,
+  value,
+  onChange,
+  rows = 3,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  rows?: number;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-bold text-muted-foreground">{label}</Label>
+      <Textarea
+        value={value}
+        rows={rows}
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded-2xl leading-relaxed"
+      />
+    </div>
+  );
+}
+
+function IconField({
+  label = "الأيقونة",
+  value,
+  onChange,
+}: {
+  label?: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const Icon = siteIcon(value);
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-bold text-muted-foreground">{label}</Label>
+      <div className="flex items-center gap-2">
+        <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-accent text-primary">
+          <Icon className="size-5" />
+        </span>
+        <Select value={value || "Sparkles"} onValueChange={onChange}>
+          <SelectTrigger className="rounded-2xl">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SITE_ICON_NAMES.map((name) => (
+              <SelectItem key={name} value={name}>
+                {name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
+
+function ListSection<T>({
+  title,
+  items,
+  onChange,
+  blank,
+  render,
+  addLabel = "إضافة عنصر",
+}: {
+  title: string;
+  items: T[];
+  onChange: (next: T[]) => void;
+  blank: () => T;
+  render: (item: T, update: (patch: Partial<T>) => void) => React.ReactNode;
+  addLabel?: string;
+}) {
+  const patchAt = (index: number, patch: Partial<T>) =>
+    onChange(items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+
+  return (
+    <Card className="rounded-[1.75rem] border-border/60 shadow-soft">
+      <CardHeader className="flex flex-row items-center justify-between gap-3">
+        <CardTitle className="text-base font-extrabold">{title}</CardTitle>
+        <Button
+          type="button"
+          variant="soft"
+          size="sm"
+          className="rounded-2xl"
+          onClick={() => onChange([...items, blank()])}
+        >
+          <Plus className="size-4" />
+          {addLabel}
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {items.length === 0 && (
+          <p className="rounded-2xl bg-beige/60 px-4 py-3 text-xs font-semibold text-muted-foreground">
+            لا توجد عناصر بعد.
+          </p>
+        )}
+        {items.map((item, index) => (
+          <div
+            key={index}
+            className="rounded-[1.5rem] border border-border/60 bg-card/70 p-4 shadow-soft"
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              {render(item, (patch) => patchAt(index, patch))}
+            </div>
+            <div className="mt-3 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="rounded-2xl text-destructive hover:text-destructive"
+                onClick={() => onChange(items.filter((_, i) => i !== index))}
+              >
+                <Trash2 className="size-4" />
+                حذف
+              </Button>
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+function LogoUploader({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const isPath = !!value && !/^https?:\/\//i.test(value);
+  const urls = useClassroomMediaUrls(isPath ? [value] : []);
+  const preview = isPath ? urls[value] : value;
+
+  async function pick(file: File | undefined) {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const path = await uploadClassroomMedia(file, "site/brand");
+      onChange(path);
+      toast.success("تم رفع الشعار");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذر رفع الشعار");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <Label className="text-xs font-bold text-muted-foreground">شعار المدرسة</Label>
+      <div className="flex flex-wrap items-center gap-4">
+        <span className="grid size-20 place-items-center overflow-hidden rounded-3xl border border-border/60 bg-beige/60">
+          {preview ? (
+            <img src={preview} alt="شعار المدرسة" className="size-full object-contain" />
+          ) : (
+            <span className="text-[11px] font-bold text-muted-foreground">بدون شعار</span>
+          )}
+        </span>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="soft"
+            className="rounded-2xl"
+            disabled={busy}
+            onClick={() => inputRef.current?.click()}
+          >
+            {busy ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+            رفع صورة
+          </Button>
+          {value && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="rounded-2xl text-destructive hover:text-destructive"
+              onClick={() => onChange("")}
+            >
+              <Trash2 className="size-4" />
+              إزالة
+            </Button>
+          )}
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={(e) => void pick(e.target.files?.[0])}
+        />
+      </div>
+      <Input
+        value={value}
+        dir="ltr"
+        placeholder="أو ضع رابط صورة مباشر https://…"
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded-2xl"
+      />
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------- main editor */
+
+export function SiteSettings() {
+  const queryClient = useQueryClient();
+  const fetchContent = useServerFn(siteContentGet);
+  const saveContent = useServerFn(siteContentSave);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["site-content"],
+    queryFn: () => fetchContent(),
+  });
+
+  const [draft, setDraft] = useState<SiteContent | null>(null);
+  useEffect(() => {
+    if (data) setDraft(data);
+  }, [data]);
+
+  const save = useMutation({
+    mutationFn: (content: SiteContent) => saveContent({ data: { content } }),
+    onSuccess: () => {
+      toast.success("تم حفظ محتوى الموقع");
+      queryClient.invalidateQueries({ queryKey: ["site-content"] });
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "تعذر حفظ المحتوى"),
+  });
+
+  if (isLoading || !draft) {
+    return (
+      <div className="grid place-items-center rounded-[1.75rem] border border-border/60 bg-card/80 py-16">
+        <Loader2 className="size-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const set = <K extends keyof SiteContent>(key: K, value: SiteContent[K]) =>
+    setDraft((prev) => (prev ? { ...prev, [key]: value } : prev));
+
+  const setBrand = (patch: Partial<SiteContent["brand"]>) =>
+    set("brand", { ...draft.brand, ...patch });
+  const setContact = (patch: Partial<SiteContent["contact"]>) =>
+    set("contact", { ...draft.contact, ...patch });
+  const setHome = (patch: Partial<SiteContent["home"]>) => set("home", { ...draft.home, ...patch });
+  const setAbout = (patch: Partial<SiteContent["about"]>) =>
+    set("about", { ...draft.about, ...patch });
+  const setPage = (key: string, patch: Partial<SiteContent["pages"][string]>) =>
+    set("pages", {
+      ...draft.pages,
+      [key]: { ...(draft.pages[key] ?? { eyebrow: "", title: "", description: "" }), ...patch },
+    });
+
+  return (
+    <div className="space-y-6">
+      <div className="no-print flex flex-wrap items-center justify-between gap-3 rounded-[1.75rem] border border-border/60 bg-card/90 p-4 shadow-soft">
+        <p className="text-xs font-semibold leading-relaxed text-muted-foreground">
+          التعديلات تُطبّق على الموقع العام مباشرة بعد الحفظ.
+        </p>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-2xl"
+            onClick={() => setDraft(DEFAULT_SITE_CONTENT)}
+          >
+            <RotateCcw className="size-4" />
+            استعادة الافتراضي
+          </Button>
+          <Button
+            type="button"
+            variant="hero"
+            className="rounded-2xl"
+            disabled={save.isPending}
+            onClick={() => save.mutate(draft)}
+          >
+            {save.isPending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            حفظ التغييرات
+          </Button>
+        </div>
+      </div>
+
+      <Tabs defaultValue="brand" className="space-y-6">
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 rounded-[1.5rem] bg-beige/70 p-1.5">
+          <TabsTrigger value="brand" className="rounded-2xl">الهوية</TabsTrigger>
+          <TabsTrigger value="contact" className="rounded-2xl">التواصل والفوتر</TabsTrigger>
+          <TabsTrigger value="nav" className="rounded-2xl">القائمة</TabsTrigger>
+          <TabsTrigger value="home" className="rounded-2xl">الرئيسية</TabsTrigger>
+          <TabsTrigger value="about" className="rounded-2xl">صفحة عنا</TabsTrigger>
+          <TabsTrigger value="pages" className="rounded-2xl">رؤوس الصفحات</TabsTrigger>
+          <TabsTrigger value="content" className="rounded-2xl">المحتوى</TabsTrigger>
+        </TabsList>
+
+        {/* Brand */}
+        <TabsContent value="brand" className="space-y-6">
+          <Card className="rounded-[1.75rem] border-border/60 shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-base font-extrabold">هوية المدرسة</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <LogoUploader value={draft.brand.logoUrl} onChange={(v) => setBrand({ logoUrl: v })} />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="الاسم الكامل" value={draft.brand.name} onChange={(v) => setBrand({ name: v })} />
+                <Field label="الاسم المختصر" value={draft.brand.shortName} onChange={(v) => setBrand({ shortName: v })} />
+                <Field label="الجهة المالكة" value={draft.brand.organization} onChange={(v) => setBrand({ organization: v })} />
+                <Field label="الشعار النصي" value={draft.brand.tagline} onChange={(v) => setBrand({ tagline: v })} />
+              </div>
+              <AreaField label="الوصف العام" value={draft.brand.description} onChange={(v) => setBrand({ description: v })} />
+            </CardContent>
+          </Card>
+
+          <ListSection
+            title="الإحصائيات المعروضة"
+            items={draft.stats}
+            onChange={(next) => set("stats", next)}
+            blank={() => ({ value: 0, suffix: "", label: "" })}
+            render={(item, update) => (
+              <>
+                <Field label="العنوان" value={item.label} onChange={(v) => update({ label: v })} />
+                <div className="grid grid-cols-2 gap-3">
+                  <Field
+                    label="القيمة"
+                    value={String(item.value)}
+                    dir="ltr"
+                    onChange={(v) => update({ value: Number(v.replace(/[^\d]/g, "")) || 0 })}
+                  />
+                  <Field label="اللاحقة" value={item.suffix} dir="ltr" onChange={(v) => update({ suffix: v })} />
+                </div>
+              </>
+            )}
+          />
+        </TabsContent>
+
+        {/* Contact + footer */}
+        <TabsContent value="contact" className="space-y-6">
+          <Card className="rounded-[1.75rem] border-border/60 shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-base font-extrabold">معلومات التواصل والعنوان</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <Field label="الجوال (للعرض)" value={draft.contact.phone} dir="ltr" onChange={(v) => setContact({ phone: v })} />
+              <Field label="الجوال الدولي" value={draft.contact.phoneIntl} dir="ltr" onChange={(v) => setContact({ phoneIntl: v })} />
+              <Field label="البريد الإلكتروني" value={draft.contact.email} dir="ltr" onChange={(v) => setContact({ email: v })} />
+              <Field label="رابط الخريطة" value={draft.contact.mapLink} dir="ltr" onChange={(v) => setContact({ mapLink: v })} />
+              <Field label="العنوان التفصيلي" value={draft.contact.line1} onChange={(v) => setContact({ line1: v })} />
+              <Field label="الحي" value={draft.contact.district} onChange={(v) => setContact({ district: v })} />
+              <Field label="المدينة والرمز" value={draft.contact.city} onChange={(v) => setContact({ city: v })} />
+              <Field label="الدولة" value={draft.contact.country} onChange={(v) => setContact({ country: v })} />
+              <Field label="ملخص أوقات العمل" value={draft.contact.hoursSummary} onChange={(v) => setContact({ hoursSummary: v })} />
+            </CardContent>
+          </Card>
+
+          <ListSection
+            title="أوقات العمل"
+            items={draft.workingHours}
+            onChange={(next) => set("workingHours", next)}
+            blank={() => ({ day: "", hours: "", closed: false })}
+            addLabel="إضافة يوم"
+            render={(item, update) => (
+              <>
+                <Field label="اليوم" value={item.day} onChange={(v) => update({ day: v })} />
+                <Field label="الوقت" value={item.hours} onChange={(v) => update({ hours: v })} />
+                <div className="flex items-center gap-3 sm:col-span-2">
+                  <Switch checked={item.closed} onCheckedChange={(v) => update({ closed: v })} />
+                  <span className="text-xs font-bold text-muted-foreground">يوم إجازة</span>
+                </div>
+              </>
+            )}
+          />
+
+          <ListSection
+            title="حسابات التواصل الاجتماعي"
+            items={draft.socials}
+            onChange={(next) => set("socials", next)}
+            blank={() => ({ label: "", icon: "Instagram", url: "" })}
+            addLabel="إضافة حساب"
+            render={(item, update) => (
+              <>
+                <Field label="الاسم" value={item.label} onChange={(v) => update({ label: v })} />
+                <Field label="الرابط" value={item.url} dir="ltr" onChange={(v) => update({ url: v })} />
+                <IconField value={item.icon} onChange={(v) => update({ icon: v })} />
+              </>
+            )}
+          />
+        </TabsContent>
+
+        {/* Nav */}
+        <TabsContent value="nav">
+          <ListSection
+            title="قائمة التنقل الرئيسية"
+            items={draft.nav}
+            onChange={(next) => set("nav", next)}
+            blank={() => ({ label: "", to: "/" })}
+            addLabel="إضافة رابط"
+            render={(item, update) => (
+              <>
+                <Field label="النص" value={item.label} onChange={(v) => update({ label: v })} />
+                <Field label="المسار" value={item.to} dir="ltr" onChange={(v) => update({ to: v })} />
+              </>
+            )}
+          />
+        </TabsContent>
+
+        {/* Home */}
+        <TabsContent value="home" className="space-y-6">
+          <Card className="rounded-[1.75rem] border-border/60 shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-base font-extrabold">قسم «عن المنال» في الرئيسية</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="العنوان الفرعي" value={draft.home.aboutEyebrow} onChange={(v) => setHome({ aboutEyebrow: v })} />
+                <Field label="العنوان الرئيسي" value={draft.home.aboutTitle} onChange={(v) => setHome({ aboutTitle: v })} />
+              </div>
+              <AreaField label="الوصف" value={draft.home.aboutDescription} onChange={(v) => setHome({ aboutDescription: v })} />
+              <AreaField
+                label="الشريط المتحرك (كل عبارة في سطر)"
+                value={draft.home.marquee.join("\n")}
+                rows={5}
+                onChange={(v) =>
+                  setHome({ marquee: v.split("\n").map((s) => s.trim()).filter(Boolean) })
+                }
+              />
+            </CardContent>
+          </Card>
+
+          <ListSection
+            title="بطاقات الرسالة والرؤية والقيم"
+            items={draft.home.missionCards}
+            onChange={(next) => setHome({ missionCards: next })}
+            blank={() => ({ icon: "Sparkles", title: "", body: "" })}
+            addLabel="إضافة بطاقة"
+            render={(item, update) => (
+              <>
+                <Field label="العنوان" value={item.title} onChange={(v) => update({ title: v })} />
+                <IconField value={item.icon} onChange={(v) => update({ icon: v })} />
+                <div className="sm:col-span-2">
+                  <AreaField label="النص" value={item.body} onChange={(v) => update({ body: v })} />
+                </div>
+              </>
+            )}
+          />
+        </TabsContent>
+
+        {/* About page */}
+        <TabsContent value="about" className="space-y-6">
+          <Card className="rounded-[1.75rem] border-border/60 shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-base font-extrabold">قصتنا</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="العنوان الفرعي" value={draft.about.storyEyebrow} onChange={(v) => setAbout({ storyEyebrow: v })} />
+                <Field label="العنوان الرئيسي" value={draft.about.storyTitle} onChange={(v) => setAbout({ storyTitle: v })} />
+              </div>
+              <AreaField label="النص" value={draft.about.storyDescription} rows={4} onChange={(v) => setAbout({ storyDescription: v })} />
+            </CardContent>
+          </Card>
+
+          <ListSection
+            title="مميزات المدرسة"
+            items={draft.about.highlights}
+            onChange={(next) => setAbout({ highlights: next })}
+            blank={() => ({ icon: "Sparkles", title: "", body: "" })}
+            addLabel="إضافة ميزة"
+            render={(item, update) => (
+              <>
+                <Field label="العنوان" value={item.title} onChange={(v) => update({ title: v })} />
+                <IconField value={item.icon} onChange={(v) => update({ icon: v })} />
+                <div className="sm:col-span-2">
+                  <AreaField label="النص" value={item.body} onChange={(v) => update({ body: v })} />
+                </div>
+              </>
+            )}
+          />
+
+          <ListSection
+            title="الرسالة والرؤية والقيم"
+            items={draft.about.pillars}
+            onChange={(next) => setAbout({ pillars: next })}
+            blank={() => ({ icon: "Target", title: "", body: "" })}
+            addLabel="إضافة بطاقة"
+            render={(item, update) => (
+              <>
+                <Field label="العنوان" value={item.title} onChange={(v) => update({ title: v })} />
+                <IconField value={item.icon} onChange={(v) => update({ icon: v })} />
+                <div className="sm:col-span-2">
+                  <AreaField label="النص" value={item.body} onChange={(v) => update({ body: v })} />
+                </div>
+              </>
+            )}
+          />
+        </TabsContent>
+
+        {/* Page heroes */}
+        <TabsContent value="pages" className="space-y-6">
+          {Object.entries(draft.pages).map(([key, hero]) => (
+            <Card key={key} className="rounded-[1.75rem] border-border/60 shadow-soft">
+              <CardHeader>
+                <CardTitle className="text-base font-extrabold" dir="ltr">
+                  /{key}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="العنوان الفرعي" value={hero.eyebrow} onChange={(v) => setPage(key, { eyebrow: v })} />
+                  <Field label="العنوان الرئيسي" value={hero.title} onChange={(v) => setPage(key, { title: v })} />
+                </div>
+                <AreaField label="الوصف" value={hero.description} onChange={(v) => setPage(key, { description: v })} />
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+
+        {/* Content lists */}
+        <TabsContent value="content" className="space-y-6">
+          <ListSection
+            title="مزايا المدرسة (بطاقات القيم)"
+            items={draft.values}
+            onChange={(next) => set("values", next)}
+            blank={() => ({ title: "", description: "", icon: "Sparkles", tone: "rose" })}
+            addLabel="إضافة ميزة"
+            render={(item, update) => (
+              <>
+                <Field label="العنوان" value={item.title} onChange={(v) => update({ title: v })} />
+                <IconField value={item.icon} onChange={(v) => update({ icon: v })} />
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-muted-foreground">اللون</Label>
+                  <Select value={item.tone} onValueChange={(v) => update({ tone: v })}>
+                    <SelectTrigger className="rounded-2xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["rose", "sky", "mint", "lavender", "gold"].map((tone) => (
+                        <SelectItem key={tone} value={tone}>
+                          {tone}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="sm:col-span-2">
+                  <AreaField label="الوصف" value={item.description} onChange={(v) => update({ description: v })} />
+                </div>
+              </>
+            )}
+          />
+
+          <ListSection
+            title="آراء أولياء الأمور"
+            items={draft.testimonials}
+            onChange={(next) => set("testimonials", next)}
+            blank={() => ({ name: "", role: "", quote: "" })}
+            addLabel="إضافة رأي"
+            render={(item, update) => (
+              <>
+                <Field label="الاسم" value={item.name} onChange={(v) => update({ name: v })} />
+                <Field label="الصفة" value={item.role} onChange={(v) => update({ role: v })} />
+                <div className="sm:col-span-2">
+                  <AreaField label="النص" value={item.quote} onChange={(v) => update({ quote: v })} />
+                </div>
+              </>
+            )}
+          />
+
+          <ListSection
+            title="الأخبار"
+            items={draft.news}
+            onChange={(next) => set("news", next)}
+            blank={() => ({
+              slug: `news-${Date.now()}`,
+              title: "",
+              date: new Date().toISOString().slice(0, 10),
+              dateLabel: "",
+              category: "أخبار",
+              excerpt: "",
+            })}
+            addLabel="إضافة خبر"
+            render={(item, update) => (
+              <>
+                <Field label="العنوان" value={item.title} onChange={(v) => update({ title: v })} />
+                <Field label="التصنيف" value={item.category} onChange={(v) => update({ category: v })} />
+                <Field label="التاريخ" value={item.date} dir="ltr" onChange={(v) => update({ date: v })} />
+                <Field label="التاريخ المعروض" value={item.dateLabel} onChange={(v) => update({ dateLabel: v })} />
+                <div className="sm:col-span-2">
+                  <AreaField label="الملخص" value={item.excerpt} onChange={(v) => update({ excerpt: v })} />
+                </div>
+              </>
+            )}
+          />
+
+          <ListSection
+            title="الأسئلة الشائعة"
+            items={draft.faqs}
+            onChange={(next) => set("faqs", next)}
+            blank={() => ({ q: "", a: "" })}
+            addLabel="إضافة سؤال"
+            render={(item, update) => (
+              <>
+                <div className="sm:col-span-2">
+                  <Field label="السؤال" value={item.q} onChange={(v) => update({ q: v })} />
+                </div>
+                <div className="sm:col-span-2">
+                  <AreaField label="الإجابة" value={item.a} onChange={(v) => update({ a: v })} />
+                </div>
+              </>
+            )}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
