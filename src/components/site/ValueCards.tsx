@@ -1,25 +1,8 @@
-import {
-  BookOpenText,
-  GraduationCap,
-  HeartHandshake,
-  Palette,
-  ShieldCheck,
-  Sparkles,
-  type LucideIcon,
-} from "lucide-react";
 import { motion } from "motion/react";
 
-import { values } from "@/data/site";
+import { useSiteContent } from "@/features/site-content/SiteContentProvider";
+import { siteIcon } from "@/features/site-content/icons";
 import { staggerItem, StaggerGroup } from "./Reveal";
-
-const icons: Record<string, LucideIcon> = {
-  GraduationCap,
-  ShieldCheck,
-  Sparkles,
-  BookOpenText,
-  Palette,
-  HeartHandshake,
-};
 
 const tones: Record<string, string> = {
   rose: "bg-accent text-primary",
@@ -30,10 +13,12 @@ const tones: Record<string, string> = {
 };
 
 export function ValueCards() {
+  const { values } = useSiteContent();
   return (
     <StaggerGroup className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {values.map((value) => {
-        const Icon = icons[value.icon];
+        const Icon = siteIcon(value.icon);
+        const tone = tones[value.tone] ?? tones.rose;
         return (
           <motion.div
             key={value.title}
@@ -43,10 +28,10 @@ export function ValueCards() {
           >
             <span
               aria-hidden
-              className={`absolute -top-10 -end-10 size-28 rounded-full opacity-50 blur-2xl ${tones[value.tone]}`}
+              className={`absolute -top-10 -end-10 size-28 rounded-full opacity-50 blur-2xl ${tone}`}
             />
             <span
-              className={`relative grid size-16 place-items-center rounded-[1.4rem] transition-transform duration-500 group-hover:-rotate-6 ${tones[value.tone]}`}
+              className={`relative grid size-16 place-items-center rounded-[1.4rem] transition-transform duration-500 group-hover:-rotate-6 ${tone}`}
             >
               <Icon className="size-8" strokeWidth={2} />
             </span>
