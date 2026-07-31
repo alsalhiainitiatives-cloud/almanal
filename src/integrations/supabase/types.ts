@@ -1676,6 +1676,27 @@ export type Database = {
         }
         Relationships: []
       }
+      site_content: {
+        Row: {
+          data: Json
+          key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          data?: Json
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          data?: Json
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       stages: {
         Row: {
           activities: Json
