@@ -1,16 +1,19 @@
 import { Clock, MapPin, Phone } from "lucide-react";
 
-import { school, workingHours } from "@/data/site";
+import { school } from "@/data/site";
+import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "./Reveal";
 
 export function ContactBlock() {
+  const { brand, contact, workingHours } = useSiteContent();
+
   return (
     <div className="grid gap-8 lg:grid-cols-2">
       <Reveal direction="right" className="space-y-6">
         <div className="rounded-4xl bg-card p-8 shadow-card">
-          <h3 className="text-2xl text-foreground">{school.name}</h3>
-          <p className="mt-1.5 text-sm font-semibold text-secondary">{school.organization}</p>
+          <h3 className="text-2xl text-foreground">{brand.name}</h3>
+          <p className="mt-1.5 text-sm font-semibold text-secondary">{brand.organization}</p>
 
           <ul className="mt-7 space-y-5 text-sm">
             <li className="flex gap-4">
@@ -19,9 +22,9 @@ export function ContactBlock() {
               </span>
               <span className="text-muted-foreground">
                 <span className="block font-bold text-foreground">العنوان</span>
-                {school.address.line1}، {school.address.district}
+                {contact.line1}، {contact.district}
                 <br />
-                {school.address.city}، {school.address.country}
+                {contact.city}، {contact.country}
               </span>
             </li>
             <li className="flex gap-4">
@@ -30,8 +33,8 @@ export function ContactBlock() {
               </span>
               <span className="text-muted-foreground">
                 <span className="block font-bold text-foreground">الهاتف</span>
-                <a href={`tel:${school.phoneIntl}`} dir="ltr" className="hover:text-primary">
-                  {school.phone}
+                <a href={`tel:${contact.phoneIntl}`} dir="ltr" className="hover:text-primary">
+                  {contact.phone}
                 </a>
               </span>
             </li>
@@ -62,10 +65,10 @@ export function ContactBlock() {
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild variant="hero" size="lg">
-              <a href={`tel:${school.phoneIntl}`}>اتصل بالمدرسة</a>
+              <a href={`tel:${contact.phoneIntl}`}>اتصل بالمدرسة</a>
             </Button>
             <Button asChild variant="outline" size="lg">
-              <a href={school.mapLink} target="_blank" rel="noreferrer">
+              <a href={contact.mapLink} target="_blank" rel="noreferrer">
                 الاتجاهات على الخريطة
               </a>
             </Button>
