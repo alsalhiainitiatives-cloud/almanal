@@ -116,9 +116,7 @@ function Index() {
       </section>
 
       {/* Stages */}
-      <MarqueeBand
-        items={["تعليم بمحبة", "قيم إسلامية", "بيئة آمنة", "مونتيسوري معتمد", "أنشطة ممتعة"]}
-      />
+      <MarqueeBand items={home.marquee} />
 
       <section className="section-y relative overflow-hidden bg-beige/60 pt-24 md:pt-28">
         <div className="pattern-dots absolute inset-0 opacity-40" aria-hidden />
