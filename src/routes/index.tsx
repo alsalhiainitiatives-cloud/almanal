@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Compass } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ContactBlock } from "@/components/site/ContactBlock";
