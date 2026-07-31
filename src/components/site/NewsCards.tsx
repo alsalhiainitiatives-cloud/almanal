@@ -1,11 +1,12 @@
 import { CalendarDays } from "lucide-react";
 import { motion } from "motion/react";
 
-import { news } from "@/data/site";
+import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 import { galleryItems } from "@/data/gallery";
 import { staggerItem, StaggerGroup } from "./Reveal";
 
 export function NewsCards({ limit }: { limit?: number }) {
+  const { news } = useSiteContent();
   const items = limit ? news.slice(0, limit) : news;
 
   return (

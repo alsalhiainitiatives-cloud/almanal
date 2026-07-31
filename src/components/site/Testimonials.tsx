@@ -1,10 +1,11 @@
 import { Quote } from "lucide-react";
 import { motion } from "motion/react";
 
-import { testimonials } from "@/data/site";
+import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 import { staggerItem, StaggerGroup } from "./Reveal";
 
 export function Testimonials() {
+  const { testimonials } = useSiteContent();
   return (
     <StaggerGroup className="grid gap-6 md:grid-cols-2">
       {testimonials.map((item, index) => (
