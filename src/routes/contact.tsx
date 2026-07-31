@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ContactBlock } from "@/components/site/ContactBlock";
 import { ContactForm } from "@/components/site/ContactForm";
 import { PageHero } from "@/components/site/PageHero";
+import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 
 const title = "تواصل معنا | مدارس وروضة المنال بعنيزة";
 const description =
@@ -24,12 +25,17 @@ export const Route = createFileRoute("/contact")({
 });
 
 function ContactPage() {
+  const { pages } = useSiteContent();
+  const hero = pages.contact;
   return (
     <>
       <PageHero
-        eyebrow="تواصل معنا"
-        title="نرحّب بكم في حي الخزامي بعنيزة"
-        description="يمكنكم الاتصال بنا أو زيارة المدرسة خلال أوقات العمل، وسنكون سعداء باستقبالكم في جولة تعريفية."
+        eyebrow={hero?.eyebrow ?? "تواصل معنا"}
+        title={hero?.title ?? "نرحّب بكم في حي الخزامي بعنيزة"}
+        description={
+          hero?.description ??
+          "يمكنكم الاتصال بنا أو زيارة المدرسة خلال أوقات العمل، وسنكون سعداء باستقبالكم في جولة تعريفية."
+        }
       />
       <section className="section-y">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
