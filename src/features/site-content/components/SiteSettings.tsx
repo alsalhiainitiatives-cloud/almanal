@@ -719,9 +719,137 @@ export function SiteSettings() {
           />
         </TabsContent>
 
+        {/* School life */}
+        <TabsContent value="school-life" className="space-y-6">
+          <Card className="rounded-[1.75rem] border-border/60 shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-base font-extrabold">عناوين صفحة الحياة المدرسية</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="عنوان فرعي — الجدول" value={draft.schoolLife.scheduleEyebrow} onChange={(v) => setSchoolLife({ scheduleEyebrow: v })} />
+                <Field label="عنوان — الجدول" value={draft.schoolLife.scheduleTitle} onChange={(v) => setSchoolLife({ scheduleTitle: v })} />
+              </div>
+              <AreaField label="وصف الجدول" value={draft.schoolLife.scheduleDescription} onChange={(v) => setSchoolLife({ scheduleDescription: v })} />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="عنوان فرعي — الأنشطة" value={draft.schoolLife.activities.eyebrow} onChange={(v) => setSchoolLife({ activities: { ...draft.schoolLife.activities, eyebrow: v } })} />
+                <Field label="عنوان — الأنشطة" value={draft.schoolLife.activities.title} onChange={(v) => setSchoolLife({ activities: { ...draft.schoolLife.activities, title: v } })} />
+              </div>
+              <AreaField label="وصف الأنشطة" value={draft.schoolLife.activities.description} onChange={(v) => setSchoolLife({ activities: { ...draft.schoolLife.activities, description: v } })} />
+              <p className="rounded-2xl bg-beige/60 px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
+                صور وفيديوهات الأنشطة تُدار من تبويب «المعرض» (أول ٦ عناصر تظهر في الصفحة الرئيسية وصفحة الحياة المدرسية).
+              </p>
+            </CardContent>
+          </Card>
+
+          <ListSection
+            title="الجدول اليومي"
+            items={draft.schoolLife.schedule}
+            onChange={(next) => setSchoolLife({ schedule: next })}
+            blank={() => ({ time: "", title: "", body: "" })}
+            addLabel="إضافة فترة"
+            render={(item, update) => (
+              <>
+                <Field label="الوقت" value={item.time} dir="ltr" onChange={(v) => update({ time: v })} />
+                <Field label="العنوان" value={item.title} onChange={(v) => update({ title: v })} />
+                <div className="sm:col-span-2">
+                  <AreaField label="الوصف" value={item.body} onChange={(v) => update({ body: v })} />
+                </div>
+              </>
+            )}
+          />
+        </TabsContent>
+
+        {/* Gallery */}
+        <TabsContent value="gallery" className="space-y-6">
+          <ListSection
+            title="معرض الصور والفيديو"
+            items={draft.gallery}
+            onChange={(next) => set("gallery", next)}
+            blank={() => ({
+              id: `g-${Date.now()}`,
+              kind: "image" as const,
+              src: "",
+              title: "",
+              description: "",
+              category: "",
+            })}
+            addLabel="إضافة عنصر"
+            render={(item, update) => (
+              <>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-muted-foreground">النوع</Label>
+                  <Select value={item.kind} onValueChange={(v) => update({ kind: v as "image" | "video" })}>
+                    <SelectTrigger className="rounded-2xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="image">صورة</SelectItem>
+                      <SelectItem value="video">فيديو</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Field
+                  label="الفئة أو الفصل"
+                  value={item.category}
+                  placeholder="مثال: فنون · صغار المنال"
+                  onChange={(v) => update({ category: v })}
+                />
+                <Field label="العنوان" value={item.title} onChange={(v) => update({ title: v })} />
+                <div className="sm:col-span-2">
+                  <MediaField
+                    label={item.kind === "video" ? "ملف الفيديو" : "الصورة"}
+                    value={item.src}
+                    folder="site/gallery"
+                    kind={item.kind}
+                    accept={item.kind === "video" ? "video/*" : "image/*"}
+                    onChange={(v) => update({ src: v })}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <AreaField label="التوصيف" value={item.description} onChange={(v) => update({ description: v })} />
+                </div>
+              </>
+            )}
+          />
+        </TabsContent>
+
+        {/* Parent reviews */}
+        <TabsContent value="reviews" className="space-y-6">
+          <Card className="rounded-[1.75rem] border-border/60 shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-base font-extrabold">نموذج مشاركة الآراء</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={draft.testimonialsForm.enabled}
+                  onCheckedChange={(v) =>
+                    set("testimonialsForm", { ...draft.testimonialsForm, enabled: v })
+                  }
+                />
+                <span className="text-xs font-bold text-muted-foreground">
+                  إتاحة كتابة الآراء لأولياء الأمور في الموقع
+                </span>
+              </div>
+              <Field
+                label="عنوان النموذج"
+                value={draft.testimonialsForm.title}
+                onChange={(v) => set("testimonialsForm", { ...draft.testimonialsForm, title: v })}
+              />
+              <AreaField
+                label="النص التوضيحي"
+                value={draft.testimonialsForm.note}
+                onChange={(v) => set("testimonialsForm", { ...draft.testimonialsForm, note: v })}
+              />
+            </CardContent>
+          </Card>
+
+          <TestimonialsModeration />
+        </TabsContent>
+
         {/* Page heroes */}
         <TabsContent value="pages" className="space-y-6">
-        {/* placeholder-anchor */}
           <p className="rounded-2xl bg-beige/60 px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
             رؤوس الصفحات العامة: عنا، التواصل، الأسئلة، المعرض، الأخبار، والحياة المدرسية.
           </p>
