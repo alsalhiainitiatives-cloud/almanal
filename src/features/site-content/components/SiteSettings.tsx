@@ -933,6 +933,9 @@ export function SiteSettings() {
               dateLabel: "",
               category: "أخبار",
               excerpt: "",
+              image: "",
+              video: "",
+              body: "",
             })}
             addLabel="إضافة خبر"
             render={(item, update) => (
@@ -944,6 +947,28 @@ export function SiteSettings() {
                 <div className="sm:col-span-2">
                   <AreaField label="الملخص" value={item.excerpt} onChange={(v) => update({ excerpt: v })} />
                 </div>
+                <div className="sm:col-span-2">
+                  <AreaField
+                    label="التفاصيل (اختياري)"
+                    value={item.body ?? ""}
+                    rows={5}
+                    onChange={(v) => update({ body: v })}
+                  />
+                </div>
+                <MediaField
+                  label="صورة الخبر"
+                  value={item.image ?? ""}
+                  folder="site/news"
+                  onChange={(v) => update({ image: v })}
+                />
+                <MediaField
+                  label="فيديو الخبر (اختياري)"
+                  value={item.video ?? ""}
+                  folder="site/news"
+                  kind="video"
+                  accept="video/*"
+                  onChange={(v) => update({ video: v })}
+                />
               </>
             )}
           />
