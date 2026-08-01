@@ -576,6 +576,16 @@ export function SiteSettings() {
                 <Field label="العنوان الرئيسي" value={draft.home.aboutTitle} onChange={(v) => setHome({ aboutTitle: v })} />
               </div>
               <AreaField label="الوصف" value={draft.home.aboutDescription} onChange={(v) => setHome({ aboutDescription: v })} />
+              <MediaField
+                label="صورة قسم «عن المنال»"
+                value={draft.home.aboutImage}
+                folder="site/home"
+                onChange={(v) => setHome({ aboutImage: v })}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="رقم الشارة (مثال 400+)" value={draft.home.aboutBadgeValue} dir="ltr" onChange={(v) => setHome({ aboutBadgeValue: v })} />
+                <Field label="نص الشارة" value={draft.home.aboutBadgeLabel} onChange={(v) => setHome({ aboutBadgeLabel: v })} />
+              </div>
               <AreaField
                 label="الشريط المتحرك (كل عبارة في سطر)"
                 value={draft.home.marquee.join("\n")}
@@ -603,6 +613,48 @@ export function SiteSettings() {
               </>
             )}
           />
+
+          <Card className="rounded-[1.75rem] border-border/60 shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-base font-extrabold">عناوين أقسام الصفحة الرئيسية</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {(
+                [
+                  ["stages", "المراحل التعليمية"],
+                  ["values", "لماذا المنال"],
+                  ["life", "الحياة المدرسية"],
+                  ["testimonials", "آراء أولياء الأمور"],
+                  ["news", "الأخبار"],
+                  ["faq", "الأسئلة الشائعة"],
+                  ["contact", "تواصل معنا"],
+                ] as const
+              ).map(([key, label]) => (
+                <div key={key} className="rounded-[1.5rem] border border-border/60 bg-card/70 p-4">
+                  <p className="mb-3 text-xs font-black text-primary">{label}</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field
+                      label="العنوان الفرعي"
+                      value={draft.home.sections[key].eyebrow}
+                      onChange={(v) => setSection(key, { eyebrow: v })}
+                    />
+                    <Field
+                      label="العنوان الرئيسي"
+                      value={draft.home.sections[key].title}
+                      onChange={(v) => setSection(key, { title: v })}
+                    />
+                  </div>
+                  <div className="mt-3">
+                    <AreaField
+                      label="الوصف"
+                      value={draft.home.sections[key].description}
+                      onChange={(v) => setSection(key, { description: v })}
+                    />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* About page */}
@@ -617,6 +669,18 @@ export function SiteSettings() {
                 <Field label="العنوان الرئيسي" value={draft.about.storyTitle} onChange={(v) => setAbout({ storyTitle: v })} />
               </div>
               <AreaField label="النص" value={draft.about.storyDescription} rows={4} onChange={(v) => setAbout({ storyDescription: v })} />
+              <MediaField
+                label="صورة قسم «قصتنا»"
+                value={draft.about.storyImage}
+                folder="site/about"
+                onChange={(v) => setAbout({ storyImage: v })}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="عنوان فرعي — المبادئ" value={draft.about.pillarsEyebrow} onChange={(v) => setAbout({ pillarsEyebrow: v })} />
+                <Field label="عنوان — المبادئ" value={draft.about.pillarsTitle} onChange={(v) => setAbout({ pillarsTitle: v })} />
+                <Field label="عنوان فرعي — المزايا" value={draft.about.valuesEyebrow} onChange={(v) => setAbout({ valuesEyebrow: v })} />
+                <Field label="عنوان — المزايا" value={draft.about.valuesTitle} onChange={(v) => setAbout({ valuesTitle: v })} />
+              </div>
             </CardContent>
           </Card>
 
