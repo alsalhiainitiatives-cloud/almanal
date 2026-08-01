@@ -22,6 +22,8 @@ import { uploadClassroomMedia, useClassroomMediaUrls } from "@/lib/classroom-med
 import { DEFAULT_SITE_CONTENT, type SiteContent } from "../defaults";
 import { SITE_ICON_NAMES, siteIcon } from "../icons";
 import { siteContentGet, siteContentSave } from "../site-content.functions";
+import { TestimonialsModeration } from "./TestimonialsModeration";
+import { isDirectMedia } from "../media";
 
 /* ----------------------------------------------------------------- helpers */
 
@@ -256,6 +258,99 @@ function LogoUploader({
   );
 }
 
+/** Generic image/video field: upload to storage or paste a direct URL. */
+function MediaField({
+  label,
+  value,
+  onChange,
+  folder,
+  accept = "image/*",
+  kind = "image",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  folder: string;
+  accept?: string;
+  kind?: "image" | "video";
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const isPath = !!value && !isDirectMedia(value);
+  const urls = useClassroomMediaUrls(isPath ? [value] : []);
+  const preview = isPath ? urls[value] : value;
+
+  async function pick(file: File | undefined) {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const path = await uploadClassroomMedia(file, folder);
+      onChange(path);
+      toast.success("تم رفع الملف");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذر رفع الملف");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-xs font-bold text-muted-foreground">{label}</Label>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="grid h-20 w-28 place-items-center overflow-hidden rounded-2xl border border-border/60 bg-beige/60">
+          {preview ? (
+            kind === "video" ? (
+              <video src={preview} className="size-full object-cover" muted />
+            ) : (
+              <img src={preview} alt={label} className="size-full object-cover" />
+            )
+          ) : (
+            <span className="text-[11px] font-bold text-muted-foreground">بدون ملف</span>
+          )}
+        </span>
+        <Button
+          type="button"
+          variant="soft"
+          size="sm"
+          className="rounded-2xl"
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+        >
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+          رفع
+        </Button>
+        {value && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="rounded-2xl text-destructive hover:text-destructive"
+            onClick={() => onChange("")}
+          >
+            <Trash2 className="size-4" />
+            إزالة
+          </Button>
+        )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept={accept}
+          hidden
+          onChange={(e) => void pick(e.target.files?.[0])}
+        />
+      </div>
+      <Input
+        value={value}
+        dir="ltr"
+        placeholder="أو ضع رابطًا مباشرًا https://…"
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded-2xl"
+      />
+    </div>
+  );
+}
+
 /* -------------------------------------------------------------- main editor */
 
 export function SiteSettings() {
@@ -306,6 +401,15 @@ export function SiteSettings() {
       ...draft.pages,
       [key]: { ...(draft.pages[key] ?? { eyebrow: "", title: "", description: "" }), ...patch },
     });
+  const setSchoolLife = (patch: Partial<SiteContent["schoolLife"]>) =>
+    set("schoolLife", { ...draft.schoolLife, ...patch });
+  const setSection = (
+    key: keyof SiteContent["home"]["sections"],
+    patch: Partial<SiteContent["home"]["sections"][keyof SiteContent["home"]["sections"]]>,
+  ) =>
+    setHome({
+      sections: { ...draft.home.sections, [key]: { ...draft.home.sections[key], ...patch } },
+    });
 
   return (
     <div className="space-y-6">
@@ -343,6 +447,9 @@ export function SiteSettings() {
           <TabsTrigger value="nav" className="rounded-2xl">القائمة</TabsTrigger>
           <TabsTrigger value="home" className="rounded-2xl">الرئيسية</TabsTrigger>
           <TabsTrigger value="about" className="rounded-2xl">صفحة عنا</TabsTrigger>
+          <TabsTrigger value="school-life" className="rounded-2xl">الحياة المدرسية</TabsTrigger>
+          <TabsTrigger value="gallery" className="rounded-2xl">المعرض</TabsTrigger>
+          <TabsTrigger value="reviews" className="rounded-2xl">آراء الأولياء</TabsTrigger>
           <TabsTrigger value="pages" className="rounded-2xl">رؤوس الصفحات</TabsTrigger>
           <TabsTrigger value="content" className="rounded-2xl">المحتوى</TabsTrigger>
         </TabsList>
