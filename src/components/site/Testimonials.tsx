@@ -67,7 +67,7 @@ function ShareForm() {
 
       {!isAuthenticated ? (
         <Button asChild variant="soft" size="lg" className="mt-5">
-          <Link to="/auth" search={{ reason: "testimonial" } as never}>
+          <Link to="/auth" search={{ reason: "testimonial" }}>
             <MessageSquarePlus className="size-5" />
             سجّل الدخول لمشاركة رأيك
           </Link>
