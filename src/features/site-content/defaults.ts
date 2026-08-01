@@ -4,6 +4,7 @@
  * overrides in `public.site_content` (key = 'site').
  */
 import { faqs, navLinks, news, school, stats, testimonials, values, workingHours } from "@/data/site";
+import { galleryItems, images } from "@/data/gallery";
 
 export type Social = { label: string; icon: string; url: string };
 export type HourRow = { day: string; hours: string; closed: boolean };
@@ -18,10 +19,37 @@ export type NewsItem = {
   dateLabel: string;
   category: string;
   excerpt: string;
+  /** Cover media: https URL or `classroom-media` storage path. */
+  image?: string;
+  /** Optional video (https URL or storage path) shown instead of the cover. */
+  video?: string;
+  /** Optional long body shown under the excerpt. */
+  body?: string;
 };
 export type FaqItem = { q: string; a: string };
 export type IconCard = { icon: string; title: string; body: string };
 export type PageHeroContent = { eyebrow: string; title: string; description: string };
+export type SectionContent = { eyebrow: string; title: string; description: string };
+export type ScheduleRow = { time: string; title: string; body: string };
+export type MediaItem = {
+  id: string;
+  kind: "image" | "video";
+  /** https URL or `classroom-media` storage path. */
+  src: string;
+  title: string;
+  description: string;
+  /** Free-text category or classroom name used for filtering. */
+  category: string;
+};
+
+export type HomeSectionKey =
+  | "stages"
+  | "values"
+  | "life"
+  | "testimonials"
+  | "news"
+  | "faq"
+  | "contact";
 
 export type SiteContent = {
   brand: {
@@ -52,6 +80,8 @@ export type SiteContent = {
   testimonials: TestimonialItem[];
   news: NewsItem[];
   faqs: FaqItem[];
+  gallery: MediaItem[];
+  testimonialsForm: { enabled: boolean; title: string; note: string };
   pages: Record<string, PageHeroContent>;
   home: {
     missionCards: IconCard[];
@@ -59,13 +89,30 @@ export type SiteContent = {
     aboutEyebrow: string;
     aboutTitle: string;
     aboutDescription: string;
+    /** Image of the about preview block on the home page. */
+    aboutImage: string;
+    aboutBadgeValue: string;
+    aboutBadgeLabel: string;
+    sections: Record<HomeSectionKey, SectionContent>;
   };
   about: {
     storyEyebrow: string;
     storyTitle: string;
     storyDescription: string;
+    storyImage: string;
+    pillarsEyebrow: string;
+    pillarsTitle: string;
+    valuesEyebrow: string;
+    valuesTitle: string;
     highlights: IconCard[];
     pillars: IconCard[];
+  };
+  schoolLife: {
+    scheduleEyebrow: string;
+    scheduleTitle: string;
+    scheduleDescription: string;
+    schedule: ScheduleRow[];
+    activities: SectionContent;
   };
 };
 
@@ -101,6 +148,19 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   testimonials: testimonials.map((t) => ({ ...t })),
   news: news.map((n) => ({ ...n })),
   faqs: faqs.map((f) => ({ ...f })),
+  gallery: galleryItems.map((item, index) => ({
+    id: `g-${index + 1}`,
+    kind: "image" as const,
+    src: item.src,
+    title: item.title,
+    description: item.alt,
+    category: item.category,
+  })),
+  testimonialsForm: {
+    enabled: true,
+    title: "شاركنا تجربتك",
+    note: "رأيك يساعد أسرًا أخرى — تُنشر المشاركات بعد مراجعة إدارة الروضة.",
+  },
   pages: {
     about: {
       eyebrow: "عن المنال",
@@ -117,6 +177,22 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       eyebrow: "الأسئلة الشائعة",
       title: "إجابات لأكثر ما يسأل عنه أولياء الأمور",
       description: "جمعنا لكم أهم الأسئلة حول القبول والبرامج والسلامة والتواصل.",
+    },
+    gallery: {
+      eyebrow: "معرض الصور",
+      title: "لحظات من حياة أطفالنا",
+      description: "صور ومقاطع تحكي يوميات المنال: التعلّم، اللعب، الإبداع، والصداقة.",
+    },
+    news: {
+      eyebrow: "الأخبار",
+      title: "آخر ما يحدث في المنال",
+      description: "نشارككم فعالياتنا وبرامجنا وإنجازات طلابنا ومعلماتنا خلال العام الدراسي.",
+    },
+    "school-life": {
+      eyebrow: "الحياة المدرسية",
+      title: "يوم مليء بالتعلّم والفرح",
+      description:
+        "نصمم يوم الطفل ليكون متوازنًا بين التركيز والحركة، بين المعرفة والقيم، وبين العمل الفردي والجماعي.",
     },
   },
   home: {
@@ -141,12 +217,51 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     aboutEyebrow: "عن المنال",
     aboutTitle: "مشروع تربوي تابع للجمعية الأهلية الصالحية بعنيزة",
     aboutDescription: school.description,
+    aboutImage: images.campus,
+    aboutBadgeValue: "400+",
+    aboutBadgeLabel: "أسرة تثق بنا",
+    sections: {
+      stages: {
+        eyebrow: "المراحل التعليمية",
+        title: "ثلاث مراحل تنمو مع طفلك",
+        description:
+          "من الحضانة الدافئة إلى بيئة المونتيسوري ثم المرحلة الابتدائية، رحلة متصلة ومصممة بعناية.",
+      },
+      values: {
+        eyebrow: "لماذا المنال",
+        title: "أسباب تجعل الأسر تختارنا",
+        description: "كل تفصيل في المنال مصمم ليمنح طفلك الأمان والفرح والتعلّم العميق.",
+      },
+      life: {
+        eyebrow: "الحياة المدرسية",
+        title: "يوم في المنال",
+        description: "قراءة، رسم، علوم، رياضة، وأناشيد — أنشطة متوازنة تصنع يومًا سعيدًا ومفيدًا.",
+      },
+      testimonials: {
+        eyebrow: "آراء أولياء الأمور",
+        title: "ثقة الأسر هي أجمل شهادة",
+        description: "",
+      },
+      news: { eyebrow: "آخر الأخبار", title: "ما يحدث في المنال", description: "" },
+      faq: { eyebrow: "الأسئلة الشائعة", title: "أسئلة يسألها أولياء الأمور", description: "" },
+      contact: {
+        eyebrow: "تواصل معنا",
+        title: "نرحّب بزيارتكم في حي الخزامي بعنيزة",
+        description:
+          "زوروا المدرسة أو اتصلوا بنا خلال أوقات العمل، وسنكون سعداء بالإجابة على كل استفساراتكم.",
+      },
+    },
   },
   about: {
     storyEyebrow: "قصتنا",
     storyTitle: "نبني إنسانًا قبل أن نبني متعلمًا",
     storyDescription:
       "بدأت المنال بفكرة بسيطة: أن يجد الطفل في مدرسته الأمان الذي يجده في بيته، والفرح الذي يجعله يحب التعلّم. اليوم نرافق مئات الأطفال من الحضانة حتى الصف السادس عبر برامج مدروسة ومعلمات يحملن هذه الرسالة.",
+    storyImage: images.heroClassroom,
+    pillarsEyebrow: "مبادئنا",
+    pillarsTitle: "الرسالة والرؤية والقيم",
+    valuesEyebrow: "لماذا المنال",
+    valuesTitle: "ما يميّز تجربتنا التعليمية",
     highlights: [
       {
         icon: "Building2",
