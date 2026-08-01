@@ -721,6 +721,7 @@ export function SiteSettings() {
 
         {/* Page heroes */}
         <TabsContent value="pages" className="space-y-6">
+        {/* placeholder-anchor */}
           <p className="rounded-2xl bg-beige/60 px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
             رؤوس الصفحات العامة: عنا، التواصل، الأسئلة، المعرض، الأخبار، والحياة المدرسية.
           </p>
