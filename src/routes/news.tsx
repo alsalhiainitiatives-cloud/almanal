@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { NewsCards } from "@/components/site/NewsCards";
 import { PageHero } from "@/components/site/PageHero";
+import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 
 const title = "الأخبار والفعاليات | مدارس وروضة المنال";
 const description =
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/news")({
       { property: "og:description", content: description },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "/news" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [{ rel: "canonical", href: "/news" }],
   }),
@@ -23,12 +25,13 @@ export const Route = createFileRoute("/news")({
 });
 
 function NewsPage() {
+  const hero = useSiteContent().pages.news;
   return (
     <>
       <PageHero
-        eyebrow="الأخبار"
-        title="آخر ما يحدث في المنال"
-        description="نشارككم فعالياتنا وبرامجنا وإنجازات طلابنا ومعلماتنا خلال العام الدراسي."
+        eyebrow={hero?.eyebrow ?? "الأخبار"}
+        title={hero?.title ?? "آخر ما يحدث في المنال"}
+        description={hero?.description ?? ""}
       />
       <section className="section-y pt-4 md:pt-8">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
