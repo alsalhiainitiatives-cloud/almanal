@@ -13,9 +13,9 @@ import { StageCards } from "@/components/site/StageCards";
 import { StatsBand } from "@/components/site/StatsBand";
 import { Testimonials } from "@/components/site/Testimonials";
 import { ValueCards } from "@/components/site/ValueCards";
-import { galleryItems, images } from "@/data/gallery";
 import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 import { siteIcon } from "@/features/site-content/icons";
+import { useSiteMedia } from "@/features/site-content/media";
 
 const title = "مدارس وروضة المنال | روضة ومدرسة ابتدائية في عنيزة";
 const description =
@@ -40,8 +40,11 @@ export const Route = createFileRoute("/")({
 const MISSION_TONES = ["bg-accent", "bg-sky", "bg-mint", "bg-lavender"];
 
 function Index() {
-  const { home } = useSiteContent();
+  const { home, gallery } = useSiteContent();
   const missionCards = home.missionCards;
+  const sections = home.sections;
+  const lifeItems = gallery.slice(0, 6);
+  const resolve = useSiteMedia([home.aboutImage, ...lifeItems.map((item) => item.src)]);
 
   return (
     <>
@@ -59,7 +62,7 @@ function Index() {
               />
               <div className="relative overflow-hidden blob-shape-alt shadow-glow">
                 <img
-                  src={images.campus}
+                  src={resolve(home.aboutImage)}
                   alt="مبنى مدارس وروضة المنال في حي الخزامي بعنيزة"
                   width={1400}
                   height={1200}
@@ -68,8 +71,8 @@ function Index() {
                 />
               </div>
               <div className="glass-panel absolute -bottom-5 end-6 rounded-3xl px-5 py-3 text-center">
-                <p className="font-latin text-xl font-black text-secondary">400+</p>
-                <p className="text-xs font-bold text-muted-foreground">أسرة تثق بنا</p>
+                <p className="font-latin text-xl font-black text-secondary">{home.aboutBadgeValue}</p>
+                <p className="text-xs font-bold text-muted-foreground">{home.aboutBadgeLabel}</p>
               </div>
             </div>
           </Reveal>
@@ -122,9 +125,9 @@ function Index() {
         <div className="pattern-dots absolute inset-0 opacity-40" aria-hidden />
         <div className="relative z-20 mx-auto max-w-7xl px-4 md:px-8">
           <SectionHeading
-            eyebrow="المراحل التعليمية"
-            title="ثلاث مراحل تنمو مع طفلك"
-            description="من الحضانة الدافئة إلى بيئة المونتيسوري ثم المرحلة الابتدائية، رحلة متصلة ومصممة بعناية."
+            eyebrow={sections.stages.eyebrow}
+            title={sections.stages.title}
+            description={sections.stages.description || undefined}
           />
           <div className="mt-14">
             <StageCards />
@@ -137,9 +140,9 @@ function Index() {
       <section className="section-y">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <SectionHeading
-            eyebrow="لماذا المنال"
-            title="أسباب تجعل الأسر تختارنا"
-            description="كل تفصيل في المنال مصمم ليمنح طفلك الأمان والفرح والتعلّم العميق."
+            eyebrow={sections.values.eyebrow}
+            title={sections.values.title}
+            description={sections.values.description || undefined}
           />
           <div className="mt-14">
             <ValueCards />
@@ -151,22 +154,31 @@ function Index() {
       <section className="section-y relative overflow-hidden bg-beige/60 pb-28 md:pb-36">
         <div className="relative z-20 mx-auto max-w-7xl px-4 md:px-8">
           <SectionHeading
-            eyebrow="الحياة المدرسية"
-            title="يوم في المنال"
-            description="قراءة، رسم، علوم، رياضة، وأناشيد — أنشطة متوازنة تصنع يومًا سعيدًا ومفيدًا."
+            eyebrow={sections.life.eyebrow}
+            title={sections.life.title}
+            description={sections.life.description || undefined}
           />
           <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {galleryItems.slice(0, 6).map((item, index) => (
-              <Reveal key={item.title} delay={index * 0.06}>
+            {lifeItems.map((item, index) => (
+              <Reveal key={item.id} delay={index * 0.06}>
                 <figure className="group relative h-full overflow-hidden rounded-4xl shadow-soft">
-                  <img
-                    src={item.src}
-                    alt={item.alt}
-                    width={1000}
-                    height={800}
-                    loading="lazy"
-                    className="aspect-4/3 w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
+                  {item.kind === "video" ? (
+                    <video
+                      src={resolve(item.src)}
+                      controls
+                      preload="metadata"
+                      className="aspect-4/3 w-full bg-foreground/5 object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={resolve(item.src)}
+                      alt={item.description || item.title}
+                      width={1000}
+                      height={800}
+                      loading="lazy"
+                      className="aspect-4/3 w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  )}
                   <figcaption className="absolute inset-x-4 bottom-4 rounded-2xl bg-card/85 px-4 py-3 backdrop-blur-md">
                     <span className="block text-sm font-extrabold text-primary">{item.title}</span>
                     <span className="text-xs text-muted-foreground">{item.category}</span>
@@ -193,8 +205,9 @@ function Index() {
       <section className="section-y">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <SectionHeading
-            eyebrow="آراء أولياء الأمور"
-            title="ثقة الأسر هي أجمل شهادة"
+            eyebrow={sections.testimonials.eyebrow}
+            title={sections.testimonials.title}
+            description={sections.testimonials.description || undefined}
           />
           <div className="mt-14">
             <Testimonials />
@@ -205,7 +218,11 @@ function Index() {
       {/* News */}
       <section className="section-y bg-beige/60">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
-          <SectionHeading eyebrow="آخر الأخبار" title="ما يحدث في المنال" />
+          <SectionHeading
+            eyebrow={sections.news.eyebrow}
+            title={sections.news.title}
+            description={sections.news.description || undefined}
+          />
           <div className="mt-14">
             <NewsCards limit={3} />
           </div>
@@ -223,7 +240,11 @@ function Index() {
       {/* FAQ preview */}
       <section className="section-y">
         <div className="mx-auto max-w-3xl px-4 md:px-8">
-          <SectionHeading eyebrow="الأسئلة الشائعة" title="أسئلة يسألها أولياء الأمور" />
+          <SectionHeading
+            eyebrow={sections.faq.eyebrow}
+            title={sections.faq.title}
+            description={sections.faq.description || undefined}
+          />
           <div className="mt-12">
             <FaqAccordion limit={5} />
           </div>
@@ -239,9 +260,9 @@ function Index() {
       <section className="section-y bg-beige/60">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <SectionHeading
-            eyebrow="تواصل معنا"
-            title="نرحّب بزيارتكم في حي الخزامي بعنيزة"
-            description="زوروا المدرسة أو اتصلوا بنا خلال أوقات العمل، وسنكون سعداء بالإجابة على كل استفساراتكم."
+            eyebrow={sections.contact.eyebrow}
+            title={sections.contact.title}
+            description={sections.contact.description || undefined}
           />
           <div className="mt-14">
             <ContactBlock />
