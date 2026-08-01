@@ -1697,6 +1697,48 @@ export type Database = {
         }
         Relationships: []
       }
+      site_testimonials: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          quote: string
+          rating: number
+          reviewed_at: string | null
+          reviewed_by: string | null
+          role: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          quote: string
+          rating?: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          quote?: string
+          rating?: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       stages: {
         Row: {
           activities: Json
@@ -2047,6 +2089,10 @@ export type Database = {
       revoke_my_other_sessions: {
         Args: { _ip: string; _user_agent: string }
         Returns: number
+      }
+      submit_site_testimonial: {
+        Args: { _name: string; _quote: string; _rating: number; _role: string }
+        Returns: string
       }
       track_application_documents_public: {
         Args: { _application_number: string; _token: string }

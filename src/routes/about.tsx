@@ -5,9 +5,9 @@ import { Reveal } from "@/components/site/Reveal";
 import { SectionHeading } from "@/components/site/SectionHeading";
 import { StatsBand } from "@/components/site/StatsBand";
 import { ValueCards } from "@/components/site/ValueCards";
-import { images } from "@/data/gallery";
 import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 import { siteIcon } from "@/features/site-content/icons";
+import { useSiteMedia } from "@/features/site-content/media";
 
 const title = "عن المنال | مدارس وروضة المنال بعنيزة";
 const description =
@@ -31,7 +31,19 @@ export const Route = createFileRoute("/about")({
 function AboutPage() {
   const content = useSiteContent();
   const hero = content.pages.about;
-  const { highlights, pillars, storyEyebrow, storyTitle, storyDescription } = content.about;
+  const {
+    highlights,
+    pillars,
+    storyEyebrow,
+    storyTitle,
+    storyDescription,
+    storyImage,
+    pillarsEyebrow,
+    pillarsTitle,
+    valuesEyebrow,
+    valuesTitle,
+  } = content.about;
+  const resolve = useSiteMedia([storyImage]);
 
   return (
     <>
@@ -46,7 +58,7 @@ function AboutPage() {
           <Reveal direction="right">
             <div className="overflow-hidden rounded-4xl shadow-card">
               <img
-                src={images.heroClassroom}
+                src={resolve(storyImage)}
                 alt="معلمة وأطفال يتعلمون معًا في روضة المنال"
                 width={1600}
                 height={1200}
@@ -88,7 +100,7 @@ function AboutPage() {
 
       <section className="section-y bg-beige/60">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
-          <SectionHeading eyebrow="مبادئنا" title="الرسالة والرؤية والقيم" />
+          <SectionHeading eyebrow={pillarsEyebrow} title={pillarsTitle} />
           <div className="mt-14 grid gap-6 md:grid-cols-3">
             {pillars.map((item, i) => {
               const Icon = siteIcon(item.icon);
@@ -112,7 +124,7 @@ function AboutPage() {
 
       <section className="section-y">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
-          <SectionHeading eyebrow="لماذا المنال" title="ما يميّز تجربتنا التعليمية" />
+          <SectionHeading eyebrow={valuesEyebrow} title={valuesTitle} />
           <div className="mt-14">
             <ValueCards />
           </div>

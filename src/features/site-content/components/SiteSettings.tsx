@@ -22,6 +22,8 @@ import { uploadClassroomMedia, useClassroomMediaUrls } from "@/lib/classroom-med
 import { DEFAULT_SITE_CONTENT, type SiteContent } from "../defaults";
 import { SITE_ICON_NAMES, siteIcon } from "../icons";
 import { siteContentGet, siteContentSave } from "../site-content.functions";
+import { TestimonialsModeration } from "./TestimonialsModeration";
+import { isDirectMedia } from "../media";
 
 /* ----------------------------------------------------------------- helpers */
 
@@ -256,6 +258,99 @@ function LogoUploader({
   );
 }
 
+/** Generic image/video field: upload to storage or paste a direct URL. */
+function MediaField({
+  label,
+  value,
+  onChange,
+  folder,
+  accept = "image/*",
+  kind = "image",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  folder: string;
+  accept?: string;
+  kind?: "image" | "video";
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const isPath = !!value && !isDirectMedia(value);
+  const urls = useClassroomMediaUrls(isPath ? [value] : []);
+  const preview = isPath ? urls[value] : value;
+
+  async function pick(file: File | undefined) {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const path = await uploadClassroomMedia(file, folder);
+      onChange(path);
+      toast.success("تم رفع الملف");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذر رفع الملف");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-xs font-bold text-muted-foreground">{label}</Label>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="grid h-20 w-28 place-items-center overflow-hidden rounded-2xl border border-border/60 bg-beige/60">
+          {preview ? (
+            kind === "video" ? (
+              <video src={preview} className="size-full object-cover" muted />
+            ) : (
+              <img src={preview} alt={label} className="size-full object-cover" />
+            )
+          ) : (
+            <span className="text-[11px] font-bold text-muted-foreground">بدون ملف</span>
+          )}
+        </span>
+        <Button
+          type="button"
+          variant="soft"
+          size="sm"
+          className="rounded-2xl"
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+        >
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+          رفع
+        </Button>
+        {value && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="rounded-2xl text-destructive hover:text-destructive"
+            onClick={() => onChange("")}
+          >
+            <Trash2 className="size-4" />
+            إزالة
+          </Button>
+        )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept={accept}
+          hidden
+          onChange={(e) => void pick(e.target.files?.[0])}
+        />
+      </div>
+      <Input
+        value={value}
+        dir="ltr"
+        placeholder="أو ضع رابطًا مباشرًا https://…"
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded-2xl"
+      />
+    </div>
+  );
+}
+
 /* -------------------------------------------------------------- main editor */
 
 export function SiteSettings() {
@@ -306,6 +401,15 @@ export function SiteSettings() {
       ...draft.pages,
       [key]: { ...(draft.pages[key] ?? { eyebrow: "", title: "", description: "" }), ...patch },
     });
+  const setSchoolLife = (patch: Partial<SiteContent["schoolLife"]>) =>
+    set("schoolLife", { ...draft.schoolLife, ...patch });
+  const setSection = (
+    key: keyof SiteContent["home"]["sections"],
+    patch: Partial<SiteContent["home"]["sections"][keyof SiteContent["home"]["sections"]]>,
+  ) =>
+    setHome({
+      sections: { ...draft.home.sections, [key]: { ...draft.home.sections[key], ...patch } },
+    });
 
   return (
     <div className="space-y-6">
@@ -343,6 +447,9 @@ export function SiteSettings() {
           <TabsTrigger value="nav" className="rounded-2xl">القائمة</TabsTrigger>
           <TabsTrigger value="home" className="rounded-2xl">الرئيسية</TabsTrigger>
           <TabsTrigger value="about" className="rounded-2xl">صفحة عنا</TabsTrigger>
+          <TabsTrigger value="school-life" className="rounded-2xl">الحياة المدرسية</TabsTrigger>
+          <TabsTrigger value="gallery" className="rounded-2xl">المعرض</TabsTrigger>
+          <TabsTrigger value="reviews" className="rounded-2xl">آراء الأولياء</TabsTrigger>
           <TabsTrigger value="pages" className="rounded-2xl">رؤوس الصفحات</TabsTrigger>
           <TabsTrigger value="content" className="rounded-2xl">المحتوى</TabsTrigger>
         </TabsList>
@@ -469,6 +576,16 @@ export function SiteSettings() {
                 <Field label="العنوان الرئيسي" value={draft.home.aboutTitle} onChange={(v) => setHome({ aboutTitle: v })} />
               </div>
               <AreaField label="الوصف" value={draft.home.aboutDescription} onChange={(v) => setHome({ aboutDescription: v })} />
+              <MediaField
+                label="صورة قسم «عن المنال»"
+                value={draft.home.aboutImage}
+                folder="site/home"
+                onChange={(v) => setHome({ aboutImage: v })}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="رقم الشارة (مثال 400+)" value={draft.home.aboutBadgeValue} dir="ltr" onChange={(v) => setHome({ aboutBadgeValue: v })} />
+                <Field label="نص الشارة" value={draft.home.aboutBadgeLabel} onChange={(v) => setHome({ aboutBadgeLabel: v })} />
+              </div>
               <AreaField
                 label="الشريط المتحرك (كل عبارة في سطر)"
                 value={draft.home.marquee.join("\n")}
@@ -496,6 +613,48 @@ export function SiteSettings() {
               </>
             )}
           />
+
+          <Card className="rounded-[1.75rem] border-border/60 shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-base font-extrabold">عناوين أقسام الصفحة الرئيسية</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {(
+                [
+                  ["stages", "المراحل التعليمية"],
+                  ["values", "لماذا المنال"],
+                  ["life", "الحياة المدرسية"],
+                  ["testimonials", "آراء أولياء الأمور"],
+                  ["news", "الأخبار"],
+                  ["faq", "الأسئلة الشائعة"],
+                  ["contact", "تواصل معنا"],
+                ] as const
+              ).map(([key, label]) => (
+                <div key={key} className="rounded-[1.5rem] border border-border/60 bg-card/70 p-4">
+                  <p className="mb-3 text-xs font-black text-primary">{label}</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field
+                      label="العنوان الفرعي"
+                      value={draft.home.sections[key].eyebrow}
+                      onChange={(v) => setSection(key, { eyebrow: v })}
+                    />
+                    <Field
+                      label="العنوان الرئيسي"
+                      value={draft.home.sections[key].title}
+                      onChange={(v) => setSection(key, { title: v })}
+                    />
+                  </div>
+                  <div className="mt-3">
+                    <AreaField
+                      label="الوصف"
+                      value={draft.home.sections[key].description}
+                      onChange={(v) => setSection(key, { description: v })}
+                    />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* About page */}
@@ -510,6 +669,18 @@ export function SiteSettings() {
                 <Field label="العنوان الرئيسي" value={draft.about.storyTitle} onChange={(v) => setAbout({ storyTitle: v })} />
               </div>
               <AreaField label="النص" value={draft.about.storyDescription} rows={4} onChange={(v) => setAbout({ storyDescription: v })} />
+              <MediaField
+                label="صورة قسم «قصتنا»"
+                value={draft.about.storyImage}
+                folder="site/about"
+                onChange={(v) => setAbout({ storyImage: v })}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="عنوان فرعي — المبادئ" value={draft.about.pillarsEyebrow} onChange={(v) => setAbout({ pillarsEyebrow: v })} />
+                <Field label="عنوان — المبادئ" value={draft.about.pillarsTitle} onChange={(v) => setAbout({ pillarsTitle: v })} />
+                <Field label="عنوان فرعي — المزايا" value={draft.about.valuesEyebrow} onChange={(v) => setAbout({ valuesEyebrow: v })} />
+                <Field label="عنوان — المزايا" value={draft.about.valuesTitle} onChange={(v) => setAbout({ valuesTitle: v })} />
+              </div>
             </CardContent>
           </Card>
 
@@ -548,8 +719,140 @@ export function SiteSettings() {
           />
         </TabsContent>
 
+        {/* School life */}
+        <TabsContent value="school-life" className="space-y-6">
+          <Card className="rounded-[1.75rem] border-border/60 shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-base font-extrabold">عناوين صفحة الحياة المدرسية</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="عنوان فرعي — الجدول" value={draft.schoolLife.scheduleEyebrow} onChange={(v) => setSchoolLife({ scheduleEyebrow: v })} />
+                <Field label="عنوان — الجدول" value={draft.schoolLife.scheduleTitle} onChange={(v) => setSchoolLife({ scheduleTitle: v })} />
+              </div>
+              <AreaField label="وصف الجدول" value={draft.schoolLife.scheduleDescription} onChange={(v) => setSchoolLife({ scheduleDescription: v })} />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="عنوان فرعي — الأنشطة" value={draft.schoolLife.activities.eyebrow} onChange={(v) => setSchoolLife({ activities: { ...draft.schoolLife.activities, eyebrow: v } })} />
+                <Field label="عنوان — الأنشطة" value={draft.schoolLife.activities.title} onChange={(v) => setSchoolLife({ activities: { ...draft.schoolLife.activities, title: v } })} />
+              </div>
+              <AreaField label="وصف الأنشطة" value={draft.schoolLife.activities.description} onChange={(v) => setSchoolLife({ activities: { ...draft.schoolLife.activities, description: v } })} />
+              <p className="rounded-2xl bg-beige/60 px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
+                صور وفيديوهات الأنشطة تُدار من تبويب «المعرض» (أول ٦ عناصر تظهر في الصفحة الرئيسية وصفحة الحياة المدرسية).
+              </p>
+            </CardContent>
+          </Card>
+
+          <ListSection
+            title="الجدول اليومي"
+            items={draft.schoolLife.schedule}
+            onChange={(next) => setSchoolLife({ schedule: next })}
+            blank={() => ({ time: "", title: "", body: "" })}
+            addLabel="إضافة فترة"
+            render={(item, update) => (
+              <>
+                <Field label="الوقت" value={item.time} dir="ltr" onChange={(v) => update({ time: v })} />
+                <Field label="العنوان" value={item.title} onChange={(v) => update({ title: v })} />
+                <div className="sm:col-span-2">
+                  <AreaField label="الوصف" value={item.body} onChange={(v) => update({ body: v })} />
+                </div>
+              </>
+            )}
+          />
+        </TabsContent>
+
+        {/* Gallery */}
+        <TabsContent value="gallery" className="space-y-6">
+          <ListSection
+            title="معرض الصور والفيديو"
+            items={draft.gallery}
+            onChange={(next) => set("gallery", next)}
+            blank={() => ({
+              id: `g-${Date.now()}`,
+              kind: "image" as const,
+              src: "",
+              title: "",
+              description: "",
+              category: "",
+            })}
+            addLabel="إضافة عنصر"
+            render={(item, update) => (
+              <>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-muted-foreground">النوع</Label>
+                  <Select value={item.kind} onValueChange={(v) => update({ kind: v as "image" | "video" })}>
+                    <SelectTrigger className="rounded-2xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="image">صورة</SelectItem>
+                      <SelectItem value="video">فيديو</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Field
+                  label="الفئة أو الفصل"
+                  value={item.category}
+                  placeholder="مثال: فنون · صغار المنال"
+                  onChange={(v) => update({ category: v })}
+                />
+                <Field label="العنوان" value={item.title} onChange={(v) => update({ title: v })} />
+                <div className="sm:col-span-2">
+                  <MediaField
+                    label={item.kind === "video" ? "ملف الفيديو" : "الصورة"}
+                    value={item.src}
+                    folder="site/gallery"
+                    kind={item.kind}
+                    accept={item.kind === "video" ? "video/*" : "image/*"}
+                    onChange={(v) => update({ src: v })}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <AreaField label="التوصيف" value={item.description} onChange={(v) => update({ description: v })} />
+                </div>
+              </>
+            )}
+          />
+        </TabsContent>
+
+        {/* Parent reviews */}
+        <TabsContent value="reviews" className="space-y-6">
+          <Card className="rounded-[1.75rem] border-border/60 shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-base font-extrabold">نموذج مشاركة الآراء</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={draft.testimonialsForm.enabled}
+                  onCheckedChange={(v) =>
+                    set("testimonialsForm", { ...draft.testimonialsForm, enabled: v })
+                  }
+                />
+                <span className="text-xs font-bold text-muted-foreground">
+                  إتاحة كتابة الآراء لأولياء الأمور في الموقع
+                </span>
+              </div>
+              <Field
+                label="عنوان النموذج"
+                value={draft.testimonialsForm.title}
+                onChange={(v) => set("testimonialsForm", { ...draft.testimonialsForm, title: v })}
+              />
+              <AreaField
+                label="النص التوضيحي"
+                value={draft.testimonialsForm.note}
+                onChange={(v) => set("testimonialsForm", { ...draft.testimonialsForm, note: v })}
+              />
+            </CardContent>
+          </Card>
+
+          <TestimonialsModeration />
+        </TabsContent>
+
         {/* Page heroes */}
         <TabsContent value="pages" className="space-y-6">
+          <p className="rounded-2xl bg-beige/60 px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
+            رؤوس الصفحات العامة: عنا، التواصل، الأسئلة، المعرض، الأخبار، والحياة المدرسية.
+          </p>
           {Object.entries(draft.pages).map(([key, hero]) => (
             <Card key={key} className="rounded-[1.75rem] border-border/60 shadow-soft">
               <CardHeader>
@@ -630,6 +933,9 @@ export function SiteSettings() {
               dateLabel: "",
               category: "أخبار",
               excerpt: "",
+              image: "",
+              video: "",
+              body: "",
             })}
             addLabel="إضافة خبر"
             render={(item, update) => (
@@ -641,6 +947,28 @@ export function SiteSettings() {
                 <div className="sm:col-span-2">
                   <AreaField label="الملخص" value={item.excerpt} onChange={(v) => update({ excerpt: v })} />
                 </div>
+                <div className="sm:col-span-2">
+                  <AreaField
+                    label="التفاصيل (اختياري)"
+                    value={item.body ?? ""}
+                    rows={5}
+                    onChange={(v) => update({ body: v })}
+                  />
+                </div>
+                <MediaField
+                  label="صورة الخبر"
+                  value={item.image ?? ""}
+                  folder="site/news"
+                  onChange={(v) => update({ image: v })}
+                />
+                <MediaField
+                  label="فيديو الخبر (اختياري)"
+                  value={item.video ?? ""}
+                  folder="site/news"
+                  kind="video"
+                  accept="video/*"
+                  onChange={(v) => update({ video: v })}
+                />
               </>
             )}
           />
