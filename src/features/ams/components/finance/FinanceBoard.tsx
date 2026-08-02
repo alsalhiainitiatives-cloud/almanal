@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScheduleList, type InstallmentRow } from "@/features/finance/components/ScheduleList";
+import { InvoiceChat } from "@/features/finance/components/InvoiceChat";
 import {
   financeOverviewGet,
   installmentRemind,
@@ -399,6 +400,8 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
                   </p>
                 )}
               </section>
+
+              <InvoiceChat invoiceId={active.id} asStaff />
             </>
           ) : (
             <div className="rounded-[2rem] border-2 border-dashed border-border/70 p-12 text-center text-sm font-bold text-muted-foreground">

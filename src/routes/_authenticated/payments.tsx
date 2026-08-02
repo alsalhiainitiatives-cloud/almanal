@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { PortalLayout } from "@/features/auth/components/PortalLayout";
 import { myFinanceGet, receiptSignedUrl } from "@/features/finance/finance.functions";
 import { BankCard } from "@/features/finance/components/BankCard";
+import { InvoiceChat } from "@/features/finance/components/InvoiceChat";
+import { PlanChooser } from "@/features/finance/components/PlanChooser";
 import { ReceiptDialog } from "@/features/finance/components/ReceiptDialog";
 import { ScheduleList, type InstallmentRow } from "@/features/finance/components/ScheduleList";
 import { printVoucher } from "@/features/finance/components/PaymentVoucher";
@@ -58,13 +60,14 @@ function PaymentsPage() {
   const bank = (data?.bankAccounts ?? [])[0] as BankAccountRow | undefined;
   const settings = data?.settings;
   const lateAfter = data?.planSettings?.late_after_days ?? 0;
+  const pendingPlans = data?.pendingPlans ?? [];
 
   return (
     <PortalLayout
       title="المدفوعات والرسوم"
       description="جدول الدفعات المستحقة، بيانات التحويل البنكي، ورفع إيصالات السداد"
     >
-      {invoices.length === 0 ? (
+      {invoices.length === 0 && pendingPlans.length === 0 ? (
         <div className="rounded-3xl border-2 border-dashed border-border/70 bg-card p-10 text-center">
           <p className="text-sm font-black text-foreground">لا توجد مستحقات مالية حاليًا</p>
           <p className="mt-2 text-xs font-bold text-muted-foreground">
@@ -79,6 +82,17 @@ function PaymentsPage() {
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-6">
+            {pendingPlans.map((app) => (
+              <PlanChooser
+                key={app.id}
+                applicationId={app.id}
+                applicationNumber={app.application_number}
+                qurraMessage={settings?.qurra_message_ar}
+                qurraServicesMessage={settings?.qurra_services_message_ar}
+                onDone={() => queryClient.invalidateQueries({ queryKey: ["my-finance"] })}
+              />
+            ))}
+
             {invoices.map((invoice) => {
               const rows = (data?.installments ?? []).filter(
                 (i) => i.invoice_id === invoice.id,
@@ -194,6 +208,10 @@ function PaymentsPage() {
                       ))}
                     </div>
                   ) : null}
+
+                  <div className="mt-5">
+                    <InvoiceChat invoiceId={invoice.id} />
+                  </div>
                 </section>
               );
             })}

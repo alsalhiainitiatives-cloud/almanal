@@ -504,6 +504,26 @@ export async function createOrUpdateInvoice(
     })),
   );
 
+  await db.from("invoices").update({ paid_total: 0 }).eq("id", invoiceId!);
+  await syncPaymentStatus(db, input.applicationId, {
+    grandTotal: quote.payableTotal,
+    paid: 0,
+    qurraCovered: quote.qurraCovered,
+  });
+
+  await notify(supabase, {
+    roles: ["accountant", "admin"],
+    kind: "finance.plan_selected",
+    title: "اختار ولي الأمر خطة السداد",
+    body:
+      input.planType === "full"
+        ? "سداد دفعة واحدة"
+        : `جدولة على ${input.installments} دفعات`,
+    applicationId: input.applicationId,
+    link: "/ams/finance",
+    severity: "info",
+  });
+
   return { invoiceId, quote, schedule };
 }
 
@@ -515,7 +535,7 @@ export async function myFinance(supabase: Db, userId: string) {
     .order("created_at", { ascending: false });
 
   const ids = (invoices ?? []).map((i) => i.id);
-  const [installments, receipts, banks, settings, plan] = await Promise.all([
+  const [installments, receipts, banks, settings, plan, approved, messages] = await Promise.all([
     ids.length
       ? supabase.from("installments").select("*").in("invoice_id", ids).order("seq")
       : Promise.resolve({ data: [] }),
@@ -525,7 +545,17 @@ export async function myFinance(supabase: Db, userId: string) {
     supabase.from("bank_accounts").select("*").eq("is_active", true).order("is_default", { ascending: false }),
     supabase.from("finance_settings").select("*").limit(1).maybeSingle(),
     supabase.from("payment_plan_settings").select("*").eq("academic_year", ACADEMIC_YEAR).maybeSingle(),
+    supabase
+      .from("applications")
+      .select("id, application_number, status, academic_year")
+      .eq("parent_id", userId)
+      .eq("status", "approved"),
+    ids.length
+      ? supabase.from("invoice_messages").select("*").in("invoice_id", ids).order("created_at")
+      : Promise.resolve({ data: [] }),
   ]);
+
+  const invoicedApps = new Set((invoices ?? []).map((i) => i.application_id));
 
   return {
     invoices: invoices ?? [],
@@ -534,7 +564,82 @@ export async function myFinance(supabase: Db, userId: string) {
     bankAccounts: banks.data ?? [],
     settings: settings.data ?? null,
     planSettings: plan.data ?? null,
+    messages: messages.data ?? [],
+    /** Approved applications that still need the parent to pick a payment plan. */
+    pendingPlans: (approved.data ?? []).filter((a) => !invoicedApps.has(a.id)),
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* Parent ⇄ accountant conversation                                    */
+/* ------------------------------------------------------------------ */
+
+async function guardInvoiceAccess(supabase: Db, userId: string, invoiceId: string) {
+  const { data: invoice } = await supabase
+    .from("invoices")
+    .select("id, parent_id, application_id")
+    .eq("id", invoiceId)
+    .maybeSingle();
+  if (!invoice) throw new Error("الفاتورة غير موجودة.");
+  const staff = await isStaff(supabase, userId);
+  if (invoice.parent_id !== userId && !staff) {
+    throw new Error("غير مصرح بالوصول لهذه المحادثة المالية.");
+  }
+  return { invoice, staff };
+}
+
+export async function listInvoiceMessages(supabase: Db, userId: string, invoiceId: string) {
+  await guardInvoiceAccess(supabase, userId, invoiceId);
+  const { data } = await supabase
+    .from("invoice_messages")
+    .select("*")
+    .eq("invoice_id", invoiceId)
+    .order("created_at");
+  const authorIds = [...new Set((data ?? []).map((m) => m.author_id))];
+  const { data: profiles } = authorIds.length
+    ? await supabase.from("profiles").select("id, full_name").in("id", authorIds)
+    : { data: [] };
+  const names = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
+  return (data ?? []).map((m) => ({ ...m, author_name: names.get(m.author_id) ?? "مستخدم" }));
+}
+
+export async function postInvoiceMessage(
+  supabase: Db,
+  userId: string,
+  input: { invoiceId: string; body: string },
+) {
+  const { invoice, staff } = await guardInvoiceAccess(supabase, userId, input.invoiceId);
+  const { error } = await supabase.from("invoice_messages").insert({
+    invoice_id: input.invoiceId,
+    author_id: userId,
+    is_staff: staff,
+    body: input.body.trim().slice(0, 1000),
+  });
+  if (error) throw new Error("تعذّر إرسال الرسالة.");
+
+  await notify(
+    supabase,
+    staff
+      ? {
+          userIds: [invoice.parent_id],
+          kind: "finance.message",
+          title: "رسالة جديدة من قسم الحسابات",
+          body: input.body.slice(0, 160),
+          applicationId: invoice.application_id,
+          link: "/payments",
+          severity: "info",
+        }
+      : {
+          roles: ["accountant", "admin"],
+          kind: "finance.message",
+          title: "رسالة مالية جديدة من ولي الأمر",
+          body: input.body.slice(0, 160),
+          applicationId: invoice.application_id,
+          link: "/ams/finance",
+          severity: "info",
+        },
+  );
+  return { ok: true };
 }
 
 export async function financeOverview(supabase: Db, userId: string) {
@@ -758,6 +863,11 @@ export async function remindInstallment(
 }
 
 async function recalcInvoice(db: Db, invoiceId: string) {
+  const { data: invoice } = await db
+    .from("invoices")
+    .select("id, application_id, grand_total, qurra_covered")
+    .eq("id", invoiceId)
+    .maybeSingle();
   const { data: rows } = await db.from("installments").select("amount, status, paid_amount").eq("invoice_id", invoiceId);
   const paid = (rows ?? []).reduce(
     (sum, r) => sum + (r.status === "paid" ? Number(r.paid_amount || r.amount) : 0),
@@ -768,4 +878,34 @@ async function recalcInvoice(db: Db, invoiceId: string) {
     .from("invoices")
     .update({ paid_total: paid, status: outstanding ? "active" : "paid" })
     .eq("id", invoiceId);
+
+  if (invoice) {
+    await syncPaymentStatus(db, invoice.application_id, {
+      grandTotal: Number(invoice.grand_total),
+      paid,
+      qurraCovered: Boolean(invoice.qurra_covered),
+    });
+  }
+}
+
+/**
+ * Payment status on the application is always derived — never set by hand.
+ * It follows the invoice the parent created when picking a payment plan.
+ */
+async function syncPaymentStatus(
+  db: Db,
+  applicationId: string,
+  input: { grandTotal: number; paid: number; qurraCovered: boolean },
+) {
+  const status =
+    input.grandTotal <= 0
+      ? input.qurraCovered
+        ? "waived"
+        : "paid"
+      : input.paid >= input.grandTotal
+        ? "paid"
+        : input.paid > 0
+          ? "partial"
+          : "unpaid";
+  await db.from("applications").update({ payment_status: status }).eq("id", applicationId);
 }

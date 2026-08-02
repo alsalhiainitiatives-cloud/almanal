@@ -189,6 +189,14 @@ function MyApplicationsPage() {
                         </>
                       ) : (
                         <>
+                          {app.status === "approved" ? (
+                            <Button asChild variant="hero">
+                              <Link to="/payments">
+                                المصروفات الدراسية
+                                <ArrowLeft className="size-4" />
+                              </Link>
+                            </Button>
+                          ) : null}
                           <Button asChild variant="soft">
                             <Link to="/track/$applicationId" params={{ applicationId: app.id }}>
                               تتبع الطلب
