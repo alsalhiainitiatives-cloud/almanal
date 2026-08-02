@@ -1182,6 +1182,44 @@ export type Database = {
           },
         ]
       }
+      invoice_messages: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          invoice_id: string
+          is_staff: boolean
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          invoice_id: string
+          is_staff?: boolean
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          is_staff?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_messages_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           academic_year: string
