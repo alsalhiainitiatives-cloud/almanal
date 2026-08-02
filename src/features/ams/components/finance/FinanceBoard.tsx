@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScheduleList, type InstallmentRow } from "@/features/finance/components/ScheduleList";
+import { InvoiceChat } from "@/features/finance/components/InvoiceChat";
 import {
   financeOverviewGet,
   installmentRemind,
