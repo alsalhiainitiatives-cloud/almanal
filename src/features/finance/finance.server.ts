@@ -843,6 +843,11 @@ export async function remindInstallment(
 }
 
 async function recalcInvoice(db: Db, invoiceId: string) {
+  const { data: invoice } = await db
+    .from("invoices")
+    .select("id, application_id, grand_total, qurra_covered")
+    .eq("id", invoiceId)
+    .maybeSingle();
   const { data: rows } = await db.from("installments").select("amount, status, paid_amount").eq("invoice_id", invoiceId);
   const paid = (rows ?? []).reduce(
     (sum, r) => sum + (r.status === "paid" ? Number(r.paid_amount || r.amount) : 0),
@@ -853,4 +858,34 @@ async function recalcInvoice(db: Db, invoiceId: string) {
     .from("invoices")
     .update({ paid_total: paid, status: outstanding ? "active" : "paid" })
     .eq("id", invoiceId);
+
+  if (invoice) {
+    await syncPaymentStatus(db, invoice.application_id, {
+      grandTotal: Number(invoice.grand_total),
+      paid,
+      qurraCovered: Boolean(invoice.qurra_covered),
+    });
+  }
+}
+
+/**
+ * Payment status on the application is always derived — never set by hand.
+ * It follows the invoice the parent created when picking a payment plan.
+ */
+async function syncPaymentStatus(
+  db: Db,
+  applicationId: string,
+  input: { grandTotal: number; paid: number; qurraCovered: boolean },
+) {
+  const status =
+    input.grandTotal <= 0
+      ? input.qurraCovered
+        ? "waived"
+        : "paid"
+      : input.paid >= input.grandTotal
+        ? "paid"
+        : input.paid > 0
+          ? "partial"
+          : "unpaid";
+  await db.from("applications").update({ payment_status: status }).eq("id", applicationId);
 }
