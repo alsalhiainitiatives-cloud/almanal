@@ -208,6 +208,10 @@ function PaymentsPage() {
                       ))}
                     </div>
                   ) : null}
+
+                  <div className="mt-5">
+                    <InvoiceChat invoiceId={invoice.id} />
+                  </div>
                 </section>
               );
             })}
