@@ -10,8 +10,10 @@ import {
   deleteService,
   financeOverview,
   getFinanceConfig,
+  listInvoiceMessages,
   myFinance,
   notifyOverdue,
+  postInvoiceMessage,
   quoteApplication,
   receiptUploadPath,
   recordReceipt,
@@ -283,3 +285,19 @@ export const serviceDelete = createServerFn({ method: "POST" })
 export const overdueNotifyAll = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => notifyOverdue(context.supabase, context.userId));
+
+export const invoiceMessagesGet = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ invoiceId: uuid }).parse(data))
+  .handler(async ({ data, context }) =>
+    listInvoiceMessages(context.supabase, context.userId, data.invoiceId),
+  );
+
+export const invoiceMessageSend = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ invoiceId: uuid, body: z.string().trim().min(1).max(1000) }).parse(data),
+  )
+  .handler(async ({ data, context }) =>
+    postInvoiceMessage(context.supabase, context.userId, data),
+  );

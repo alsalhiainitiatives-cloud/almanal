@@ -504,6 +504,26 @@ export async function createOrUpdateInvoice(
     })),
   );
 
+  await db.from("invoices").update({ paid_total: 0 }).eq("id", invoiceId!);
+  await syncPaymentStatus(db, input.applicationId, {
+    grandTotal: quote.payableTotal,
+    paid: 0,
+    qurraCovered: quote.qurraCovered,
+  });
+
+  await notify(supabase, {
+    roles: ["accountant", "admin"],
+    kind: "finance.plan_selected",
+    title: "اختار ولي الأمر خطة السداد",
+    body:
+      input.planType === "full"
+        ? "سداد دفعة واحدة"
+        : `جدولة على ${input.installments} دفعات`,
+    applicationId: input.applicationId,
+    link: "/ams/finance",
+    severity: "info",
+  });
+
   return { invoiceId, quote, schedule };
 }
 
