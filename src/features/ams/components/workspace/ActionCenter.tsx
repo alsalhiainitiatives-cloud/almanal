@@ -39,12 +39,11 @@ import {
   amsRecommend,
   amsRequestDocuments,
   amsRequestCorrections,
-  amsSetPayment,
   amsSetPriority,
   amsStartReview,
   amsUpdateQurra,
 } from "../../ams.functions";
-import { can } from "../../roles";
+import { PAYMENT_STATUS_LABELS, can } from "../../roles";
 import { documentCompletion } from "../../recommendations";
 import { DocumentReview } from "./DocumentReview";
 import { WAITLIST_REASONS, evaluatePreferences, waitlistSummary } from "../../waitlist-reasons";
@@ -61,8 +60,7 @@ type DialogKind =
   | "reject"
   | "seat"
   | "waitlist"
-  | "qurra"
-  | "payment";
+  | "qurra";
 
 const CORRECTION_OPTIONS = [
   { value: "parent", label: "بيانات ولي الأمر" },
@@ -114,7 +112,6 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
   const [childIdx, setChildIdx] = useState(0);
   const [signature, setSignature] = useState("");
   const [qurraStatus, setQurraStatus] = useState(data.qurra?.status ?? "not_requested");
-  const [paymentStatus, setPaymentStatus] = useState(data.application.payment_status);
   const [requested, setRequested] = useState<string[]>([]);
   const [sections, setSections] = useState<CorrectionSection[]>([]);
 
@@ -128,7 +125,6 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
   const seat = useServerFn(amsManageSeat);
   const waitlist = useServerFn(amsMoveToWaitingList);
   const qurra = useServerFn(amsUpdateQurra);
-  const payment = useServerFn(amsSetPayment);
 
   const run = useMutation({
     mutationFn: async (task: () => Promise<unknown>) => task(),
@@ -387,14 +383,18 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
         {/* --------------------------------------------------- payments */}
         {can(roles, "payments") && reviewStarted ? (
           <Stage index={showOfficerActions ? 6 : canDecide ? 2 : 1} title="السداد">
-            <Button
-              variant="outline"
-              size="sm"
-              className="col-span-2 rounded-2xl text-xs font-bold"
-              onClick={() => setDialog("payment")}
-            >
-              <Wallet className="size-3.5" /> حالة السداد
-            </Button>
+            <div className="col-span-2 flex items-center justify-between gap-2 rounded-2xl border border-border/60 bg-muted/40 px-4 py-3">
+              <span className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                <Wallet className="size-3.5" /> حالة السداد (تلقائية)
+              </span>
+              <span className="rounded-full bg-card px-3 py-1 text-[11px] font-black text-foreground">
+                {PAYMENT_STATUS_LABELS[data.application.payment_status] ??
+                  data.application.payment_status}
+              </span>
+            </div>
+            <p className="col-span-2 text-[11px] font-bold text-muted-foreground">
+              تُحسب الحالة تلقائيًا من خطة السداد وجدول الدفعات والإيصالات المعتمدة.
+            </p>
           </Stage>
         ) : null}
 
