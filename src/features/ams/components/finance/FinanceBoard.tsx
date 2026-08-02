@@ -399,6 +399,8 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
                   </p>
                 )}
               </section>
+
+              <InvoiceChat invoiceId={active.id} asStaff />
             </>
           ) : (
             <div className="rounded-[2rem] border-2 border-dashed border-border/70 p-12 text-center text-sm font-bold text-muted-foreground">
