@@ -804,36 +804,6 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={dialog === "payment"} onOpenChange={(open) => (open ? null : close())}>
-        <DialogContent dir="rtl">
-          <DialogHeader>
-            <DialogTitle>حالة السداد</DialogTitle>
-            <DialogDescription>تُحدَّث حالة سداد رسوم التسجيل يدويًا من المحاسب.</DialogDescription>
-          </DialogHeader>
-          <Select value={paymentStatus} onValueChange={(value) => setPaymentStatus(value)}>
-            <SelectTrigger className="rounded-2xl">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="unpaid">غير مدفوع</SelectItem>
-              <SelectItem value="partial">مدفوع جزئيًا</SelectItem>
-              <SelectItem value="paid">مدفوع</SelectItem>
-              <SelectItem value="waived">معفى</SelectItem>
-            </SelectContent>
-          </Select>
-          <DialogFooter>
-            <Button
-              className="rounded-2xl"
-              disabled={busy}
-              onClick={() =>
-                run.mutate(() => payment({ data: { id, status: paymentStatus as "unpaid" | "partial" | "paid" | "waived" } }))
-              }
-            >
-              حفظ
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
