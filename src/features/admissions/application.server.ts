@@ -373,6 +373,17 @@ function randomCode(length: number) {
   return out;
 }
 
+/**
+ * Professional short application code: MN-48-ABC123
+ * MN = school prefix, 48 = Hijri intake year (1448), then a 6-char
+ * unambiguous alphanumeric serial. ASCII only, safe for QR/URLs/exports.
+ */
+function buildApplicationCode() {
+  const hijri = ACADEMIC_YEAR.match(/1(\d{3})/);
+  const year = hijri ? hijri[1].slice(1) : String(new Date().getFullYear()).slice(2);
+  return `MN-${year}-${randomCode(6)}`;
+}
+
 export async function submitApplication(supabase: Db, userId: string, id: string) {
   const app = await loadApplicationRow(supabase, id, userId);
   if (app.status !== "draft" && app.status !== "needs_action") {
@@ -400,7 +411,7 @@ export async function submitApplication(supabase: Db, userId: string, id: string
   // One unified number is used for both the application and its tracking page.
   const wasCorrection = app.status === "needs_action";
   // Keep the original number when the parent resubmits after corrections.
-  const applicationNumber = app.application_number ?? `MN-${ACADEMIC_YEAR}-${randomCode(5)}`;
+  const applicationNumber = app.application_number ?? buildApplicationCode();
   const trackingNumber = applicationNumber;
 
   const { error } = await supabase
