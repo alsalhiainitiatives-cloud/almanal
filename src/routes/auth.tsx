@@ -97,7 +97,7 @@ function AuthPage() {
             >
               <div aria-hidden className="pointer-events-none absolute inset-0 pattern-dots opacity-20" />
               <div className="relative flex h-full flex-col items-center justify-center text-center">
-                <div className="rounded-3xl bg-primary-foreground/95 px-4 py-3 shadow-sm">
+                <div className="rounded-3xl bg-primary-foreground/95 px-4 py-3 shadow-sm">-
                   <Logo />
                 </div>
                 <h2 className="mt-6 text-3xl font-extrabold sm:text-4xl">
