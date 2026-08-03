@@ -30,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { ageInMonths, detectNationality, formatAge } from "@/features/admissions/eligibility";
 import {
   amsDecide,
@@ -104,6 +105,7 @@ function Notice({ tone = "muted", children }: { tone?: "muted" | "warn" | "ok"; 
 
 export function ActionCenter({ data }: { data: WorkspaceData }) {
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
   const roles = (data.roles ?? []) as AppRole[];
   const id = data.application.id;
   const [dialog, setDialog] = useState<DialogKind>(null);
@@ -643,7 +645,7 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
               {dialog === "approve"
                 ? "هل ترغب في قبول طلب الالتحاق؟"
                 : "هل ترغب في رفض طلب الالتحاق؟"}{" "}
-              يُسجَّل القرار في سجل التدقيق تلقائيًا باسمك ({data.viewerName ?? "المدير"}).
+              يُسجَّل القرار في سجل التدقيق تلقائيًا باسمك ({profile?.fullName ?? "المدير"}).
             </DialogDescription>
           </DialogHeader>
           <Textarea
