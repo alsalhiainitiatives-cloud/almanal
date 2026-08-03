@@ -636,40 +636,45 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
       <Dialog open={dialog === "approve" || dialog === "reject"} onOpenChange={(open) => (open ? null : close())}>
         <DialogContent dir="rtl">
           <DialogHeader>
-            <DialogTitle>{dialog === "approve" ? "اعتماد قبول الطلب" : "رفض الطلب"}</DialogTitle>
-            <DialogDescription>القرار نهائي ويُسجَّل في سجل التدقيق مع اسم المعتمِد.</DialogDescription>
+            <DialogTitle>
+              {dialog === "approve" ? "تأكيد قبول الطلب" : "تأكيد رفض الطلب"}
+            </DialogTitle>
+            <DialogDescription>
+              {dialog === "approve"
+                ? "هل ترغب في قبول طلب الالتحاق؟"
+                : "هل ترغب في رفض طلب الالتحاق؟"}{" "}
+              يُسجَّل القرار في سجل التدقيق تلقائيًا باسمك ({data.viewerName ?? "المدير"}).
+            </DialogDescription>
           </DialogHeader>
           <Textarea
             value={note}
             onChange={(event) => setNote(event.target.value)}
             className="min-h-24 rounded-2xl text-xs"
-            placeholder={dialog === "approve" ? "ملاحظات القبول…" : "سبب الرفض…"}
-          />
-          <Input
-            value={signature}
-            onChange={(event) => setSignature(event.target.value)}
-            placeholder="التوقيع الرقمي (الاسم)"
-            className="rounded-2xl text-xs"
+            placeholder={
+              dialog === "approve" ? "ملاحظات القبول (اختياري)…" : "سبب الرفض (اختياري)…"
+            }
           />
           <DialogFooter>
+            <Button variant="ghost" className="rounded-2xl" disabled={busy} onClick={close}>
+              إلغاء
+            </Button>
             <Button
               className="rounded-2xl"
               variant={dialog === "reject" ? "destructive" : "default"}
-              disabled={note.trim().length < 3 || busy || decided}
+              disabled={busy || decided}
               onClick={() =>
                 run.mutate(() =>
                   decide({
                     data: {
                       id,
                       decision: dialog === "approve" ? "approved" : "rejected",
-                      note: note.trim(),
-                      signature: signature || undefined,
+                      note: note.trim() || undefined,
                     },
                   }),
                 )
               }
             >
-              تأكيد القرار
+              {dialog === "approve" ? "نعم، قبول الطلب" : "نعم، رفض الطلب"}
             </Button>
           </DialogFooter>
         </DialogContent>
