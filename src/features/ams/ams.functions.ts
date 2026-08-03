@@ -196,7 +196,7 @@ export const amsDecide = createServerFn({ method: "POST" })
       .object({
         id: uuid,
         decision: z.enum(["approved", "rejected"]),
-        note: z.string().trim().min(3).max(1000),
+        note: z.string().trim().max(1000).optional(),
         signature: z.string().trim().max(120).optional(),
       })
       .parse(data),
