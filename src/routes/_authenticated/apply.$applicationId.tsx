@@ -70,6 +70,8 @@ import { QurraStep } from "@/features/admissions/components/steps/QurraStep";
 import { ReviewStep } from "@/features/admissions/components/steps/ReviewStep";
 import { ServicesStep } from "@/features/admissions/components/steps/ServicesStep";
 import { supabase } from "@/integrations/supabase/client";
+import { useUploadSettings } from "@/features/ams/useUploadSettings";
+import { formatSize, optimizeAttachment } from "@/lib/upload-compression";
 import { annualTuition, computeQuote, type DiscountRuleRow, type FeePlanRow } from "@/features/finance/pricing";
 import { financeConfigGet } from "@/features/finance/finance.functions";
 
@@ -244,6 +246,7 @@ function WizardPage() {
   const { applicationId } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const uploadSettings = useUploadSettings();
 
   const fetchApplication = useServerFn(getApplication);
   const fetchCatalog = useServerFn(getAdmissionCatalog);
@@ -616,19 +619,28 @@ function WizardPage() {
   }
 
   async function handleUpload(slug: string, file: File, childIndex: number | null) {
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("حجم الملف يتجاوز 10 ميغابايت");
+    let upload = file;
+    try {
+      const result = await optimizeAttachment(file, {
+        maxDimension: uploadSettings.imageMaxDimension,
+        quality: uploadSettings.imageQuality,
+        maxMb: uploadSettings.maxDocumentMb,
+        enabled: uploadSettings.compressImages,
+      });
+      upload = result.file;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "تعذّر تجهيز الملف");
       return;
     }
     const { data: auth } = await supabase.auth.getUser();
     if (!auth.user) return;
-    const safeName = file.name.replace(/[^\w.\-]/g, "_").slice(-60);
+    const safeName = upload.name.replace(/[^\w.\-]/g, "_").slice(-60);
     const scope = childIndex === null ? "parent" : `child${childIndex}`;
     const path = `${auth.user.id}/${applicationId}/${scope}-${slug}-${Date.now()}-${safeName}`;
 
     const { error } = await supabase.storage
       .from("admission-documents")
-      .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
+      .upload(path, upload, { contentType: upload.type || "application/octet-stream", upsert: false });
     if (error) {
       toast.error(`تعذّر رفع الملف: ${error.message}`);
       return;
@@ -638,13 +650,17 @@ function WizardPage() {
         id: applicationId,
         slug,
         filePath: path,
-        fileName: file.name,
-        fileSize: file.size,
+        fileName: upload.name,
+        fileSize: upload.size,
         childIndex,
       },
     });
     await queryClient.invalidateQueries({ queryKey: ["application", applicationId] });
-    toast.success("تم رفع المستند");
+    toast.success(
+      upload.size < file.size
+        ? `تم رفع المستند بعد ضغطه (${formatSize(file.size)} → ${formatSize(upload.size)})`
+        : "تم رفع المستند",
+    );
   }
 
   async function handleRemove(docId: string) {

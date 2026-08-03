@@ -15,6 +15,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { useUploadSettings } from "@/features/ams/useUploadSettings";
+import { formatSize, optimizeAttachment } from "@/lib/upload-compression";
 import { receiptPath, receiptRecord } from "../finance.functions";
 import { money } from "../pricing";
 
@@ -35,6 +37,7 @@ export function ReceiptDialog({
 }) {
   const makePath = useServerFn(receiptPath);
   const record = useServerFn(receiptRecord);
+  const uploadSettings = useUploadSettings();
   const [file, setFile] = useState<File | null>(null);
   const [transferDate, setTransferDate] = useState("");
   const [reference, setReference] = useState("");
@@ -47,13 +50,17 @@ export function ReceiptDialog({
     }
     setBusy(true);
     try {
-      const { path } = await makePath({ data: { invoiceId, fileName: file.name } });
-      if (file.size > 10 * 1024 * 1024) {
-        throw new Error("حجم الملف كبير — الحد الأقصى 10 ميجابايت.");
-      }
-      const { error } = await supabase.storage.from("payment-receipts").upload(path, file, {
+      const optimized = await optimizeAttachment(file, {
+        maxDimension: uploadSettings.imageMaxDimension,
+        quality: uploadSettings.imageQuality,
+        maxMb: uploadSettings.maxReceiptMb,
+        enabled: uploadSettings.compressImages,
+      });
+      const upload = optimized.file;
+      const { path } = await makePath({ data: { invoiceId, fileName: upload.name } });
+      const { error } = await supabase.storage.from("payment-receipts").upload(path, upload, {
         upsert: false,
-        contentType: file.type || "application/octet-stream",
+        contentType: upload.type || "application/octet-stream",
       });
       if (error) throw new Error(`تعذّر رفع الملف: ${error.message}`);
       await record({
@@ -61,13 +68,17 @@ export function ReceiptDialog({
           invoiceId,
           installmentId,
           filePath: path,
-          fileName: file.name,
+          fileName: upload.name,
           amount,
           transferDate: transferDate || null,
           referenceNo: reference || null,
         },
       });
-      toast.success("تم رفع الإيصال، بانتظار اعتماد قسم الحسابات");
+      toast.success(
+        upload.size < file.size
+          ? `تم رفع الإيصال بعد ضغطه (${formatSize(file.size)} → ${formatSize(upload.size)}) — بانتظار اعتماد قسم الحسابات`
+          : "تم رفع الإيصال، بانتظار اعتماد قسم الحسابات",
+      );
       onOpenChange(false);
       setFile(null);
       setTransferDate("");
