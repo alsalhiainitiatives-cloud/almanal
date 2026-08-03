@@ -24,6 +24,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   permissions: "مصفوفة الصلاحيات",
   audit: "سجل العمليات",
   "site-content": "إعدادات الموقع الإلكتروني",
+  inbox: "استقبال المراسلات والتقييمات",
 };
 
 function labelFor(segment: string) {
@@ -53,6 +54,7 @@ const NAVIGABLE = new Set([
   "/admin/permissions",
   "/admin/audit",
   "/admin/site-content",
+  "/admin/inbox",
 ]);
 
 /**
