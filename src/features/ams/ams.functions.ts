@@ -34,6 +34,7 @@ import {
   updateQurra,
 } from "./ams.server";
 import { getReports } from "./reports.server";
+import { getStudentFile, listStudents, setStudentPhoto } from "./students.server";
 
 const uuid = z.string().uuid();
 
@@ -339,3 +340,28 @@ export const amsClassroomDelete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ id: uuid }).parse(data))
   .handler(async ({ data, context }) => deleteClassroom(context.supabase, context.userId, data));
+
+export const amsStudents = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        stageId: z.string().nullable().optional(),
+        classroomId: z.string().nullable().optional(),
+        academicYear: z.string().nullable().optional(),
+      })
+      .parse(data ?? {}),
+  )
+  .handler(async ({ data, context }) => listStudents(context.supabase, context.userId, data));
+
+export const amsStudentFile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => uuid.parse(data))
+  .handler(async ({ data, context }) => getStudentFile(context.supabase, context.userId, data));
+
+export const amsStudentPhoto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ childId: uuid, photoUrl: z.string().max(400).nullable() }).parse(data),
+  )
+  .handler(async ({ data, context }) => setStudentPhoto(context.supabase, context.userId, data));

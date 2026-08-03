@@ -10,6 +10,7 @@ import {
   LogOut,
   Search,
   SlidersHorizontal,
+  GraduationCap,
   Wallet,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -47,6 +48,13 @@ const NAV: NavItem[] = [
   { to: "/ams/seats", label: "الفصول والمقاعد", icon: Armchair, exact: false, group: "معالجة الطلبات" },
   { to: "/ams/waiting-list", label: "قائمة الانتظار", icon: ListOrdered, exact: false, group: "معالجة الطلبات" },
   {
+    to: "/ams/students",
+    label: "شؤون الطلاب",
+    icon: GraduationCap,
+    exact: false,
+    group: "شؤون الطلاب",
+  },
+  {
     to: "/ams/finance",
     label: "الإدارة المالية",
     icon: Wallet,
@@ -69,6 +77,7 @@ const NAV: NavItem[] = [
 const NAV_GROUP_ORDER = [
   "نظرة عامة",
   "معالجة الطلبات",
+  "شؤون الطلاب",
   "الشؤون المالية",
   "المتابعة والتقارير",
   "الإعدادات",
