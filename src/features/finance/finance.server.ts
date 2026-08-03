@@ -542,9 +542,9 @@ export async function myFinance(supabase: Db, userId: string) {
     ids.length
       ? supabase.from("payment_receipts").select("*").in("invoice_id", ids).order("created_at", { ascending: false })
       : Promise.resolve({ data: [] }),
-    supabase.from("bank_accounts").select("*").eq("is_active", true).order("is_default", { ascending: false }),
+    supabase.from("bank_accounts").select("*").eq("is_active", true).order("is_default", { ascending: false }).order("updated_at", { ascending: false }),
     supabase.from("finance_settings").select("*").limit(1).maybeSingle(),
-    supabase.from("payment_plan_settings").select("*").eq("academic_year", ACADEMIC_YEAR).maybeSingle(),
+    supabase.from("payment_plan_settings").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
     supabase
       .from("applications")
       .select("id, application_number, status, academic_year")
@@ -672,7 +672,7 @@ export async function financeOverview(supabase: Db, userId: string) {
           )
       : Promise.resolve({ data: [] }),
     supabase.from("finance_settings").select("*").limit(1).maybeSingle(),
-    supabase.from("payment_plan_settings").select("*").eq("academic_year", ACADEMIC_YEAR).maybeSingle(),
+    supabase.from("payment_plan_settings").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
   return {
