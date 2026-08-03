@@ -66,7 +66,7 @@ export async function listStudents(
   let query = supabase
     .from("application_children")
     .select(STUDENT_SELECT)
-    .in("applications.status", STUDENT_STATUSES as unknown as string[])
+    .in("applications.status", [...STUDENT_STATUSES])
     .order("name_ar")
     .limit(600);
 
