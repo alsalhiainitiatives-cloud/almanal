@@ -54,8 +54,7 @@ export async function getUploadSettings(supabase: Db): Promise<UploadSettings> {
 export async function saveUploadSettings(supabase: Db, userId: string, input: unknown) {
   await guardBuilder(supabase, userId);
   const settings = normalizeUploadSettings(input);
-  const db = await admin();
-  const { error } = await db
+  const { error } = await supabase
     .from("site_content")
     .upsert(
       { key: UPLOAD_SETTINGS_KEY, data: settings as never, updated_by: userId, updated_at: new Date().toISOString() },
@@ -149,9 +148,9 @@ export async function exportRegistrationData(supabase: Db, userId: string) {
 /** Live counts shown in the danger zone before any destructive action. */
 export async function registrationDataStats(supabase: Db, userId: string) {
   await guardBuilder(supabase, userId);
-  const db = await admin();
   const count = async (table: "applications" | "application_children" | "application_documents" | "invoices" | "payment_receipts") => {
-    const { count: c } = await db.from(table).select("id", { count: "exact", head: true });
+    const { count: c, error } = await supabase.from(table).select("id", { count: "exact", head: true });
+    if (error) throw new Error("تعذّر تحميل إحصاءات بيانات التسجيل.");
     return c ?? 0;
   };
   const [applications, children, documents, invoices, receipts] = await Promise.all([
