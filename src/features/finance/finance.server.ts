@@ -448,13 +448,15 @@ export async function createOrUpdateInvoice(
     throw new Error("تم سداد جزء من الفاتورة — تواصل مع قسم الحسابات لتعديل الخطة.");
   }
 
+  const zeroDue = quote.payableTotal <= 0;
+
   const payload = {
     application_id: input.applicationId,
     parent_id: app.parent_id,
     academic_year: ACADEMIC_YEAR,
-    status: "active" as const,
-    plan_type: input.planType,
-    installments_count: input.planType === "full" ? 1 : input.installments,
+    status: zeroDue ? ("paid" as const) : ("active" as const),
+    plan_type: zeroDue ? "full" : input.planType,
+    installments_count: zeroDue || input.planType === "full" ? 1 : input.installments,
     admission_fee: quote.admissionFee,
     tuition_total: quote.tuition,
     services_total: quote.servicesTotal,
@@ -495,14 +497,28 @@ export async function createOrUpdateInvoice(
   }
 
   await db.from("invoice_items").insert(items.map((i) => ({ ...i, invoice_id: invoiceId! })));
-  await db.from("installments").insert(
-    schedule.map((row) => ({
+  if (zeroDue) {
+    // No amount is due (full Qurra coverage and no paid services): settle immediately.
+    await db.from("installments").insert({
       invoice_id: invoiceId!,
-      seq: row.seq,
-      amount: row.amount,
-      due_date: row.dueDate,
-    })),
-  );
+      seq: 1,
+      amount: 0,
+      paid_amount: 0,
+      due_date: schedule[0]?.dueDate ?? new Date().toISOString().slice(0, 10),
+      status: "waived",
+      note: "لا يوجد مبلغ مستحق — مغطى بالكامل",
+      paid_at: new Date().toISOString(),
+    });
+  } else {
+    await db.from("installments").insert(
+      schedule.map((row) => ({
+        invoice_id: invoiceId!,
+        seq: row.seq,
+        amount: row.amount,
+        due_date: row.dueDate,
+      })),
+    );
+  }
 
   await db.from("invoices").update({ paid_total: 0 }).eq("id", invoiceId!);
   await syncPaymentStatus(db, input.applicationId, {
@@ -514,9 +530,11 @@ export async function createOrUpdateInvoice(
   await notify(supabase, {
     roles: ["accountant", "admin"],
     kind: "finance.plan_selected",
-    title: "اختار ولي الأمر خطة السداد",
+    title: zeroDue ? "تم تأكيد خطة السداد تلقائيًا (لا مستحقات)" : "اختار ولي الأمر خطة السداد",
     body:
-      input.planType === "full"
+      zeroDue
+        ? "لا يوجد مبلغ مستحق على ولي الأمر"
+        : input.planType === "full"
         ? "سداد دفعة واحدة"
         : `جدولة على ${input.installments} دفعات`,
     applicationId: input.applicationId,
@@ -524,7 +542,7 @@ export async function createOrUpdateInvoice(
     severity: "info",
   });
 
-  return { invoiceId, quote, schedule };
+  return { invoiceId, quote, schedule, zeroDue };
 }
 
 export async function myFinance(supabase: Db, userId: string) {

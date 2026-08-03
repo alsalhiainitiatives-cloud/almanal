@@ -51,6 +51,15 @@ export function PlanChooser({
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const payable = Number((data?.quote as Quote | undefined)?.payableTotal ?? -1);
+  const zeroDue = !!data && payable <= 0;
+
+  // Nothing is due (full Qurra coverage, no paid services): confirm automatically.
+  useEffect(() => {
+    if (zeroDue && !confirm.isPending && !confirm.isSuccess && !confirm.isError) confirm.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zeroDue]);
+
   return (
     <section className="space-y-5 rounded-[2rem] border border-primary/30 bg-primary/[0.03] p-6">
       <header>
@@ -65,6 +74,24 @@ export function PlanChooser({
       {isLoading || !data ? (
         <div className="grid place-items-center py-10">
           <Loader2 className="size-5 animate-spin text-primary" />
+        </div>
+      ) : zeroDue ? (
+        <div className="space-y-3">
+          <p className="rounded-2xl bg-mint/40 px-4 py-3 text-xs font-bold leading-relaxed text-foreground">
+            لا يوجد مبلغ مستحق على ولي الأمر — الرسوم مغطاة بالكامل ولم يتم اختيار خدمات مدفوعة، لذلك تم
+            تأكيد خطة السداد تلقائيًا.
+          </p>
+          {confirm.isPending && (
+            <div className="grid place-items-center py-4">
+              <Loader2 className="size-5 animate-spin text-primary" />
+            </div>
+          )}
+          {confirm.isError && (
+            <Button className="w-full rounded-2xl" onClick={() => confirm.mutate()}>
+              <CheckCircle2 className="size-4" />
+              إعادة المحاولة
+            </Button>
+          )}
         </div>
       ) : (
         <>

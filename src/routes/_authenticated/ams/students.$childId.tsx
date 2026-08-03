@@ -42,7 +42,11 @@ function StudentFilePage() {
   const photoPath = data?.student.photo_url ?? null;
   const isStoragePath = !!photoPath && !/^https?:\/\//.test(photoPath);
   const signed = useClassroomMediaUrls(isStoragePath ? [photoPath] : []);
-  const photoSrc = photoPath ? (isStoragePath ? signed[photoPath] : photoPath) : undefined;
+  const photoSrc = photoPath
+    ? isStoragePath
+      ? signed[photoPath]
+      : photoPath
+    : (data?.student.photo_signed_url ?? undefined);
 
   const savePhoto = useMutation({
     mutationFn: (photoUrl: string | null) => amsStudentPhoto({ data: { childId, photoUrl } }),

@@ -4,12 +4,15 @@ import {
   Activity,
   Armchair,
   BarChart3,
+  GraduationCap,
+  Home,
   Inbox,
   LayoutDashboard,
   ListOrdered,
   LogOut,
   Search,
   SlidersHorizontal,
+  Wallet,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -64,6 +67,33 @@ const NAV_GROUP_ORDER = [
   "الإعدادات",
 ];
 
+/** Student Affairs is a separate operational module — no admissions links. */
+const STUDENTS_NAV: NavItem[] = [
+  { to: "/ams/students", label: "سجل الطلاب", icon: GraduationCap, exact: false, group: "شؤون الطلاب" },
+];
+
+/** Finance is a separate operational module — no admissions links. */
+const FINANCE_NAV: NavItem[] = [
+  { to: "/ams/finance", label: "لوحة الإدارة المالية", icon: Wallet, exact: false, group: "الإدارة المالية" },
+];
+
+type ModuleKey = "admissions" | "students" | "finance";
+
+const MODULES: Record<
+  ModuleKey,
+  { badge: string; title: string; nav: NavItem[]; groups: string[]; home: string; search: boolean }
+> = {
+  admissions: { badge: "AMS", title: "نظام إدارة القبول", nav: NAV, groups: NAV_GROUP_ORDER, home: "/ams", search: true },
+  students: { badge: "SIS", title: "شؤون الطلاب", nav: STUDENTS_NAV, groups: ["شؤون الطلاب"], home: "/ams/students", search: false },
+  finance: { badge: "FIN", title: "الإدارة المالية", nav: FINANCE_NAV, groups: ["الإدارة المالية"], home: "/ams/finance", search: false },
+};
+
+function moduleFor(pathname: string): ModuleKey {
+  if (pathname.startsWith("/ams/students")) return "students";
+  if (pathname.startsWith("/ams/finance")) return "finance";
+  return "admissions";
+}
+
 export function AmsShell({
   title,
   description,
@@ -79,10 +109,11 @@ export function AmsShell({
 }) {
   const { profile, roles, primaryRole, signOut } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const navItems = NAV.filter(
+  const activeModule = MODULES[moduleFor(pathname)];
+  const navItems = activeModule.nav.filter(
     (item) => !item.roles || item.roles.some((role) => (roles as string[]).includes(role)),
   );
-  const navGroups = NAV_GROUP_ORDER.map((group) => ({
+  const navGroups = activeModule.groups.map((group) => ({
     group,
     items: navItems.filter((item) => item.group === group),
   })).filter((entry) => entry.items.length > 0);
@@ -105,7 +136,7 @@ export function AmsShell({
   const { data: searchRows } = useQuery({
     queryKey: ["ams", "queue", "palette"],
     queryFn: () => amsQueue({ data: {} }),
-    enabled: paletteOpen,
+    enabled: paletteOpen && activeModule.search,
   });
 
   return (
@@ -116,10 +147,10 @@ export function AmsShell({
             <div className="rounded-3xl border border-border/60 bg-card/80 p-4 shadow-sm backdrop-blur">
               <div className="flex items-center gap-2.5">
                 <span className="grid size-10 place-items-center rounded-2xl bg-primary text-sm font-extrabold text-primary-foreground">
-                  AMS
+                  {activeModule.badge}
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-extrabold text-foreground">نظام إدارة القبول</p>
+                  <p className="truncate text-sm font-extrabold text-foreground">{activeModule.title}</p>
                   <p className="truncate text-[11px] text-muted-foreground">مدارس وروضة المنال</p>
                 </div>
               </div>
@@ -150,6 +181,13 @@ export function AmsShell({
                     })}
                   </div>
                 ))}
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-sm font-bold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  <Home className="size-4" />
+                  العودة إلى بوابتي
+                </Link>
               </nav>
             </div>
 
@@ -187,7 +225,7 @@ export function AmsShell({
         </aside>
 
         <main className="min-w-0 flex-1 space-y-5">
-          <PortalTrail home="/ams" />
+          <PortalTrail home={activeModule.home} />
           <header className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-border/60 bg-card/80 px-5 py-4 shadow-sm backdrop-blur">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -200,17 +238,19 @@ export function AmsShell({
               {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                className="rounded-2xl text-xs font-bold"
-                onClick={() => setPaletteOpen(true)}
-              >
-                <Search className="size-3.5" />
-                بحث سريع
-                <kbd className="ms-1 rounded bg-muted px-1.5 py-0.5 text-[10px]" dir="ltr">
-                  ⌘K
-                </kbd>
-              </Button>
+              {activeModule.search && (
+                <Button
+                  variant="outline"
+                  className="rounded-2xl text-xs font-bold"
+                  onClick={() => setPaletteOpen(true)}
+                >
+                  <Search className="size-3.5" />
+                  بحث سريع
+                  <kbd className="ms-1 rounded bg-muted px-1.5 py-0.5 text-[10px]" dir="ltr">
+                    ⌘K
+                  </kbd>
+                </Button>
+              )}
               {actions}
             </div>
           </header>
@@ -233,7 +273,7 @@ export function AmsShell({
         </main>
       </div>
 
-      <CommandDialog open={paletteOpen} onOpenChange={setPaletteOpen}>
+      <CommandDialog open={paletteOpen && activeModule.search} onOpenChange={setPaletteOpen}>
         <CommandInput placeholder="ابحث برقم الطلب أو اسم الطالب أو ولي الأمر أو الهوية…" />
         <CommandList>
           <CommandEmpty>لا توجد نتائج مطابقة.</CommandEmpty>
