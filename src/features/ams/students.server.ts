@@ -197,6 +197,38 @@ type ChildRow = Pick<
   | "created_at"
 > & { applications: unknown };
 
+/**
+ * Falls back to the personal photo the guardian already uploaded with the
+ * admission documents (`student-photo`) when no staff photo is set.
+ */
+async function admissionPhotoUrl(supabase: Db, applicationId: string, childId: string) {
+  const { data: siblings } = await supabase
+    .from("application_children")
+    .select("id, created_at")
+    .eq("application_id", applicationId)
+    .order("created_at");
+  const index = (siblings ?? []).findIndex((c) => c.id === childId);
+
+  const { data: docs } = await supabase
+    .from("application_documents")
+    .select("file_path, child_index, created_at")
+    .eq("application_id", applicationId)
+    .eq("document_type_slug", "student-photo")
+    .order("created_at", { ascending: false });
+  if (!docs?.length) return null;
+
+  const match =
+    docs.find((d) => d.child_index === index) ??
+    docs.find((d) => d.child_index === null || d.child_index === undefined) ??
+    (docs.length === 1 ? docs[0] : undefined);
+  if (!match?.file_path) return null;
+
+  const { data: signed } = await supabase.storage
+    .from("admission-documents")
+    .createSignedUrl(match.file_path, 60 * 60);
+  return signed?.signedUrl ?? null;
+}
+
 async function buildStudentFile(supabase: Db, row: ChildRow): Promise<StudentFileData> {
   const app = row.applications as unknown as AppJoin;
 
@@ -225,6 +257,7 @@ async function buildStudentFile(supabase: Db, row: ChildRow): Promise<StudentFil
   ]);
 
   const draftParent = parentFromDraft(app.draft_data);
+  const photoSignedUrl = row.photo_url ? null : await admissionPhotoUrl(supabase, app.id, row.id);
 
   return {
     student: {
@@ -237,6 +270,7 @@ async function buildStudentFile(supabase: Db, row: ChildRow): Promise<StudentFil
       nationality: row.nationality,
       birth_place: row.birth_place,
       photo_url: row.photo_url,
+      photo_signed_url: photoSignedUrl,
       blood_type: row.blood_type,
       medical_conditions: row.medical_conditions,
       allergies: row.allergies,
