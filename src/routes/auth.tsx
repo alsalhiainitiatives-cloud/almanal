@@ -97,10 +97,7 @@ function AuthPage() {
             >
               <div aria-hidden className="pointer-events-none absolute inset-0 pattern-dots opacity-20" />
               <div className="relative flex h-full flex-col items-center justify-center text-center">
-                <div className="rounded-3xl bg-primary-foreground/95 px-4 py-3 shadow-sm">
-                  <Logo />
-                </div>
-                <h2 className="mt-6 text-3xl font-extrabold sm:text-4xl">
+                <h2 className="text-3xl font-extrabold sm:text-4xl">
                   {signup ? "مرحبًا بعودتك!" : "أهلًا بك في المنال!"}
                 </h2>
                 <p className="mt-3 max-w-xs text-sm leading-relaxed text-primary-foreground/80">
@@ -196,7 +193,7 @@ function FormPane({
 function PaneHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="flex flex-col items-center text-center">
-      <Logo />
+      <Logo variant="mark" size="lg" />
       <h1 className="mt-5 text-2xl font-extrabold text-foreground sm:text-3xl">{title}</h1>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{subtitle}</p>
     </div>
