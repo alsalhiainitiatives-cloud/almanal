@@ -173,23 +173,9 @@ export async function listMyChildren(supabase: Db, userId: string) {
   });
 }
 
-async function buildStudentFile(supabase: Db, row: Record<string, unknown>) {
-  const rowData = row as {
-    id: string;
-    stage_id: string | null;
-    classroom_id: string | null;
-    applications: unknown;
-  } & Record<string, unknown>;
-  return buildStudentFileFrom(supabase, rowData);
-}
+type ChildRow = Database["public"]["Tables"]["application_children"]["Row"] & { applications: unknown };
 
-async function buildStudentFileFrom(
-  supabase: Db,
-  row: { id: string; stage_id: string | null; classroom_id: string | null; applications: unknown } & Record<
-    string,
-    unknown
-  >,
-) {
+async function buildStudentFile(supabase: Db, row: ChildRow): Promise<StudentFileData> {
   const app = row.applications as unknown as AppJoin;
 
   const [stage, classroom, parent, qurra, services, invoice] = await Promise.all([
