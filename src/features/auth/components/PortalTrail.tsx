@@ -1,4 +1,4 @@
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { ChevronLeft, Home } from "lucide-react";
 
 /** Human labels for portal path segments (used by the breadcrumb trail). */
@@ -32,29 +32,64 @@ function labelFor(segment: string) {
   return segment;
 }
 
+/** Paths that actually exist as routes — everything else is shown as plain text. */
+const NAVIGABLE = new Set([
+  "/profile",
+  "/my-applications",
+  "/payments",
+  "/apply/new",
+  "/track",
+  "/ams",
+  "/ams/queue",
+  "/ams/seats",
+  "/ams/waiting-list",
+  "/ams/finance",
+  "/ams/activity",
+  "/ams/reports",
+  "/ams/form-builder",
+  "/admin/users",
+  "/admin/permissions",
+  "/admin/audit",
+  "/admin/site-content",
+]);
+
 /**
  * Shows the user's current location inside the portal, allows jumping back to
  * any ancestor step, and offers a one-click "back" action.
  */
-export function PortalTrail() {
+export function PortalTrail({ home = "/profile" }: { home?: string }) {
   const navigate = useNavigate();
+  const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const segments = pathname.split("/").filter(Boolean);
 
-  const crumbs = segments.map((segment, index) => ({
-    label: labelFor(segment),
-    to: `/${segments.slice(0, index + 1).join("/")}`,
-    isLast: index === segments.length - 1,
-  }));
+  const crumbs = segments.map((segment, index) => {
+    const to = `/${segments.slice(0, index + 1).join("/")}`;
+    return {
+      label: labelFor(segment),
+      to,
+      isLast: index === segments.length - 1,
+      navigable: NAVIGABLE.has(to),
+    };
+  });
+
+  function goBack() {
+    if (router.history.canGoBack()) {
+      router.history.back();
+      return;
+    }
+    const ancestor = [...crumbs]
+      .slice(0, -1)
+      .reverse()
+      .find((crumb) => crumb.navigable);
+    navigate({ to: (ancestor?.to ?? home) as never });
+  }
 
   return (
     <div className="no-print flex flex-wrap items-center gap-2">
       <button
         type="button"
-        onClick={() => {
-          if (crumbs.length > 1) navigate({ to: crumbs[crumbs.length - 2]!.to as never });
-          else navigate({ to: "/profile" });
-        }}
+        onClick={goBack}
         className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/80 px-3 py-1.5 text-[11px] font-bold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
       >
         <ChevronLeft className="size-3.5 rtl:rotate-180" />
@@ -66,7 +101,7 @@ export function PortalTrail() {
         className="flex flex-wrap items-center gap-1 rounded-full border border-border/60 bg-card/80 px-3 py-1.5 text-[11px] font-bold"
       >
         <Link
-          to="/profile"
+          to={home as never}
           className="inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
         >
           <Home className="size-3.5" />
@@ -75,7 +110,7 @@ export function PortalTrail() {
         {crumbs.map((crumb) => (
           <span key={crumb.to} className="inline-flex items-center gap-1">
             <span className="text-muted-foreground/50">/</span>
-            {crumb.isLast ? (
+            {crumb.isLast || !crumb.navigable ? (
               <span className="text-foreground">{crumb.label}</span>
             ) : (
               <Link
