@@ -716,34 +716,55 @@ export type Database = {
       }
       contact_messages: {
         Row: {
+          assigned_to: string | null
           created_at: string
           email: string | null
+          handled_at: string | null
+          handled_by: string | null
           id: string
           message: string
           name: string
           phone: string
+          priority: string
           program: string | null
+          staff_note: string | null
+          status: string
           subject: string | null
+          updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           email?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
           id?: string
           message: string
           name: string
           phone: string
+          priority?: string
           program?: string | null
+          staff_note?: string | null
+          status?: string
           subject?: string | null
+          updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           email?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
           id?: string
           message?: string
           name?: string
           phone?: string
+          priority?: string
           program?: string | null
+          staff_note?: string | null
+          status?: string
           subject?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
