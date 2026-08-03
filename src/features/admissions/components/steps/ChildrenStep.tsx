@@ -36,7 +36,7 @@ import {
   isStageEligible,
   seatsLeft,
 } from "../../eligibility";
-import { emptyChild, type ChildInput } from "../../schemas";
+import { SAUDI_PARENT_CHILD_MISMATCH, emptyChild, type ChildInput } from "../../schemas";
 
 type Stage = {
   id: string;
@@ -66,6 +66,7 @@ export function ChildrenStep({
   duplicates,
   stages,
   classrooms,
+  parentNationality,
   onChange,
 }: {
   children: ChildInput[];
@@ -73,6 +74,7 @@ export function ChildrenStep({
   duplicates: Record<number, string>;
   stages: Stage[];
   classrooms: Classroom[];
+  parentNationality?: string;
   onChange: (next: ChildInput[]) => void;
 }) {
   const patch = (index: number, p: Partial<ChildInput>) =>
@@ -87,6 +89,7 @@ export function ChildrenStep({
           const fit = stages.filter((s) => isStageEligible(s, months));
           const rooms = child.stageId ? eligibleClassrooms(classrooms, child.stageId, months) : [];
           const nat = detectNationality(child.nationalId);
+          const nationalityConflict = parentNationality === "saudi" && nat === "resident";
           const selectedStage = stages.find((s) => s.id === child.stageId);
           const roomOption = (c: { id: string; name_ar: string; capacity?: number; taken_seats: number }) => ({
             value: c.id,
@@ -166,8 +169,16 @@ export function ChildrenStep({
                           ...(detected === "saudi" ? { country: "" } : {}),
                         });
                       }}
-                      error={errors[`${index}.nationalId`]}
-                      hint="1 للمواطن و 2 للمقيم"
+                      error={
+                        nationalityConflict
+                          ? SAUDI_PARENT_CHILD_MISMATCH
+                          : errors[`${index}.nationalId`]
+                      }
+                      hint={
+                        parentNationality === "saudi"
+                          ? "ولي الأمر سعودي — يجب أن يبدأ رقم هوية الطفل بالرقم 1"
+                          : "1 للمواطن و 2 للمقيم"
+                      }
                       dir="ltr"
                       inputMode="numeric"
                       maxLength={10}
