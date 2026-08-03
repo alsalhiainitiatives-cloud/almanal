@@ -753,8 +753,7 @@ export async function signReceiptUrl(supabase: Db, userId: string, path: string)
   if (owner !== userId && !(await isStaff(supabase, userId))) {
     throw new Error("غير مصرح بعرض هذا الإيصال.");
   }
-  const db = await admin();
-  const { data, error } = await db.storage.from("payment-receipts").createSignedUrl(path, 60 * 10);
+  const { data, error } = await supabase.storage.from("payment-receipts").createSignedUrl(path, 60 * 10);
   if (error || !data) throw new Error("تعذّر فتح الإيصال.");
   return { url: data.signedUrl };
 }
