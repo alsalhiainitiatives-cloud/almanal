@@ -705,9 +705,21 @@ function studentNumber(year: string) {
 export async function decideApplication(
   supabase: Db,
   userId: string,
-  input: { id: string; decision: "approved" | "rejected"; note: string; signature?: string },
+  input: { id: string; decision: "approved" | "rejected"; note?: string; signature?: string },
 ) {
   await guard(supabase, userId, "decide");
+  // The decision is signed automatically with the deciding manager's own name,
+  // and the note stays optional (a default sentence is stored for the record).
+  const { data: deciderProfile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", userId)
+    .maybeSingle();
+  const signature = (input.signature ?? deciderProfile?.full_name ?? "").trim() || null;
+  const approvedDecision = input.decision === "approved";
+  const note =
+    (input.note ?? "").trim() ||
+    (approvedDecision ? "تم اعتماد قبول الطلب." : "تم رفض الطلب.");
   const { data: app } = await supabase
     .from("applications")
     .select("academic_year, student_number, classroom_id")
