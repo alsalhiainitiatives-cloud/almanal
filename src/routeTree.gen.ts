@@ -46,6 +46,7 @@ import { Route as AuthenticatedAdminSiteContentRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminPermissionsRouteImport } from './routes/_authenticated/admin/permissions'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
 import { Route as AdmissionsStageSlugIndexRouteImport } from './routes/admissions.stage.$slug.index'
+import { Route as AuthenticatedAmsStudentsIndexRouteImport } from './routes/_authenticated/ams/students.index'
 import { Route as AdmissionsStageSlugClassroomsRouteImport } from './routes/admissions.stage.$slug.classrooms'
 import { Route as AuthenticatedAmsApplicationsApplicationIdRouteImport } from './routes/_authenticated/ams/applications.$applicationId'
 import { Route as AdmissionsStageSlugClassroomClassroomSlugRouteImport } from './routes/admissions.stage.$slug.classroom.$classroomSlug'
@@ -243,6 +244,12 @@ const AdmissionsStageSlugIndexRoute =
     path: '/admissions/stage/$slug/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedAmsStudentsIndexRoute =
+  AuthenticatedAmsStudentsIndexRouteImport.update({
+    id: '/ams/students/',
+    path: '/ams/students/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AdmissionsStageSlugClassroomsRoute =
   AdmissionsStageSlugClassroomsRouteImport.update({
     id: '/admissions/stage/$slug/classrooms',
@@ -300,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/ams/': typeof AuthenticatedAmsIndexRoute
   '/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
+  '/ams/students/': typeof AuthenticatedAmsStudentsIndexRoute
   '/admissions/stage/$slug/': typeof AdmissionsStageSlugIndexRoute
   '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
 }
@@ -341,6 +349,7 @@ export interface FileRoutesByTo {
   '/ams': typeof AuthenticatedAmsIndexRoute
   '/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
+  '/ams/students': typeof AuthenticatedAmsStudentsIndexRoute
   '/admissions/stage/$slug': typeof AdmissionsStageSlugIndexRoute
   '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
 }
@@ -384,6 +393,7 @@ export interface FileRoutesById {
   '/_authenticated/ams/': typeof AuthenticatedAmsIndexRoute
   '/_authenticated/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
+  '/_authenticated/ams/students/': typeof AuthenticatedAmsStudentsIndexRoute
   '/admissions/stage/$slug/': typeof AdmissionsStageSlugIndexRoute
   '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
 }
@@ -427,6 +437,7 @@ export interface FileRouteTypes {
     | '/ams/'
     | '/ams/applications/$applicationId'
     | '/admissions/stage/$slug/classrooms'
+    | '/ams/students/'
     | '/admissions/stage/$slug/'
     | '/admissions/stage/$slug/classroom/$classroomSlug'
   fileRoutesByTo: FileRoutesByTo
@@ -468,6 +479,7 @@ export interface FileRouteTypes {
     | '/ams'
     | '/ams/applications/$applicationId'
     | '/admissions/stage/$slug/classrooms'
+    | '/ams/students'
     | '/admissions/stage/$slug'
     | '/admissions/stage/$slug/classroom/$classroomSlug'
   id:
@@ -510,6 +522,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ams/'
     | '/_authenticated/ams/applications/$applicationId'
     | '/admissions/stage/$slug/classrooms'
+    | '/_authenticated/ams/students/'
     | '/admissions/stage/$slug/'
     | '/admissions/stage/$slug/classroom/$classroomSlug'
   fileRoutesById: FileRoutesById
@@ -798,6 +811,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdmissionsStageSlugIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/ams/students/': {
+      id: '/_authenticated/ams/students/'
+      path: '/ams/students'
+      fullPath: '/ams/students/'
+      preLoaderRoute: typeof AuthenticatedAmsStudentsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/admissions/stage/$slug/classrooms': {
       id: '/admissions/stage/$slug/classrooms'
       path: '/admissions/stage/$slug/classrooms'
@@ -843,6 +863,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTrackApplicationIdRoute: typeof AuthenticatedTrackApplicationIdRoute
   AuthenticatedAmsIndexRoute: typeof AuthenticatedAmsIndexRoute
   AuthenticatedAmsApplicationsApplicationIdRoute: typeof AuthenticatedAmsApplicationsApplicationIdRoute
+  AuthenticatedAmsStudentsIndexRoute: typeof AuthenticatedAmsStudentsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -867,6 +888,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAmsIndexRoute: AuthenticatedAmsIndexRoute,
   AuthenticatedAmsApplicationsApplicationIdRoute:
     AuthenticatedAmsApplicationsApplicationIdRoute,
+  AuthenticatedAmsStudentsIndexRoute: AuthenticatedAmsStudentsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
