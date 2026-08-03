@@ -14,16 +14,22 @@ export const ALL_ROLES: AppRole[] = [
   "registration_officer",
   "accountant",
   "principal",
-  "supervisor",
   "admin",
 ];
+
+/**
+ * Legacy roles merged into another role. `supervisor` and `admin` now share the
+ * same name and permissions, so only `admin` is offered in the UI while
+ * existing `supervisor` grants keep working.
+ */
+export const MERGED_ROLES: AppRole[] = ["supervisor"];
 
 export const ROLE_LABELS: Record<AppRole, string> = {
   parent: "ولي أمر",
   registration_officer: "مسؤول التسجيل",
   accountant: "المحاسب",
   principal: "مدير المدرسة",
-  supervisor: "المشرف العام",
+  supervisor: "مدير النظام",
   admin: "مدير النظام",
 };
 
@@ -33,7 +39,7 @@ export const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
     "مراجعة الطلبات والتحقق من المستندات وإرجاع الناقص وتحويل المكتمل — بدون اعتماد نهائي.",
   accountant: "الفواتير والمدفوعات وطباعة السندات والتقارير المالية — بدون صلاحية قبول.",
   principal: "الصلاحية التنفيذية الكاملة: الاعتماد، الرفض، طلب التعديل، توزيع الفصول، حالة التسجيل.",
-  supervisor: "اطّلاع فقط: الإحصاءات واللوحات والتقارير ومؤشرات الأداء — بدون أي تنفيذ أو تعديل.",
+  supervisor: "إدارة المستخدمين والأدوار والصلاحيات وإعدادات النظام — بدون اعتماد قبول الطلاب.",
   admin: "إدارة المستخدمين والأدوار والصلاحيات وإعدادات النظام — بدون اعتماد قبول الطلاب.",
 };
 
@@ -42,11 +48,11 @@ export const ROLE_COLORS: Record<AppRole, string> = {
   registration_officer: "bg-mint/70 text-foreground",
   accountant: "bg-lavender/70 text-foreground",
   principal: "bg-primary text-primary-foreground",
-  supervisor: "bg-beige text-foreground",
+  supervisor: "bg-gold text-gold-foreground",
   admin: "bg-gold text-gold-foreground",
 };
 
-export const READ_ONLY_ROLES: AppRole[] = ["supervisor"];
+export const READ_ONLY_ROLES: AppRole[] = [];
 
 export const PERMISSION_CATEGORY_LABELS: Record<string, string> = {
   general: "عام",
