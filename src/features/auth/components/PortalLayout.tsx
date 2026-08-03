@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { FileClock, Globe, Inbox, KeyRound, LogOut, ShieldCheck, UserCog, Users, Wallet } from "lucide-react";
+import { BabyIcon, FileClock, Globe, Inbox, KeyRound, LogOut, ShieldCheck, UserCog, Users, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -15,6 +15,7 @@ const NAV_GROUPS = [
     items: [
       { to: "/profile", label: "ملفي الشخصي ولوحتي", icon: UserCog, permission: P.profileEdit, featured: false },
       { to: "/my-applications", label: "طلباتي وتتبع الطلب", icon: FileClock, permission: P.applicationsTrack, featured: false },
+      { to: "/child-file", label: "ملف الطفل", icon: BabyIcon, permission: P.applicationsTrack, featured: false },
       { to: "/payments", label: "المدفوعات والرسوم", icon: Wallet, permission: P.applicationsTrack, featured: false },
     ],
   },
