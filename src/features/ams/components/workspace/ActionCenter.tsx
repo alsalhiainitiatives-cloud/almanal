@@ -112,7 +112,6 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
   const [note, setNote] = useState("");
   const [classroomId, setClassroomId] = useState<string>("");
   const [childIdx, setChildIdx] = useState(0);
-  const [signature, setSignature] = useState("");
   const [qurraStatus, setQurraStatus] = useState(data.qurra?.status ?? "not_requested");
   const [requested, setRequested] = useState<string[]>([]);
   const [sections, setSections] = useState<CorrectionSection[]>([]);
@@ -134,7 +133,6 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
       toast.success("تم تنفيذ الإجراء");
       setDialog(null);
       setNote("");
-      setSignature("");
       queryClient.invalidateQueries({ queryKey: ["ams"] });
     },
     onError: (error: Error) => toast.error(error.message || "تعذّر تنفيذ الإجراء"),
