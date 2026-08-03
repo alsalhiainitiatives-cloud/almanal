@@ -184,7 +184,7 @@ export function buildStudentFileHtml(
     background: #f4f0ec; color: #b08a99; font-size: 18pt; font-weight: 900;
   }
   .cap { font-size: 7.4pt; color: #7a7a7a; margin-top: 1mm; }
-  .sec { margin-top: 2.5mm; break-inside: avoid; }
+  .sec { margin-top: 2.3mm; break-inside: avoid; }
   .sec h2 {
     font-size: 10.4pt; color: #7A1F3D; font-weight: 900; margin: 0 0 2mm;
     border-bottom: 0.8pt solid #e2c9d3; padding-bottom: 1mm;
@@ -200,9 +200,9 @@ export function buildStudentFileHtml(
   .signs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8mm; margin-top: 4mm; border-top: 0.8pt solid #ddd6d0; padding-top: 4mm; break-inside: avoid; }
   .sign { text-align: center; }
   .sign p { margin: 0; font-size: 9pt; font-weight: 900; }
-  .line { margin: 5mm auto 1mm; width: 80%; border-top: 0.8pt dashed #9a9a9a; }
+  .line { margin: 4mm auto 1mm; width: 80%; border-top: 0.8pt dashed #9a9a9a; }
   .sign small { font-size: 7.2pt; color: #7a7a7a; }
-  .foot { margin-top: 3mm; text-align: center; font-size: 7.4pt; color: #8a8a8a; }
+  .foot { margin-top: 2mm; text-align: center; font-size: 7.4pt; color: #8a8a8a; }
   .ltr { direction: ltr; unicode-bidi: embed; }
 </style>
 </head>
