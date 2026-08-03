@@ -7,16 +7,32 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "../AuthProvider";
 import { P, ROLE_COLORS, ROLE_LABELS } from "../rbac";
 
-const NAV = [
-  { to: "/dashboard", label: "لوحة المعلومات", icon: LayoutDashboard, permission: P.dashboardView },
-  { to: "/my-applications", label: "طلباتي وتتبع الطلب", icon: FileClock, permission: P.applicationsTrack },
-  { to: "/payments", label: "المدفوعات والرسوم", icon: Wallet, permission: P.applicationsTrack },
-  { to: "/ams", label: "نظام إدارة القبول", icon: Inbox, permission: P.applicationsReview },
-  { to: "/profile", label: "ملفي الشخصي", icon: UserCog, permission: P.profileEdit },
-  { to: "/admin/users", label: "المستخدمون والأدوار", icon: Users, permission: P.usersView },
-  { to: "/admin/permissions", label: "مصفوفة الصلاحيات", icon: KeyRound, permission: P.usersView },
-  { to: "/admin/audit", label: "سجل العمليات", icon: ShieldCheck, permission: P.auditView },
-  { to: "/admin/site-content", label: "إعدادات الموقع الإلكتروني", icon: Globe, permission: P.settingsManage },
+/** Grouped, ordered navigation: personal services → operations → administration. */
+const NAV_GROUPS = [
+  {
+    label: "حسابي وطلباتي",
+    items: [
+      { to: "/dashboard", label: "لوحة المعلومات", icon: LayoutDashboard, permission: P.dashboardView },
+      { to: "/my-applications", label: "طلباتي وتتبع الطلب", icon: FileClock, permission: P.applicationsTrack },
+      { to: "/payments", label: "المدفوعات والرسوم", icon: Wallet, permission: P.applicationsTrack },
+      { to: "/profile", label: "ملفي الشخصي", icon: UserCog, permission: P.profileEdit },
+    ],
+  },
+  {
+    label: "العمل التشغيلي",
+    items: [
+      { to: "/ams", label: "نظام إدارة القبول", icon: Inbox, permission: P.applicationsReview },
+    ],
+  },
+  {
+    label: "إدارة النظام",
+    items: [
+      { to: "/admin/users", label: "المستخدمون والأدوار", icon: Users, permission: P.usersView },
+      { to: "/admin/permissions", label: "مصفوفة الصلاحيات", icon: KeyRound, permission: P.usersView },
+      { to: "/admin/audit", label: "سجل العمليات", icon: ShieldCheck, permission: P.auditView },
+      { to: "/admin/site-content", label: "إعدادات الموقع الإلكتروني", icon: Globe, permission: P.settingsManage },
+    ],
+  },
 ] as const;
 
 export function PortalLayout({
@@ -32,7 +48,10 @@ export function PortalLayout({
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  const items = NAV.filter((item) => hasPermission(item.permission));
+  const groups = NAV_GROUPS.map((group) => ({
+    label: group.label,
+    items: group.items.filter((item) => hasPermission(item.permission)),
+  })).filter((group) => group.items.length > 0);
 
   async function handleSignOut() {
     await signOut();
@@ -77,24 +96,31 @@ export function PortalLayout({
               </p>
             )}
 
-            <nav className="mt-5 space-y-1.5">
-              {items.map((item) => {
-                const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    className={`flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 text-sm font-bold transition-colors ${
-                      active
-                        ? "bg-primary text-primary-foreground shadow-soft"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    }`}
-                  >
-                    <item.icon className="size-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
+            <nav className="mt-5 space-y-4">
+              {groups.map((group) => (
+                <div key={group.label} className="space-y-1.5">
+                  <p className="px-3 text-[10px] font-black uppercase tracking-wide text-muted-foreground/70">
+                    {group.label}
+                  </p>
+                  {group.items.map((item) => {
+                    const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        className={`flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 text-sm font-bold transition-colors ${
+                          active
+                            ? "bg-primary text-primary-foreground shadow-soft"
+                            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                        }`}
+                      >
+                        <item.icon className="size-4" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
             </nav>
 
             <Button

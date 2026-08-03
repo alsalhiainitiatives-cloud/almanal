@@ -12,7 +12,6 @@ import {
   Plus,
   Settings2,
   Trash2,
-  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 
