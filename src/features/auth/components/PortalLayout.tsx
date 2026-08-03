@@ -1,36 +1,36 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { FileClock, Globe, Inbox, KeyRound, LayoutDashboard, LogOut, ShieldCheck, UserCog, Users, Wallet } from "lucide-react";
+import { FileClock, Globe, Inbox, KeyRound, LogOut, ShieldCheck, UserCog, Users, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "../AuthProvider";
 import { P, ROLE_COLORS, ROLE_LABELS } from "../rbac";
+import { PortalTrail } from "./PortalTrail";
 
 /** Grouped, ordered navigation: personal services → operations → administration. */
 const NAV_GROUPS = [
   {
     label: "حسابي وطلباتي",
     items: [
-      { to: "/dashboard", label: "لوحة المعلومات", icon: LayoutDashboard, permission: P.dashboardView },
-      { to: "/my-applications", label: "طلباتي وتتبع الطلب", icon: FileClock, permission: P.applicationsTrack },
-      { to: "/payments", label: "المدفوعات والرسوم", icon: Wallet, permission: P.applicationsTrack },
-      { to: "/profile", label: "ملفي الشخصي", icon: UserCog, permission: P.profileEdit },
+      { to: "/profile", label: "ملفي الشخصي ولوحتي", icon: UserCog, permission: P.profileEdit, featured: false },
+      { to: "/my-applications", label: "طلباتي وتتبع الطلب", icon: FileClock, permission: P.applicationsTrack, featured: false },
+      { to: "/payments", label: "المدفوعات والرسوم", icon: Wallet, permission: P.applicationsTrack, featured: false },
     ],
   },
   {
     label: "العمل التشغيلي",
     items: [
-      { to: "/ams", label: "نظام إدارة القبول", icon: Inbox, permission: P.applicationsReview },
+      { to: "/ams", label: "نظام إدارة القبول", icon: Inbox, permission: P.applicationsReview, featured: true },
     ],
   },
   {
     label: "إدارة النظام",
     items: [
-      { to: "/admin/users", label: "المستخدمون والأدوار", icon: Users, permission: P.usersView },
-      { to: "/admin/permissions", label: "مصفوفة الصلاحيات", icon: KeyRound, permission: P.usersView },
-      { to: "/admin/audit", label: "سجل العمليات", icon: ShieldCheck, permission: P.auditView },
-      { to: "/admin/site-content", label: "إعدادات الموقع الإلكتروني", icon: Globe, permission: P.settingsManage },
+      { to: "/admin/site-content", label: "إعدادات الموقع الإلكتروني", icon: Globe, permission: P.settingsManage, featured: true },
+      { to: "/admin/users", label: "المستخدمون والأدوار", icon: Users, permission: P.usersView, featured: false },
+      { to: "/admin/permissions", label: "مصفوفة الصلاحيات", icon: KeyRound, permission: P.usersView, featured: false },
+      { to: "/admin/audit", label: "سجل العمليات", icon: ShieldCheck, permission: P.auditView, featured: false },
     ],
   },
 ] as const;
@@ -104,18 +104,28 @@ export function PortalLayout({
                   </p>
                   {group.items.map((item) => {
                     const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
+                    const featured = item.featured;
                     return (
                       <Link
                         key={item.to}
                         to={item.to}
-                        className={`flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 text-sm font-bold transition-colors ${
+                        className={`flex items-center gap-2.5 rounded-2xl px-3.5 text-sm font-bold transition-colors ${
+                          featured ? "py-3 text-[0.95rem]" : "py-2.5"
+                        } ${
                           active
                             ? "bg-primary text-primary-foreground shadow-soft"
+                            : featured
+                              ? "bg-gradient-to-l from-gold/25 to-primary/10 text-foreground ring-1 ring-gold/50 hover:from-gold/35"
                             : "text-muted-foreground hover:bg-accent hover:text-foreground"
                         }`}
                       >
                         <item.icon className="size-4" />
-                        {item.label}
+                        <span className="flex-1">{item.label}</span>
+                        {featured && !active && (
+                          <span className="rounded-full bg-gold px-2 py-0.5 text-[9px] font-black text-gold-foreground">
+                            مميز
+                          </span>
+                        )}
                       </Link>
                     );
                   })}
@@ -136,6 +146,9 @@ export function PortalLayout({
 
         {/* Content */}
         <div>
+          <div className="mb-4">
+            <PortalTrail />
+          </div>
           <header className="no-print rounded-[2rem] border border-border/60 bg-card/90 p-6 shadow-soft backdrop-blur sm:p-8">
             <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">{title}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
