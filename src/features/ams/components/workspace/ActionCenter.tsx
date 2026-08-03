@@ -153,7 +153,6 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
 
   const openRequests = data.documentRequests.filter((r) => !r.fulfilled_at).length;
   const openCorrections = status === "needs_action" || (data.application.correction_sections ?? []).length > 0;
-  const readyToRaise = openRequests === 0 && !openCorrections;
 
   /* -------------------------------------------------------------- children */
   const child = data.children[Math.min(childIdx, Math.max(0, data.children.length - 1))] ?? null;
