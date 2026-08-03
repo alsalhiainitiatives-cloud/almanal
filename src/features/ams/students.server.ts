@@ -174,11 +174,28 @@ export async function listMyChildren(supabase: Db, userId: string) {
   });
 }
 
-type ChildRow = Partial<Database["public"]["Tables"]["application_children"]["Row"]> & {
-  id: string;
-  name_ar: string;
-  applications: unknown;
-};
+type ChildRow = Pick<
+  Database["public"]["Tables"]["application_children"]["Row"],
+  | "id"
+  | "name_ar"
+  | "name_en"
+  | "national_id"
+  | "gender"
+  | "birth_date"
+  | "nationality"
+  | "birth_place"
+  | "photo_url"
+  | "blood_type"
+  | "medical_conditions"
+  | "allergies"
+  | "special_needs"
+  | "previous_school"
+  | "last_grade"
+  | "vaccination_status"
+  | "stage_id"
+  | "classroom_id"
+  | "created_at"
+> & { applications: unknown };
 
 async function buildStudentFile(supabase: Db, row: ChildRow): Promise<StudentFileData> {
   const app = row.applications as unknown as AppJoin;
