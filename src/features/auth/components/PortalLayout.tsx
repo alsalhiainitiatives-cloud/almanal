@@ -1,5 +1,17 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { BabyIcon, FileClock, Globe, Inbox, KeyRound, LogOut, ShieldCheck, UserCog, Users, Wallet } from "lucide-react";
+import {
+  BabyIcon,
+  FileClock,
+  Globe,
+  GraduationCap,
+  Inbox,
+  KeyRound,
+  LogOut,
+  ShieldCheck,
+  UserCog,
+  Users,
+  Wallet,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -23,6 +35,20 @@ const NAV_GROUPS = [
     label: "العمل التشغيلي",
     items: [
       { to: "/ams", label: "نظام إدارة القبول", icon: Inbox, permission: P.applicationsReview, featured: true },
+      {
+        to: "/ams/students",
+        label: "شؤون الطلاب",
+        icon: GraduationCap,
+        permission: P.applicationsReview,
+        featured: true,
+      },
+      {
+        to: "/ams/finance",
+        label: "الإدارة المالية",
+        icon: Wallet,
+        permission: P.paymentsManage,
+        featured: true,
+      },
     ],
   },
   {
@@ -81,12 +107,14 @@ export function PortalLayout({
             </div>
 
             <div className="mt-4 flex flex-wrap gap-1.5">
-              {roles.map((role) => (
+              {[...new Set(roles.map((role) => ROLE_LABELS[role]))].map((label) => (
                 <span
-                  key={role}
-                  className={`rounded-full px-3 py-1 text-[11px] font-bold ${ROLE_COLORS[role]}`}
+                  key={label}
+                  className={`rounded-full px-3 py-1 text-[11px] font-bold ${
+                    ROLE_COLORS[roles.find((r) => ROLE_LABELS[r] === label)!]
+                  }`}
                 >
-                  {ROLE_LABELS[role]}
+                  {label}
                 </span>
               ))}
             </div>
@@ -122,11 +150,6 @@ export function PortalLayout({
                       >
                         <item.icon className="size-4" />
                         <span className="flex-1">{item.label}</span>
-                        {featured && !active && (
-                          <span className="rounded-full bg-gold px-2 py-0.5 text-[9px] font-black text-gold-foreground">
-                            مميز
-                          </span>
-                        )}
                       </Link>
                     );
                   })}
