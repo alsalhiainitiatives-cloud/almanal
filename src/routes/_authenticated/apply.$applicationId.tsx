@@ -73,6 +73,8 @@ import { QurraStep } from "@/features/admissions/components/steps/QurraStep";
 import { ReviewStep } from "@/features/admissions/components/steps/ReviewStep";
 import { ServicesStep } from "@/features/admissions/components/steps/ServicesStep";
 import { supabase } from "@/integrations/supabase/client";
+import { annualTuition, computeQuote, type DiscountRuleRow, type FeePlanRow } from "@/features/finance/pricing";
+import { financeConfigGet } from "@/features/finance/finance.functions";
 
 export const Route = createFileRoute("/_authenticated/apply/$applicationId")({
   head: () => ({
@@ -248,6 +250,7 @@ function WizardPage() {
 
   const fetchApplication = useServerFn(getApplication);
   const fetchCatalog = useServerFn(getAdmissionCatalog);
+  const fetchFinanceConfig = useServerFn(financeConfigGet);
   const saveDraft = useServerFn(saveApplicationDraft);
   const saveChildrenFn = useServerFn(saveApplicationChildren);
   const saveQurraFn = useServerFn(saveApplicationQurra);
@@ -269,9 +272,14 @@ function WizardPage() {
     () => queryOptions({ queryKey: ["admissions", "catalog"], queryFn: () => fetchCatalog() }),
     [fetchCatalog],
   );
+  const financeQuery = useMemo(
+    () => queryOptions({ queryKey: ["finance", "registration-config"], queryFn: () => fetchFinanceConfig() }),
+    [fetchFinanceConfig],
+  );
 
   const { data: bundle } = useSuspenseQuery(appQuery);
   const { data: catalog } = useSuspenseQuery(catalogQuery);
+  const { data: financeConfig } = useSuspenseQuery(financeQuery);
 
   const draft = (bundle.application.draft_data ?? {}) as {
     parent?: Partial<ParentInfoInput>;
@@ -470,14 +478,41 @@ function WizardPage() {
     child_index: number | null;
   }[];
 
-  const financials = computeFinancials({
+  const feePlans = (financeConfig.feePlans ?? []).filter((plan) => plan.is_active) as FeePlanRow[];
+  const planForChild = (child: ChildInput) =>
+    feePlans.find((plan) => plan.classroom_id && plan.classroom_id === child.classroomId) ??
+    feePlans.find((plan) => plan.stage_id && plan.stage_id === (child.stageId || stage?.id)) ??
+    null;
+  const childPlans = children.map(planForChild);
+  const tuition = childPlans.reduce(
+    (sum, plan) => sum + (plan ? annualTuition(plan) : Number(stage?.tuition_from ?? 0)),
+    0,
+  );
+  const admissionFee = childPlans.reduce(
+    (sum, plan) => sum + Number(plan?.admission_fee ?? stage?.admission_fee ?? 0),
+    0,
+  );
+  const selectedServices = catalog.services
+    .filter((service) => service.is_required || services.includes(service.id))
+    .map((service) => ({ name: service.name_ar, price: Number(service.price) }));
+  const quote = computeQuote({
     childCount: children.length,
-    admissionFeePerChild: Number(stage?.admission_fee ?? 0),
-    tuitionPerChild: Number(stage?.tuition_from ?? 0),
-    servicePrices: catalog.services
-      .filter((s) => s.is_required || services.includes(s.id))
-      .map((s) => Number(s.price)),
+    admissionFeePerChild: admissionFee / Math.max(1, children.length),
+    tuitionPerChild: tuition / Math.max(1, children.length),
+    services: selectedServices,
+    planType: "installments",
+    settings: financeConfig.planSettings,
+    discountRules: financeConfig.discountRules as DiscountRuleRow[],
   });
+  const financials = {
+    childCount: quote.childCount,
+    admissionFee: quote.admissionFee,
+    tuition: quote.tuition,
+    servicesTotal: quote.servicesTotal,
+    discount: quote.discountTotal,
+    grandTotal: quote.payableTotal,
+    discountLabel: quote.discounts.map((item) => item.label).join("، ") || "الخصومات",
+  };
 
   const classroomNameOf = (id?: string) =>
     catalog.classrooms.find((c) => c.id === id)?.name_ar ?? "ترك الاختيار للإدارة";

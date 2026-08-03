@@ -624,8 +624,7 @@ export async function documentSignedUrl(
     .maybeSingle();
   if (error || !doc) throw new Error("تعذّر العثور على المستند.");
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: signed, error: signError } = await supabaseAdmin.storage
+  const { data: signed, error: signError } = await supabase.storage
     .from("admission-documents")
     .createSignedUrl(doc.file_path, 300);
   if (signError || !signed?.signedUrl) throw new Error("تعذّر إنشاء رابط المعاينة.");
