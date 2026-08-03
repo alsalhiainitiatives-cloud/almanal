@@ -7,7 +7,7 @@ export function Logo({ inverted = false }: { inverted?: boolean }) {
   const logoUrl = useBrandLogoUrl();
 
   return (
-    <span className="flex min-w-0 items-center gap-3">
+    <span className="flex min-w-0 items-center gap-3">{"\n"}
       {logoUrl ? (
         <img
           src={logoUrl}
