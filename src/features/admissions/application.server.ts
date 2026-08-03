@@ -489,6 +489,12 @@ export async function deleteDraftApplication(supabase: Db, userId: string, id: s
 }
 
 export async function createDocumentUploadPath(userId: string, applicationId: string, slug: string, fileName: string) {
-  const safe = fileName.replace(/[^\w.\-]/g, "_").slice(-60);
-  return `${userId}/${applicationId}/${slug}-${Date.now()}-${safe}`;
+  // Storage keys must stay ASCII — Arabic file names otherwise raise "Invalid key".
+  const ext = (fileName.match(/\.[a-zA-Z0-9]{1,8}$/)?.[0] ?? "").toLowerCase();
+  const base = fileName
+    .slice(0, fileName.length - ext.length)
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(-40);
+  return `${userId}/${applicationId}/${slug}-${Date.now()}-${base || "file"}${ext}`;
 }
