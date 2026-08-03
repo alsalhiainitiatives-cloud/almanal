@@ -34,7 +34,13 @@ import {
   updateQurra,
 } from "./ams.server";
 import { getReports } from "./reports.server";
-import { getStudentFile, listStudents, setStudentPhoto } from "./students.server";
+import {
+  getMyStudentFile,
+  getStudentFile,
+  listMyChildren,
+  listStudents,
+  setStudentPhoto,
+} from "./students.server";
 
 const uuid = z.string().uuid();
 
@@ -358,6 +364,15 @@ export const amsStudentFile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => uuid.parse(data))
   .handler(async ({ data, context }) => getStudentFile(context.supabase, context.userId, data));
+
+export const myChildren = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => listMyChildren(context.supabase, context.userId));
+
+export const myChildFile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => uuid.parse(data))
+  .handler(async ({ data, context }) => getMyStudentFile(context.supabase, context.userId, data));
 
 export const amsStudentPhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

@@ -8,6 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { AppRole } from "@/features/auth/rbac";
 import type { Database } from "@/integrations/supabase/types";
+import type { StudentFileData } from "./student-file";
 import { can, type Capability } from "./roles";
 
 type Db = SupabaseClient<Database>;
@@ -129,6 +130,74 @@ export async function getStudentFile(supabase: Db, userId: string, childId: stri
     .maybeSingle();
   if (error || !row) throw new Error("لم يتم العثور على ملف الطالب.");
 
+  return buildStudentFile(supabase, row);
+}
+
+/**
+ * Parent-facing student file: readable only by the guardian who owns the
+ * application, and only once the application is approved.
+ */
+export async function getMyStudentFile(supabase: Db, userId: string, childId: string) {
+  const { data: row, error } = await supabase
+    .from("application_children")
+    .select(STUDENT_SELECT)
+    .eq("id", childId)
+    .maybeSingle();
+  if (error || !row) throw new Error("لم يتم العثور على ملف الطفل.");
+  const app = row.applications as unknown as AppJoin;
+  if (app.parent_id !== userId) throw new Error("لا تملك صلاحية عرض هذا الملف.");
+  if (!STUDENT_STATUSES.includes(app.status as (typeof STUDENT_STATUSES)[number]))
+    throw new Error("يصدر ملف الطفل الرسمي بعد اعتماد الطلب.");
+  return buildStudentFile(supabase, row);
+}
+
+/** Approved children belonging to the signed-in guardian. */
+export async function listMyChildren(supabase: Db, userId: string) {
+  const { data, error } = await supabase
+    .from("application_children")
+    .select(STUDENT_SELECT)
+    .in("applications.status", [...STUDENT_STATUSES])
+    .eq("applications.parent_id", userId)
+    .order("name_ar")
+    .limit(50);
+  if (error) throw new Error("تعذّر تحميل ملفات الأبناء.");
+  return (data ?? []).map((row) => {
+    const app = row.applications as unknown as AppJoin;
+    return {
+      id: row.id,
+      name_ar: row.name_ar,
+      photo_url: row.photo_url,
+      stage_id: row.stage_id,
+      applicationNumber: app.application_number,
+      academicYear: app.academic_year,
+    };
+  });
+}
+
+type ChildRow = Pick<
+  Database["public"]["Tables"]["application_children"]["Row"],
+  | "id"
+  | "name_ar"
+  | "name_en"
+  | "national_id"
+  | "gender"
+  | "birth_date"
+  | "nationality"
+  | "birth_place"
+  | "photo_url"
+  | "blood_type"
+  | "medical_conditions"
+  | "allergies"
+  | "special_needs"
+  | "previous_school"
+  | "last_grade"
+  | "vaccination_status"
+  | "stage_id"
+  | "classroom_id"
+  | "created_at"
+> & { applications: unknown };
+
+async function buildStudentFile(supabase: Db, row: ChildRow): Promise<StudentFileData> {
   const app = row.applications as unknown as AppJoin;
 
   const [stage, classroom, parent, qurra, services, invoice] = await Promise.all([

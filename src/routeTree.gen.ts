@@ -30,6 +30,7 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
 import { Route as AuthenticatedMyApplicationsRouteImport } from './routes/_authenticated/my-applications'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedChildFileRouteImport } from './routes/_authenticated/child-file'
 import { Route as AuthenticatedAmsIndexRouteImport } from './routes/_authenticated/ams/index'
 import { Route as AuthenticatedTrackApplicationIdRouteImport } from './routes/_authenticated/track.$applicationId'
 import { Route as AuthenticatedApplyNewRouteImport } from './routes/_authenticated/apply.new'
@@ -155,6 +156,11 @@ const AuthenticatedMyApplicationsRoute =
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedChildFileRoute = AuthenticatedChildFileRouteImport.update({
+  id: '/child-file',
+  path: '/child-file',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAmsIndexRoute = AuthenticatedAmsIndexRouteImport.update({
@@ -291,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/school-life': typeof SchoolLifeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
+  '/child-file': typeof AuthenticatedChildFileRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
@@ -334,6 +341,7 @@ export interface FileRoutesByTo {
   '/school-life': typeof SchoolLifeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
+  '/child-file': typeof AuthenticatedChildFileRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
@@ -379,6 +387,7 @@ export interface FileRoutesById {
   '/school-life': typeof SchoolLifeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
+  '/_authenticated/child-file': typeof AuthenticatedChildFileRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
@@ -424,6 +433,7 @@ export interface FileRouteTypes {
     | '/school-life'
     | '/sitemap.xml'
     | '/stages'
+    | '/child-file'
     | '/dashboard'
     | '/my-applications'
     | '/payments'
@@ -467,6 +477,7 @@ export interface FileRouteTypes {
     | '/school-life'
     | '/sitemap.xml'
     | '/stages'
+    | '/child-file'
     | '/dashboard'
     | '/my-applications'
     | '/payments'
@@ -511,6 +522,7 @@ export interface FileRouteTypes {
     | '/school-life'
     | '/sitemap.xml'
     | '/stages'
+    | '/_authenticated/child-file'
     | '/_authenticated/dashboard'
     | '/_authenticated/my-applications'
     | '/_authenticated/payments'
@@ -712,6 +724,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/child-file': {
+      id: '/_authenticated/child-file'
+      path: '/child-file'
+      fullPath: '/child-file'
+      preLoaderRoute: typeof AuthenticatedChildFileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ams/': {
       id: '/_authenticated/ams/'
       path: '/ams'
@@ -863,6 +882,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedChildFileRoute: typeof AuthenticatedChildFileRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedMyApplicationsRoute: typeof AuthenticatedMyApplicationsRoute
   AuthenticatedPaymentsRoute: typeof AuthenticatedPaymentsRoute
@@ -888,6 +908,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedChildFileRoute: AuthenticatedChildFileRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedMyApplicationsRoute: AuthenticatedMyApplicationsRoute,
   AuthenticatedPaymentsRoute: AuthenticatedPaymentsRoute,

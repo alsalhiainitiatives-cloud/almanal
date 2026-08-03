@@ -5,6 +5,7 @@ import { ChevronLeft, Home } from "lucide-react";
 const SEGMENT_LABELS: Record<string, string> = {
   profile: "ملفي الشخصي",
   "my-applications": "طلباتي وتتبع الطلب",
+  "child-file": "ملف الطفل",
   payments: "المدفوعات والرسوم",
   apply: "طلب تسجيل جديد",
   new: "طلب جديد",
@@ -36,6 +37,7 @@ function labelFor(segment: string) {
 const NAVIGABLE = new Set([
   "/profile",
   "/my-applications",
+  "/child-file",
   "/payments",
   "/apply/new",
   "/track",
