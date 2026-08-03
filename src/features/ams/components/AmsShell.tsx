@@ -4,12 +4,15 @@ import {
   Activity,
   Armchair,
   BarChart3,
+  GraduationCap,
+  Home,
   Inbox,
   LayoutDashboard,
   ListOrdered,
   LogOut,
   Search,
   SlidersHorizontal,
+  Wallet,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -64,6 +67,30 @@ const NAV_GROUP_ORDER = [
   "الإعدادات",
 ];
 
+/** Student Affairs is a separate operational module — no admissions links. */
+const STUDENTS_NAV: NavItem[] = [
+  { to: "/ams/students", label: "سجل الطلاب", icon: GraduationCap, exact: false, group: "شؤون الطلاب" },
+];
+
+/** Finance is a separate operational module — no admissions links. */
+const FINANCE_NAV: NavItem[] = [
+  { to: "/ams/finance", label: "لوحة الإدارة المالية", icon: Wallet, exact: false, group: "الإدارة المالية" },
+];
+
+type ModuleKey = "admissions" | "students" | "finance";
+
+const MODULES: Record<ModuleKey, { badge: string; title: string; nav: NavItem[]; groups: string[] }> = {
+  admissions: { badge: "AMS", title: "نظام إدارة القبول", nav: NAV, groups: NAV_GROUP_ORDER },
+  students: { badge: "SIS", title: "شؤون الطلاب", nav: STUDENTS_NAV, groups: ["شؤون الطلاب"] },
+  finance: { badge: "FIN", title: "الإدارة المالية", nav: FINANCE_NAV, groups: ["الإدارة المالية"] },
+};
+
+function moduleFor(pathname: string): ModuleKey {
+  if (pathname.startsWith("/ams/students")) return "students";
+  if (pathname.startsWith("/ams/finance")) return "finance";
+  return "admissions";
+}
+
 export function AmsShell({
   title,
   description,
@@ -79,10 +106,11 @@ export function AmsShell({
 }) {
   const { profile, roles, primaryRole, signOut } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const navItems = NAV.filter(
+  const activeModule = MODULES[moduleFor(pathname)];
+  const navItems = activeModule.nav.filter(
     (item) => !item.roles || item.roles.some((role) => (roles as string[]).includes(role)),
   );
-  const navGroups = NAV_GROUP_ORDER.map((group) => ({
+  const navGroups = activeModule.groups.map((group) => ({
     group,
     items: navItems.filter((item) => item.group === group),
   })).filter((entry) => entry.items.length > 0);
@@ -116,10 +144,10 @@ export function AmsShell({
             <div className="rounded-3xl border border-border/60 bg-card/80 p-4 shadow-sm backdrop-blur">
               <div className="flex items-center gap-2.5">
                 <span className="grid size-10 place-items-center rounded-2xl bg-primary text-sm font-extrabold text-primary-foreground">
-                  AMS
+                  {activeModule.badge}
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-extrabold text-foreground">نظام إدارة القبول</p>
+                  <p className="truncate text-sm font-extrabold text-foreground">{activeModule.title}</p>
                   <p className="truncate text-[11px] text-muted-foreground">مدارس وروضة المنال</p>
                 </div>
               </div>
@@ -150,6 +178,13 @@ export function AmsShell({
                     })}
                   </div>
                 ))}
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-sm font-bold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  <Home className="size-4" />
+                  العودة إلى بوابتي
+                </Link>
               </nav>
             </div>
 
