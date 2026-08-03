@@ -79,10 +79,13 @@ const FINANCE_NAV: NavItem[] = [
 
 type ModuleKey = "admissions" | "students" | "finance";
 
-const MODULES: Record<ModuleKey, { badge: string; title: string; nav: NavItem[]; groups: string[] }> = {
-  admissions: { badge: "AMS", title: "نظام إدارة القبول", nav: NAV, groups: NAV_GROUP_ORDER },
-  students: { badge: "SIS", title: "شؤون الطلاب", nav: STUDENTS_NAV, groups: ["شؤون الطلاب"] },
-  finance: { badge: "FIN", title: "الإدارة المالية", nav: FINANCE_NAV, groups: ["الإدارة المالية"] },
+const MODULES: Record<
+  ModuleKey,
+  { badge: string; title: string; nav: NavItem[]; groups: string[]; home: string; search: boolean }
+> = {
+  admissions: { badge: "AMS", title: "نظام إدارة القبول", nav: NAV, groups: NAV_GROUP_ORDER, home: "/ams", search: true },
+  students: { badge: "SIS", title: "شؤون الطلاب", nav: STUDENTS_NAV, groups: ["شؤون الطلاب"], home: "/ams/students", search: false },
+  finance: { badge: "FIN", title: "الإدارة المالية", nav: FINANCE_NAV, groups: ["الإدارة المالية"], home: "/ams/finance", search: false },
 };
 
 function moduleFor(pathname: string): ModuleKey {
@@ -133,7 +136,7 @@ export function AmsShell({
   const { data: searchRows } = useQuery({
     queryKey: ["ams", "queue", "palette"],
     queryFn: () => amsQueue({ data: {} }),
-    enabled: paletteOpen,
+    enabled: paletteOpen && activeModule.search,
   });
 
   return (
@@ -222,7 +225,7 @@ export function AmsShell({
         </aside>
 
         <main className="min-w-0 flex-1 space-y-5">
-          <PortalTrail home="/ams" />
+          <PortalTrail home={activeModule.home} />
           <header className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-border/60 bg-card/80 px-5 py-4 shadow-sm backdrop-blur">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -235,17 +238,19 @@ export function AmsShell({
               {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                className="rounded-2xl text-xs font-bold"
-                onClick={() => setPaletteOpen(true)}
-              >
-                <Search className="size-3.5" />
-                بحث سريع
-                <kbd className="ms-1 rounded bg-muted px-1.5 py-0.5 text-[10px]" dir="ltr">
-                  ⌘K
-                </kbd>
-              </Button>
+              {activeModule.search && (
+                <Button
+                  variant="outline"
+                  className="rounded-2xl text-xs font-bold"
+                  onClick={() => setPaletteOpen(true)}
+                >
+                  <Search className="size-3.5" />
+                  بحث سريع
+                  <kbd className="ms-1 rounded bg-muted px-1.5 py-0.5 text-[10px]" dir="ltr">
+                    ⌘K
+                  </kbd>
+                </Button>
+              )}
               {actions}
             </div>
           </header>
@@ -268,7 +273,7 @@ export function AmsShell({
         </main>
       </div>
 
-      <CommandDialog open={paletteOpen} onOpenChange={setPaletteOpen}>
+      <CommandDialog open={paletteOpen && activeModule.search} onOpenChange={setPaletteOpen}>
         <CommandInput placeholder="ابحث برقم الطلب أو اسم الطالب أو ولي الأمر أو الهوية…" />
         <CommandList>
           <CommandEmpty>لا توجد نتائج مطابقة.</CommandEmpty>
