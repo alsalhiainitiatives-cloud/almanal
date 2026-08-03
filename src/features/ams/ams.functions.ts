@@ -34,7 +34,13 @@ import {
   updateQurra,
 } from "./ams.server";
 import { getReports } from "./reports.server";
-import { getStudentFile, listStudents, setStudentPhoto } from "./students.server";
+import {
+  getMyStudentFile,
+  getStudentFile,
+  listMyChildren,
+  listStudents,
+  setStudentPhoto,
+} from "./students.server";
 
 const uuid = z.string().uuid();
 
