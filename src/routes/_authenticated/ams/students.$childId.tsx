@@ -1,17 +1,19 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Camera, Printer, Trash2 } from "lucide-react";
+import { Camera, Download, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { amsStudentFile, amsStudentPhoto } from "@/features/ams/ams.functions";
 import { AmsShell } from "@/features/ams/components/AmsShell";
 import { EmptyState, SkeletonRows } from "@/features/ams/components/atoms";
-import { formatApplicationCode } from "@/features/admissions/application-code";
-import { ageInMonths, formatAge } from "@/features/admissions/eligibility";
+import {
+  StudentFileDocument,
+  studentFilePdfOptions,
+} from "@/features/ams/components/students/StudentFileDocument";
+import { buildStudentFileHtml, downloadStudentFilePdf } from "@/features/ams/student-file";
 import { uploadClassroomMedia, useClassroomMediaUrls } from "@/lib/classroom-media";
-import { school } from "@/data/site";
 import { useBrandLogoUrl } from "@/features/site-content/SiteContentProvider";
 
 export const Route = createFileRoute("/_authenticated/ams/students/$childId")({
@@ -24,51 +26,6 @@ export const Route = createFileRoute("/_authenticated/ams/students/$childId")({
   }),
   component: StudentFilePage,
 });
-
-const GENDER: Record<string, string> = { male: "ذكر", female: "أنثى" };
-
-const QURRA_LABELS: Record<string, string> = {
-  eligible: "مستحق مبدئيًا",
-  waiting_school_review: "بانتظار مراجعة المدرسة",
-  submitted_to_qurra: "مرفوع لمنصة قرة",
-  waiting_response: "بانتظار رد قرة",
-  approved: "معتمد من قرة",
-  rejected: "غير معتمد",
-  not_requested: "غير مطلوب",
-};
-
-function formatDate(value?: string | null) {
-  if (!value) return "—";
-  try {
-    return new Intl.DateTimeFormat("ar-SA-u-ca-gregory", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(new Date(value));
-  } catch {
-    return value;
-  }
-}
-
-function Field({ label, value }: { label: string; value?: string | number | null }) {
-  return (
-    <div className="rounded-2xl border border-border/60 bg-background/60 px-3 py-2 print-avoid-break">
-      <p className="text-[10px] font-black text-muted-foreground">{label}</p>
-      <p className="mt-0.5 text-sm font-bold text-foreground">
-        {value === null || value === undefined || value === "" ? "—" : value}
-      </p>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="print-avoid-break space-y-2">
-      <h2 className="border-b border-primary/30 pb-1 text-sm font-black text-primary">{title}</h2>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
-    </section>
-  );
-}
 
 function StudentFilePage() {
   const { childId } = Route.useParams();
