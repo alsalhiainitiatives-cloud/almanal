@@ -7,6 +7,7 @@ export type FinancialBreakdown = {
   servicesTotal: number;
   discount: number;
   grandTotal: number;
+  discountLabel?: string;
 };
 
 export function computeFinancials(input: {
@@ -53,7 +54,7 @@ export function FinancialStep({ data }: { data: FinancialBreakdown }) {
           <Line label="الرسوم الدراسية" value={money(data.tuition)} />
           <Line label="الخدمات الإضافية" value={money(data.servicesTotal)} />
           {data.discount > 0 ? (
-            <Line label="خصم الإخوة (10%)" value={`- ${money(data.discount)}`} accent />
+            <Line label={data.discountLabel ?? "الخصومات"} value={`- ${money(data.discount)}`} accent />
           ) : null}
           <div className="mt-4 flex items-center justify-between rounded-2xl bg-beige/70 px-5 py-4">
             <dt className="font-black text-foreground">الإجمالي التقديري</dt>

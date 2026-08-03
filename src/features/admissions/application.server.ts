@@ -9,7 +9,7 @@ import type { ChildInput, ParentInfoInput, QurraInput } from "./schemas";
 
 type Db = SupabaseClient<Database>;
 
-export const ACADEMIC_YEAR = "1447";
+export const ACADEMIC_YEAR = "2026-2027 / 1448هـ";
 
 async function loadApplicationRow(supabase: Db, id: string, userId: string) {
   const { data, error } = await supabase

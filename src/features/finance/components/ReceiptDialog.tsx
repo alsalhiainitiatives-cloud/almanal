@@ -52,7 +52,7 @@ export function ReceiptDialog({
         throw new Error("حجم الملف كبير — الحد الأقصى 10 ميجابايت.");
       }
       const { error } = await supabase.storage.from("payment-receipts").upload(path, file, {
-        upsert: true,
+        upsert: false,
         contentType: file.type || "application/octet-stream",
       });
       if (error) throw new Error(`تعذّر رفع الملف: ${error.message}`);

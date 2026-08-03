@@ -149,6 +149,7 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
   const reviewStarted = !["draft", "submitted"].includes(status);
   const raised = status === "principal_review";
   const decided = ["approved", "rejected", "withdrawn"].includes(status);
+  const seatAlreadyReserved = data.application.seat_status === "reserved";
 
   const openRequests = data.documentRequests.filter((r) => !r.fulfilled_at).length;
   const openCorrections = status === "needs_action" || (data.application.correction_sections ?? []).length > 0;
@@ -302,7 +303,7 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
                     : "لا تظهر إلا الفصول المطابقة لعمر الطفل والتي بها مقاعد شاغرة."
               }
             >
-              {can(roles, "seats") && admissiblePreference?.classroom ? (
+              {can(roles, "seats") && admissiblePreference?.classroom && !seatAlreadyReserved ? (
                 <Button
                   size="sm"
                   className="col-span-2 rounded-2xl text-xs font-bold"
@@ -328,9 +329,10 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
                   variant="outline"
                   size="sm"
                   className={cn("rounded-2xl text-xs font-bold", !waitlistNeeded && "col-span-2")}
+                  disabled={busy || seatAlreadyReserved}
                   onClick={() => setDialog("seat")}
                 >
-                  <Armchair className="size-3.5" /> {admissiblePreference ? "تغيير الفصل" : "اختيار الفصل"}
+                  <Armchair className="size-3.5" /> {seatAlreadyReserved ? "تم اعتماد المقعد" : admissiblePreference ? "تغيير الفصل" : "اختيار الفصل"}
                 </Button>
               ) : null}
               {can(roles, "waitlist") && waitlistNeeded ? (
