@@ -33,6 +33,23 @@ const OFFICER: Capability[] = [
   "reports",
 ];
 
+const ADMIN: Capability[] = [
+  "view",
+  "review",
+  "documents",
+  "assign",
+  "recommend",
+  "decide",
+  "seats",
+  "waitlist",
+  "qurra",
+  "notes",
+  "confidential",
+  "payments",
+  "reports",
+  "archive",
+];
+
 const PRINCIPAL: Capability[] = [
   "view",
   "review",
@@ -54,23 +71,9 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
   registration_officer: OFFICER,
   accountant: ["view", "payments", "reports"],
   principal: PRINCIPAL,
-  supervisor: ["view", "reports"],
-  admin: [
-    "view",
-    "review",
-    "documents",
-    "assign",
-    "recommend",
-    "decide",
-    "seats",
-    "waitlist",
-    "qurra",
-    "notes",
-    "confidential",
-    "payments",
-    "reports",
-    "archive",
-  ],
+  // `supervisor` is merged with `admin` — identical name and permissions.
+  supervisor: ADMIN,
+  admin: ADMIN,
 };
 
 export function capabilitiesFor(roles: AppRole[]): Capability[] {
