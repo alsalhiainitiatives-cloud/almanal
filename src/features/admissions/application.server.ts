@@ -234,6 +234,14 @@ export async function saveChildren(
   input: { id: string; children: ChildInput[] },
 ) {
   const app = await loadApplicationRow(supabase, input.id, userId);
+  if (app.parent_nationality === "saudi") {
+    const bad = input.children.find((c) => c.nationalId.trim().startsWith("2"));
+    if (bad) {
+      throw new Error(
+        "ولي الأمر سعودي — لا يمكن إدخال رقم إقامة للطفل. يجب أن يبدأ رقم هوية الطفل بالرقم 1.",
+      );
+    }
+  }
   await supabase.from("application_children").delete().eq("application_id", input.id);
 
   const rows = input.children.map((c) => ({
