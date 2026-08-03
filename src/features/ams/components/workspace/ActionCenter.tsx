@@ -168,6 +168,24 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
   const verdicts = evaluatePreferences(preferences, data.classrooms, childMonths);
   const parentSummary = waitlistSummary(verdicts, child?.name_ar ?? "الطفل");
 
+  /**
+   * The parent already ranked classrooms in the application. When one of those
+   * preferences is still admissible the officer only needs to endorse it, and
+   * the waiting-list action stays hidden — it appears only when every ranked
+   * classroom is genuinely full / not admissible.
+   */
+  const admissiblePreference = verdicts.find((v) => v.admissible) ?? null;
+  const rankedPreferences = verdicts.filter((v) => v.classroom);
+  const anyFreeClassroom = data.classrooms.some((c) => {
+    const free = Math.max(0, c.capacity - c.taken_seats);
+    const ageOk =
+      childMonths === null ||
+      (childMonths >= c.min_age_months && childMonths <= c.max_age_months);
+    return c.is_active !== false && ageOk && free > 0;
+  });
+  const waitlistNeeded =
+    !admissiblePreference && (rankedPreferences.length > 0 ? true : !anyFreeClassroom);
+
   const classroomState = (classroom: WorkspaceData["classrooms"][number]) => {
     const free = Math.max(0, classroom.capacity - classroom.taken_seats);
     const ageOk =
@@ -274,16 +292,57 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
               </Button>
             </Stage>
 
-            <Stage index={2} title="المقعد وقائمة الانتظار" hint="لا تظهر إلا الفصول المطابقة لعمر الطفل والتي بها مقاعد شاغرة.">
-              {can(roles, "seats") ? (
-                <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("seat")}>
-                  <Armchair className="size-3.5" /> المقعد
+            <Stage
+              index={2}
+              title="المقعد وقائمة الانتظار"
+              hint={
+                admissiblePreference
+                  ? `اختار ولي الأمر فصل «${admissiblePreference.classroom?.name_ar}» وهو مطابق للعمر وبه ${admissiblePreference.free} مقعدًا شاغرًا — يكفي اعتماده.`
+                  : waitlistNeeded
+                    ? "اكتملت الفصول المطابقة لعمر الطفل — يمكن نقل الطلب إلى قائمة الانتظار."
+                    : "لا تظهر إلا الفصول المطابقة لعمر الطفل والتي بها مقاعد شاغرة."
+              }
+            >
+              {can(roles, "seats") && admissiblePreference?.classroom ? (
+                <Button
+                  size="sm"
+                  className="col-span-2 rounded-2xl text-xs font-bold"
+                  disabled={busy}
+                  onClick={() =>
+                    run.mutate(() =>
+                      seat({
+                        data: {
+                          id,
+                          action: "reserve",
+                          classroomId: admissiblePreference.classroom!.id,
+                        },
+                      }),
+                    )
+                  }
+                >
+                  <CheckCircle2 className="size-3.5" /> اعتماد فصل ولي الأمر (
+                  {admissiblePreference.classroom.name_ar})
                 </Button>
               ) : null}
-              {can(roles, "waitlist") ? (
+              {can(roles, "seats") ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn("rounded-2xl text-xs font-bold", !waitlistNeeded && "col-span-2")}
+                  onClick={() => setDialog("seat")}
+                >
+                  <Armchair className="size-3.5" /> {admissiblePreference ? "تغيير الفصل" : "اختيار الفصل"}
+                </Button>
+              ) : null}
+              {can(roles, "waitlist") && waitlistNeeded ? (
                 <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("waitlist")}>
                   <ListOrdered className="size-3.5" /> قائمة الانتظار
                 </Button>
+              ) : null}
+              {!waitlistNeeded ? (
+                <p className="col-span-2 text-[10px] font-bold text-muted-foreground">
+                  قائمة الانتظار غير مطلوبة حاليًا لتوفّر مقاعد مطابقة لعمر الطفل.
+                </p>
               ) : null}
             </Stage>
 
