@@ -3,9 +3,15 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import type { Database } from "@/integrations/supabase/types";
+import { normalizeApplicationCode } from "./application-code";
 
 const inputSchema = z.object({
-  number: z.string().trim().min(4, "رقم الطلب غير صحيح").max(40, "رقم الطلب غير صحيح"),
+  number: z
+    .string()
+    .trim()
+    .min(4, "رقم الطلب غير صحيح")
+    .max(40, "رقم الطلب غير صحيح")
+    .transform((value) => normalizeApplicationCode(value) || value),
   token: z
     .string()
     .trim()
