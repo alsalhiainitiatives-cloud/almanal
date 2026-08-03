@@ -47,21 +47,6 @@ const NAV: NavItem[] = [
   { to: "/ams/queue", label: "قائمة الطلبات", icon: Inbox, exact: false, group: "معالجة الطلبات" },
   { to: "/ams/seats", label: "الفصول والمقاعد", icon: Armchair, exact: false, group: "معالجة الطلبات" },
   { to: "/ams/waiting-list", label: "قائمة الانتظار", icon: ListOrdered, exact: false, group: "معالجة الطلبات" },
-  {
-    to: "/ams/students",
-    label: "شؤون الطلاب",
-    icon: GraduationCap,
-    exact: false,
-    group: "شؤون الطلاب",
-  },
-  {
-    to: "/ams/finance",
-    label: "الإدارة المالية",
-    icon: Wallet,
-    exact: false,
-    group: "الشؤون المالية",
-    roles: ["accountant", "admin", "principal", "supervisor", "registration_officer"],
-  },
   { to: "/ams/activity", label: "الحركة اللحظية", icon: Activity, exact: false, group: "المتابعة والتقارير" },
   { to: "/ams/reports", label: "التقارير", icon: BarChart3, exact: false, group: "المتابعة والتقارير" },
   {
@@ -77,8 +62,6 @@ const NAV: NavItem[] = [
 const NAV_GROUP_ORDER = [
   "نظرة عامة",
   "معالجة الطلبات",
-  "شؤون الطلاب",
-  "الشؤون المالية",
   "المتابعة والتقارير",
   "الإعدادات",
 ];
