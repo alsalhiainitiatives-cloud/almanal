@@ -8,6 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { AppRole } from "@/features/auth/rbac";
 import type { Database } from "@/integrations/supabase/types";
+import type { StudentFileData } from "./student-file";
 import { can, type Capability } from "./roles";
 
 type Db = SupabaseClient<Database>;
@@ -173,7 +174,11 @@ export async function listMyChildren(supabase: Db, userId: string) {
   });
 }
 
-type ChildRow = Database["public"]["Tables"]["application_children"]["Row"] & { applications: unknown };
+type ChildRow = Partial<Database["public"]["Tables"]["application_children"]["Row"]> & {
+  id: string;
+  name_ar: string;
+  applications: unknown;
+};
 
 async function buildStudentFile(supabase: Db, row: ChildRow): Promise<StudentFileData> {
   const app = row.applications as unknown as AppJoin;
