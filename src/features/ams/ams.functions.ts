@@ -359,6 +359,15 @@ export const amsStudentFile = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => uuid.parse(data))
   .handler(async ({ data, context }) => getStudentFile(context.supabase, context.userId, data));
 
+export const myChildren = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => listMyChildren(context.supabase, context.userId));
+
+export const myChildFile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => uuid.parse(data))
+  .handler(async ({ data, context }) => getMyStudentFile(context.supabase, context.userId, data));
+
 export const amsStudentPhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
