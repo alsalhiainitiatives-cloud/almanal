@@ -726,12 +726,12 @@ export async function decideApplication(
     .eq("id", input.id)
     .maybeSingle();
 
-  const approved = input.decision === "approved";
+  const approved = approvedDecision;
   await touch(supabase, input.id, {
     status: input.decision as Status,
     decided_by: userId,
     decided_at: new Date().toISOString(),
-    decision_note: input.note,
+    decision_note: note,
     seat_status: approved ? "reserved" : "released",
     student_number: approved ? (app?.student_number ?? studentNumber(app?.academic_year ?? "1447")) : null,
   });
@@ -750,15 +750,15 @@ export async function decideApplication(
     userId,
     approved ? "application.approved" : "application.rejected",
     approved ? "اعتمد مدير المدرسة قبول الطلب" : "تم رفض الطلب من مدير المدرسة",
-    input.note,
-    { signature: input.signature ?? null },
+    note,
+    { signature },
   );
   const meta = await appMeta(supabase, input.id);
   await notify(supabase, {
     userIds: [meta.parentId],
     kind: approved ? "application.approved" : "application.rejected",
     title: approved ? `تم قبول الطلب ${meta.number}` : `تم رفض الطلب ${meta.number}`,
-    body: input.note,
+    body: note,
     applicationId: input.id,
     link: "/my-applications",
     severity: approved ? "success" : "warning",
@@ -767,7 +767,7 @@ export async function decideApplication(
     userIds: [meta.officerId],
     kind: "application.decided",
     title: `صدر قرار المدير على الطلب ${meta.number}: ${approved ? "قبول" : "رفض"}`,
-    body: input.note,
+    body: note,
     applicationId: input.id,
     link: meta.link,
     severity: approved ? "success" : "info",
