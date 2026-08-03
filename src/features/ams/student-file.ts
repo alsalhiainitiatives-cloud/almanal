@@ -17,6 +17,8 @@ export type StudentFileData = {
     nationality: string | null;
     birth_place: string | null;
     photo_url: string | null;
+    /** Signed URL of the photo uploaded within the admission documents (fallback). */
+    photo_signed_url?: string | null;
     blood_type: string | null;
     medical_conditions: string | null;
     allergies: string | null;
