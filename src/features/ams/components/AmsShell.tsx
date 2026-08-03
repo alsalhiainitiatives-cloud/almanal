@@ -36,29 +36,41 @@ type NavItem = {
   icon: typeof LayoutDashboard;
   exact: boolean;
   roles?: string[];
+  group: string;
 };
 
+/** Ordered by daily workflow: overview → processing → seats → money → insights → setup. */
 const NAV: NavItem[] = [
-  { to: "/ams", label: "لوحة المتابعة", icon: LayoutDashboard, exact: true },
-  { to: "/ams/queue", label: "قائمة الطلبات", icon: Inbox, exact: false },
-  { to: "/ams/seats", label: "إدارة  الفصول والمقاعد", icon: Armchair, exact: false },
-  { to: "/ams/waiting-list", label: "قائمة الانتظار", icon: ListOrdered, exact: false },
+  { to: "/ams", label: "لوحة المتابعة", icon: LayoutDashboard, exact: true, group: "نظرة عامة" },
+  { to: "/ams/queue", label: "قائمة الطلبات", icon: Inbox, exact: false, group: "معالجة الطلبات" },
+  { to: "/ams/seats", label: "الفصول والمقاعد", icon: Armchair, exact: false, group: "معالجة الطلبات" },
+  { to: "/ams/waiting-list", label: "قائمة الانتظار", icon: ListOrdered, exact: false, group: "معالجة الطلبات" },
   {
     to: "/ams/finance",
     label: "الإدارة المالية",
     icon: Wallet,
     exact: false,
+    group: "الشؤون المالية",
     roles: ["accountant", "admin", "principal", "supervisor", "registration_officer"],
   },
-  { to: "/ams/activity", label: "الحركة اللحظية", icon: Activity, exact: false },
-  { to: "/ams/reports", label: "التقارير", icon: BarChart3, exact: false },
+  { to: "/ams/activity", label: "الحركة اللحظية", icon: Activity, exact: false, group: "المتابعة والتقارير" },
+  { to: "/ams/reports", label: "التقارير", icon: BarChart3, exact: false, group: "المتابعة والتقارير" },
   {
     to: "/ams/form-builder",
-    label: "إدارة وتخصيص نظام التسجيل",
+    label: "تخصيص نظام التسجيل",
     icon: SlidersHorizontal,
     exact: false,
+    group: "الإعدادات",
     roles: ["admin", "supervisor"],
   },
+];
+
+const NAV_GROUP_ORDER = [
+  "نظرة عامة",
+  "معالجة الطلبات",
+  "الشؤون المالية",
+  "المتابعة والتقارير",
+  "الإعدادات",
 ];
 
 export function AmsShell({
@@ -79,6 +91,10 @@ export function AmsShell({
   const navItems = NAV.filter(
     (item) => !item.roles || item.roles.some((role) => (roles as string[]).includes(role)),
   );
+  const navGroups = NAV_GROUP_ORDER.map((group) => ({
+    group,
+    items: navItems.filter((item) => item.group === group),
+  })).filter((entry) => entry.items.length > 0);
   const navigate = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
 
@@ -117,25 +133,32 @@ export function AmsShell({
                 </div>
               </div>
 
-              <nav className="mt-4 space-y-1">
-                {navItems.map((item) => {
-                  const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
-                  return (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      className={cn(
-                        "flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-sm font-bold transition-colors",
-                        active
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                      )}
-                    >
-                      <item.icon className="size-4" />
-                      {item.label}
-                    </Link>
-                  );
-                })}
+              <nav className="mt-4 space-y-3.5">
+                {navGroups.map((entry) => (
+                  <div key={entry.group} className="space-y-1">
+                    <p className="px-3 text-[10px] font-black tracking-wide text-muted-foreground/70">
+                      {entry.group}
+                    </p>
+                    {entry.items.map((item) => {
+                      const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
+                      return (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          className={cn(
+                            "flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-sm font-bold transition-colors",
+                            active
+                              ? "bg-primary text-primary-foreground shadow-sm"
+                              : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                          )}
+                        >
+                          <item.icon className="size-4" />
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ))}
               </nav>
             </div>
 

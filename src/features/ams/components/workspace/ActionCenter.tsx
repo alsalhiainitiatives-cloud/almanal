@@ -26,10 +26,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { ageInMonths, detectNationality, formatAge } from "@/features/admissions/eligibility";
 import {
   amsDecide,
@@ -104,13 +104,13 @@ function Notice({ tone = "muted", children }: { tone?: "muted" | "warn" | "ok"; 
 
 export function ActionCenter({ data }: { data: WorkspaceData }) {
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
   const roles = (data.roles ?? []) as AppRole[];
   const id = data.application.id;
   const [dialog, setDialog] = useState<DialogKind>(null);
   const [note, setNote] = useState("");
   const [classroomId, setClassroomId] = useState<string>("");
   const [childIdx, setChildIdx] = useState(0);
-  const [signature, setSignature] = useState("");
   const [qurraStatus, setQurraStatus] = useState(data.qurra?.status ?? "not_requested");
   const [requested, setRequested] = useState<string[]>([]);
   const [sections, setSections] = useState<CorrectionSection[]>([]);
@@ -132,7 +132,6 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
       toast.success("تم تنفيذ الإجراء");
       setDialog(null);
       setNote("");
-      setSignature("");
       queryClient.invalidateQueries({ queryKey: ["ams"] });
     },
     onError: (error: Error) => toast.error(error.message || "تعذّر تنفيذ الإجراء"),
@@ -167,6 +166,24 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
   /** Reason-coded verdict for each preference + the parent-facing summary. */
   const verdicts = evaluatePreferences(preferences, data.classrooms, childMonths);
   const parentSummary = waitlistSummary(verdicts, child?.name_ar ?? "الطفل");
+
+  /**
+   * The parent already ranked classrooms in the application. When one of those
+   * preferences is still admissible the officer only needs to endorse it, and
+   * the waiting-list action stays hidden — it appears only when every ranked
+   * classroom is genuinely full / not admissible.
+   */
+  const admissiblePreference = verdicts.find((v) => v.admissible) ?? null;
+  const rankedPreferences = verdicts.filter((v) => v.classroom);
+  const anyFreeClassroom = data.classrooms.some((c) => {
+    const free = Math.max(0, c.capacity - c.taken_seats);
+    const ageOk =
+      childMonths === null ||
+      (childMonths >= c.min_age_months && childMonths <= c.max_age_months);
+    return c.is_active !== false && ageOk && free > 0;
+  });
+  const waitlistNeeded =
+    !admissiblePreference && (rankedPreferences.length > 0 ? true : !anyFreeClassroom);
 
   const classroomState = (classroom: WorkspaceData["classrooms"][number]) => {
     const free = Math.max(0, classroom.capacity - classroom.taken_seats);
@@ -274,16 +291,57 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
               </Button>
             </Stage>
 
-            <Stage index={2} title="المقعد وقائمة الانتظار" hint="لا تظهر إلا الفصول المطابقة لعمر الطفل والتي بها مقاعد شاغرة.">
-              {can(roles, "seats") ? (
-                <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("seat")}>
-                  <Armchair className="size-3.5" /> المقعد
+            <Stage
+              index={2}
+              title="المقعد وقائمة الانتظار"
+              hint={
+                admissiblePreference
+                  ? `اختار ولي الأمر فصل «${admissiblePreference.classroom?.name_ar}» وهو مطابق للعمر وبه ${admissiblePreference.free} مقعدًا شاغرًا — يكفي اعتماده.`
+                  : waitlistNeeded
+                    ? "اكتملت الفصول المطابقة لعمر الطفل — يمكن نقل الطلب إلى قائمة الانتظار."
+                    : "لا تظهر إلا الفصول المطابقة لعمر الطفل والتي بها مقاعد شاغرة."
+              }
+            >
+              {can(roles, "seats") && admissiblePreference?.classroom ? (
+                <Button
+                  size="sm"
+                  className="col-span-2 rounded-2xl text-xs font-bold"
+                  disabled={busy}
+                  onClick={() =>
+                    run.mutate(() =>
+                      seat({
+                        data: {
+                          id,
+                          action: "reserve",
+                          classroomId: admissiblePreference.classroom!.id,
+                        },
+                      }),
+                    )
+                  }
+                >
+                  <CheckCircle2 className="size-3.5" /> اعتماد فصل ولي الأمر (
+                  {admissiblePreference.classroom.name_ar})
                 </Button>
               ) : null}
-              {can(roles, "waitlist") ? (
+              {can(roles, "seats") ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn("rounded-2xl text-xs font-bold", !waitlistNeeded && "col-span-2")}
+                  onClick={() => setDialog("seat")}
+                >
+                  <Armchair className="size-3.5" /> {admissiblePreference ? "تغيير الفصل" : "اختيار الفصل"}
+                </Button>
+              ) : null}
+              {can(roles, "waitlist") && waitlistNeeded ? (
                 <Button variant="outline" size="sm" className="rounded-2xl text-xs font-bold" onClick={() => setDialog("waitlist")}>
                   <ListOrdered className="size-3.5" /> قائمة الانتظار
                 </Button>
+              ) : null}
+              {!waitlistNeeded ? (
+                <p className="col-span-2 text-[10px] font-bold text-muted-foreground">
+                  قائمة الانتظار غير مطلوبة حاليًا لتوفّر مقاعد مطابقة لعمر الطفل.
+                </p>
               ) : null}
             </Stage>
 
@@ -577,40 +635,45 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
       <Dialog open={dialog === "approve" || dialog === "reject"} onOpenChange={(open) => (open ? null : close())}>
         <DialogContent dir="rtl">
           <DialogHeader>
-            <DialogTitle>{dialog === "approve" ? "اعتماد قبول الطلب" : "رفض الطلب"}</DialogTitle>
-            <DialogDescription>القرار نهائي ويُسجَّل في سجل التدقيق مع اسم المعتمِد.</DialogDescription>
+            <DialogTitle>
+              {dialog === "approve" ? "تأكيد قبول الطلب" : "تأكيد رفض الطلب"}
+            </DialogTitle>
+            <DialogDescription>
+              {dialog === "approve"
+                ? "هل ترغب في قبول طلب الالتحاق؟"
+                : "هل ترغب في رفض طلب الالتحاق؟"}{" "}
+              يُسجَّل القرار في سجل التدقيق تلقائيًا باسمك ({profile?.fullName ?? "المدير"}).
+            </DialogDescription>
           </DialogHeader>
           <Textarea
             value={note}
             onChange={(event) => setNote(event.target.value)}
             className="min-h-24 rounded-2xl text-xs"
-            placeholder={dialog === "approve" ? "ملاحظات القبول…" : "سبب الرفض…"}
-          />
-          <Input
-            value={signature}
-            onChange={(event) => setSignature(event.target.value)}
-            placeholder="التوقيع الرقمي (الاسم)"
-            className="rounded-2xl text-xs"
+            placeholder={
+              dialog === "approve" ? "ملاحظات القبول (اختياري)…" : "سبب الرفض (اختياري)…"
+            }
           />
           <DialogFooter>
+            <Button variant="ghost" className="rounded-2xl" disabled={busy} onClick={close}>
+              إلغاء
+            </Button>
             <Button
               className="rounded-2xl"
               variant={dialog === "reject" ? "destructive" : "default"}
-              disabled={note.trim().length < 3 || busy || decided}
+              disabled={busy || decided}
               onClick={() =>
                 run.mutate(() =>
                   decide({
                     data: {
                       id,
                       decision: dialog === "approve" ? "approved" : "rejected",
-                      note: note.trim(),
-                      signature: signature || undefined,
+                      note: note.trim() || undefined,
                     },
                   }),
                 )
               }
             >
-              تأكيد القرار
+              {dialog === "approve" ? "نعم، قبول الطلب" : "نعم، رفض الطلب"}
             </Button>
           </DialogFooter>
         </DialogContent>
