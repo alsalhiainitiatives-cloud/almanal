@@ -393,14 +393,14 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
                   ? "الطلب لدى المدير — يمكنك إرسال تذكير أو رفع الأولوية."
                   : readyToRaise
                     ? "اكتملت الملاحظات — يمكن رفع الطلب لاعتماد المدير."
-                    : "أغلق كل الملاحظات المفتوحة قبل الرفع للمدير."
+                    : "أكمل اعتماد جميع المستندات وأقفل حالة قرة قبل الرفع للمدير."
               }
             >
               {!raised ? (
                 <Button
                   size="sm"
                   className="col-span-2 rounded-2xl text-xs font-bold"
-                  disabled={!readyToRaise}
+                  disabled={!readyToRaise || busy}
                   onClick={() => setDialog("recommend")}
                 >
                   <ChevronsUpDown className="size-3.5" /> رفع لاعتماد المدير
@@ -416,11 +416,11 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
                 </Button>
               )}
               {!readyToRaise && !raised ? (
-                <p className="col-span-2 text-[11px] font-bold text-muted-foreground">
-                  ملاحظات مفتوحة: {openRequests > 0 ? `${openRequests} طلب مستندات` : ""}
-                  {openRequests > 0 && openCorrections ? " · " : ""}
-                  {openCorrections ? "طلب تعديل بانتظار ولي الأمر" : ""}
-                </p>
+                <ul className="col-span-2 space-y-1 text-[11px] font-bold text-muted-foreground">
+                  {blockers.map((b) => (
+                    <li key={b}>• {b}</li>
+                  ))}
+                </ul>
               ) : null}
             </Stage>
           </>
