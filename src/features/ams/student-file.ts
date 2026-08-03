@@ -155,8 +155,8 @@ export function buildStudentFileHtml(
   body {
     font-family: "Cairo", "Segoe UI", Tahoma, sans-serif;
     color: #1c1c1c;
-    font-size: 10.2pt;
-    line-height: 1.45;
+    font-size: 9.4pt;
+    line-height: 1.35;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -184,25 +184,25 @@ export function buildStudentFileHtml(
     background: #f4f0ec; color: #b08a99; font-size: 18pt; font-weight: 900;
   }
   .cap { font-size: 7.4pt; color: #7a7a7a; margin-top: 1mm; }
-  .sec { margin-top: 4.5mm; break-inside: avoid; }
+  .sec { margin-top: 3.4mm; break-inside: avoid; }
   .sec h2 {
     font-size: 10.4pt; color: #7A1F3D; font-weight: 900; margin: 0 0 2mm;
     border-bottom: 0.8pt solid #e2c9d3; padding-bottom: 1mm;
   }
   .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2mm; }
-  .grid.head { margin-top: 4mm; }
+  .grid.head { margin-top: 3.4mm; }
   .f {
-    border: 0.6pt solid #ddd6d0; border-radius: 2mm; padding: 1.6mm 2.4mm;
+    border: 0.6pt solid #ddd6d0; border-radius: 2mm; padding: 1.3mm 2.2mm;
     break-inside: avoid; background: #fdfcfb;
   }
   .fl { display: block; font-size: 7.6pt; color: #7a7a7a; font-weight: 700; }
-  .fv { display: block; font-size: 9.6pt; color: #1c1c1c; font-weight: 700; margin-top: 0.6mm; }
-  .signs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8mm; margin-top: 9mm; border-top: 0.8pt solid #ddd6d0; padding-top: 6mm; break-inside: avoid; }
+  .fv { display: block; font-size: 9pt; color: #1c1c1c; font-weight: 700; margin-top: 0.6mm; }
+  .signs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8mm; margin-top: 6mm; border-top: 0.8pt solid #ddd6d0; padding-top: 6mm; break-inside: avoid; }
   .sign { text-align: center; }
   .sign p { margin: 0; font-size: 9pt; font-weight: 900; }
-  .line { margin: 10mm auto 1mm; width: 80%; border-top: 0.8pt dashed #9a9a9a; }
+  .line { margin: 8mm auto 1mm; width: 80%; border-top: 0.8pt dashed #9a9a9a; }
   .sign small { font-size: 7.2pt; color: #7a7a7a; }
-  .foot { margin-top: 6mm; text-align: center; font-size: 7.4pt; color: #8a8a8a; }
+  .foot { margin-top: 4mm; text-align: center; font-size: 7.4pt; color: #8a8a8a; }
   .ltr { direction: ltr; unicode-bidi: embed; }
 </style>
 </head>
