@@ -43,6 +43,20 @@ function PaymentsPage() {
 
   const { data, isLoading } = useQuery({ queryKey: ["my-finance"], queryFn: () => load() });
 
+  const invoices = data?.invoices ?? [];
+  const normalizedSearch = search.trim().toLocaleLowerCase("ar");
+  const visibleInvoices = useMemo(
+    () =>
+      invoices.filter((invoice) => {
+        if (!normalizedSearch) return true;
+        const app = (invoice as unknown as { applications?: { application_number: string | null } }).applications;
+        return `${app?.application_number ?? ""} ${invoice.academic_year}`
+          .toLocaleLowerCase("ar")
+          .includes(normalizedSearch);
+      }),
+    [invoices, normalizedSearch],
+  );
+
   async function openReceipt(path: string) {
     const { url } = await sign({ data: { path } });
     window.open(url, "_blank", "noopener");
@@ -58,23 +72,10 @@ function PaymentsPage() {
     );
   }
 
-  const invoices = data?.invoices ?? [];
   const bank = (data?.bankAccounts ?? [])[0] as BankAccountRow | undefined;
   const settings = data?.settings;
   const lateAfter = data?.planSettings?.late_after_days ?? 0;
   const pendingPlans = data?.pendingPlans ?? [];
-  const normalizedSearch = search.trim().toLocaleLowerCase("ar");
-  const visibleInvoices = useMemo(
-    () =>
-      invoices.filter((invoice) => {
-        if (!normalizedSearch) return true;
-        const app = (invoice as unknown as { applications?: { application_number: string | null } }).applications;
-        return `${app?.application_number ?? ""} ${invoice.academic_year}`
-          .toLocaleLowerCase("ar")
-          .includes(normalizedSearch);
-      }),
-    [invoices, normalizedSearch],
-  );
 
   return (
     <PortalLayout
