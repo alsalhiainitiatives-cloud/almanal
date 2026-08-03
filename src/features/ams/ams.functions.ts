@@ -33,6 +33,7 @@ import {
   togglePin,
   updateQurra,
 } from "./ams.server";
+import { getReports } from "./reports.server";
 
 const uuid = z.string().uuid();
 
@@ -61,6 +62,10 @@ export const amsStaff = createServerFn({ method: "GET" })
 export const amsOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => getOverview(context.supabase, context.userId));
+
+export const amsReports = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => getReports(context.supabase, context.userId));
 
 export const amsActivity = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
