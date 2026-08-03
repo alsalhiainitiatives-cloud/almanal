@@ -54,8 +54,7 @@ export async function getUploadSettings(supabase: Db): Promise<UploadSettings> {
 export async function saveUploadSettings(supabase: Db, userId: string, input: unknown) {
   await guardBuilder(supabase, userId);
   const settings = normalizeUploadSettings(input);
-  const db = await admin();
-  const { error } = await db
+  const { error } = await supabase
     .from("site_content")
     .upsert(
       { key: UPLOAD_SETTINGS_KEY, data: settings as never, updated_by: userId, updated_at: new Date().toISOString() },
@@ -70,7 +69,9 @@ export async function saveUploadSettings(supabase: Db, userId: string, input: un
 /* ------------------------------------------------------------------ */
 
 function secret() {
-  return process.env["SUPABASE_SERVICE_ROLE_KEY"] ?? process.env["SUPABASE_URL"] ?? "manal";
+  const value = process.env["REGISTRATION_PURGE_SIGNING_SECRET"];
+  if (!value) throw new Error("تعذّر تهيئة حماية تصدير بيانات التسجيل.");
+  return value;
 }
 
 function signToken(userId: string, issuedAt: number) {
@@ -101,21 +102,20 @@ function verifyToken(userId: string, token: string) {
 /** Full registration dataset dump, plus a short-lived token that unlocks the purge. */
 export async function exportRegistrationData(supabase: Db, userId: string) {
   await guardAdminOnly(supabase, userId);
-  const db = await admin();
 
   const [apps, children, docs, services, qurra, events, notes, invoices, installments, receipts, waiting] =
     await Promise.all([
-      db.from("applications").select("*").order("created_at"),
-      db.from("application_children").select("*").order("created_at"),
-      db.from("application_documents").select("*").order("created_at"),
-      db.from("application_services").select("*"),
-      db.from("qurra_requests").select("*"),
-      db.from("application_events").select("*").order("created_at"),
-      db.from("application_notes").select("*").order("created_at"),
-      db.from("invoices").select("*").order("created_at"),
-      db.from("installments").select("*").order("created_at"),
-      db.from("payment_receipts").select("*").order("created_at"),
-      db.from("waiting_list_entries").select("*").order("created_at"),
+      supabase.from("applications").select("*").order("created_at"),
+      supabase.from("application_children").select("*").order("created_at"),
+      supabase.from("application_documents").select("*").order("created_at"),
+      supabase.from("application_services").select("*"),
+      supabase.from("qurra_requests").select("*"),
+      supabase.from("application_events").select("*").order("created_at"),
+      supabase.from("application_notes").select("*").order("created_at"),
+      supabase.from("invoices").select("*").order("created_at"),
+      supabase.from("installments").select("*").order("created_at"),
+      supabase.from("payment_receipts").select("*").order("created_at"),
+      supabase.from("waiting_list_entries").select("*").order("created_at"),
     ]);
 
   const issuedAt = Date.now();
@@ -149,9 +149,9 @@ export async function exportRegistrationData(supabase: Db, userId: string) {
 /** Live counts shown in the danger zone before any destructive action. */
 export async function registrationDataStats(supabase: Db, userId: string) {
   await guardBuilder(supabase, userId);
-  const db = await admin();
   const count = async (table: "applications" | "application_children" | "application_documents" | "invoices" | "payment_receipts") => {
-    const { count: c } = await db.from(table).select("id", { count: "exact", head: true });
+    const { count: c, error } = await supabase.from(table).select("id", { count: "exact", head: true });
+    if (error) throw new Error("تعذّر تحميل إحصاءات بيانات التسجيل.");
     return c ?? 0;
   };
   const [applications, children, documents, invoices, receipts] = await Promise.all([
