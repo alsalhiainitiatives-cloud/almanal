@@ -132,7 +132,13 @@ export function PortalLayout({
                     {group.label}
                   </p>
                   {group.items.map((item) => {
-                    const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
+                    const active =
+                      item.to === "/ams"
+                        ? pathname === "/ams" ||
+                          (pathname.startsWith("/ams/") &&
+                            !pathname.startsWith("/ams/students") &&
+                            !pathname.startsWith("/ams/finance"))
+                        : pathname === item.to || pathname.startsWith(`${item.to}/`);
                     const featured = item.featured;
                     return (
                       <Link
