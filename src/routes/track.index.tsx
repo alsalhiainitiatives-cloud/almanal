@@ -23,6 +23,11 @@ import { Input } from "@/components/ui/input";
 import { PageHero } from "@/components/site/PageHero";
 import { QrScanDialog } from "@/components/site/QrScanDialog";
 import { parseTrackCode } from "@/features/admissions/parseTrackCode";
+import {
+  APPLICATION_CODE_EXAMPLE,
+  applicationCodeError,
+  normalizeApplicationCode,
+} from "@/features/admissions/application-code";
 import { publicTrackApplication } from "@/features/admissions/track.functions";
 import {
   ApplicationStepper,
@@ -100,16 +105,20 @@ function PublicTrackPage() {
     const t = token.trim();
     const pasted = parseTrackCode(no) ?? parseTrackCode(`${no} ${t}`.trim());
     if (pasted) {
-      setNumber(pasted.number);
+      const pastedNumber = normalizeApplicationCode(pasted.number) || pasted.number;
+      setNumber(pastedNumber);
       setToken(pasted.token);
       setFormError(null);
-      void navigate({ to: "/track", search: { no: pasted.number, t: pasted.token }, replace: true });
+      void navigate({ to: "/track", search: { no: pastedNumber, t: pasted.token }, replace: true });
       return;
     }
-    if (no.length < 4) return setFormError("يرجى إدخال رقم الطلب كاملًا");
+    const codeError = applicationCodeError(no);
+    if (codeError) return setFormError(codeError);
+    const code = normalizeApplicationCode(no);
     if (t.length < 16) return setFormError("يرجى إدخال رمز التحقق الظاهر على إشعار الطلب أو امسح رمز QR");
     setFormError(null);
-    void navigate({ to: "/track", search: { no, t }, replace: true });
+    setNumber(code);
+    void navigate({ to: "/track", search: { no: code, t }, replace: true });
   }
 
   function handleScan(text: string) {
@@ -119,10 +128,11 @@ function PublicTrackPage() {
       setFormError("رمز QR غير صالح لهذا النظام. تأكد من مسح الرمز الموجود على نموذج الطلب.");
       return;
     }
-    setNumber(parsed.number);
+    const scannedNumber = normalizeApplicationCode(parsed.number) || parsed.number;
+    setNumber(scannedNumber);
     setToken(parsed.token);
     setFormError(null);
-    void navigate({ to: "/track", search: { no: parsed.number, t: parsed.token }, replace: true });
+    void navigate({ to: "/track", search: { no: scannedNumber, t: parsed.token }, replace: true });
   }
 
   const result = query.data;
@@ -155,7 +165,7 @@ function PublicTrackPage() {
                   رقم الطلب
                 </label>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  مثال: <span dir="ltr">MN-1447-AB12C</span>
+                  مثال: <span dir="ltr">{APPLICATION_CODE_EXAMPLE}</span>
                 </p>
                 <Input
                   id="app-number"
