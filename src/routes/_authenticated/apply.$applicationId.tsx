@@ -46,6 +46,7 @@ import {
 import { ageInMonths } from "@/features/admissions/eligibility";
 import {
   childrenSchema,
+  childNationalityConflicts,
   emptyChild,
   parentInfoSchema,
   type ChildInput,
@@ -560,6 +561,12 @@ function WizardPage() {
           toast.error("يرجى استكمال بيانات الأبناء");
           return;
         }
+        const conflicts = childNationalityConflicts(parsed.data, parent.nationality);
+        if (Object.keys(conflicts).length) {
+          setErrors(conflicts);
+          toast.error("جنسية الطفل لا تتوافق مع جنسية ولي الأمر");
+          return;
+        }
         await saveChildrenFn({ data: { id: applicationId, children: parsed.data } });
       }
 
@@ -829,6 +836,7 @@ function WizardPage() {
                 duplicates={duplicates}
                 stages={catalog.stages}
                 classrooms={catalog.classrooms}
+                parentNationality={parent.nationality}
                 onChange={setChildren}
               />
             ) : null}
