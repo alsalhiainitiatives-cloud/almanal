@@ -11,7 +11,9 @@ import {
   Lock,
   Plus,
   Settings2,
+  ShieldAlert,
   Trash2,
+  UploadCloud,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,6 +44,8 @@ import {
 import { FieldDialog } from "./FieldDialog";
 import { StepDialog } from "./StepDialog";
 import { DocTypeDialog } from "./DocTypeDialog";
+import { UploadSettingsPanel } from "./UploadSettingsPanel";
+import { DangerZone } from "./DangerZone";
 
 export type DocTypeRow = {
   id: string;
@@ -202,6 +206,12 @@ export function FormBuilder() {
         </TabsTrigger>
         <TabsTrigger value="docs" className="rounded-xl text-xs font-bold">
           <FileText className="ms-1 size-4" /> أنواع المستندات
+        </TabsTrigger>
+        <TabsTrigger value="uploads" className="rounded-xl text-xs font-bold">
+          <UploadCloud className="ms-1 size-4" /> المرفقات والأحجام
+        </TabsTrigger>
+        <TabsTrigger value="danger" className="rounded-xl text-xs font-bold text-destructive">
+          <ShieldAlert className="ms-1 size-4" /> منطقة الخطر
         </TabsTrigger>
       </TabsList>
 
@@ -517,6 +527,14 @@ export function FormBuilder() {
             ))}
           </div>
         </div>
+      </TabsContent>
+
+      <TabsContent value="uploads" className="m-0">
+        <UploadSettingsPanel />
+      </TabsContent>
+
+      <TabsContent value="danger" className="m-0">
+        <DangerZone />
       </TabsContent>
 
       <StepDialog
