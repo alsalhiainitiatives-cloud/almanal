@@ -24,6 +24,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { PortalTrail } from "@/features/auth/components/PortalTrail";
 import { ROLE_COLORS, ROLE_LABELS } from "@/features/auth/rbac";
 import { cn } from "@/lib/utils";
 import { amsQueue } from "../ams.functions";
@@ -196,6 +197,7 @@ export function AmsShell({
         </aside>
 
         <main className="min-w-0 flex-1 space-y-5">
+          <PortalTrail home="/ams" />
           <header className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-border/60 bg-card/80 px-5 py-4 shadow-sm backdrop-blur">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
