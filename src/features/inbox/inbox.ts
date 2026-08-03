@@ -54,7 +54,13 @@ export async function updateContactMessage(
   id: string,
   patch: { status?: ContactMessageStatus; priority?: string; staff_note?: string },
 ) {
-  const payload: Record<string, unknown> = { ...patch };
+  const payload: {
+    status?: ContactMessageStatus;
+    priority?: string;
+    staff_note?: string;
+    handled_by?: string | null;
+    handled_at?: string | null;
+  } = { ...patch };
   if (patch.status === "closed") {
     const { data: auth } = await supabase.auth.getUser();
     payload.handled_by = auth.user?.id ?? null;
