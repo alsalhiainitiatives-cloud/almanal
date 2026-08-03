@@ -64,10 +64,7 @@ import {
 } from "@/features/admissions/form-config";
 import { ChildrenStep } from "@/features/admissions/components/steps/ChildrenStep";
 import { DocumentsStep } from "@/features/admissions/components/steps/DocumentsStep";
-import {
-  computeFinancials,
-  FinancialStep,
-} from "@/features/admissions/components/steps/FinancialStep";
+import { FinancialStep } from "@/features/admissions/components/steps/FinancialStep";
 import { ParentStep } from "@/features/admissions/components/steps/ParentStep";
 import { QurraStep } from "@/features/admissions/components/steps/QurraStep";
 import { ReviewStep } from "@/features/admissions/components/steps/ReviewStep";
