@@ -691,8 +691,14 @@ export async function financeOverview(supabase: Db, userId: string) {
 /* ------------------------------------------------------------------ */
 
 export function receiptUploadPath(userId: string, invoiceId: string, fileName: string) {
-  const safe = fileName.replace(/[^\w.\-\u0600-\u06FF]+/g, "_").slice(-80);
-  return `${userId}/${invoiceId}/${Date.now()}-${safe}`;
+  // Storage keys must be ASCII-safe — non-latin file names cause "Invalid key".
+  const ext = (fileName.match(/\.[a-zA-Z0-9]{1,8}$/)?.[0] ?? "").toLowerCase();
+  const base = fileName
+    .slice(0, fileName.length - ext.length)
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(-40);
+  return `${userId}/${invoiceId}/${Date.now()}-${base || "receipt"}${ext}`;
 }
 
 export async function recordReceipt(

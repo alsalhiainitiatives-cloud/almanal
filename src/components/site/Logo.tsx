@@ -2,9 +2,34 @@ import { GraduationCap } from "lucide-react";
 
 import { useBrandLogoUrl, useSiteContent } from "@/features/site-content/SiteContentProvider";
 
-export function Logo({ inverted = false }: { inverted?: boolean }) {
+export function Logo({
+  inverted = false,
+  variant = "full",
+  size = "md",
+}: {
+  inverted?: boolean;
+  /** "mark" renders the crest only — used on the auth screens. */
+  variant?: "full" | "mark";
+  size?: "md" | "lg";
+}) {
   const { brand } = useSiteContent();
   const logoUrl = useBrandLogoUrl();
+  const box = size === "lg" ? "size-20" : "size-11";
+  const icon = size === "lg" ? "size-10" : "size-6";
+
+  if (variant === "mark") {
+    return logoUrl ? (
+      <img
+        src={logoUrl}
+        alt={brand.name}
+        className={`${box} shrink-0 object-contain`}
+      />
+    ) : (
+      <span className={`grid ${box} shrink-0 place-items-center rounded-3xl gradient-burgundy shadow-soft`}>
+        <GraduationCap className={`${icon} text-primary-foreground`} strokeWidth={2.2} />
+      </span>
+    );
+  }
 
   return (
     <span className="flex min-w-0 items-center gap-3">

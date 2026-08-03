@@ -153,7 +153,6 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
 
   const openRequests = data.documentRequests.filter((r) => !r.fulfilled_at).length;
   const openCorrections = status === "needs_action" || (data.application.correction_sections ?? []).length > 0;
-  const readyToRaise = openRequests === 0 && !openCorrections;
 
   /* -------------------------------------------------------------- children */
   const child = data.children[Math.min(childIdx, Math.max(0, data.children.length - 1))] ?? null;
@@ -222,6 +221,24 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
   ];
   const docLabel = (slug: string) => data.documentTypes.find((t) => t.slug === slug)?.name_ar ?? slug;
   const keyOf = (item: { slug: string; childIndex: number | null }) => `${item.childIndex ?? "p"}:${item.slug}`;
+
+  /* ---------------------------------------------- readiness for principal */
+  /**
+   * The application only reaches the principal after every operational step is
+   * closed: no open notes, no missing/unapproved documents and a final Qurra
+   * verdict when the family is eligible for the programme.
+   */
+  const pendingDocs = data.documents.filter((d) => d.status !== "approved").length;
+  const qurraStatusNow = data.qurra?.status ?? "not_requested";
+  const qurraClosed = !qurraEligible || ["approved", "rejected"].includes(qurraStatusNow);
+  const blockers = [
+    openRequests > 0 ? `${openRequests} طلب مستندات مفتوح` : null,
+    openCorrections ? "طلب تعديل بانتظار ولي الأمر" : null,
+    missingDocs.length > 0 ? `${missingDocs.length} مستند مطلوب لم يُرفع` : null,
+    pendingDocs > 0 ? `${pendingDocs} مستند بانتظار الاعتماد` : null,
+    !qurraClosed ? "حالة دعم قرة لم تُقفل (قبول أو رفض)" : null,
+  ].filter((x): x is string => Boolean(x));
+  const readyToRaise = blockers.length === 0;
 
   /* ------------------------------------------------------------ view-only */
   if (isViewerOnly) {
@@ -376,14 +393,14 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
                   ? "الطلب لدى المدير — يمكنك إرسال تذكير أو رفع الأولوية."
                   : readyToRaise
                     ? "اكتملت الملاحظات — يمكن رفع الطلب لاعتماد المدير."
-                    : "أغلق كل الملاحظات المفتوحة قبل الرفع للمدير."
+                    : "أكمل اعتماد جميع المستندات وأقفل حالة قرة قبل الرفع للمدير."
               }
             >
               {!raised ? (
                 <Button
                   size="sm"
                   className="col-span-2 rounded-2xl text-xs font-bold"
-                  disabled={!readyToRaise}
+                  disabled={!readyToRaise || busy}
                   onClick={() => setDialog("recommend")}
                 >
                   <ChevronsUpDown className="size-3.5" /> رفع لاعتماد المدير
@@ -399,11 +416,11 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
                 </Button>
               )}
               {!readyToRaise && !raised ? (
-                <p className="col-span-2 text-[11px] font-bold text-muted-foreground">
-                  ملاحظات مفتوحة: {openRequests > 0 ? `${openRequests} طلب مستندات` : ""}
-                  {openRequests > 0 && openCorrections ? " · " : ""}
-                  {openCorrections ? "طلب تعديل بانتظار ولي الأمر" : ""}
-                </p>
+                <ul className="col-span-2 space-y-1 text-[11px] font-bold text-muted-foreground">
+                  {blockers.map((b) => (
+                    <li key={b}>• {b}</li>
+                  ))}
+                </ul>
               ) : null}
             </Stage>
           </>
