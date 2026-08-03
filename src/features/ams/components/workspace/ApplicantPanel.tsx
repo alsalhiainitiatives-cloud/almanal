@@ -45,7 +45,7 @@ export function ApplicantPanel({ data }: { data: WorkspaceData }) {
           </span>
         </AccordionTrigger>
         <AccordionContent>
-          <Row label="الاسم" value={data.parent?.fullName} />
+          <Row label="الاسم" value={parentDraft.fullName || data.parent?.fullName} />
           <Row label="رقم الهوية" value={data.application.parent_national_id} />
           <Row
             label="الجنسية"
@@ -71,8 +71,8 @@ export function ApplicantPanel({ data }: { data: WorkspaceData }) {
           </span>
         </AccordionTrigger>
         <AccordionContent>
-          <Row label="الجوال" value={<span dir="ltr">{data.parent?.phone ?? "—"}</span>} />
-          <Row label="البريد" value={<span dir="ltr">{data.parent?.email ?? "—"}</span>} />
+          <Row label="الجوال" value={<span dir="ltr">{parentDraft.mobile || data.parent?.phone || "—"}</span>} />
+          <Row label="البريد" value={<span dir="ltr">{parentDraft.email || data.parent?.email || "—"}</span>} />
         </AccordionContent>
       </AccordionItem>
       <AccordionItem value="children" className="rounded-3xl border border-border/60 bg-card px-4">

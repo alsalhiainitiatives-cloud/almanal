@@ -594,9 +594,11 @@ function WizardPage() {
     const scope = childIndex === null ? "parent" : `child${childIndex}`;
     const path = `${auth.user.id}/${applicationId}/${scope}-${slug}-${Date.now()}-${safeName}`;
 
-    const { error } = await supabase.storage.from("admission-documents").upload(path, file);
+    const { error } = await supabase.storage
+      .from("admission-documents")
+      .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
     if (error) {
-      toast.error("تعذّر رفع الملف، حاول مرة أخرى");
+      toast.error(`تعذّر رفع الملف: ${error.message}`);
       return;
     }
     await recordDoc({

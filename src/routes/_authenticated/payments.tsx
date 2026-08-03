@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { ArrowLeft, FileText, Loader2, Printer, Sparkles, Upload, Wallet } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowLeft, FileText, Loader2, Printer, Search, Sparkles, Upload, Wallet } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { PortalLayout } from "@/features/auth/components/PortalLayout";
 import { myFinanceGet, receiptSignedUrl } from "@/features/finance/finance.functions";
 import { BankCard } from "@/features/finance/components/BankCard";
@@ -38,6 +39,7 @@ function PaymentsPage() {
     installmentId: string | null;
     amount: number;
   } | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data, isLoading } = useQuery({ queryKey: ["my-finance"], queryFn: () => load() });
 
@@ -61,6 +63,18 @@ function PaymentsPage() {
   const settings = data?.settings;
   const lateAfter = data?.planSettings?.late_after_days ?? 0;
   const pendingPlans = data?.pendingPlans ?? [];
+  const normalizedSearch = search.trim().toLocaleLowerCase("ar");
+  const visibleInvoices = useMemo(
+    () =>
+      invoices.filter((invoice) => {
+        if (!normalizedSearch) return true;
+        const app = (invoice as unknown as { applications?: { application_number: string | null } }).applications;
+        return `${app?.application_number ?? ""} ${invoice.academic_year}`
+          .toLocaleLowerCase("ar")
+          .includes(normalizedSearch);
+      }),
+    [invoices, normalizedSearch],
+  );
 
   return (
     <PortalLayout
@@ -82,6 +96,17 @@ function PaymentsPage() {
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-6">
+            {invoices.length > 1 ? (
+              <div className="relative">
+                <Search className="pointer-events-none absolute end-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="ابحث برقم الطلب أو العام الدراسي"
+                  className="h-12 rounded-2xl bg-card pe-11"
+                />
+              </div>
+            ) : null}
             {pendingPlans.map((app) => (
               <PlanChooser
                 key={app.id}
@@ -93,7 +118,7 @@ function PaymentsPage() {
               />
             ))}
 
-            {invoices.map((invoice) => {
+            {visibleInvoices.map((invoice) => {
               const rows = (data?.installments ?? []).filter(
                 (i) => i.invoice_id === invoice.id,
               ) as unknown as InstallmentRow[];
@@ -215,6 +240,11 @@ function PaymentsPage() {
                 </section>
               );
             })}
+            {invoices.length > 0 && visibleInvoices.length === 0 ? (
+              <div className="rounded-3xl border-2 border-dashed border-border/70 bg-card p-8 text-center text-sm font-bold text-muted-foreground">
+                لا توجد نتائج مطابقة للبحث.
+              </div>
+            ) : null}
           </div>
 
           <aside className="space-y-4">

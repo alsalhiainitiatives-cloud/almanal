@@ -20,7 +20,7 @@ import {
 
 type Db = SupabaseClient<Database>;
 
-export const ACADEMIC_YEAR = "1447";
+export const ACADEMIC_YEAR = "2026-2027 / 1448هـ";
 const FINANCE_ROLES: AppRole[] = ["admin", "principal", "accountant"];
 
 async function rolesOf(supabase: Db, userId: string) {
@@ -53,9 +53,9 @@ async function admin() {
 export async function getFinanceConfig(supabase: Db) {
   const [plans, settings, discounts, banks, general, stages, classrooms, services] = await Promise.all([
     supabase.from("fee_plans").select("*").order("created_at"),
-    supabase.from("payment_plan_settings").select("*").eq("academic_year", ACADEMIC_YEAR).maybeSingle(),
+    supabase.from("payment_plan_settings").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("discount_rules").select("*").order("sort_order"),
-    supabase.from("bank_accounts").select("*").order("created_at"),
+    supabase.from("bank_accounts").select("*").order("is_default", { ascending: false }).order("updated_at", { ascending: false }),
     supabase.from("finance_settings").select("*").limit(1).maybeSingle(),
     supabase.from("stages").select("id, name_ar, slug, sort_order").order("sort_order"),
     supabase.from("classrooms").select("id, name_ar, stage_id, sort_order").order("sort_order"),
@@ -345,7 +345,7 @@ async function loadQuoteContext(supabase: Db, applicationId: string) {
       .select("price_at_selection, services(name_ar)")
       .eq("application_id", applicationId),
     supabase.from("fee_plans").select("*").eq("is_active", true),
-    supabase.from("payment_plan_settings").select("*").eq("academic_year", ACADEMIC_YEAR).maybeSingle(),
+    supabase.from("payment_plan_settings").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("discount_rules").select("*").eq("is_active", true),
     supabase.from("qurra_requests").select("status, requested").eq("application_id", applicationId).maybeSingle(),
   ]);

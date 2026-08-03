@@ -169,6 +169,8 @@ export async function listQueue(supabase: Db, userId: string, filters: QueueFilt
   return rows.map((row) => {
     const qurra = (row.qurra_requests as unknown as { status: string }[] | null)?.[0] ?? null;
     const docs = (row.application_documents as unknown as { status: string }[] | null) ?? [];
+    const draft = row.draft_data as { parent?: { fullName?: string; mobile?: string; email?: string } } | null;
+    const enteredParent = draft?.parent;
     return {
       ...row,
       children: (row.application_children as unknown as QueueChild[]) ?? [],
@@ -176,9 +178,9 @@ export async function listQueue(supabase: Db, userId: string, filters: QueueFilt
       documentsTotal: docs.length,
       documentsApproved: docs.filter((d) => d.status === "approved").length,
       documentsRejected: docs.filter((d) => d.status === "rejected").length,
-      parentName: people[row.parent_id]?.fullName ?? "—",
-      parentPhone: people[row.parent_id]?.phone ?? null,
-      parentEmail: people[row.parent_id]?.email ?? null,
+      parentName: enteredParent?.fullName?.trim() || people[row.parent_id]?.fullName || "—",
+      parentPhone: enteredParent?.mobile?.trim() || people[row.parent_id]?.phone || null,
+      parentEmail: enteredParent?.email?.trim() || people[row.parent_id]?.email || null,
       officerName: row.assigned_officer_id ? (people[row.assigned_officer_id]?.fullName ?? "—") : null,
       pinned: pinned.has(row.id),
     };
@@ -733,7 +735,7 @@ export async function decideApplication(
     decided_at: new Date().toISOString(),
     decision_note: note,
     seat_status: approved ? "reserved" : "released",
-    student_number: approved ? (app?.student_number ?? studentNumber(app?.academic_year ?? "1447")) : null,
+    student_number: approved ? (app?.student_number ?? studentNumber(app?.academic_year ?? "1448")) : null,
   });
 
   if (!approved) {
@@ -781,6 +783,19 @@ export async function manageSeat(
   input: { id: string; action: "reserve" | "release" | "transfer"; classroomId?: string | null; note?: string },
 ) {
   await guard(supabase, userId, "seats");
+
+  const { data: current } = await supabase
+    .from("applications")
+    .select("classroom_id, seat_status")
+    .eq("id", input.id)
+    .maybeSingle();
+  if (
+    input.action === "reserve" &&
+    current?.seat_status === "reserved" &&
+    current.classroom_id === input.classroomId
+  ) {
+    return { ok: true as const };
+  }
 
   if (input.action === "release") {
     await supabase
