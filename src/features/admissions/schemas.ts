@@ -169,6 +169,26 @@ export const childSchema = z.object({
 
 export const childrenSchema = z.array(childSchema).min(1, "أضف طفلًا واحدًا على الأقل").max(6);
 
+/**
+ * A Saudi guardian cannot have a resident (iqama) child. Validated separately
+ * because it needs the parent's nationality, which lives on another step.
+ */
+export const SAUDI_PARENT_CHILD_MISMATCH =
+  "ولي الأمر سعودي — لا يمكن إدخال رقم إقامة (يبدأ بـ 2) للطفل. يجب أن يبدأ رقم هوية الطفل بالرقم 1.";
+
+export function childNationalityConflicts(
+  children: Array<{ nationalId?: string }>,
+  parentNationality: "saudi" | "resident" | string | undefined,
+): Record<string, string> {
+  if (parentNationality !== "saudi") return {};
+  const out: Record<string, string> = {};
+  children.forEach((c, i) => {
+    const id = (c.nationalId ?? "").trim();
+    if (id.startsWith("2")) out[`${i}.nationalId`] = SAUDI_PARENT_CHILD_MISMATCH;
+  });
+  return out;
+}
+
 export const qurraSchema = z.object({
   requested: z.boolean(),
   declarationAccepted: z.boolean(),
