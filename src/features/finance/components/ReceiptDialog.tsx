@@ -48,11 +48,14 @@ export function ReceiptDialog({
     setBusy(true);
     try {
       const { path } = await makePath({ data: { invoiceId, fileName: file.name } });
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error("حجم الملف كبير — الحد الأقصى 10 ميجابايت.");
+      }
       const { error } = await supabase.storage.from("payment-receipts").upload(path, file, {
-        upsert: false,
-        contentType: file.type || undefined,
+        upsert: true,
+        contentType: file.type || "application/octet-stream",
       });
-      if (error) throw new Error("تعذّر رفع الملف، حاول مرة أخرى.");
+      if (error) throw new Error(`تعذّر رفع الملف: ${error.message}`);
       await record({
         data: {
           invoiceId,
