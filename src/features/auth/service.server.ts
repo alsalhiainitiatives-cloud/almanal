@@ -41,7 +41,11 @@ export type SecurityContext = {
   }>;
 };
 
-export async function performSignIn(data: SignInInput) {
+export type SignInResult =
+  | { ok: true; accessToken: string; refreshToken: string }
+  | { ok: false; message: string };
+
+export async function performSignIn(data: SignInInput): Promise<SignInResult> {
   const meta = getRequestMeta();
   const identifier = data.identifier.trim().toLowerCase();
 
@@ -52,13 +56,16 @@ export async function performSignIn(data: SignInInput) {
       metadata: { identifier },
       meta,
     });
-    throw new Error("تم تجاوز عدد المحاولات المسموح. يرجى المحاولة بعد 15 دقيقة.");
+    return {
+      ok: false,
+      message: "تم تجاوز عدد المحاولات المسموح. يرجى المحاولة بعد 15 دقيقة.",
+    };
   }
 
   const email = await resolveEmail(identifier);
   if (!email) {
     await recordLoginAttempt({ identifier, success: false, meta });
-    throw new Error("بيانات الدخول غير صحيحة.");
+    return { ok: false, message: "بيانات الدخول غير صحيحة." };
   }
 
   const auth = serverAuthClient();
@@ -76,7 +83,7 @@ export async function performSignIn(data: SignInInput) {
       metadata: { reason: error?.message ?? "invalid_credentials" },
       meta,
     });
-    throw new Error("بيانات الدخول غير صحيحة.");
+    return { ok: false, message: "بيانات الدخول غير صحيحة." };
   }
 
   await recordLoginAttempt({ identifier, success: true, meta });
@@ -95,6 +102,7 @@ export async function performSignIn(data: SignInInput) {
   });
 
   return {
+    ok: true as const,
     accessToken: result.session.access_token,
     refreshToken: result.session.refresh_token,
   };

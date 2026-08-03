@@ -232,6 +232,11 @@ function SignInForm() {
     setLoading(true);
     try {
       const result = await signInWithIdentifier({ data: parsed.data });
+      if (!result.ok) {
+        setErrors({ identifier: result.message });
+        toast.error(result.message);
+        return;
+      }
       const { error } = await supabase.auth.setSession({
         access_token: result.accessToken,
         refresh_token: result.refreshToken,
