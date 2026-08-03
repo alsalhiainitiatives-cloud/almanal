@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 import type { ChildInput, ParentInfoInput, QurraInput } from "./schemas";
+import { buildApplicationCode } from "./application-code";
 
 type Db = SupabaseClient<Database>;
 
@@ -365,23 +366,22 @@ export async function removeDocument(supabase: Db, userId: string, input: { id: 
   return { ok: true as const };
 }
 
-function randomCode(length: number) {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let out = "";
-  const bytes = crypto.getRandomValues(new Uint8Array(length));
-  for (let i = 0; i < length; i++) out += chars[bytes[i] % chars.length];
-  return out;
-}
-
 /**
- * Professional short application code: MN-48-ABC123
- * MN = school prefix, 48 = Hijri intake year (1448), then a 6-char
- * unambiguous alphanumeric serial. ASCII only, safe for QR/URLs/exports.
+ * Issues a professional short code (MN-48-ABC123) and guarantees uniqueness by
+ * re-rolling the serial whenever the database already holds it.
  */
-function buildApplicationCode() {
-  const hijri = ACADEMIC_YEAR.match(/1(\d{3})/);
-  const year = hijri ? hijri[1].slice(1) : String(new Date().getFullYear()).slice(2);
-  return `MN-${year}-${randomCode(6)}`;
+async function issueApplicationCode(supabase: Db) {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const candidate = buildApplicationCode(ACADEMIC_YEAR);
+    const { data, error } = await supabase
+      .from("applications")
+      .select("id")
+      .or(`application_number.eq.${candidate},tracking_number.eq.${candidate}`)
+      .limit(1);
+    if (error) throw new Error("تعذّر توليد رقم الطلب، حاول مرة أخرى.");
+    if (!data?.length) return candidate;
+  }
+  throw new Error("تعذّر توليد رقم طلب فريد، حاول مرة أخرى.");
 }
 
 export async function submitApplication(supabase: Db, userId: string, id: string) {
@@ -411,7 +411,7 @@ export async function submitApplication(supabase: Db, userId: string, id: string
   // One unified number is used for both the application and its tracking page.
   const wasCorrection = app.status === "needs_action";
   // Keep the original number when the parent resubmits after corrections.
-  const applicationNumber = app.application_number ?? buildApplicationCode();
+  const applicationNumber = app.application_number ?? (await issueApplicationCode(supabase));
   const trackingNumber = applicationNumber;
 
   const { error } = await supabase
