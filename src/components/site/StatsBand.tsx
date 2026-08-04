@@ -1,4 +1,13 @@
-import { CalendarCheck, GraduationCap, Palette, Users, type LucideIcon } from "lucide-react";
+import {
+  CalendarCheck,
+  GraduationCap,
+  Heart,
+  Palette,
+  School,
+  Smile,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { motion } from "motion/react";
 
 import { useSiteContent } from "@/features/site-content/SiteContentProvider";
@@ -6,7 +15,7 @@ import { Counter } from "./Counter";
 import { staggerItem, StaggerGroup } from "./Reveal";
 import { WaveDivider } from "./Decor";
 
-const ICONS: LucideIcon[] = [Users, GraduationCap, Palette, CalendarCheck];
+const ICONS: LucideIcon[] = [Users, GraduationCap, Palette, CalendarCheck, Heart, School, Smile];
 
 /**
  * Performance-indicator band: one hero figure in a glass feature panel beside a
@@ -61,9 +70,9 @@ export function StatsBand() {
             ) : null}
           </motion.div>
 
-          <StaggerGroup className="grid auto-rows-min content-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <StaggerGroup className="grid auto-rows-fr gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {rest.map((stat, index) => {
-              const Icon = ICONS[(index + 1) % ICONS.length]!;
+              const Icon = ICONS[(index + 1) % ICONS.length] ?? Users;
               return (
                 <motion.div
                   key={stat.label}
