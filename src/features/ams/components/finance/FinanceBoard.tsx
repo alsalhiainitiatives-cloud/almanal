@@ -55,6 +55,7 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [waDraft, setWaDraft] = useState<WhatsappDraft | null>(null);
 
   const { data, isLoading } = useQuery({ queryKey: KEY, queryFn: () => load() });
 
@@ -421,6 +422,8 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
           )}
         </div>
       </div>
+
+      <WhatsappConfirmDialog draft={waDraft} onClose={() => setWaDraft(null)} />
     </div>
   );
 }
