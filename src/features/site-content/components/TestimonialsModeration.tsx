@@ -38,6 +38,7 @@ export function TestimonialsModeration({
   const queryClient = useQueryClient();
   const [templateKey, setTemplateKey] = useState(REVIEW_TEMPLATES[0].key);
   const [waDraft, setWaDraft] = useState<WhatsappDraft | null>(null);
+  const [waSubject, setWaSubject] = useState<{ id: string; label: string } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["site-testimonials", "all"],
@@ -190,14 +191,10 @@ export function TestimonialsModeration({
                       variant="soft"
                       size="sm"
                       className="rounded-2xl"
-                      onClick={() =>
-                        setWaDraft({
-                          phone: contact.phone,
-                          text: body,
-                          recipient: row.name,
-                          subjectId: row.id,
-                        } as WhatsappDraft & { subjectId: string })
-                      }
+                      onClick={() => {
+                        setWaSubject({ id: row.id, label: template.label });
+                        setWaDraft({ phone: contact.phone, text: body, recipient: row.name });
+                      }}
                     >
                       <Phone className="size-4" />
                       رد واتساب
