@@ -84,6 +84,13 @@ export const P = {
   paymentsManage: "payments.manage",
   reportsView: "reports.view",
   settingsManage: "settings.manage",
+  inboxView: "inbox.view",
+  inboxReply: "inbox.reply",
+  inboxStatus: "inbox.status",
+  inboxNote: "inbox.note",
+  inboxExport: "inbox.export",
+  inboxDelete: "inbox.delete",
+  reviewsModerate: "reviews.moderate",
 } as const;
 
 export function passwordStrength(value: string): {

@@ -7,6 +7,7 @@ import { useAuth } from "@/features/auth/AuthProvider";
 import { PortalLayout } from "@/features/auth/components/PortalLayout";
 import { P } from "@/features/auth/rbac";
 import { MessagesInbox } from "@/features/inbox/components/MessagesInbox";
+import { useInboxRealtime } from "@/features/inbox/useInboxRealtime";
 import { TestimonialsModeration } from "@/features/site-content/components/TestimonialsModeration";
 
 export const Route = createFileRoute("/_authenticated/admin/inbox")({
@@ -19,10 +20,22 @@ const TABS = [
 ];
 
 function InboxPage() {
-  const { hasPermission, roles } = useAuth();
+  const { hasPermission } = useAuth();
   const [tab, setTab] = useState<"messages" | "reviews">("messages");
-  const canManage = hasPermission(P.applicationsReview) || hasPermission(P.settingsManage);
-  const canDelete = roles.includes("admin") || roles.includes("principal");
+  const canManage =
+    hasPermission(P.inboxView) ||
+    hasPermission(P.applicationsReview) ||
+    hasPermission(P.settingsManage);
+  const abilities = {
+    canReply: hasPermission(P.inboxReply),
+    canStatus: hasPermission(P.inboxStatus),
+    canNote: hasPermission(P.inboxNote),
+    canExport: hasPermission(P.inboxExport),
+    canDelete: hasPermission(P.inboxDelete),
+  };
+  const canModerateReviews = hasPermission(P.reviewsModerate);
+
+  useInboxRealtime(canManage);
 
   return (
     <PortalLayout
@@ -52,9 +65,13 @@ function InboxPage() {
           </div>
 
           {tab === "messages" ? (
-            <MessagesInbox canDelete={canDelete} />
+            <MessagesInbox abilities={abilities} />
           ) : (
-            <TestimonialsModeration />
+            <TestimonialsModeration
+              canModerate={canModerateReviews}
+              canDelete={canModerateReviews && hasPermission(P.inboxDelete)}
+              canReply={abilities.canReply}
+            />
           )}
         </>
       )}

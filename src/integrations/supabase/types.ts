@@ -1105,6 +1105,45 @@ export type Database = {
         }
         Relationships: []
       }
+      inbox_events: {
+        Row: {
+          action: string
+          actor_id: string
+          actor_name: string | null
+          created_at: string
+          from_value: string | null
+          id: string
+          note: string | null
+          subject_id: string
+          subject_type: string
+          to_value: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          actor_name?: string | null
+          created_at?: string
+          from_value?: string | null
+          id?: string
+          note?: string | null
+          subject_id: string
+          subject_type: string
+          to_value?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          actor_name?: string | null
+          created_at?: string
+          from_value?: string | null
+          id?: string
+          note?: string | null
+          subject_id?: string
+          subject_type?: string
+          to_value?: string | null
+        }
+        Relationships: []
+      }
       installments: {
         Row: {
           amount: number

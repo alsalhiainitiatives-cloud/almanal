@@ -18,6 +18,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/features/auth/AuthProvider";
+import { P } from "@/features/auth/rbac";
 import { uploadClassroomMedia, useClassroomMediaUrls } from "@/lib/classroom-media";
 import { DEFAULT_SITE_CONTENT, type SiteContent } from "../defaults";
 import { SITE_ICON_NAMES, siteIcon } from "../icons";
@@ -354,6 +356,7 @@ function MediaField({
 /* -------------------------------------------------------------- main editor */
 
 export function SiteSettings() {
+  const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
   const fetchContent = useServerFn(siteContentGet);
   const saveContent = useServerFn(siteContentSave);
@@ -845,7 +848,11 @@ export function SiteSettings() {
             </CardContent>
           </Card>
 
-          <TestimonialsModeration />
+          <TestimonialsModeration
+            canModerate={hasPermission(P.reviewsModerate)}
+            canDelete={hasPermission(P.reviewsModerate) && hasPermission(P.inboxDelete)}
+            canReply={hasPermission(P.inboxReply)}
+          />
         </TabsContent>
 
         {/* Page heroes */}
