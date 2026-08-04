@@ -10,10 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestimonialsRouteImport } from './routes/testimonials'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as StagesRouteImport } from './routes/stages'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SchoolLifeRouteImport } from './routes/school-life'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PrimaryRouteImport } from './routes/primary'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as KindergartenRouteImport } from './routes/kindergarten'
@@ -27,6 +29,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TrackIndexRouteImport } from './routes/track.index'
 import { Route as AdmissionsIndexRouteImport } from './routes/admissions.index'
+import { Route as LegalSlugRouteImport } from './routes/legal.$slug'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
 import { Route as AuthenticatedMyApplicationsRouteImport } from './routes/_authenticated/my-applications'
@@ -60,6 +63,11 @@ const TestimonialsRoute = TestimonialsRouteImport.update({
   path: '/testimonials',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StagesRoute = StagesRouteImport.update({
   id: '/stages',
   path: '/stages',
@@ -78,6 +86,11 @@ const SchoolLifeRoute = SchoolLifeRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrimaryRoute = PrimaryRouteImport.update({
@@ -142,6 +155,11 @@ const TrackIndexRoute = TrackIndexRouteImport.update({
 const AdmissionsIndexRoute = AdmissionsIndexRouteImport.update({
   id: '/admissions/',
   path: '/admissions/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalSlugRoute = LegalSlugRouteImport.update({
+  id: '/legal/$slug',
+  path: '/legal/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
@@ -305,16 +323,19 @@ export interface FileRoutesByFullPath {
   '/kindergarten': typeof KindergartenRoute
   '/news': typeof NewsRoute
   '/primary': typeof PrimaryRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/school-life': typeof SchoolLifeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
+  '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/child-file': typeof AuthenticatedChildFileRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/legal/$slug': typeof LegalSlugRoute
   '/admissions/': typeof AdmissionsIndexRoute
   '/track/': typeof TrackIndexRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -351,16 +372,19 @@ export interface FileRoutesByTo {
   '/kindergarten': typeof KindergartenRoute
   '/news': typeof NewsRoute
   '/primary': typeof PrimaryRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/school-life': typeof SchoolLifeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
+  '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/child-file': typeof AuthenticatedChildFileRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/legal/$slug': typeof LegalSlugRoute
   '/admissions': typeof AdmissionsIndexRoute
   '/track': typeof TrackIndexRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -399,16 +423,19 @@ export interface FileRoutesById {
   '/kindergarten': typeof KindergartenRoute
   '/news': typeof NewsRoute
   '/primary': typeof PrimaryRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/school-life': typeof SchoolLifeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
+  '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/_authenticated/child-file': typeof AuthenticatedChildFileRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/legal/$slug': typeof LegalSlugRoute
   '/admissions/': typeof AdmissionsIndexRoute
   '/track/': typeof TrackIndexRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -447,16 +474,19 @@ export interface FileRouteTypes {
     | '/kindergarten'
     | '/news'
     | '/primary'
+    | '/privacy'
     | '/reset-password'
     | '/school-life'
     | '/sitemap.xml'
     | '/stages'
+    | '/terms'
     | '/testimonials'
     | '/child-file'
     | '/dashboard'
     | '/my-applications'
     | '/payments'
     | '/profile'
+    | '/legal/$slug'
     | '/admissions/'
     | '/track/'
     | '/admin/audit'
@@ -493,16 +523,19 @@ export interface FileRouteTypes {
     | '/kindergarten'
     | '/news'
     | '/primary'
+    | '/privacy'
     | '/reset-password'
     | '/school-life'
     | '/sitemap.xml'
     | '/stages'
+    | '/terms'
     | '/testimonials'
     | '/child-file'
     | '/dashboard'
     | '/my-applications'
     | '/payments'
     | '/profile'
+    | '/legal/$slug'
     | '/admissions'
     | '/track'
     | '/admin/audit'
@@ -540,16 +573,19 @@ export interface FileRouteTypes {
     | '/kindergarten'
     | '/news'
     | '/primary'
+    | '/privacy'
     | '/reset-password'
     | '/school-life'
     | '/sitemap.xml'
     | '/stages'
+    | '/terms'
     | '/testimonials'
     | '/_authenticated/child-file'
     | '/_authenticated/dashboard'
     | '/_authenticated/my-applications'
     | '/_authenticated/payments'
     | '/_authenticated/profile'
+    | '/legal/$slug'
     | '/admissions/'
     | '/track/'
     | '/_authenticated/admin/audit'
@@ -588,11 +624,14 @@ export interface RootRouteChildren {
   KindergartenRoute: typeof KindergartenRoute
   NewsRoute: typeof NewsRoute
   PrimaryRoute: typeof PrimaryRoute
+  PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SchoolLifeRoute: typeof SchoolLifeRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StagesRoute: typeof StagesRoute
+  TermsRoute: typeof TermsRoute
   TestimonialsRoute: typeof TestimonialsRoute
+  LegalSlugRoute: typeof LegalSlugRoute
   AdmissionsIndexRoute: typeof AdmissionsIndexRoute
   TrackIndexRoute: typeof TrackIndexRoute
   AdmissionsStageSlugClassroomsRoute: typeof AdmissionsStageSlugClassroomsRoute
@@ -607,6 +646,13 @@ declare module '@tanstack/react-router' {
       path: '/testimonials'
       fullPath: '/testimonials'
       preLoaderRoute: typeof TestimonialsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/stages': {
@@ -635,6 +681,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/primary': {
@@ -726,6 +779,13 @@ declare module '@tanstack/react-router' {
       path: '/admissions'
       fullPath: '/admissions/'
       preLoaderRoute: typeof AdmissionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/$slug': {
+      id: '/legal/$slug'
+      path: '/legal/$slug'
+      fullPath: '/legal/$slug'
+      preLoaderRoute: typeof LegalSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/profile': {
@@ -990,11 +1050,14 @@ const rootRouteChildren: RootRouteChildren = {
   KindergartenRoute: KindergartenRoute,
   NewsRoute: NewsRoute,
   PrimaryRoute: PrimaryRoute,
+  PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SchoolLifeRoute: SchoolLifeRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StagesRoute: StagesRoute,
+  TermsRoute: TermsRoute,
   TestimonialsRoute: TestimonialsRoute,
+  LegalSlugRoute: LegalSlugRoute,
   AdmissionsIndexRoute: AdmissionsIndexRoute,
   TrackIndexRoute: TrackIndexRoute,
   AdmissionsStageSlugClassroomsRoute: AdmissionsStageSlugClassroomsRoute,
