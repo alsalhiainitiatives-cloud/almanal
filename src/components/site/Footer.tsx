@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 import { siteIcon } from "@/features/site-content/icons";
 import { legalDocPath, useVisibleLegalDocs } from "@/features/site-content/legal";
+import { WaveDivider } from "./Decor";
 import { Logo } from "./Logo";
 
 export function Footer() {
@@ -16,20 +17,21 @@ export function Footer() {
   return (
     <footer
       data-site-footer
-      className="relative mt-32 overflow-hidden gradient-soft-cream text-foreground"
+      className="relative mt-32 overflow-hidden gradient-burgundy-deep text-primary-foreground"
     >
-      <span aria-hidden className="pattern-dots absolute inset-0 opacity-25" />
+      <WaveDivider position="top" className="text-background" />
+      <span aria-hidden className="pattern-dots-light absolute inset-0 opacity-25" />
+      <span aria-hidden className="pattern-noise absolute inset-0 opacity-50" />
       <motion.span
         aria-hidden
-        className="pointer-events-none absolute -top-32 start-1/3 size-[26rem] rounded-full bg-accent/50 blur-[110px]"
-        animate={{ y: [0, 26, 0], opacity: [0.5, 0.9, 0.5] }}
+        className="pointer-events-none absolute top-40 start-1/3 size-[26rem] rounded-full bg-gold/20 blur-[110px]"
+        animate={{ y: [0, 26, 0], opacity: [0.4, 0.75, 0.4] }}
         transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
       />
-      <span aria-hidden className="absolute inset-x-0 top-0 h-1 gradient-burgundy" />
 
       {/* Call to action band */}
-      <div className="relative mx-auto max-w-7xl px-4 pt-16 md:px-8">
-        <div className="relative overflow-hidden rounded-[2.5rem] gradient-burgundy-deep px-7 py-9 text-primary-foreground ring-gold-soft md:px-12">
+      <div className="relative z-20 mx-auto max-w-7xl px-4 pt-24 md:px-8 md:pt-32">
+        <div className="relative overflow-hidden rounded-[2.5rem] glass-dark px-7 py-9 text-primary-foreground ring-gold-soft md:px-12">
           <span aria-hidden className="pattern-noise absolute inset-0 opacity-60" />
           <span
             aria-hidden
@@ -68,19 +70,19 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="relative mx-auto grid max-w-7xl gap-12 px-4 pt-16 pb-14 md:grid-cols-2 md:px-8 lg:grid-cols-12">
+      <div className="relative z-20 mx-auto grid max-w-7xl gap-12 px-4 pt-16 pb-14 md:grid-cols-2 md:px-8 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-4">
-          <div className="w-fit rounded-3xl border border-border/70 bg-card/80 p-4 backdrop-blur-sm shadow-soft">
+          <div className="w-fit rounded-3xl border border-primary-foreground/15 bg-card/95 p-4 shadow-soft backdrop-blur-sm">
             <Logo />
           </div>
-          <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+          <p className="max-w-sm text-sm leading-relaxed text-primary-foreground/75">
             {brand.description}
           </p>
           <div className="flex gap-2.5">
             {socials.map((social) => {
               const Icon = siteIcon(social.icon);
               const className =
-                "grid size-11 place-items-center rounded-2xl border border-border/70 bg-card/80 text-secondary transition-all duration-300 hover:-translate-y-1 hover:border-gold/60 hover:bg-gold/20 hover:text-gold-foreground";
+                "grid size-11 place-items-center rounded-2xl border border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground transition-all duration-300 hover:-translate-y-1 hover:border-gold/60 hover:bg-gold/25 hover:text-gold";
               return social.url ? (
                 <a
                   key={social.label}
@@ -109,11 +111,11 @@ export function Footer() {
               <li key={link.to}>
                 <Link
                   to={link.to as "/"}
-                  className="group inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-secondary"
+                  className="group inline-flex items-center gap-2 text-sm text-primary-foreground/75 transition-colors hover:text-gold"
                 >
                   <span
                     aria-hidden
-                    className="h-px w-4 bg-border transition-all duration-300 group-hover:w-7 group-hover:bg-gold"
+                    className="h-px w-4 bg-primary-foreground/35 transition-all duration-300 group-hover:w-7 group-hover:bg-gold"
                   />
                   {link.label}
                 </Link>
@@ -124,9 +126,9 @@ export function Footer() {
 
         <div className="lg:col-span-3">
           <FooterTitle>معلومات التواصل</FooterTitle>
-          <ul className="mt-6 space-y-4 text-sm text-muted-foreground">
+          <ul className="mt-6 space-y-4 text-sm text-primary-foreground/75">
             <li className="flex gap-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent text-secondary">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gold/20 text-gold">
                 <MapPin className="size-4" />
               </span>
               <span className="leading-relaxed">
@@ -136,18 +138,18 @@ export function Footer() {
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent text-secondary">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gold/20 text-gold">
                 <Phone className="size-4" />
               </span>
-              <a href={`tel:${contact.phoneIntl}`} dir="ltr" className="hover:text-secondary">
+              <a href={`tel:${contact.phoneIntl}`} dir="ltr" className="hover:text-gold">
                 {contact.phone}
               </a>
             </li>
             <li className="flex gap-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent text-secondary">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gold/20 text-gold">
                 <Mail className="size-4" />
               </span>
-              <a href={`mailto:${contact.email}`} dir="ltr" className="hover:text-secondary">
+              <a href={`mailto:${contact.email}`} dir="ltr" className="hover:text-gold">
                 {contact.email}
               </a>
             </li>
@@ -160,15 +162,15 @@ export function Footer() {
             {workingHours.map((row) => (
               <li
                 key={row.day}
-                className="flex items-center justify-between gap-3 border-b border-dashed border-border pb-2 last:border-0"
+                className="flex items-center justify-between gap-3 border-b border-dashed border-primary-foreground/20 pb-2 last:border-0"
               >
-                <span className="text-muted-foreground">{row.day}</span>
+                <span className="text-primary-foreground/70">{row.day}</span>
                 <span
                   dir="ltr"
                   className={
                     row.closed
-                      ? "font-latin text-xs text-muted-foreground/60"
-                      : "font-latin text-xs font-bold text-secondary"
+                      ? "font-latin text-xs text-primary-foreground/45"
+                      : "font-latin text-xs font-bold text-gold"
                   }
                 >
                   {row.hours}
@@ -181,13 +183,13 @@ export function Footer() {
 
       {/* Transparency & policies band */}
       {legalDocs.length ? (
-        <div className="relative mx-auto max-w-7xl px-4 pb-2 md:px-8">
-          <div className="rounded-[2rem] border border-border/70 bg-card/70 px-6 py-6 backdrop-blur-sm md:px-8">
+        <div className="relative z-20 mx-auto max-w-7xl px-4 pb-2 md:px-8">
+          <div className="rounded-[2rem] border border-primary-foreground/15 bg-primary-foreground/8 px-6 py-6 backdrop-blur-sm md:px-8">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <FooterTitle>{legal?.footerTitle || "الشفافية والسياسات"}</FooterTitle>
                 {legal?.footerNote ? (
-                  <p className="mt-3 max-w-xl text-xs leading-relaxed text-muted-foreground">
+                  <p className="mt-3 max-w-xl text-xs leading-relaxed text-primary-foreground/70">
                     {legal.footerNote}
                   </p>
                 ) : null}
@@ -197,7 +199,7 @@ export function Footer() {
                   <li key={doc.slug}>
                     <Link
                       to={legalDocPath(doc.slug)}
-                      className="group inline-flex items-center gap-2 rounded-full border border-border/70 bg-card px-4 py-2 text-xs font-bold text-muted-foreground transition-all duration-300 hover:-translate-y-0.5 hover:border-gold/60 hover:bg-gold/15 hover:text-secondary"
+                      className="group inline-flex items-center gap-2 rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-4 py-2 text-xs font-bold text-primary-foreground/80 transition-all duration-300 hover:-translate-y-0.5 hover:border-gold/60 hover:bg-gold/20 hover:text-gold"
                     >
                       {doc.navLabel}
                       <ArrowLeft className="size-3.5 transition-transform duration-300 group-hover:-translate-x-1" />
@@ -211,13 +213,13 @@ export function Footer() {
       ) : null}
 
       {/* Oversized brand watermark */}
-      <div aria-hidden className="relative mx-auto max-w-7xl px-4 md:px-8">
-        <p className="number-ghost translate-y-2 text-center text-[15vw] leading-none whitespace-nowrap opacity-70">
+      <div aria-hidden className="relative z-10 mx-auto max-w-7xl px-4 md:px-8">
+        <p className="translate-y-2 text-center text-[15vw] leading-none font-black whitespace-nowrap text-primary-foreground/8">
           {brand.name}
         </p>
       </div>
 
-      <div className="relative gradient-burgundy text-primary-foreground">
+      <div className="relative z-20 border-t border-primary-foreground/15 bg-primary-foreground/8 text-primary-foreground backdrop-blur-sm">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-5 text-xs font-semibold text-primary-foreground/85 md:flex-row md:px-8">
           <p>
             © {new Date().getFullYear()} {brand.name} — جميع الحقوق محفوظة.
@@ -234,9 +236,9 @@ export function Footer() {
 
 function FooterTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="flex items-center gap-3 text-sm font-extrabold tracking-wide text-foreground">
+    <h3 className="flex items-center gap-3 text-sm font-extrabold tracking-wide text-primary-foreground">
       {children}
-      <span aria-hidden className="h-px flex-1 bg-border" />
+      <span aria-hidden className="h-px flex-1 bg-primary-foreground/25" />
     </h3>
   );
 }
