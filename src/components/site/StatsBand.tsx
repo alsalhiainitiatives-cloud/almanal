@@ -61,7 +61,7 @@ export function StatsBand() {
             ) : null}
           </motion.div>
 
-          <StaggerGroup className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <StaggerGroup className="grid auto-rows-min content-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {rest.map((stat, index) => {
               const Icon = ICONS[(index + 1) % ICONS.length]!;
               return (
