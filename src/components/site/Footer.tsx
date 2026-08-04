@@ -179,6 +179,37 @@ export function Footer() {
         </div>
       </div>
 
+      {/* Transparency & policies band */}
+      {legalDocs.length ? (
+        <div className="relative mx-auto max-w-7xl px-4 pb-2 md:px-8">
+          <div className="rounded-[2rem] border border-primary-foreground/12 bg-primary-foreground/6 px-6 py-6 backdrop-blur-sm md:px-8">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <FooterTitle>{legal?.footerTitle || "الشفافية والسياسات"}</FooterTitle>
+                {legal?.footerNote ? (
+                  <p className="mt-3 max-w-xl text-xs leading-relaxed text-primary-foreground/60">
+                    {legal.footerNote}
+                  </p>
+                ) : null}
+              </div>
+              <ul className="flex flex-wrap gap-2.5">
+                {legalDocs.map((doc) => (
+                  <li key={doc.slug}>
+                    <Link
+                      to={legalDocPath(doc.slug)}
+                      className="group inline-flex items-center gap-2 rounded-full border border-primary-foreground/15 bg-primary-foreground/8 px-4 py-2 text-xs font-bold text-primary-foreground/80 transition-all duration-300 hover:-translate-y-0.5 hover:border-gold/60 hover:bg-gold/15 hover:text-gold"
+                    >
+                      {doc.navLabel}
+                      <ArrowLeft className="size-3.5 transition-transform duration-300 group-hover:-translate-x-1" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* Oversized brand watermark */}
       <div aria-hidden className="relative mx-auto max-w-7xl px-4 md:px-8">
         <p className="number-ghost translate-y-2 text-center text-[15vw] leading-none whitespace-nowrap opacity-60 [-webkit-text-stroke:1.5px_oklch(1_0_0_/_0.14)]">
