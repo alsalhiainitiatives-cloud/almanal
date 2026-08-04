@@ -22,14 +22,14 @@ function isMobileAgent() {
   return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
 }
 
-/** Builds the direct WhatsApp URL (no api.whatsapp.com redirect). */
+/** Builds the WhatsApp URL (wa.me on desktop, deep link on mobile). */
 export function buildWhatsappUrl(phone: string | null | undefined, text: string) {
   const intl = normalizeSaudiPhone(phone);
   if (!intl) return null;
   const encoded = encodeURIComponent(text ?? "");
   return isMobileAgent()
     ? `whatsapp://send?phone=${intl}&text=${encoded}`
-    : `https://web.whatsapp.com/send?phone=${intl}&text=${encoded}`;
+    : `https://wa.me/${intl}?text=${encoded}`;
 }
 
 /**
