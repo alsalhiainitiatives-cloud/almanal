@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type InboxEvent, fetchInboxEvents, logInboxEvent } from "@/features/inbox/audit";
 import { AuditTrail } from "@/features/inbox/components/MessagesInbox";
-import { REVIEW_TEMPLATES, mailtoLink, whatsappLink } from "@/features/inbox/templates";
+import { REVIEW_TEMPLATES, mailtoLink } from "@/features/inbox/templates";
+import { openWhatsapp } from "@/lib/whatsapp";
 import {
   deleteTestimonial,
   fetchAllTestimonials,
@@ -181,23 +182,22 @@ export function TestimonialsModeration({
 
                 <div className="mt-3 flex flex-wrap justify-end gap-2">
                   {canReply && contact?.phone && (
-                    <Button asChild variant="soft" size="sm" className="rounded-2xl">
-                      <a
-                        href={whatsappLink(contact.phone, body)}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={() =>
-                          logInboxEvent({
-                            subjectType: "testimonial",
-                            subjectId: row.id,
-                            action: "reply_whatsapp",
-                            note: template.label,
-                          })
-                        }
-                      >
-                        <Phone className="size-4" />
-                        رد واتساب
-                      </a>
+                    <Button
+                      variant="soft"
+                      size="sm"
+                      className="rounded-2xl"
+                      onClick={() => {
+                        openWhatsapp(contact.phone, body);
+                        logInboxEvent({
+                          subjectType: "testimonial",
+                          subjectId: row.id,
+                          action: "reply_whatsapp",
+                          note: template.label,
+                        });
+                      }}
+                    >
+                      <Phone className="size-4" />
+                      رد واتساب
                     </Button>
                   )}
                   {canReply && contact?.email && (
