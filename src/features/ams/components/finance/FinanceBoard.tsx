@@ -36,6 +36,7 @@ import {
   whatsappUrl,
 } from "@/features/finance/pricing";
 import { cn } from "@/lib/utils";
+import { openWhatsapp } from "@/lib/whatsapp";
 
 const KEY = ["ams", "finance"];
 
