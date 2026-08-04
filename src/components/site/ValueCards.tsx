@@ -27,7 +27,7 @@ export function ValueCards() {
 
   return (
     <div className="flex flex-col items-center gap-12">
-      <div className="flex flex-wrap items-start justify-center gap-x-6 gap-y-8 md:gap-x-10">
+      <div className="flex flex-wrap items-stretch justify-center gap-5 md:gap-7">
         {values.map((value, index) => {
           const Icon = siteIcon(value.icon);
           const isActive = index === active;
@@ -37,15 +37,19 @@ export function ValueCards() {
                 type="button"
                 onClick={() => setActive(index)}
                 aria-pressed={isActive}
-                className="group flex w-24 flex-col items-center gap-3 md:w-28"
+                className={`group flex w-40 flex-col items-center gap-4 rounded-[1.75rem] border p-5 transition-all duration-500 md:w-48 md:p-6 ${
+                  isActive
+                    ? "border-gold/60 bg-card shadow-glow"
+                    : "border-border/70 bg-card/70 hover:-translate-y-1 hover:border-gold/45"
+                }`}
               >
-                <span className="relative grid size-24 place-items-center md:size-28">
+                <span className="relative grid size-28 place-items-center md:size-32">
                   <span
                     aria-hidden
                     className={`animate-blob absolute inset-0 border transition-all duration-500 ${
                       isActive
                         ? "border-gold/60 gradient-burgundy-deep shadow-glow"
-                        : "border-border bg-beige/70 group-hover:border-gold/50"
+                        : "border-border bg-accent/70 group-hover:border-gold/50"
                     }`}
                   />
                   <span
@@ -55,15 +59,15 @@ export function ValueCards() {
                     }`}
                   />
                   <Icon
-                    className={`relative size-9 transition-colors duration-500 ${
+                    className={`relative size-12 transition-colors duration-500 md:size-14 ${
                       isActive ? "text-gold" : "text-secondary group-hover:text-primary"
                     }`}
                     strokeWidth={1.7}
                   />
                 </span>
                 <span
-                  className={`text-center text-xs leading-snug font-black transition-colors duration-300 md:text-sm ${
-                    isActive ? "text-secondary" : "text-muted-foreground group-hover:text-foreground"
+                  className={`text-center text-sm leading-snug font-black transition-colors duration-300 md:text-base ${
+                    isActive ? "text-secondary" : "text-foreground/75 group-hover:text-foreground"
                   }`}
                 >
                   {value.title}
@@ -88,9 +92,6 @@ export function ValueCards() {
               aria-hidden
               className={`absolute -top-16 -end-16 size-48 rounded-full opacity-50 blur-3xl ${tones[current.tone] ?? tones.rose}`}
             />
-            <span aria-hidden className="number-ghost absolute top-4 end-8 text-6xl">
-              {String(active + 1).padStart(2, "0")}
-            </span>
             <div className="relative flex flex-col items-start gap-6 md:flex-row md:items-center">
               <span
                 className={`grid size-16 shrink-0 place-items-center rounded-[1.4rem] ${tones[current.tone] ?? tones.rose}`}

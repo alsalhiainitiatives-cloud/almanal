@@ -10,7 +10,12 @@ import type { IconCard } from "@/features/site-content/defaults";
 import { siteIcon } from "@/features/site-content/icons";
 import { useSiteMedia } from "@/features/site-content/media";
 
-const TONES = ["bg-accent", "bg-sky", "bg-mint", "bg-lavender"];
+const TONES = [
+  "bg-accent text-secondary",
+  "bg-sky text-primary",
+  "bg-mint text-primary",
+  "bg-lavender text-primary",
+];
 
 /**
  * Editorial "about" block shared by the home page preview and the /about story
@@ -57,37 +62,38 @@ export function AboutIntro({
             aria-hidden
             className="animate-spin-slow absolute -top-10 -end-10 size-32 rounded-full border border-dashed border-gold/50"
           />
-          <div className="relative overflow-hidden rounded-[3rem] shadow-glow ring-gold-soft">
+          <div className="relative overflow-hidden rounded-t-[10rem] rounded-b-[3rem] shadow-glow ring-gold-soft">
             {src ? (
               <motion.img
                 src={src}
                 alt={title}
                 width={1400}
-                height={1200}
+                height={1600}
                 loading="lazy"
                 initial={{ scale: 1.12 }}
                 whileInView={{ scale: 1 }}
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-                className="aspect-4/3 w-full object-cover"
+                className="aspect-[4/5] w-full object-cover"
               />
             ) : (
-              <div className="aspect-4/3 w-full bg-beige" />
+              <div className="aspect-[4/5] w-full bg-beige" />
             )}
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-0 bg-linear-to-t from-primary/45 via-transparent to-transparent"
+              className="pointer-events-none absolute inset-0 bg-linear-to-t from-primary/55 via-primary/10 to-transparent"
             />
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-x-6 bottom-5 h-px gradient-gold-hairline"
+              className="pointer-events-none absolute inset-x-8 bottom-6 h-px gradient-gold-hairline"
             />
           </div>
 
           {badgeValue ? (
-            <div className="glass-panel absolute -bottom-6 end-8 rounded-[1.75rem] px-6 py-4 text-center ring-gold-soft">
-              <p className="font-latin text-2xl font-black text-secondary">{badgeValue}</p>
-              <p className="mt-0.5 text-xs font-bold text-muted-foreground">{badgeLabel}</p>
+            <div className="glass-panel absolute -bottom-7 end-6 rounded-[1.9rem] px-7 py-5 text-center ring-gold-soft">
+              <p className="font-latin text-3xl font-black text-secondary">{badgeValue}</p>
+              <span aria-hidden className="mx-auto mt-2 block h-0.5 w-10 rounded-full bg-gold" />
+              <p className="mt-2 text-xs font-bold text-muted-foreground">{badgeLabel}</p>
             </div>
           ) : null}
         </div>
@@ -96,23 +102,24 @@ export function AboutIntro({
       <div className={flip ? "lg:order-1" : ""}>
         <SectionHeading align="start" eyebrow={eyebrow} title={title} description={description} />
 
-        <StaggerGroup className="mt-9 space-y-4">
+        <StaggerGroup className="mt-9 grid gap-4 sm:grid-cols-2">
           {cards.map((card, i) => {
             const Icon = siteIcon(card.icon);
             return (
               <motion.div
                 key={card.title}
                 variants={staggerItem}
-                className="premium-card group flex gap-4 rounded-[1.75rem] p-5"
+                className="premium-card group relative flex h-full flex-col gap-4 rounded-[1.75rem] p-6"
               >
                 <span
-                  className={`grid size-12 shrink-0 place-items-center rounded-[1.1rem] text-primary transition-transform duration-500 group-hover:-rotate-6 group-hover:scale-105 ${TONES[i % TONES.length]}`}
+                  className={`grid size-14 shrink-0 place-items-center rounded-[1.25rem] transition-transform duration-500 group-hover:-rotate-6 group-hover:scale-105 ${TONES[i % TONES.length]}`}
                 >
-                  <Icon className="size-6" />
+                  <Icon className="size-7" strokeWidth={1.8} />
                 </span>
                 <span>
-                  <span className="block font-extrabold text-foreground">{card.title}</span>
-                  <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
+                  <span className="block text-base font-black text-foreground">{card.title}</span>
+                  <span aria-hidden className="mt-2 block h-0.5 w-8 rounded-full bg-gold transition-all duration-500 group-hover:w-16" />
+                  <span className="mt-2 block text-sm leading-relaxed text-muted-foreground">
                     {card.body}
                   </span>
                 </span>

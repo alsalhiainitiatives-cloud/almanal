@@ -107,14 +107,13 @@ function Index() {
       {/* 05 · آراء أولياء الأمور — mirrors /testimonials */}
       <SectionShell
         id="testimonials"
-        index={5}
-        tone="deep"
-        width="mid"
+        tone="soft"
+        width="wide"
         eyebrow={sections.testimonials.eyebrow}
         title={sections.testimonials.title}
         description={sections.testimonials.description}
       >
-        <Testimonials variant="carousel" limit={8} showForm={false} moreLink invert />
+        <Testimonials variant="carousel" limit={12} showForm={false} moreLink />
       </SectionShell>
 
       {/* 06 · آخر الأخبار — mirrors /news */}
