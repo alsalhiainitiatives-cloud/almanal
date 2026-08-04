@@ -48,7 +48,14 @@ export type StudentFileData = {
     district: string | null;
     job: string | null;
   };
-  stage: { id: string; name_ar: string; age_label: string | null; operating_hours: string | null } | null;
+  stage: {
+    id: string;
+    name_ar: string;
+    age_label: string | null;
+    operating_hours: string | null;
+    min_age_months?: number | null;
+    max_age_months?: number | null;
+  } | null;
   classroom: {
     id: string;
     name_ar: string;
@@ -68,6 +75,42 @@ export type StudentFileData = {
 };
 
 export const GENDER_LABELS: Record<string, string> = { male: "ذكر", female: "أنثى" };
+
+/** Vaccination status is stored in English — always render the Arabic label. */
+export const VACCINATION_FILE_LABELS: Record<string, string> = {
+  complete: "مكتملة",
+  partial: "غير مكتملة",
+  none: "لا يوجد",
+};
+
+export function vaccinationLabel(value?: string | null) {
+  if (!value) return null;
+  return VACCINATION_FILE_LABELS[value] ?? value;
+}
+
+const yearsWord = (n: number) => (n === 1 ? "سنة" : n === 2 ? "سنتان" : n <= 10 ? "سنوات" : "سنة");
+
+/** Auto-derived age band for the stage (e.g. "من 3 إلى 4 سنوات"). */
+export function ageBandLabel(stage: StudentFileData["stage"]): string | null {
+  const min = stage?.min_age_months;
+  const max = stage?.max_age_months;
+  if (min === null || min === undefined || max === null || max === undefined) return stage?.age_label ?? null;
+  const toLabel = (m: number) => {
+    const y = Math.floor(m / 12);
+    const r = m % 12;
+    if (y === 0) return `${m} شهرًا`;
+    return r === 0 ? `${y} ${yearsWord(y)}` : `${y} ${yearsWord(y)} و ${r} شهرًا`;
+  };
+  return `من ${toLabel(min)} إلى ${toLabel(max)}`;
+}
+
+/** The single official identifier of an enrolled student. */
+export function studentIdentifier(
+  application: StudentFileData["application"],
+  applicationCode: string,
+): string {
+  return application.studentNumber?.trim() || applicationCode;
+}
 
 export const QURRA_LABELS: Record<string, string> = {
   eligible: "مستحق مبدئيًا",
