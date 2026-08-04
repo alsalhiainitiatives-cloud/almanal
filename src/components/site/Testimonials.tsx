@@ -165,62 +165,185 @@ function ShareForm() {
   );
 }
 
-export function Testimonials() {
+export function Testimonials({
+  variant = "grid",
+  limit,
+  showForm = true,
+  moreLink = false,
+}: {
+  /** `carousel` pages through cards to keep the landing page short. */
+  variant?: "grid" | "carousel";
+  limit?: number;
+  showForm?: boolean;
+  moreLink?: boolean;
+} = {}) {
   const { testimonials } = useSiteContent();
+  const isMobile = useIsMobile();
   const { data: approved } = useQuery({
     queryKey: ["site-testimonials", "approved"],
     queryFn: fetchApprovedTestimonials,
     staleTime: 60_000,
   });
 
-  const cards: Card[] = [
-    ...(approved ?? []).map((row) => ({
-      key: row.id,
-      name: row.name,
-      role: row.role,
-      quote: row.quote,
-      rating: row.rating,
-    })),
-    ...testimonials.map((item) => ({
-      key: `cms-${item.name}-${item.quote.slice(0, 12)}`,
-      name: item.name,
-      role: item.role,
-      quote: item.quote,
-    })),
-  ];
+  const cards: Card[] = useMemo(() => {
+    const all: Card[] = [
+      ...(approved ?? []).map((row) => ({
+        key: row.id,
+        name: row.name,
+        role: row.role,
+        quote: row.quote,
+        rating: row.rating,
+      })),
+      ...testimonials.map((item) => ({
+        key: `cms-${item.name}-${item.quote.slice(0, 12)}`,
+        name: item.name,
+        role: item.role,
+        quote: item.quote,
+      })),
+    ];
+    return limit ? all.slice(0, limit) : all;
+  }, [approved, testimonials, limit]);
+
+  if (variant === "carousel") {
+    return (
+      <>
+        <TestimonialCarousel cards={cards} perView={isMobile ? 1 : 2} />
+        {moreLink ? (
+          <div className="mt-10 text-center">
+            <Button asChild variant="soft" size="lg">
+              <Link to="/testimonials">
+                عرض كل الآراء
+                <ArrowLeft className="size-4" />
+              </Link>
+            </Button>
+          </div>
+        ) : null}
+        {showForm ? <ShareForm /> : null}
+      </>
+    );
+  }
 
   return (
     <>
       <StaggerGroup className="grid gap-6 md:grid-cols-2">
         {cards.map((item, index) => (
-          <motion.figure
-            key={item.key}
-            variants={staggerItem}
-            whileHover={{ y: -6, rotate: 0 }}
-            className={`relative flex h-full flex-col rounded-[2.5rem] bg-card p-8 pt-10 shadow-card transition-all ${
-              index % 2 === 0 ? "md:-rotate-1" : "md:rotate-1"
-            }`}
-          >
-            <span className="absolute -top-6 start-8 grid size-14 place-items-center rounded-2xl gradient-gold shadow-card">
-              <Quote className="size-6 text-gold-foreground" />
-            </span>
-            <blockquote className="mt-4 flex-1 text-base leading-relaxed text-foreground/85">
-              {item.quote}
-            </blockquote>
-            <figcaption className="mt-6 flex items-center gap-3 border-t border-dashed border-border pt-5">
-              <span className="grid size-12 shrink-0 place-items-center rounded-full bg-accent text-sm font-black text-primary ring-2 ring-gold/40">
-                {item.name.slice(0, 1)}
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-bold text-foreground">{item.name}</span>
-                <span className="block truncate text-xs text-muted-foreground">{item.role}</span>
-              </span>
-              {item.rating ? <Stars rating={item.rating} /> : null}
-            </figcaption>
-          </motion.figure>
+          <motion.div key={item.key} variants={staggerItem}>
+            <TestimonialCard item={item} tilt={index % 2 === 0 ? -1 : 1} />
+          </motion.div>
         ))}
       </StaggerGroup>
-      <ShareForm />
+      {showForm ? <ShareForm /> : null}
     </>
+  );
+}
+
+function TestimonialCard({ item, tilt = 0 }: { item: Card; tilt?: number }) {
+  return (
+    <motion.figure
+      whileHover={{ y: -8, rotate: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="relative flex h-full flex-col overflow-hidden rounded-[2.5rem] border border-border/60 bg-card p-8 pt-10 shadow-card"
+      style={{ rotate: `${tilt * 0.8}deg` }}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -end-10 -top-10 size-32 rounded-full bg-accent/70 blur-2xl"
+      />
+      <span className="absolute -top-6 start-8 grid size-14 place-items-center rounded-2xl gradient-gold shadow-card">
+        <Quote className="size-6 text-gold-foreground" />
+      </span>
+      <blockquote className="relative mt-4 flex-1 text-base leading-relaxed text-foreground/85">
+        {item.quote}
+      </blockquote>
+      <figcaption className="relative mt-6 flex items-center gap-3 border-t border-dashed border-border pt-5">
+        <span className="grid size-12 shrink-0 place-items-center rounded-full bg-accent text-sm font-black text-primary ring-2 ring-gold/40">
+          {item.name.slice(0, 1)}
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-bold text-foreground">{item.name}</span>
+          <span className="block truncate text-xs text-muted-foreground">{item.role}</span>
+        </span>
+        {item.rating ? <Stars rating={item.rating} /> : null}
+      </figcaption>
+    </motion.figure>
+  );
+}
+
+/** Paged testimonial viewer — keeps the landing page compact. */
+function TestimonialCarousel({ cards, perView }: { cards: Card[]; perView: number }) {
+  const pages = Math.max(1, Math.ceil(cards.length / perView));
+  const [page, setPage] = useState(0);
+  const [dir, setDir] = useState(1);
+
+  useEffect(() => {
+    if (page > pages - 1) setPage(0);
+  }, [page, pages]);
+
+  if (!cards.length) return null;
+
+  const slice = cards.slice(page * perView, page * perView + perView);
+  const move = (next: number) => {
+    setDir(next > page ? 1 : -1);
+    setPage(((next % pages) + pages) % pages);
+  };
+
+  return (
+    <div>
+      <div className="relative overflow-hidden">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={page}
+            initial={{ opacity: 0, x: dir > 0 ? 60 : -60 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: dir > 0 ? -60 : 60 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className="grid gap-6 md:grid-cols-2"
+          >
+            {slice.map((item, i) => (
+              <TestimonialCard key={item.key} item={item} tilt={i % 2 === 0 ? -1 : 1} />
+            ))}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {pages > 1 ? (
+        <div className="mt-8 flex items-center justify-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="الآراء السابقة"
+            className="rounded-full"
+            onClick={() => move(page - 1)}
+          >
+            <ChevronRight className="size-5" />
+          </Button>
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: pages }).map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                aria-label={`الصفحة ${i + 1}`}
+                aria-current={i === page}
+                onClick={() => move(i)}
+                className={`h-2 rounded-full transition-all ${
+                  i === page ? "w-8 bg-primary" : "w-2 bg-border hover:bg-secondary/50"
+                }`}
+              />
+            ))}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="الآراء التالية"
+            className="rounded-full"
+            onClick={() => move(page + 1)}
+          >
+            <ChevronLeft className="size-5" />
+          </Button>
+        </div>
+      ) : null}
+    </div>
   );
 }
