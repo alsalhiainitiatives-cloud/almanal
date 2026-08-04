@@ -1013,7 +1013,7 @@ export async function listClaimTargets(supabase: Db, userId: string) {
       parentPhone: (profiles.data ?? []).find((p) => p.id === app.parent_id)?.phone ?? null,
       children: kids.map((c) => c.name_ar),
       stageId: primary?.stage_id ?? app.stage_id,
-      classroomId: primary?.classroomId ?? primary?.classroom_id ?? app.classroom_id,
+      classroomId: primary?.classroom_id ?? app.classroom_id,
       invoices: billed,
       latestYear,
       suggestedYear: nextAcademicYear(latestYear),
