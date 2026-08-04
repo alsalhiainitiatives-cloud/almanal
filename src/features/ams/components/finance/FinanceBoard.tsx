@@ -281,11 +281,14 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
                       return (
                         <div className="flex items-center gap-1.5">
                           {link && row.status !== "paid" ? (
-                            <Button asChild size="sm" variant="outline" className="rounded-xl">
-                              <a href={link} target="_blank" rel="noopener noreferrer">
-                                <MessageCircle className="size-3.5" />
-                                واتساب
-                              </a>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-xl"
+                              onClick={() => openWhatsapp(activeProfile?.phone, link.messageText)}
+                            >
+                              <MessageCircle className="size-3.5" />
+                              واتساب
                             </Button>
                           ) : null}
                           {canManage && row.status !== "paid" ? (
