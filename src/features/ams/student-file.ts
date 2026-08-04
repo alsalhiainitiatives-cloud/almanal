@@ -269,15 +269,9 @@ export function buildStudentFileHtml(
       </div>
     </header>
 
-    <div class="grid head">
-      ${fieldsHtml([
-        ["اسم الطالب", student.name_ar],
-        ["رقم الطلب", opts.applicationCode],
-        ["الرقم الأكاديمي", application.studentNumber],
-      ])}
-    </div>
-
     ${sectionHtml("بيانات الطالب", [
+      ["اسم الطالب", student.name_ar],
+      ["الرقم الأكاديمي", studentIdentifier(application, opts.applicationCode)],
       ["الاسم بالإنجليزية", student.name_en],
       ["رقم الهوية / الإقامة", student.national_id],
       ["الجنس", student.gender ? (GENDER_LABELS[student.gender] ?? student.gender) : null],
@@ -286,12 +280,12 @@ export function buildStudentFileHtml(
       ["الجنسية", student.nationality],
       ["مكان الميلاد", student.birth_place],
       ["فصيلة الدم", student.blood_type],
-      ["حالة التحصينات", student.vaccination_status],
+      ["حالة التحصينات", vaccinationLabel(student.vaccination_status)],
     ])}
 
     ${sectionHtml("المرحلة والفصل", [
       ["المرحلة", stage?.name_ar],
-      ["الفئة العمرية للمرحلة", stage?.age_label],
+      ["الفئة العمرية للمرحلة", ageBandLabel(stage)],
       ["الفصل", classroom?.name_ar],
       ["المعلمة المسؤولة", classroom?.teacher_name],
       ["الدوام", classroom?.schedule_ar ?? stage?.operating_hours],
