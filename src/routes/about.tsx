@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { AboutIntro } from "@/components/site/AboutIntro";
 import { PageHero } from "@/components/site/PageHero";
-import { Reveal } from "@/components/site/Reveal";
-import { SectionHeading } from "@/components/site/SectionHeading";
+import { SectionShell } from "@/components/site/SectionShell";
 import { StatsBand } from "@/components/site/StatsBand";
 import { ValueCards } from "@/components/site/ValueCards";
 import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 import { siteIcon } from "@/features/site-content/icons";
-import { useSiteMedia } from "@/features/site-content/media";
+import { staggerItem, StaggerGroup } from "@/components/site/Reveal";
+import { motion } from "motion/react";
 
 const title = "عن المنال | مدارس وروضة المنال بعنيزة";
 const description =
@@ -43,7 +44,6 @@ function AboutPage() {
     valuesEyebrow,
     valuesTitle,
   } = content.about;
-  const resolve = useSiteMedia([storyImage]);
 
   return (
     <>
@@ -54,83 +54,53 @@ function AboutPage() {
         image={hero?.image}
       />
 
-      <section className="section-y">
-        <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 md:px-8 lg:grid-cols-2">
-          <Reveal direction="right">
-            <div className="overflow-hidden rounded-4xl shadow-card">
-              <img
-                src={resolve(storyImage)}
-                alt="معلمة وأطفال يتعلمون معًا في روضة المنال"
-                width={1600}
-                height={1200}
-                loading="lazy"
-                className="aspect-4/3 w-full object-cover"
-              />
-            </div>
-          </Reveal>
-          <div className="space-y-5">
-            <SectionHeading
-              align="start"
-              eyebrow={storyEyebrow}
-              title={storyTitle}
-              description={storyDescription}
-            />
-            <div className="space-y-4">
-              {highlights.map((item, i) => {
-                const Icon = siteIcon(item.icon);
-                return (
-                <Reveal key={item.title} delay={i * 0.08}>
-                  <div className="flex gap-4 rounded-3xl border border-border/60 bg-card p-5 shadow-soft">
-                    <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-accent text-primary">
-                      <Icon className="size-6" />
-                    </span>
-                    <span>
-                      <span className="block font-extrabold text-foreground">{item.title}</span>
-                      <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
-                        {item.body}
-                      </span>
-                    </span>
-                  </div>
-                </Reveal>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* 01 · قصتنا — same block used on the home page */}
+      <SectionShell id="story" index={1} tone="soft">
+        <AboutIntro
+          eyebrow={storyEyebrow}
+          title={storyTitle}
+          description={storyDescription}
+          image={storyImage}
+          cards={highlights}
+          badgeValue={content.home.aboutBadgeValue}
+          badgeLabel={content.home.aboutBadgeLabel}
+          flip
+        />
+      </SectionShell>
 
-      <section className="section-y bg-beige/60">
-        <div className="mx-auto max-w-7xl px-4 md:px-8">
-          <SectionHeading eyebrow={pillarsEyebrow} title={pillarsTitle} />
-          <div className="mt-14 grid gap-6 md:grid-cols-3">
-            {pillars.map((item, i) => {
-              const Icon = siteIcon(item.icon);
-              return (
-              <Reveal key={item.title} delay={i * 0.1}>
-                <div className="h-full rounded-4xl bg-card p-8 shadow-soft">
-                  <span className="grid size-14 place-items-center rounded-3xl bg-sky text-primary">
+      {/* 02 · ركائزنا */}
+      <SectionShell id="pillars" index={2} tone="beige" eyebrow={pillarsEyebrow} title={pillarsTitle}>
+        <StaggerGroup className="grid gap-6 md:grid-cols-3">
+          {pillars.map((item, i) => {
+            const Icon = siteIcon(item.icon);
+            return (
+              <motion.div key={item.title} variants={staggerItem}>
+                <div className="premium-card group relative h-full overflow-hidden rounded-[2.5rem] p-8">
+                  <span aria-hidden className="number-ghost absolute end-6 top-5 text-5xl">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="grid size-14 place-items-center rounded-3xl bg-sky text-primary transition-transform duration-500 group-hover:-rotate-6">
                     <Icon className="size-7" />
                   </span>
                   <h3 className="mt-6 text-xl text-foreground">{item.title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+                  <span
+                    aria-hidden
+                    className="mt-4 block h-0.5 w-10 rounded-full bg-gold transition-all duration-500 group-hover:w-24"
+                  />
+                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
                 </div>
-              </Reveal>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+              </motion.div>
+            );
+          })}
+        </StaggerGroup>
+      </SectionShell>
 
       <StatsBand />
 
-      <section className="section-y">
-        <div className="mx-auto max-w-7xl px-4 md:px-8">
-          <SectionHeading eyebrow={valuesEyebrow} title={valuesTitle} />
-          <div className="mt-14">
-            <ValueCards />
-          </div>
-        </div>
-      </section>
+      {/* 03 · قيمنا */}
+      <SectionShell id="values" index={3} eyebrow={valuesEyebrow} title={valuesTitle}>
+        <ValueCards />
+      </SectionShell>
     </>
   );
 }
