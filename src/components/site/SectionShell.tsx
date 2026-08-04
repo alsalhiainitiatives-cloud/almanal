@@ -24,7 +24,6 @@ const toneClass: Record<SectionTone, string> = {
  */
 export function SectionShell({
   id,
-  index,
   tone = "plain",
   eyebrow,
   title,
@@ -39,7 +38,7 @@ export function SectionShell({
   children,
 }: {
   id?: string;
-  /** Ghost number shown as an editorial marker (e.g. 2 -> "02"). */
+  /** Deprecated: section numbering was removed from the design. */
   index?: number;
   tone?: SectionTone;
   eyebrow?: string;
