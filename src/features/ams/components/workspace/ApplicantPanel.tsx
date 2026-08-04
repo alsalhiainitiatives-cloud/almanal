@@ -21,6 +21,7 @@ import {
   stageOf,
 } from "../../recommendations";
 import type { WorkspaceData } from "../../types";
+import { vaccinationLabel } from "../../student-file";
 import { Tone, formatDate, money } from "../atoms";
 function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
