@@ -133,7 +133,7 @@ export function ApplicantPanel({ data }: { data: WorkspaceData }) {
                     <Row label="حالات صحية" value={child.medical_conditions} />
                     <Row label="حساسية" value={child.allergies} />
                     <Row label="احتياج خاص" value={child.special_needs} />
-                    <Row label="التطعيمات" value={child.vaccination_status} />
+                    <Row label="التطعيمات" value={vaccinationLabel(child.vaccination_status)} />
                     {docs.missing.length > 0 ? (
                       <p className="mt-2 rounded-xl bg-destructive/8 px-3 py-2 text-[11px] font-bold text-destructive">
                         ناقص: {docs.missing.map(docLabel).join("، ")}
