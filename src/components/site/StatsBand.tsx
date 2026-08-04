@@ -1,4 +1,13 @@
-import { CalendarCheck, GraduationCap, Palette, Users, type LucideIcon } from "lucide-react";
+import {
+  CalendarCheck,
+  GraduationCap,
+  Heart,
+  Palette,
+  School,
+  Smile,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { motion } from "motion/react";
 
 import { useSiteContent } from "@/features/site-content/SiteContentProvider";
@@ -6,7 +15,14 @@ import { Counter } from "./Counter";
 import { staggerItem, StaggerGroup } from "./Reveal";
 import { WaveDivider } from "./Decor";
 
-const ICONS: LucideIcon[] = [Users, GraduationCap, Palette, CalendarCheck];
+const ICONS: LucideIcon[] = [Users, GraduationCap, Palette, CalendarCheck, Heart, School, Smile];
+
+/** Extra indicators shown when site settings still carry only four figures. */
+const EXTRA_STATS = [
+  { value: 400, suffix: "+", label: "أسرة تثق بنا" },
+  { value: 24, suffix: "", label: "فصلًا دراسيًا مجهزًا" },
+  { value: 96, suffix: "%", label: "رضا أولياء الأمور" },
+];
 
 /**
  * Performance-indicator band: one hero figure in a glass feature panel beside a
@@ -14,7 +30,8 @@ const ICONS: LucideIcon[] = [Users, GraduationCap, Palette, CalendarCheck];
  */
 export function StatsBand() {
   const { stats } = useSiteContent();
-  const [lead, ...rest] = stats;
+  const [lead, ...others] = stats;
+  const rest = others.length < 6 ? [...others, ...EXTRA_STATS.slice(0, 6 - others.length)] : others;
 
   return (
     <section className="relative overflow-hidden gradient-burgundy-deep pt-28 pb-28 md:pt-36 md:pb-36">
@@ -61,9 +78,9 @@ export function StatsBand() {
             ) : null}
           </motion.div>
 
-          <StaggerGroup className="grid auto-rows-min content-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <StaggerGroup className="grid auto-rows-fr gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {rest.map((stat, index) => {
-              const Icon = ICONS[(index + 1) % ICONS.length]!;
+              const Icon = ICONS[(index + 1) % ICONS.length] ?? Users;
               return (
                 <motion.div
                   key={stat.label}

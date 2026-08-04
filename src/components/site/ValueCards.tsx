@@ -27,23 +27,23 @@ export function ValueCards() {
 
   return (
     <div className="flex flex-col items-center gap-12">
-      <div className="flex flex-wrap items-stretch justify-center gap-5 md:gap-7">
+      <div className="grid w-full grid-cols-2 items-stretch gap-4 sm:grid-cols-3 lg:grid-cols-6 lg:gap-5">
         {values.map((value, index) => {
           const Icon = siteIcon(value.icon);
           const isActive = index === active;
           return (
-            <Reveal key={value.title} delay={index * 0.06}>
+            <Reveal key={value.title} delay={index * 0.06} className="h-full">
               <button
                 type="button"
                 onClick={() => setActive(index)}
                 aria-pressed={isActive}
-                className={`group flex w-40 flex-col items-center gap-4 rounded-[1.75rem] border p-5 transition-all duration-500 md:w-48 md:p-6 ${
+                className={`group flex h-full w-full flex-col items-center gap-4 rounded-[1.75rem] border-2 p-4 transition-all duration-500 lg:p-5 ${
                   isActive
-                    ? "border-gold/60 bg-card shadow-glow"
-                    : "border-border/70 bg-card/70 hover:-translate-y-1 hover:border-gold/45"
+                    ? "border-gold bg-card shadow-glow"
+                    : "border-secondary/35 bg-card shadow-card hover:-translate-y-1 hover:border-gold/70"
                 }`}
               >
-                <span className="relative grid size-28 place-items-center md:size-32">
+                <span className="relative grid size-24 place-items-center lg:size-[6.5rem]">
                   <span
                     aria-hidden
                     className={`animate-blob absolute inset-0 border transition-all duration-500 ${
@@ -59,14 +59,14 @@ export function ValueCards() {
                     }`}
                   />
                   <Icon
-                    className={`relative size-12 transition-colors duration-500 md:size-14 ${
+                    className={`relative size-11 transition-colors duration-500 lg:size-12 ${
                       isActive ? "text-gold" : "text-secondary group-hover:text-primary"
                     }`}
                     strokeWidth={1.7}
                   />
                 </span>
                 <span
-                  className={`text-center text-sm leading-snug font-black transition-colors duration-300 md:text-base ${
+                  className={`text-center text-[0.82rem] leading-snug font-black transition-colors duration-300 lg:text-sm ${
                     isActive ? "text-secondary" : "text-foreground/75 group-hover:text-foreground"
                   }`}
                 >

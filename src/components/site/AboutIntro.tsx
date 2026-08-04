@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, useMotionTemplate, useMotionValue, useSpring } from "motion/react";
 
 import { Button } from "@/components/ui/button";
 import { Doodle } from "./Decor";
@@ -9,6 +9,13 @@ import { SectionHeading } from "./SectionHeading";
 import type { IconCard } from "@/features/site-content/defaults";
 import { siteIcon } from "@/features/site-content/icons";
 import { useSiteMedia } from "@/features/site-content/media";
+
+/** Shown when site settings still carry fewer than four mission cards. */
+const GOALS_FALLBACK: IconCard = {
+  icon: "Award",
+  title: "أهدافنا",
+  body: "بناء أساس تعليمي متين لكل طفل، وتنمية مهاراته وقيمه بشراكة يومية مع أسرته.",
+};
 
 const TONES = [
   "bg-accent text-secondary",
@@ -47,6 +54,31 @@ export function AboutIntro({
 }) {
   const resolve = useSiteMedia([image]);
   const src = resolve(image);
+  const gridCards = cards.length === 3 ? [...cards, GOALS_FALLBACK] : cards;
+
+  // Pointer-reactive spotlight + gentle tilt on the portrait.
+  const px = useMotionValue(50);
+  const py = useMotionValue(50);
+  const rotX = useSpring(0, { stiffness: 120, damping: 18 });
+  const rotY = useSpring(0, { stiffness: 120, damping: 18 });
+  const spotlight = useMotionTemplate`radial-gradient(38% 38% at ${px}% ${py}%, oklch(0.79 0.12 82 / 0.38) 0%, transparent 70%)`;
+
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    px.set(x);
+    py.set(y);
+    rotY.set((x - 50) / 12);
+    rotX.set(-(y - 50) / 16);
+  };
+
+  const onPointerLeave = () => {
+    px.set(50);
+    py.set(50);
+    rotX.set(0);
+    rotY.set(0);
+  };
 
   return (
     <div className="relative grid items-center gap-14 lg:grid-cols-[1.02fr_1fr]">
@@ -62,7 +94,12 @@ export function AboutIntro({
             aria-hidden
             className="animate-spin-slow absolute -top-10 -end-10 size-32 rounded-full border border-dashed border-gold/50"
           />
-          <div className="relative overflow-hidden rounded-t-[10rem] rounded-b-[3rem] shadow-glow ring-gold-soft">
+          <motion.div
+            onPointerMove={onPointerMove}
+            onPointerLeave={onPointerLeave}
+            style={{ rotateX: rotX, rotateY: rotY, transformPerspective: 1200 }}
+            className="group relative overflow-hidden rounded-t-[10rem] rounded-b-[3rem] shadow-glow ring-gold-soft"
+          >
             {src ? (
               <motion.img
                 src={src}
@@ -74,20 +111,25 @@ export function AboutIntro({
                 whileInView={{ scale: 1 }}
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-                className="aspect-[4/5] w-full object-cover"
+                className="aspect-[4/5] w-full object-cover transition-transform duration-[1200ms] group-hover:scale-[1.06]"
               />
             ) : (
               <div className="aspect-[4/5] w-full bg-beige" />
             )}
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-0 bg-linear-to-t from-primary/55 via-primary/10 to-transparent"
+              className="pointer-events-none absolute inset-0 bg-linear-to-t from-primary/75 via-secondary/25 to-gold/10 mix-blend-multiply"
+            />
+            <motion.span
+              aria-hidden
+              style={{ backgroundImage: spotlight }}
+              className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
             />
             <span
               aria-hidden
               className="pointer-events-none absolute inset-x-8 bottom-6 h-px gradient-gold-hairline"
             />
-          </div>
+          </motion.div>
 
           {badgeValue ? (
             <div className="glass-panel absolute -bottom-7 end-6 rounded-[1.9rem] px-7 py-5 text-center ring-gold-soft">
@@ -103,7 +145,7 @@ export function AboutIntro({
         <SectionHeading align="start" eyebrow={eyebrow} title={title} description={description} />
 
         <StaggerGroup className="mt-9 grid gap-4 sm:grid-cols-2">
-          {cards.map((card, i) => {
+          {gridCards.map((card, i) => {
             const Icon = siteIcon(card.icon);
             return (
               <motion.div

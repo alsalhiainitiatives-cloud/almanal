@@ -51,6 +51,9 @@ export const stats = [
   { value: 38, suffix: "", label: "معلمة ومربية" },
   { value: 60, suffix: "+", label: "نشاط تعليمي وإثرائي" },
   { value: 18, suffix: "", label: "عامًا من الخبرة" },
+  { value: 400, suffix: "+", label: "أسرة تثق بنا" },
+  { value: 24, suffix: "", label: "فصلًا دراسيًا مجهزًا" },
+  { value: 96, suffix: "%", label: "رضا أولياء الأمور" },
 ];
 
 export const values = [
