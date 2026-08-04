@@ -345,7 +345,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     sections: {
       stages: {
         eyebrow: "المراحل التعليمية",
-        title: "ثلاث مراحل تنمو مع طفلك",
+        title: "مراحل تنمو مع طفلك",
         description:
           "من الحضانة الدافئة إلى بيئة المونتيسوري ثم المرحلة الابتدائية، رحلة متصلة ومصممة بعناية.",
       },
@@ -361,14 +361,14 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       },
       testimonials: {
         eyebrow: "آراء أولياء الأمور",
-        title: "ثقة الأسر هي أجمل شهادة",
+        title: "ما يقوله أولياء الأمور عنا",
         description: "",
       },
       news: { eyebrow: "آخر الأخبار", title: "مستجدات المنال", description: "" },
       faq: { eyebrow: "الأسئلة الشائعة", title: "ما يسأل عنه أولياء الأمور", description: "" },
       contact: {
         eyebrow: "تواصل معنا",
-        title: "نرحّب بزيارتكم",
+        title: "نرحّب بزيارتكم في أي وقت",
         description:
           "زوروا المدرسة أو اتصلوا بنا خلال أوقات العمل، وسنكون سعداء بالإجابة على كل استفساراتكم.",
       },
