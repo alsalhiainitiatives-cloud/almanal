@@ -5,11 +5,13 @@ import { ArrowLeft, Mail, MapPin, Phone, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 import { siteIcon } from "@/features/site-content/icons";
+import { legalDocPath, useVisibleLegalDocs } from "@/features/site-content/legal";
 import { Logo } from "./Logo";
 
 export function Footer() {
-  const { brand, contact, socials, nav, workingHours } = useSiteContent();
+  const { brand, contact, socials, nav, workingHours, legal } = useSiteContent();
   const navItems = nav as { label: string; to: string }[];
+  const legalDocs = useVisibleLegalDocs();
 
   return (
     <footer
