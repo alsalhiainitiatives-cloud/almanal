@@ -92,9 +92,6 @@ export function ValueCards() {
               aria-hidden
               className={`absolute -top-16 -end-16 size-48 rounded-full opacity-50 blur-3xl ${tones[current.tone] ?? tones.rose}`}
             />
-            <span aria-hidden className="number-ghost absolute top-4 end-8 text-6xl">
-              {String(active + 1).padStart(2, "0")}
-            </span>
             <div className="relative flex flex-col items-start gap-6 md:flex-row md:items-center">
               <span
                 className={`grid size-16 shrink-0 place-items-center rounded-[1.4rem] ${tones[current.tone] ?? tones.rose}`}
