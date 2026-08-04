@@ -10,6 +10,13 @@ import type { IconCard } from "@/features/site-content/defaults";
 import { siteIcon } from "@/features/site-content/icons";
 import { useSiteMedia } from "@/features/site-content/media";
 
+/** Shown when site settings still carry fewer than four mission cards. */
+const GOALS_FALLBACK: IconCard = {
+  icon: "Award",
+  title: "أهدافنا",
+  body: "بناء أساس تعليمي متين لكل طفل، وتنمية مهاراته وقيمه بشراكة يومية مع أسرته.",
+};
+
 const TONES = [
   "bg-accent text-secondary",
   "bg-sky text-primary",
@@ -47,6 +54,7 @@ export function AboutIntro({
 }) {
   const resolve = useSiteMedia([image]);
   const src = resolve(image);
+  const gridCards = cards.length === 3 ? [...cards, GOALS_FALLBACK] : cards;
 
   // Pointer-reactive spotlight + gentle tilt on the portrait.
   const px = useMotionValue(50);
@@ -137,7 +145,7 @@ export function AboutIntro({
         <SectionHeading align="start" eyebrow={eyebrow} title={title} description={description} />
 
         <StaggerGroup className="mt-9 grid gap-4 sm:grid-cols-2">
-          {cards.map((card, i) => {
+          {gridCards.map((card, i) => {
             const Icon = siteIcon(card.icon);
             return (
               <motion.div

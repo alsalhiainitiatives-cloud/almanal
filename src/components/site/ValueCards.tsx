@@ -40,7 +40,7 @@ export function ValueCards() {
                 className={`group flex h-full w-full flex-col items-center gap-4 rounded-[1.75rem] border-2 p-4 transition-all duration-500 lg:p-5 ${
                   isActive
                     ? "border-gold bg-card shadow-glow"
-                    : "border-secondary/25 bg-card shadow-card hover:-translate-y-1 hover:border-gold/70"
+                    : "border-secondary/35 bg-card shadow-card hover:-translate-y-1 hover:border-gold/70"
                 }`}
               >
                 <span className="relative grid size-24 place-items-center lg:size-[6.5rem]">

@@ -17,13 +17,21 @@ import { WaveDivider } from "./Decor";
 
 const ICONS: LucideIcon[] = [Users, GraduationCap, Palette, CalendarCheck, Heart, School, Smile];
 
+/** Extra indicators shown when site settings still carry only four figures. */
+const EXTRA_STATS = [
+  { value: 400, suffix: "+", label: "أسرة تثق بنا" },
+  { value: 24, suffix: "", label: "فصلًا دراسيًا مجهزًا" },
+  { value: 96, suffix: "%", label: "رضا أولياء الأمور" },
+];
+
 /**
  * Performance-indicator band: one hero figure in a glass feature panel beside a
  * grid of icon-led indicator tiles (editorial dashboard look).
  */
 export function StatsBand() {
   const { stats } = useSiteContent();
-  const [lead, ...rest] = stats;
+  const [lead, ...others] = stats;
+  const rest = others.length < 6 ? [...others, ...EXTRA_STATS.slice(0, 6 - others.length)] : others;
 
   return (
     <section className="relative overflow-hidden gradient-burgundy-deep pt-28 pb-28 md:pt-36 md:pb-36">
