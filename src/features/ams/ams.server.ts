@@ -9,7 +9,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AppRole } from "@/features/auth/rbac";
 import type { Database } from "@/integrations/supabase/types";
 import { DECIDERS, notify } from "@/features/notifications/notifications.server";
-import { can, type Capability } from "./roles";
+import { QURRA_STATUS_LABELS } from "@/features/admissions/eligibility";
+import { can, type Capability, PAYMENT_STATUS_LABELS } from "./roles";
 
 type Db = SupabaseClient<Database>;
 type Status = Database["public"]["Enums"]["application_status"];
