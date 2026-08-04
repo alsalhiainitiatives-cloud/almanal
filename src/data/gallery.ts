@@ -28,6 +28,33 @@ export const stageImages: Record<string, string> = {
   primary: stagePrimary,
 };
 
+/** Bundled artwork keyed by source file name (without extension). */
+const bundledByName: Record<string, string> = {
+  "hero-classroom": heroClassroom,
+  "stage-toddlers": stageToddlers,
+  "stage-montessori": stageMontessori,
+  "stage-primary": stagePrimary,
+  "life-reading": lifeReading,
+  "life-art": lifeArt,
+  "life-stem": lifeStem,
+  "life-sports": lifeSports,
+  "life-music": lifeMusic,
+  campus,
+};
+
+/**
+ * Heals legacy media values stored in the database — dev paths like
+ * `/src/assets/campus.jpg` and stale hashed build paths like
+ * `/assets/life-reading-DLBMALaB.jpg` — back to the current bundled URL.
+ */
+export function resolveBundledAsset(value: string): string | null {
+  const file = value.split("?")[0]!.split("#")[0]!.split("/").pop() ?? "";
+  if (!file) return null;
+  const base = file.replace(/\.[a-z0-9]+$/i, "");
+  const unhashed = base.replace(/-[A-Za-z0-9_-]{6,12}$/, "");
+  return bundledByName[base] ?? bundledByName[unhashed] ?? null;
+}
+
 export type GalleryItem = {
   src: string;
   alt: string;
