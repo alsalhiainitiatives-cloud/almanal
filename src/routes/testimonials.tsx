@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { PageHero } from "@/components/site/PageHero";
+import { SectionShell } from "@/components/site/SectionShell";
 import { Testimonials } from "@/components/site/Testimonials";
 import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 
@@ -34,11 +35,9 @@ function TestimonialsPage() {
         description={hero?.description ?? ""}
         image={hero?.image}
       />
-      <section className="section-y pt-4 md:pt-8">
-        <div className="mx-auto max-w-7xl px-4 md:px-8">
-          <Testimonials />
-        </div>
-      </section>
+      <SectionShell id="reviews" index={1} tone="soft" width="mid">
+        <Testimonials />
+      </SectionShell>
     </>
   );
 }

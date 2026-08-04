@@ -170,12 +170,15 @@ export function Testimonials({
   limit,
   showForm = true,
   moreLink = false,
+  invert = false,
 }: {
   /** `carousel` pages through cards to keep the landing page short. */
   variant?: "grid" | "carousel";
   limit?: number;
   showForm?: boolean;
   moreLink?: boolean;
+  /** Light typography + glass cards, for use on dark sections. */
+  invert?: boolean;
 } = {}) {
   const { testimonials } = useSiteContent();
   const isMobile = useIsMobile();
@@ -207,10 +210,10 @@ export function Testimonials({
   if (variant === "carousel") {
     return (
       <>
-        <TestimonialCarousel cards={cards} perView={isMobile ? 1 : 2} />
+        <TestimonialCarousel cards={cards} perView={isMobile ? 1 : 2} invert={invert} />
         {moreLink ? (
           <div className="mt-10 text-center">
-            <Button asChild variant="soft" size="lg">
+            <Button asChild variant={invert ? "hero" : "soft"} size="lg">
               <Link to="/testimonials">
                 عرض كل الآراء
                 <ArrowLeft className="size-4" />
@@ -228,7 +231,7 @@ export function Testimonials({
       <StaggerGroup className="grid gap-6 md:grid-cols-2">
         {cards.map((item, index) => (
           <motion.div key={item.key} variants={staggerItem}>
-            <TestimonialCard item={item} tilt={index % 2 === 0 ? -1 : 1} />
+            <TestimonialCard item={item} tilt={index % 2 === 0 ? -1 : 1} invert={invert} />
           </motion.div>
         ))}
       </StaggerGroup>
@@ -237,31 +240,53 @@ export function Testimonials({
   );
 }
 
-function TestimonialCard({ item, tilt = 0 }: { item: Card; tilt?: number }) {
+function TestimonialCard({
+  item,
+  tilt = 0,
+  invert = false,
+}: {
+  item: Card;
+  tilt?: number;
+  invert?: boolean;
+}) {
   return (
     <motion.figure
       whileHover={{ y: -8, rotate: 0 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className="relative flex h-full flex-col overflow-hidden rounded-[2.5rem] border border-border/60 bg-card p-8 pt-10 shadow-card"
+      className={`relative flex h-full flex-col overflow-hidden rounded-[2.5rem] p-8 pt-10 shadow-card ${
+        invert ? "glass-dark" : "border border-border/60 bg-card"
+      }`}
       style={{ rotate: `${tilt * 0.8}deg` }}
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute -end-10 -top-10 size-32 rounded-full bg-accent/70 blur-2xl"
+        className={`pointer-events-none absolute -end-10 -top-10 size-32 rounded-full blur-2xl ${invert ? "bg-gold/25" : "bg-accent/70"}`}
       />
       <span className="absolute -top-6 start-8 grid size-14 place-items-center rounded-2xl gradient-gold shadow-card">
         <Quote className="size-6 text-gold-foreground" />
       </span>
-      <blockquote className="relative mt-4 flex-1 text-base leading-relaxed text-foreground/85">
+      <blockquote
+        className={`relative mt-4 flex-1 text-base leading-relaxed ${invert ? "text-primary-foreground/90" : "text-foreground/85"}`}
+      >
         {item.quote}
       </blockquote>
-      <figcaption className="relative mt-6 flex items-center gap-3 border-t border-dashed border-border pt-5">
+      <figcaption
+        className={`relative mt-6 flex items-center gap-3 border-t border-dashed pt-5 ${invert ? "border-primary-foreground/25" : "border-border"}`}
+      >
         <span className="grid size-12 shrink-0 place-items-center rounded-full bg-accent text-sm font-black text-primary ring-2 ring-gold/40">
           {item.name.slice(0, 1)}
         </span>
         <span className="min-w-0">
-          <span className="block truncate text-sm font-bold text-foreground">{item.name}</span>
-          <span className="block truncate text-xs text-muted-foreground">{item.role}</span>
+          <span
+            className={`block truncate text-sm font-bold ${invert ? "text-primary-foreground" : "text-foreground"}`}
+          >
+            {item.name}
+          </span>
+          <span
+            className={`block truncate text-xs ${invert ? "text-primary-foreground/70" : "text-muted-foreground"}`}
+          >
+            {item.role}
+          </span>
         </span>
         {item.rating ? <Stars rating={item.rating} /> : null}
       </figcaption>
@@ -270,7 +295,15 @@ function TestimonialCard({ item, tilt = 0 }: { item: Card; tilt?: number }) {
 }
 
 /** Paged testimonial viewer — keeps the landing page compact. */
-function TestimonialCarousel({ cards, perView }: { cards: Card[]; perView: number }) {
+function TestimonialCarousel({
+  cards,
+  perView,
+  invert = false,
+}: {
+  cards: Card[];
+  perView: number;
+  invert?: boolean;
+}) {
   const pages = Math.max(1, Math.ceil(cards.length / perView));
   const [page, setPage] = useState(0);
   const [dir, setDir] = useState(1);
@@ -300,7 +333,7 @@ function TestimonialCarousel({ cards, perView }: { cards: Card[]; perView: numbe
             className="grid gap-6 md:grid-cols-2"
           >
             {slice.map((item, i) => (
-              <TestimonialCard key={item.key} item={item} tilt={i % 2 === 0 ? -1 : 1} />
+              <TestimonialCard key={item.key} item={item} tilt={i % 2 === 0 ? -1 : 1} invert={invert} />
             ))}
           </motion.div>
         </AnimatePresence>
@@ -313,7 +346,7 @@ function TestimonialCarousel({ cards, perView }: { cards: Card[]; perView: numbe
             variant="outline"
             size="icon"
             aria-label="الآراء السابقة"
-            className="rounded-full"
+            className={`rounded-full ${invert ? "border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" : ""}`}
             onClick={() => move(page - 1)}
           >
             <ChevronRight className="size-5" />
@@ -327,7 +360,13 @@ function TestimonialCarousel({ cards, perView }: { cards: Card[]; perView: numbe
                 aria-current={i === page}
                 onClick={() => move(i)}
                 className={`h-2 rounded-full transition-all ${
-                  i === page ? "w-8 bg-primary" : "w-2 bg-border hover:bg-secondary/50"
+                  i === page
+                    ? invert
+                      ? "w-8 bg-gold"
+                      : "w-8 bg-primary"
+                    : invert
+                      ? "w-2 bg-primary-foreground/30 hover:bg-primary-foreground/60"
+                      : "w-2 bg-border hover:bg-secondary/50"
                 }`}
               />
             ))}
@@ -337,7 +376,7 @@ function TestimonialCarousel({ cards, perView }: { cards: Card[]; perView: numbe
             variant="outline"
             size="icon"
             aria-label="الآراء التالية"
-            className="rounded-full"
+            className={`rounded-full ${invert ? "border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" : ""}`}
             onClick={() => move(page + 1)}
           >
             <ChevronLeft className="size-5" />

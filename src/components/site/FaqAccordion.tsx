@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/accordion";
 import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 
+/** Premium FAQ list shared by the home preview and the /faq page. */
 export function FaqAccordion({ limit }: { limit?: number }) {
   const { faqs } = useSiteContent();
   const items = limit ? faqs.slice(0, limit) : faqs;
@@ -16,17 +17,18 @@ export function FaqAccordion({ limit }: { limit?: number }) {
         <AccordionItem
           key={item.q}
           value={`item-${index}`}
-          className="group overflow-hidden rounded-[1.75rem] border border-border/60 bg-card px-6 shadow-soft transition-all duration-400 hover:border-gold/50 hover:shadow-card data-[state=open]:border-gold/60 data-[state=open]:shadow-card"
+          className="premium-card group overflow-hidden rounded-[1.85rem] px-6 data-[state=open]:border-gold/60 data-[state=open]:shadow-glow"
         >
-          <AccordionTrigger className="py-5 text-start text-base font-bold text-foreground hover:no-underline">
-            <span className="flex items-center gap-3">
-              <span className="font-latin text-xs font-black text-gold">
+          <AccordionTrigger className="py-5 text-start text-base font-bold text-foreground hover:no-underline [&>svg]:text-gold">
+            <span className="flex items-center gap-4">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent font-latin text-xs font-black text-secondary transition-all duration-500 group-hover:gradient-gold group-hover:text-gold-foreground group-data-[state=open]:gradient-gold group-data-[state=open]:text-gold-foreground">
                 {String(index + 1).padStart(2, "0")}
               </span>
-              {item.q}
+              <span className="leading-snug">{item.q}</span>
             </span>
           </AccordionTrigger>
-          <AccordionContent className="pb-5 ps-8 text-sm leading-relaxed text-muted-foreground">
+          <AccordionContent className="pb-6 ps-13 text-sm leading-relaxed text-muted-foreground">
+            <span aria-hidden className="mb-4 block h-px w-full gradient-gold-hairline opacity-70" />
             {item.a}
           </AccordionContent>
         </AccordionItem>
