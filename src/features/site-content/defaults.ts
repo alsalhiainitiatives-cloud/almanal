@@ -82,6 +82,26 @@ export type HomeSectionKey =
   | "faq"
   | "contact";
 
+export type LegalSectionItem = { heading: string; body: string };
+/** Editable legal/policy document rendered on a public route. */
+export type LegalDoc = {
+  /** URL slug: `privacy` -> /privacy, `terms` -> /terms, anything else -> /legal/{slug}. */
+  slug: string;
+  /** Label used in the footer link. */
+  navLabel: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  /** Free-text "last updated" line, e.g. "آخر تحديث: 1 أغسطس 2026". */
+  updatedLabel: string;
+  intro: string;
+  sections: LegalSectionItem[];
+  /** Closing note with the contact channel for enquiries/requests. */
+  contactNote: string;
+  /** Hide from the footer and the site without deleting the content. */
+  visible: boolean;
+};
+
 export type SiteContent = {
   brand: {
     name: string;
@@ -138,6 +158,13 @@ export type SiteContent = {
     valuesTitle: string;
     highlights: IconCard[];
     pillars: IconCard[];
+  };
+  legal: {
+    /** Footer column title for the policy links. */
+    footerTitle: string;
+    /** Short line shown under the footer copyright. */
+    footerNote: string;
+    docs: LegalDoc[];
   };
   schoolLife: {
     scheduleEyebrow: string;
