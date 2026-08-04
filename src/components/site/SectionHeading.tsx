@@ -23,21 +23,26 @@ export function SectionHeading({
       )}
     >
       {eyebrow ? (
-        <span className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-1.5 text-sm font-bold text-accent-foreground shadow-soft">
-          <span aria-hidden className="size-2 rounded-full bg-gold" />
-          {eyebrow}
+        <span
+          className={cn(
+            "inline-flex items-center gap-3 text-xs font-black tracking-[0.18em] text-secondary uppercase",
+            align === "center" ? "justify-center" : "",
+          )}
+        >
+          <span aria-hidden className="h-px w-8 gradient-gold-hairline" />
+          <span className="rounded-full bg-accent px-4 py-1.5 text-[0.72rem] tracking-normal text-accent-foreground shadow-soft">
+            {eyebrow}
+          </span>
+          <span aria-hidden className="h-px w-8 gradient-gold-hairline" />
         </span>
       ) : null}
-      <h2 className="mt-4 text-3xl leading-tight font-black text-foreground md:text-[2.6rem]">
+      <h2 className="mt-5 text-[1.95rem] leading-[1.15] font-black text-foreground md:text-[2.85rem]">
         {title}
       </h2>
       <svg
         aria-hidden
         viewBox="0 0 160 12"
-        className={cn(
-          "mt-3 h-3 w-36 text-gold",
-          align === "center" ? "mx-auto" : "",
-        )}
+        className={cn("mt-4 h-3 w-32 text-gold", align === "center" ? "mx-auto" : "")}
         fill="none"
         stroke="currentColor"
         strokeWidth="4"

@@ -60,6 +60,10 @@ function Index() {
                 aria-hidden
                 className="absolute -bottom-6 -start-6 size-40 rounded-full bg-mint/70 blur-2xl"
               />
+              <span
+                aria-hidden
+                className="absolute -top-8 -end-8 size-28 rounded-full border border-gold/40"
+              />
               <div className="relative overflow-hidden blob-shape-alt shadow-glow">
                 <img
                   src={resolve(home.aboutImage)}
@@ -69,8 +73,12 @@ function Index() {
                   loading="lazy"
                   className="aspect-4/3 w-full object-cover"
                 />
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-linear-to-t from-primary/35 via-transparent to-transparent"
+                />
               </div>
-              <div className="glass-panel absolute -bottom-5 end-6 rounded-3xl px-5 py-3 text-center">
+              <div className="glass-panel absolute -bottom-5 end-6 rounded-3xl px-5 py-3 text-center ring-gold-soft">
                 <p className="font-latin text-xl font-black text-secondary">{home.aboutBadgeValue}</p>
                 <p className="text-xs font-bold text-muted-foreground">{home.aboutBadgeLabel}</p>
               </div>
@@ -89,9 +97,9 @@ function Index() {
                 const Icon = siteIcon(card.icon);
                 return (
                 <Reveal key={card.title} delay={i * 0.08}>
-                  <div className="flex gap-4 rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft transition-shadow hover:shadow-card">
+                  <div className="group flex gap-4 rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft transition-all duration-500 hover:-translate-y-1 hover:border-gold/50 hover:shadow-card">
                     <span
-                      className={`grid size-12 shrink-0 place-items-center rounded-[1.1rem] ${MISSION_TONES[i % MISSION_TONES.length]} text-primary`}
+                      className={`grid size-12 shrink-0 place-items-center rounded-[1.1rem] transition-transform duration-500 group-hover:-rotate-6 ${MISSION_TONES[i % MISSION_TONES.length]} text-primary`}
                     >
                       <Icon className="size-6" />
                     </span>
@@ -158,16 +166,20 @@ function Index() {
             title={sections.life.title}
             description={sections.life.description || undefined}
           />
-          <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-14 grid auto-rows-[minmax(0,1fr)] gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {lifeItems.map((item, index) => (
-              <Reveal key={item.id} delay={index * 0.06}>
-                <figure className="group relative h-full overflow-hidden rounded-4xl shadow-soft">
+              <Reveal
+                key={item.id}
+                delay={index * 0.06}
+                className={index === 0 ? "sm:col-span-2 sm:row-span-2" : ""}
+              >
+                <figure className="group relative h-full overflow-hidden rounded-[2rem] shadow-soft ring-gold-soft">
                   {item.kind === "video" ? (
                     <video
                       src={resolve(item.src)}
                       controls
                       preload="metadata"
-                      className="aspect-4/3 w-full bg-foreground/5 object-cover"
+                      className="size-full min-h-64 w-full bg-foreground/5 object-cover"
                     />
                   ) : (
                     <img
@@ -176,12 +188,21 @@ function Index() {
                       width={1000}
                       height={800}
                       loading="lazy"
-                      className="aspect-4/3 w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      className={`w-full object-cover transition-transform duration-[900ms] group-hover:scale-110 ${index === 0 ? "h-full min-h-72 sm:min-h-full" : "aspect-4/3"}`}
                     />
                   )}
-                  <figcaption className="absolute inset-x-4 bottom-4 rounded-2xl bg-card/85 px-4 py-3 backdrop-blur-md">
-                    <span className="block text-sm font-extrabold text-primary">{item.title}</span>
-                    <span className="text-xs text-muted-foreground">{item.category}</span>
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 bg-linear-to-t from-primary/75 via-primary/10 to-transparent opacity-80 transition-opacity duration-500 group-hover:opacity-95"
+                  />
+                  <figcaption className="absolute inset-x-4 bottom-4 translate-y-1 transition-transform duration-500 group-hover:translate-y-0">
+                    <span className="block text-sm font-extrabold text-primary-foreground drop-shadow">
+                      {item.title}
+                    </span>
+                    <span className="mt-1 inline-flex items-center gap-2 text-xs font-bold text-gold">
+                      <span aria-hidden className="h-px w-5 bg-gold" />
+                      {item.category}
+                    </span>
                   </figcaption>
                 </figure>
               </Reveal>

@@ -28,13 +28,17 @@ export function StageCards({ withDetails = false }: { withDetails?: boolean }) {
           variants={staggerItem}
           whileHover={{ y: -10 }}
           transition={{ type: "spring", stiffness: 250, damping: 22 }}
-          className="group relative flex flex-col rounded-[2.75rem] bg-card p-4 pt-5 shadow-card"
+          className="premium-card group relative flex flex-col rounded-[2.5rem] p-4 pt-5"
         >
           <span
             aria-hidden
             className={`absolute -top-5 -end-4 size-20 rounded-full ${toneHalo[stage.tone]} opacity-70 blur-xl`}
           />
           <div className="relative overflow-hidden arch-shape">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 z-10 bg-linear-to-t from-primary/55 via-transparent to-transparent"
+            />
             <img
               src={stageImages[stage.slug]}
               alt={stage.title}
@@ -44,7 +48,7 @@ export function StageCards({ withDetails = false }: { withDetails?: boolean }) {
               className="aspect-4/5 w-full object-cover transition-transform duration-700 group-hover:scale-110"
             />
             <span
-              className={`absolute bottom-4 start-1/2 -translate-x-1/2 rounded-full bg-card/95 px-4 py-1.5 text-xs font-black text-primary shadow-card backdrop-blur ${toneRing[stage.tone]}`}
+              className={`absolute bottom-4 start-1/2 z-20 -translate-x-1/2 rounded-full px-4 py-1.5 text-xs font-black text-primary shadow-card backdrop-blur ring-gold-soft ${toneRing[stage.tone]}`}
             >
               {stage.badge}
             </span>
