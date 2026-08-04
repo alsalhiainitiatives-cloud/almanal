@@ -78,19 +78,7 @@ export function SectionShell({
         <div aria-hidden className="pattern-dots pointer-events-none absolute inset-0 opacity-25" />
       )}
 
-      {index ? (
-        <span
-          aria-hidden
-          className={cn(
-            "number-ghost pointer-events-none absolute -top-2 select-none text-[7rem] md:text-[11rem]",
-            align === "start" ? "end-4 md:end-10" : "start-4 md:start-10",
-            deep && "opacity-70 [-webkit-text-stroke:1.5px_oklch(0.79_0.12_82_/_0.35)]",
-          )}
-        >
-          {String(index).padStart(2, "0")}
-        </span>
-      ) : null}
-
+      {/* Section numbering intentionally removed for a cleaner editorial look. */}
       <div className={cn("relative z-10 mx-auto px-4 md:px-8", maxW)}>
         {title ? (
           <SectionHeading
