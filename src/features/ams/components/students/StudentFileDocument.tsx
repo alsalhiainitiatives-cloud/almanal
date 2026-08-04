@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { school } from "@/data/site";
 import { formatApplicationCode } from "@/features/admissions/application-code";
 import { ageInMonths, formatAge } from "@/features/admissions/eligibility";
@@ -5,7 +7,10 @@ import { useBrandLogoUrl } from "@/features/site-content/SiteContentProvider";
 import {
   GENDER_LABELS,
   QURRA_LABELS,
+  ageBandLabel,
   formatFileDate,
+  studentIdentifier,
+  vaccinationLabel,
   type StudentFileData,
 } from "@/features/ams/student-file";
 
@@ -29,6 +34,27 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+/** Student portrait with graceful fallback when the signed URL fails to load. */
+function StudentPhoto({ src, name }: { src?: string | undefined; name: string }) {
+  const [failed, setFailed] = useState(false);
+  const show = src && !failed;
+  return (
+    <div className="grid h-28 w-24 place-items-center overflow-hidden rounded-xl border-2 border-primary/30 bg-muted/40">
+      {show ? (
+        <img
+          src={src}
+          alt={name}
+          loading="eager"
+          onError={() => setFailed(true)}
+          className="h-full w-full object-cover object-top"
+        />
+      ) : (
+        <span className="text-2xl font-black text-primary/50">{name.trim().charAt(0)}</span>
+      )}
+    </div>
+  );
+}
+
 /** Official, print-ready student file document (shared by staff and parents). */
 export function StudentFileDocument({
   data,
@@ -39,6 +65,7 @@ export function StudentFileDocument({
 }) {
   const logoUrl = useBrandLogoUrl();
   const { student, application, parent, stage, classroom, qurra, services, invoice } = data;
+  const identifier = studentIdentifier(application, formatApplicationCode(application.applicationNumber));
 
   return (
     <article className="print-sheet space-y-5 rounded-3xl border border-border/60 bg-card p-6 shadow-sm" dir="rtl">
@@ -58,24 +85,14 @@ export function StudentFileDocument({
         </div>
 
         <div className="text-center">
-          <div className="grid h-28 w-24 place-items-center overflow-hidden rounded-xl border-2 border-primary/30 bg-muted/40">
-            {photoSrc ? (
-              <img src={photoSrc} alt={student.name_ar} className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-2xl font-black text-primary/50">{student.name_ar.trim().charAt(0)}</span>
-            )}
-          </div>
+          <StudentPhoto src={photoSrc} name={student.name_ar} />
           <p className="mt-1 text-[9px] font-bold text-muted-foreground">صورة الطالب</p>
         </div>
       </header>
 
-      <div className="grid gap-2 sm:grid-cols-3">
-        <Field label="اسم الطالب" value={student.name_ar} />
-        <Field label="رقم الطلب" value={formatApplicationCode(application.applicationNumber)} />
-        <Field label="الرقم الأكاديمي" value={application.studentNumber} />
-      </div>
-
       <Section title="بيانات الطالب">
+        <Field label="اسم الطالب" value={student.name_ar} />
+        <Field label="الرقم الأكاديمي" value={identifier} />
         <Field label="الاسم بالإنجليزية" value={student.name_en} />
         <Field label="رقم الهوية / الإقامة" value={student.national_id} />
         <Field label="الجنس" value={student.gender ? GENDER_LABELS[student.gender] ?? student.gender : null} />
@@ -84,12 +101,12 @@ export function StudentFileDocument({
         <Field label="الجنسية" value={student.nationality} />
         <Field label="مكان الميلاد" value={student.birth_place} />
         <Field label="فصيلة الدم" value={student.blood_type} />
-        <Field label="حالة التحصينات" value={student.vaccination_status} />
+        <Field label="حالة التحصينات" value={vaccinationLabel(student.vaccination_status)} />
       </Section>
 
       <Section title="المرحلة والفصل">
         <Field label="المرحلة" value={stage?.name_ar} />
-        <Field label="الفئة العمرية للمرحلة" value={stage?.age_label} />
+        <Field label="الفئة العمرية للمرحلة" value={ageBandLabel(stage)} />
         <Field label="الفصل" value={classroom?.name_ar} />
         <Field label="المعلمة المسؤولة" value={classroom?.teacher_name} />
         <Field label="الدوام" value={classroom?.schedule_ar ?? stage?.operating_hours} />

@@ -9,7 +9,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AppRole } from "@/features/auth/rbac";
 import type { Database } from "@/integrations/supabase/types";
 import { DECIDERS, notify } from "@/features/notifications/notifications.server";
-import { can, type Capability } from "./roles";
+import { QURRA_STATUS_LABELS } from "@/features/admissions/eligibility";
+import { can, type Capability, PAYMENT_STATUS_LABELS } from "./roles";
 
 type Db = SupabaseClient<Database>;
 type Status = Database["public"]["Enums"]["application_status"];
@@ -421,9 +422,10 @@ export async function assignOfficer(
 export async function setPriority(supabase: Db, userId: string, input: { id: string; priority: string }) {
   await guard(supabase, userId, "review");
   await touch(supabase, input.id, { priority: input.priority });
-  await logEvent(supabase, input.id, userId, "application.priority", `تم تغيير الأولوية إلى ${input.priority}`);
+  const priorityLabel = PRIORITY_LABELS[input.priority] ?? input.priority;
+  await logEvent(supabase, input.id, userId, "application.priority", `تم تغيير الأولوية إلى ${priorityLabel}`);
   const meta = await appMeta(supabase, input.id);
-  const label = PRIORITY_LABELS[input.priority] ?? input.priority;
+  const label = priorityLabel;
   await notify(supabase, {
     userIds: [meta.officerId],
     roles: ["high", "urgent"].includes(input.priority) ? DECIDERS : [],
@@ -892,7 +894,14 @@ export async function updateQurra(
     })
     .eq("application_id", input.id);
   if (error) throw new Error("تعذّر تحديث حالة قرة.");
-  await logEvent(supabase, input.id, userId, "qurra.updated", `تم تحديث حالة دعم قرة إلى ${input.status}`, input.note);
+  await logEvent(
+    supabase,
+    input.id,
+    userId,
+    "qurra.updated",
+    `تم تحديث حالة دعم قرة إلى ${QURRA_STATUS_LABELS[input.status] ?? input.status}`,
+    input.note,
+  );
   return { ok: true as const };
 }
 
@@ -919,7 +928,14 @@ export async function setPaymentStatus(
 ) {
   await guard(supabase, userId, "payments");
   await touch(supabase, input.id, { payment_status: input.status });
-  await logEvent(supabase, input.id, userId, "payment.updated", `تم تحديث حالة السداد إلى ${input.status}`, input.note);
+  await logEvent(
+    supabase,
+    input.id,
+    userId,
+    "payment.updated",
+    `تم تحديث حالة السداد إلى ${PAYMENT_STATUS_LABELS[input.status] ?? input.status}`,
+    input.note,
+  );
   return { ok: true as const };
 }
 

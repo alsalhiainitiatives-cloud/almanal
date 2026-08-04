@@ -34,6 +34,9 @@ const STUDENT_SELECT = `
   )
 `;
 
+/** Only real raster images can be rendered inside the student file. */
+const IMAGE_EXT = /\.(jpe?g|png|webp|gif|avif)$/i;
+
 type AppJoin = {
   id: string;
   application_number: string | null;
@@ -215,17 +218,18 @@ async function admissionPhotoUrl(supabase: Db, applicationId: string, childId: s
     .eq("application_id", applicationId)
     .eq("document_type_slug", "student-photo")
     .order("created_at", { ascending: false });
-  if (!docs?.length) return null;
+  const images = (docs ?? []).filter((d) => d.file_path && IMAGE_EXT.test(d.file_path));
+  if (!images.length) return null;
 
   const match =
-    docs.find((d) => d.child_index === index) ??
-    docs.find((d) => d.child_index === null || d.child_index === undefined) ??
-    (docs.length === 1 ? docs[0] : undefined);
+    images.find((d) => d.child_index === index) ??
+    images.find((d) => d.child_index === null || d.child_index === undefined) ??
+    (images.length === 1 ? images[0] : undefined);
   if (!match?.file_path) return null;
 
   const { data: signed } = await supabase.storage
     .from("admission-documents")
-    .createSignedUrl(match.file_path, 60 * 60);
+    .createSignedUrl(match.file_path, 60 * 60 * 6);
   return signed?.signedUrl ?? null;
 }
 
@@ -234,7 +238,11 @@ async function buildStudentFile(supabase: Db, row: ChildRow): Promise<StudentFil
 
   const [stage, classroom, parent, qurra, services, invoice] = await Promise.all([
     row.stage_id
-      ? supabase.from("stages").select("id, name_ar, age_label, operating_hours").eq("id", row.stage_id).maybeSingle()
+      ? supabase
+          .from("stages")
+          .select("id, name_ar, age_label, operating_hours, min_age_months, max_age_months")
+          .eq("id", row.stage_id)
+          .maybeSingle()
       : Promise.resolve({ data: null }),
     row.classroom_id
       ? supabase
