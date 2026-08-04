@@ -39,7 +39,10 @@ import {
   updateContactMessage,
 } from "../inbox";
 import { MESSAGE_TEMPLATES, mailtoLink } from "../templates";
-import { openWhatsapp } from "@/lib/whatsapp";
+import {
+  WhatsappConfirmDialog,
+  type WhatsappDraft,
+} from "@/components/whatsapp-confirm-dialog";
 
 export type InboxAbilities = {
   canReply: boolean;
@@ -306,6 +309,7 @@ function MessageCard({
   onDelete: () => void;
 }) {
   const [templateKey, setTemplateKey] = useState(MESSAGE_TEMPLATES[0].key);
+  const [waDraft, setWaDraft] = useState<WhatsappDraft | null>(null);
   const template = MESSAGE_TEMPLATES.find((item) => item.key === templateKey) ?? MESSAGE_TEMPLATES[0];
   const body = template.build({ name: row.name, subject: row.subject, program: row.program });
 
@@ -384,19 +388,25 @@ function MessageCard({
                   variant="soft"
                   size="sm"
                   className="rounded-2xl"
-                  onClick={() => {
-                    openWhatsapp(row.phone, body);
+                  onClick={() =>
+                    setWaDraft({ phone: row.phone, text: body, recipient: row.name })
+                  }
+                >
+                  <Phone className="size-4" />
+                  رد عبر واتساب
+                </Button>
+                <WhatsappConfirmDialog
+                  draft={waDraft}
+                  onClose={() => setWaDraft(null)}
+                  onSent={() =>
                     logInboxEvent({
                       subjectType: "message",
                       subjectId: row.id,
                       action: "reply_whatsapp",
                       note: template.label,
-                    });
-                  }}
-                >
-                  <Phone className="size-4" />
-                  رد عبر واتساب
-                </Button>
+                    })
+                  }
+                />
                 {row.email && (
                   <Button asChild variant="outline" size="sm" className="rounded-2xl">
                     <a

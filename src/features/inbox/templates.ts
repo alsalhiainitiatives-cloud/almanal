@@ -72,7 +72,7 @@ export const REVIEW_TEMPLATES: ReplyTemplate[] = [
 
 export function whatsappLink(phone: string, text: string) {
   const digits = phone.replace(/\D/g, "").replace(/^0/, "966");
-  return `https://web.whatsapp.com/send?phone=${digits}&text=${encodeURIComponent(text)}`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 }
 
 export function mailtoLink(email: string, subject: string, text: string) {

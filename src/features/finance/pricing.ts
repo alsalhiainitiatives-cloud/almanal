@@ -250,7 +250,7 @@ export function whatsappUrl(phone: string | null | undefined, text: string) {
   if (intl.startsWith("00")) intl = intl.slice(2);
   if (intl.startsWith("0")) intl = `966${intl.slice(1)}`;
   if (!intl.startsWith("966")) intl = `966${intl}`;
-  return `https://web.whatsapp.com/send?phone=${intl}&text=${encodeURIComponent(text)}`;
+  return `https://wa.me/${intl}?text=${encodeURIComponent(text)}`;
 }
 
 function round(n: number) {

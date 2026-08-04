@@ -36,7 +36,10 @@ import {
   whatsappUrl,
 } from "@/features/finance/pricing";
 import { cn } from "@/lib/utils";
-import { openWhatsapp } from "@/lib/whatsapp";
+import {
+  WhatsappConfirmDialog,
+  type WhatsappDraft,
+} from "@/components/whatsapp-confirm-dialog";
 
 const KEY = ["ams", "finance"];
 
@@ -52,6 +55,7 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [waDraft, setWaDraft] = useState<WhatsappDraft | null>(null);
 
   const { data, isLoading } = useQuery({ queryKey: KEY, queryFn: () => load() });
 
@@ -284,7 +288,13 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
                               size="sm"
                               variant="outline"
                               className="rounded-xl"
-                              onClick={() => openWhatsapp(activeProfile?.phone, messageText)}
+                              onClick={() =>
+                                setWaDraft({
+                                  phone: activeProfile?.phone,
+                                  text: messageText,
+                                  recipient: activeProfile?.full_name ?? undefined,
+                                })
+                              }
                             >
                               <MessageCircle className="size-3.5" />
                               واتساب
@@ -412,6 +422,8 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
           )}
         </div>
       </div>
+
+      <WhatsappConfirmDialog draft={waDraft} onClose={() => setWaDraft(null)} />
     </div>
   );
 }

@@ -8,7 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type InboxEvent, fetchInboxEvents, logInboxEvent } from "@/features/inbox/audit";
 import { AuditTrail } from "@/features/inbox/components/MessagesInbox";
 import { REVIEW_TEMPLATES, mailtoLink } from "@/features/inbox/templates";
-import { openWhatsapp } from "@/lib/whatsapp";
+import {
+  WhatsappConfirmDialog,
+  type WhatsappDraft,
+} from "@/components/whatsapp-confirm-dialog";
 import {
   deleteTestimonial,
   fetchAllTestimonials,
@@ -34,6 +37,8 @@ export function TestimonialsModeration({
 }) {
   const queryClient = useQueryClient();
   const [templateKey, setTemplateKey] = useState(REVIEW_TEMPLATES[0].key);
+  const [waDraft, setWaDraft] = useState<WhatsappDraft | null>(null);
+  const [waSubject, setWaSubject] = useState<{ id: string; label: string } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["site-testimonials", "all"],
@@ -187,13 +192,8 @@ export function TestimonialsModeration({
                       size="sm"
                       className="rounded-2xl"
                       onClick={() => {
-                        openWhatsapp(contact.phone, body);
-                        logInboxEvent({
-                          subjectType: "testimonial",
-                          subjectId: row.id,
-                          action: "reply_whatsapp",
-                          note: template.label,
-                        });
+                        setWaSubject({ id: row.id, label: template.label });
+                        setWaDraft({ phone: contact.phone, text: body, recipient: row.name });
                       }}
                     >
                       <Phone className="size-4" />
@@ -271,6 +271,22 @@ export function TestimonialsModeration({
           })
         )}
       </CardContent>
+      <WhatsappConfirmDialog
+        draft={waDraft}
+        onClose={() => {
+          setWaDraft(null);
+          setWaSubject(null);
+        }}
+        onSent={() => {
+          if (!waSubject) return;
+          logInboxEvent({
+            subjectType: "testimonial",
+            subjectId: waSubject.id,
+            action: "reply_whatsapp",
+            note: waSubject.label,
+          });
+        }}
+      />
     </Card>
   );
 }
