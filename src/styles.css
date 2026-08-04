@@ -382,6 +382,94 @@
   background-size: 46px 46px;
 }
 
+/* ---------- Premium sections & footer craft ---------- */
+
+@utility gradient-burgundy-deep {
+  background-image: radial-gradient(
+      90% 70% at 12% 0%,
+      oklch(0.46 0.13 8 / 0.9) 0%,
+      transparent 60%
+    ),
+    radial-gradient(70% 60% at 95% 100%, oklch(0.62 0.12 30 / 0.5) 0%, transparent 65%),
+    linear-gradient(160deg, oklch(0.24 0.075 5.5) 0%, oklch(0.32 0.105 6) 55%, oklch(0.26 0.08 12) 100%);
+}
+
+@utility gradient-gold-hairline {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(0.79 0.12 82 / 0.65) 35%,
+    oklch(0.88 0.1 88 / 0.9) 50%,
+    oklch(0.79 0.12 82 / 0.65) 65%,
+    transparent 100%
+  );
+}
+
+@utility text-gradient-gold {
+  background-image: linear-gradient(
+    100deg,
+    oklch(0.9 0.08 92) 0%,
+    oklch(0.79 0.12 82) 40%,
+    oklch(0.95 0.04 90) 70%,
+    oklch(0.74 0.13 68) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Editorial card with a gold hairline that draws itself on hover */
+@utility premium-card {
+  position: relative;
+  background-color: var(--card);
+  border: 1px solid oklch(0.36 0.121 5.5 / 0.08);
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.55s ease;
+  &:hover {
+    transform: translateY(-10px);
+    border-color: oklch(0.79 0.12 82 / 0.5);
+    box-shadow: var(--shadow-glow);
+  }
+}
+
+@utility pattern-noise {
+  background-image: radial-gradient(oklch(1 0 0 / 0.07) 0.6px, transparent 0.7px);
+  background-size: 6px 6px;
+}
+
+@utility mask-fade-bottom {
+  mask-image: linear-gradient(to bottom, #000 65%, transparent 100%);
+}
+
+@utility number-ghost {
+  font-family: var(--font-latin);
+  font-weight: 900;
+  line-height: 0.8;
+  -webkit-text-stroke: 1.5px oklch(0.36 0.121 5.5 / 0.16);
+  color: transparent;
+}
+
+@keyframes sheen {
+  0% {
+    transform: translateX(-120%) rotate(8deg);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateX(220%) rotate(8deg);
+    opacity: 0;
+  }
+}
+
+@utility animate-sheen {
+  animation: sheen 5.5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-ken-burns,
   .animate-shine,
