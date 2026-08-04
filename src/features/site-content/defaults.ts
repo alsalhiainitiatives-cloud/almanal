@@ -337,7 +337,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     ],
     marquee: ["تعليم بمحبة", "قيم إسلامية", "بيئة آمنة", "مونتيسوري معتمد", "أنشطة ممتعة"],
     aboutEyebrow: "عن المنال",
-    aboutTitle: "مشروع تربوي تابع للجمعية الأهلية الصالحية بعنيزة",
+    aboutTitle: "مشروع تربوي تعليمي",
     aboutDescription: school.description,
     aboutImage: images.campus,
     aboutBadgeValue: "400+",
@@ -351,7 +351,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       },
       values: {
         eyebrow: "لماذا المنال",
-        title: "أسباب تجعل الأسر تختارنا",
+        title: "لماذ روضة المنال هي الأفضل",
         description: "كل تفصيل في المنال مصمم ليمنح طفلك الأمان والفرح والتعلّم العميق.",
       },
       life: {
@@ -364,11 +364,11 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
         title: "ثقة الأسر هي أجمل شهادة",
         description: "",
       },
-      news: { eyebrow: "آخر الأخبار", title: "ما يحدث في المنال", description: "" },
-      faq: { eyebrow: "الأسئلة الشائعة", title: "أسئلة يسألها أولياء الأمور", description: "" },
+      news: { eyebrow: "آخر الأخبار", title: "مستجدات المنال", description: "" },
+      faq: { eyebrow: "الأسئلة الشائعة", title: "ما يسأل عنه أولياء الأمور", description: "" },
       contact: {
         eyebrow: "تواصل معنا",
-        title: "نرحّب بزيارتكم في حي الخزامي بعنيزة",
+        title: "نرحّب بزيارتكم",
         description:
           "زوروا المدرسة أو اتصلوا بنا خلال أوقات العمل، وسنكون سعداء بالإجابة على كل استفساراتكم.",
       },
