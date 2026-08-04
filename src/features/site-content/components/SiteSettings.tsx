@@ -397,6 +397,8 @@ export function SiteSettings() {
   const setContact = (patch: Partial<SiteContent["contact"]>) =>
     set("contact", { ...draft.contact, ...patch });
   const setHome = (patch: Partial<SiteContent["home"]>) => set("home", { ...draft.home, ...patch });
+  const legal = draft.legal ?? DEFAULT_SITE_CONTENT.legal;
+  const setLegal = (patch: Partial<SiteContent["legal"]>) => set("legal", { ...legal, ...patch });
   const setHero = (patch: Partial<SiteContent["hero"]>) => set("hero", { ...draft.hero, ...patch });
   const setAbout = (patch: Partial<SiteContent["about"]>) =>
     set("about", { ...draft.about, ...patch });
@@ -457,7 +459,175 @@ export function SiteSettings() {
           <TabsTrigger value="reviews" className="rounded-2xl">آراء الأولياء</TabsTrigger>
           <TabsTrigger value="pages" className="rounded-2xl">رؤوس الصفحات</TabsTrigger>
           <TabsTrigger value="content" className="rounded-2xl">المحتوى</TabsTrigger>
+          <TabsTrigger value="legal" className="rounded-2xl">السياسات القانونية</TabsTrigger>
         </TabsList>
+
+        {/* Legal & policies */}
+        <TabsContent value="legal" className="space-y-6">
+          <Card className="rounded-[1.75rem] border-border/60 shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-base font-extrabold">إعدادات قسم السياسات في الفوتر</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-2">
+              <Field
+                label="عنوان القسم في الفوتر"
+                value={legal.footerTitle}
+                onChange={(v) => setLegal({ footerTitle: v })}
+              />
+              <div className="sm:col-span-2">
+                <AreaField
+                  label="ملاحظة أسفل العنوان (اختياري)"
+                  value={legal.footerNote}
+                  onChange={(v) => setLegal({ footerNote: v })}
+                />
+              </div>
+              <p className="sm:col-span-2 rounded-2xl bg-beige/60 px-4 py-3 text-xs font-semibold text-muted-foreground">
+                المعرّف «privacy» يُنشر على /privacy و«terms» على /terms، وأي معرّف آخر يُنشر على /legal/المعرّف. استخدم حروفًا إنجليزية صغيرة وشرطات فقط.
+              </p>
+            </CardContent>
+          </Card>
+
+          <ListSection
+            title="الوثائق والسياسات"
+            addLabel="إضافة وثيقة"
+            items={legal.docs}
+            onChange={(docs) => setLegal({ docs })}
+            blank={() => ({
+              slug: "",
+              navLabel: "وثيقة جديدة",
+              eyebrow: "سياسات",
+              title: "عنوان الوثيقة",
+              description: "",
+              updatedLabel: "آخر تحديث: —",
+              intro: "",
+              sections: [],
+              contactNote: "",
+              visible: true,
+            })}
+            render={(item, update) => (
+              <>
+                <Field label="اسم الرابط في الفوتر" value={item.navLabel} onChange={(v) => update({ navLabel: v })} />
+                <Field
+                  label="المعرّف (المسار)"
+                  value={item.slug}
+                  dir="ltr"
+                  placeholder="privacy"
+                  onChange={(v) => update({ slug: v.toLowerCase().replace(/[^a-z0-9-]/g, "-") })}
+                />
+                <Field label="النص الصغير أعلى العنوان" value={item.eyebrow} onChange={(v) => update({ eyebrow: v })} />
+                <Field label="العنوان الرئيسي" value={item.title} onChange={(v) => update({ title: v })} />
+                <Field
+                  label="تاريخ آخر تحديث"
+                  value={item.updatedLabel}
+                  onChange={(v) => update({ updatedLabel: v })}
+                />
+                <div className="flex items-center justify-between gap-3 rounded-2xl bg-beige/60 px-4 py-2.5">
+                  <Label className="text-xs font-bold text-muted-foreground">منشورة في الموقع</Label>
+                  <Switch checked={item.visible} onCheckedChange={(v) => update({ visible: v })} />
+                </div>
+                <div className="sm:col-span-2">
+                  <AreaField
+                    label="وصف الصفحة (يظهر في الهيرو ومحركات البحث)"
+                    value={item.description}
+                    onChange={(v) => update({ description: v })}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <AreaField
+                    label="المقدمة"
+                    value={item.intro}
+                    rows={4}
+                    onChange={(v) => update({ intro: v })}
+                  />
+                </div>
+                <div className="sm:col-span-2 space-y-3 rounded-[1.5rem] border border-dashed border-border/70 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label className="text-xs font-black text-foreground">
+                      بنود الوثيقة ({item.sections.length})
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="soft"
+                      size="sm"
+                      className="rounded-2xl"
+                      onClick={() =>
+                        update({ sections: [...item.sections, { heading: "بند جديد", body: "" }] })
+                      }
+                    >
+                      <Plus className="size-4" />
+                      إضافة بند
+                    </Button>
+                  </div>
+                  {item.sections.length === 0 ? (
+                    <p className="rounded-2xl bg-beige/60 px-4 py-3 text-xs font-semibold text-muted-foreground">
+                      لا توجد بنود بعد.
+                    </p>
+                  ) : null}
+                  {item.sections.map((section, si) => (
+                    <div key={si} className="space-y-3 rounded-[1.25rem] border border-border/60 bg-card/70 p-4">
+                      <Field
+                        label={`عنوان البند ${si + 1}`}
+                        value={section.heading}
+                        onChange={(v) =>
+                          update({
+                            sections: item.sections.map((s, i) =>
+                              i === si ? { ...s, heading: v } : s,
+                            ),
+                          })
+                        }
+                      />
+                      <AreaField
+                        label="نص البند"
+                        rows={5}
+                        value={section.body}
+                        onChange={(v) =>
+                          update({
+                            sections: item.sections.map((s, i) => (i === si ? { ...s, body: v } : s)),
+                          })
+                        }
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="rounded-2xl"
+                          disabled={si === 0}
+                          onClick={() => {
+                            const next = [...item.sections];
+                            [next[si - 1], next[si]] = [next[si], next[si - 1]];
+                            update({ sections: next });
+                          }}
+                        >
+                          تحريك للأعلى
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="rounded-2xl text-destructive hover:text-destructive"
+                          onClick={() =>
+                            update({ sections: item.sections.filter((_, i) => i !== si) })
+                          }
+                        >
+                          <Trash2 className="size-4" />
+                          حذف البند
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="sm:col-span-2">
+                  <AreaField
+                    label="ملاحظة التواصل في نهاية الصفحة"
+                    value={item.contactNote}
+                    onChange={(v) => update({ contactNote: v })}
+                  />
+                </div>
+              </>
+            )}
+          />
+        </TabsContent>
 
         {/* Brand */}
         <TabsContent value="brand" className="space-y-6">
