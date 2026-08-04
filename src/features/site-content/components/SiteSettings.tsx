@@ -1047,6 +1047,12 @@ export function SiteSettings() {
                   <Field label="العنوان الرئيسي" value={hero.title} onChange={(v) => setPage(key, { title: v })} />
                 </div>
                 <AreaField label="الوصف" value={hero.description} onChange={(v) => setPage(key, { description: v })} />
+                <MediaField
+                  label="خلفية رأس الصفحة"
+                  value={hero.image ?? ""}
+                  folder="site/pages"
+                  onChange={(v) => setPage(key, { image: v })}
+                />
               </CardContent>
             </Card>
           ))}
