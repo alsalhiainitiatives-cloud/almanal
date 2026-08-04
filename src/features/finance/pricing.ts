@@ -242,7 +242,7 @@ export function fillTemplate(
   );
 }
 
-/** Builds a wa.me link for a Saudi mobile number (05xxxxxxxx or 9665xxxxxxxx). */
+/** Builds a direct WhatsApp link for a Saudi mobile number (05xxxxxxxx or 9665xxxxxxxx). */
 export function whatsappUrl(phone: string | null | undefined, text: string) {
   const digits = String(phone ?? "").replace(/\D/g, "");
   if (!digits) return null;
@@ -250,7 +250,7 @@ export function whatsappUrl(phone: string | null | undefined, text: string) {
   if (intl.startsWith("00")) intl = intl.slice(2);
   if (intl.startsWith("0")) intl = `966${intl.slice(1)}`;
   if (!intl.startsWith("966")) intl = `966${intl}`;
-  return `https://wa.me/${intl}?text=${encodeURIComponent(text)}`;
+  return `https://web.whatsapp.com/send?phone=${intl}&text=${encodeURIComponent(text)}`;
 }
 
 function round(n: number) {

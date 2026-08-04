@@ -36,6 +36,7 @@ import {
   whatsappUrl,
 } from "@/features/finance/pricing";
 import { cn } from "@/lib/utils";
+import { openWhatsapp } from "@/lib/whatsapp";
 
 const KEY = ["ams", "finance"];
 
@@ -267,25 +268,26 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
                       const template =
                         data?.settings?.whatsapp_template ??
                         "السلام عليكم {parent}، لديكم دفعة مستحقة رقم {seq} بمبلغ {amount} ريال.";
-                      const link = whatsappUrl(
-                        activeProfile?.phone,
-                        fillTemplate(template, {
-                          parent: activeProfile?.full_name ?? "",
-                          child: childOf(active.application_id),
-                          seq: row.seq,
-                          amount: Math.round(Number(row.amount)),
-                          due: dateAr(row.due_date),
-                          school: "روضة ومدارس المنال",
-                        }),
-                      );
+                      const messageText = fillTemplate(template, {
+                        parent: activeProfile?.full_name ?? "",
+                        child: childOf(active.application_id),
+                        seq: row.seq,
+                        amount: Math.round(Number(row.amount)),
+                        due: dateAr(row.due_date),
+                        school: "روضة ومدارس المنال",
+                      });
+                      const link = whatsappUrl(activeProfile?.phone, messageText);
                       return (
                         <div className="flex items-center gap-1.5">
                           {link && row.status !== "paid" ? (
-                            <Button asChild size="sm" variant="outline" className="rounded-xl">
-                              <a href={link} target="_blank" rel="noopener noreferrer">
-                                <MessageCircle className="size-3.5" />
-                                واتساب
-                              </a>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-xl"
+                              onClick={() => openWhatsapp(activeProfile?.phone, messageText)}
+                            >
+                              <MessageCircle className="size-3.5" />
+                              واتساب
                             </Button>
                           ) : null}
                           {canManage && row.status !== "paid" ? (

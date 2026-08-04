@@ -38,7 +38,8 @@ import {
   fetchContactMessages,
   updateContactMessage,
 } from "../inbox";
-import { MESSAGE_TEMPLATES, mailtoLink, whatsappLink } from "../templates";
+import { MESSAGE_TEMPLATES, mailtoLink } from "../templates";
+import { openWhatsapp } from "@/lib/whatsapp";
 
 export type InboxAbilities = {
   canReply: boolean;
@@ -379,23 +380,22 @@ function MessageCard({
                 {body}
               </p>
               <div className="flex flex-wrap gap-2">
-                <Button asChild variant="soft" size="sm" className="rounded-2xl">
-                  <a
-                    href={whatsappLink(row.phone, body)}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() =>
-                      logInboxEvent({
-                        subjectType: "message",
-                        subjectId: row.id,
-                        action: "reply_whatsapp",
-                        note: template.label,
-                      })
-                    }
-                  >
-                    <Phone className="size-4" />
-                    رد عبر واتساب
-                  </a>
+                <Button
+                  variant="soft"
+                  size="sm"
+                  className="rounded-2xl"
+                  onClick={() => {
+                    openWhatsapp(row.phone, body);
+                    logInboxEvent({
+                      subjectType: "message",
+                      subjectId: row.id,
+                      action: "reply_whatsapp",
+                      note: template.label,
+                    });
+                  }}
+                >
+                  <Phone className="size-4" />
+                  رد عبر واتساب
                 </Button>
                 {row.email && (
                   <Button asChild variant="outline" size="sm" className="rounded-2xl">
