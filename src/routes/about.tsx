@@ -51,6 +51,7 @@ function AboutPage() {
         eyebrow={hero?.eyebrow ?? "عن المنال"}
         title={hero?.title ?? "مشروع تربوي وُلد من قلب المجتمع"}
         description={hero?.description ?? content.brand.description}
+        image={hero?.image}
       />
 
       <section className="section-y">

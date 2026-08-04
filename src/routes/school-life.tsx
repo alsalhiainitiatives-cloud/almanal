@@ -41,6 +41,7 @@ function SchoolLifePage() {
         eyebrow={hero?.eyebrow ?? "الحياة المدرسية"}
         title={hero?.title ?? "يوم مليء بالتعلّم والفرح"}
         description={hero?.description ?? ""}
+        image={hero?.image}
       />
 
       <section className="section-y">

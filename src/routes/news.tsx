@@ -32,6 +32,7 @@ function NewsPage() {
         eyebrow={hero?.eyebrow ?? "الأخبار"}
         title={hero?.title ?? "آخر ما يحدث في المنال"}
         description={hero?.description ?? ""}
+        image={hero?.image}
       />
       <section className="section-y pt-4 md:pt-8">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
