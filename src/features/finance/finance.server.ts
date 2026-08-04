@@ -932,3 +932,234 @@ async function syncPaymentStatus(
           : "unpaid";
   await db.from("applications").update({ payment_status: status }).eq("id", applicationId);
 }
+/* ------------------------------------------------------------------ */
+/* Annual financial claims (re-billing enrolled students)              */
+/* ------------------------------------------------------------------ */
+
+/** Suggests the next academic year label from an existing one (`2026-2027 / 1448هـ`). */
+export function nextAcademicYear(current: string): string {
+  return current.replace(/(\d{4})-(\d{4})/, (_m, a: string, b: string) =>
+    `${Number(a) + 1}-${Number(b) + 1}`,
+  ).replace(/(\d{3,4})هـ/, (_m, h: string) => `${Number(h) + 1}هـ`);
+}
+
+/**
+ * Enrolled students with their billing history per academic year, so the
+ * accountant can issue a new claim for a returning student.
+ */
+export async function listClaimTargets(supabase: Db, userId: string) {
+  await guardFinance(supabase, userId);
+
+  const [apps, invoices, settings, feePlans, stages, classrooms] = await Promise.all([
+    supabase
+      .from("applications")
+      .select("id, application_number, student_number, parent_id, academic_year, stage_id, classroom_id, status")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(500),
+    supabase
+      .from("invoices")
+      .select("id, application_id, academic_year, grand_total, paid_total, status, plan_type, installments_count, created_at")
+      .order("created_at", { ascending: false })
+      .limit(1000),
+    supabase.from("payment_plan_settings").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("fee_plans").select("*").eq("is_active", true),
+    supabase.from("stages").select("id, name_ar").order("sort_order"),
+    supabase.from("classrooms").select("id, name_ar, stage_id").order("sort_order"),
+  ]);
+
+  const appIds = (apps.data ?? []).map((a) => a.id);
+  const parentIds = [...new Set((apps.data ?? []).map((a) => a.parent_id))];
+
+  const [children, profiles] = await Promise.all([
+    appIds.length
+      ? supabase
+          .from("application_children")
+          .select("id, application_id, name_ar, stage_id, classroom_id")
+          .in("application_id", appIds)
+      : Promise.resolve({ data: [] }),
+    parentIds.length
+      ? supabase.from("profiles").select("id, full_name, phone").in("id", parentIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const plans = feePlans.data ?? [];
+  const suggestFor = (stageId: string | null, classroomId: string | null) => {
+    const plan =
+      plans.find((p) => p.classroom_id && p.classroom_id === classroomId) ??
+      plans.find((p) => p.stage_id && p.stage_id === stageId) ??
+      null;
+    return plan
+      ? { tuition: annualTuition(plan), admissionFee: 0 }
+      : { tuition: 0, admissionFee: 0 };
+  };
+
+  const targets = (apps.data ?? []).map((app) => {
+    const kids = (children.data ?? []).filter((c) => c.application_id === app.id);
+    const billed = (invoices.data ?? []).filter((i) => i.application_id === app.id);
+    const primary = kids[0];
+    const suggestion = suggestFor(
+      primary?.stage_id ?? app.stage_id,
+      primary?.classroom_id ?? app.classroom_id,
+    );
+    const years = billed.map((i) => i.academic_year);
+    const latestYear = years[0] ?? app.academic_year;
+    return {
+      applicationId: app.id,
+      applicationNumber: app.application_number,
+      studentNumber: app.student_number,
+      parentId: app.parent_id,
+      parentName: (profiles.data ?? []).find((p) => p.id === app.parent_id)?.full_name ?? "—",
+      parentPhone: (profiles.data ?? []).find((p) => p.id === app.parent_id)?.phone ?? null,
+      children: kids.map((c) => c.name_ar),
+      stageId: primary?.stage_id ?? app.stage_id,
+      classroomId: primary?.classroom_id ?? app.classroom_id,
+      invoices: billed,
+      latestYear,
+      suggestedYear: nextAcademicYear(latestYear),
+      /** Annual tuition per child from the active fee plan × children count. */
+      suggestedTuition: suggestion.tuition * Math.max(1, kids.length),
+    };
+  });
+
+  return {
+    targets,
+    planSettings: settings.data ?? null,
+    stages: stages.data ?? [],
+    classrooms: classrooms.data ?? [],
+    currentYear: ACADEMIC_YEAR,
+  };
+}
+
+/**
+ * Issues a financial claim (invoice + schedule) for an enrolled student for a
+ * new academic year. Staff-driven: amounts are entered by the accountant and
+ * the schedule follows the same plan settings parents already see.
+ */
+export async function createClaim(
+  supabase: Db,
+  userId: string,
+  input: {
+    applicationId: string;
+    academicYear: string;
+    planType: "full" | "installments";
+    installments: number;
+    tuitionTotal: number;
+    admissionFee: number;
+    servicesTotal: number;
+    discountTotal: number;
+    startDate?: string | null;
+    note?: string | null;
+  },
+) {
+  await guardFinance(supabase, userId);
+
+  const { data: app } = await supabase
+    .from("applications")
+    .select("id, parent_id, application_number")
+    .eq("id", input.applicationId)
+    .maybeSingle();
+  if (!app) throw new Error("الطلب غير موجود.");
+
+  const year = input.academicYear.trim();
+  if (year.length < 4) throw new Error("أدخل العام الدراسي للمطالبة.");
+
+  const db = await admin();
+  const { data: existing } = await db
+    .from("invoices")
+    .select("id")
+    .eq("application_id", input.applicationId)
+    .eq("academic_year", year)
+    .maybeSingle();
+  if (existing) throw new Error("توجد مطالبة مالية لهذا الطالب في نفس العام الدراسي.");
+
+  const gross =
+    Math.max(0, input.tuitionTotal) +
+    Math.max(0, input.admissionFee) +
+    Math.max(0, input.servicesTotal);
+  const total = Math.max(0, gross - Math.max(0, input.discountTotal));
+  if (total <= 0) throw new Error("قيمة المطالبة يجب أن تكون أكبر من صفر.");
+
+  const { data: settings } = await supabase
+    .from("payment_plan_settings")
+    .select("*")
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const schedule = buildSchedule({
+    total,
+    count: input.planType === "full" ? 1 : input.installments,
+    settings: settings as PlanSettingsRow | null,
+    startDate: input.startDate ? new Date(input.startDate) : undefined,
+  });
+
+  const { data: created, error } = await db
+    .from("invoices")
+    .insert({
+      application_id: input.applicationId,
+      parent_id: app.parent_id,
+      academic_year: year,
+      status: "active",
+      plan_type: input.planType,
+      installments_count: input.planType === "full" ? 1 : input.installments,
+      admission_fee: Math.max(0, input.admissionFee),
+      tuition_total: Math.max(0, input.tuitionTotal),
+      services_total: Math.max(0, input.servicesTotal),
+      discount_total: Math.max(0, input.discountTotal),
+      grand_total: total,
+      qurra_covered: false,
+      note: input.note?.slice(0, 500) ?? null,
+    })
+    .select("id")
+    .single();
+  if (error || !created) throw new Error("تعذّر إنشاء المطالبة المالية.");
+
+  const items = [
+    { kind: "tuition", label_ar: `الرسوم الدراسية ${year}`, amount: Math.max(0, input.tuitionTotal), qurra_covered: false },
+    { kind: "admission", label_ar: "رسوم إعادة التسجيل", amount: Math.max(0, input.admissionFee), qurra_covered: false },
+    { kind: "service", label_ar: "الخدمات الإضافية", amount: Math.max(0, input.servicesTotal), qurra_covered: false },
+    { kind: "discount", label_ar: "خصم", amount: -Math.max(0, input.discountTotal), qurra_covered: false },
+  ].filter((i) => i.amount !== 0);
+
+  await db.from("invoice_items").insert(items.map((i) => ({ ...i, invoice_id: created.id })));
+  await db.from("installments").insert(
+    schedule.map((row) => ({
+      invoice_id: created.id,
+      seq: row.seq,
+      amount: row.amount,
+      due_date: row.dueDate,
+    })),
+  );
+
+  await notify(supabase, {
+    userIds: [app.parent_id],
+    kind: "finance.claim_issued",
+    title: `مطالبة مالية جديدة للعام ${year}`,
+    body: `إجمالي المستحق ${Math.round(total)} ر.س — ${
+      input.planType === "full" ? "سداد دفعة واحدة" : `مجدولة على ${input.installments} دفعات`
+    }`,
+    applicationId: input.applicationId,
+    link: "/payments",
+    severity: "warning",
+  });
+
+  return { invoiceId: created.id, total, schedule };
+}
+
+/** Cancels an unpaid claim (invoice) and its schedule. */
+export async function cancelClaim(supabase: Db, userId: string, invoiceId: string) {
+  await guardFinance(supabase, userId);
+  const db = await admin();
+  const { data: invoice } = await db
+    .from("invoices")
+    .select("id, paid_total")
+    .eq("id", invoiceId)
+    .maybeSingle();
+  if (!invoice) throw new Error("المطالبة غير موجودة.");
+  if (Number(invoice.paid_total) > 0) throw new Error("تم سداد جزء من المطالبة — لا يمكن إلغاؤها.");
+  await db.from("installments").delete().eq("invoice_id", invoiceId);
+  await db.from("invoice_items").delete().eq("invoice_id", invoiceId);
+  await db.from("invoices").delete().eq("id", invoiceId);
+  return { ok: true as const };
+}

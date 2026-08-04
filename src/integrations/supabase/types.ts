@@ -1599,6 +1599,57 @@ export type Database = {
         }
         Relationships: []
       }
+      promotion_rules: {
+        Row: {
+          created_at: string
+          from_stage_id: string | null
+          id: string
+          is_active: boolean
+          min_age_months: number
+          notice_months: number
+          sort_order: number
+          to_stage_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_stage_id?: string | null
+          id?: string
+          is_active?: boolean
+          min_age_months?: number
+          notice_months?: number
+          sort_order?: number
+          to_stage_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_stage_id?: string | null
+          id?: string
+          is_active?: boolean
+          min_age_months?: number
+          notice_months?: number
+          sort_order?: number
+          to_stage_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_rules_from_stage_id_fkey"
+            columns: ["from_stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_rules_to_stage_id_fkey"
+            columns: ["to_stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       qurra_requests: {
         Row: {
           application_id: string
@@ -1932,6 +1983,74 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      student_promotions: {
+        Row: {
+          age_months: number | null
+          child_id: string
+          classroom_id: string | null
+          created_at: string
+          decided_by: string | null
+          from_stage_id: string | null
+          id: string
+          note: string | null
+          status: string
+          to_stage_id: string
+        }
+        Insert: {
+          age_months?: number | null
+          child_id: string
+          classroom_id?: string | null
+          created_at?: string
+          decided_by?: string | null
+          from_stage_id?: string | null
+          id?: string
+          note?: string | null
+          status?: string
+          to_stage_id: string
+        }
+        Update: {
+          age_months?: number | null
+          child_id?: string
+          classroom_id?: string | null
+          created_at?: string
+          decided_by?: string | null
+          from_stage_id?: string | null
+          id?: string
+          note?: string | null
+          status?: string
+          to_stage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_promotions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "application_children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_promotions_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_promotions_from_stage_id_fkey"
+            columns: ["from_stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_promotions_to_stage_id_fkey"
+            columns: ["to_stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_permissions: {
         Row: {
