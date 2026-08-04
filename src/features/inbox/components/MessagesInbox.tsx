@@ -4,8 +4,10 @@ import {
   CheckCircle2,
   Clock,
   Download,
+  History,
   Inbox,
   Loader2,
+  Lock,
   Mail,
   MessageSquare,
   Phone,
@@ -20,6 +22,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  INBOX_ACTION_LABELS,
+  type InboxEvent,
+  fetchInboxEvents,
+  logInboxEvent,
+} from "../audit";
+import {
   MESSAGE_PRIORITY_LABELS,
   MESSAGE_STATUS_LABELS,
   MESSAGE_STATUS_STYLES,
@@ -30,6 +38,15 @@ import {
   fetchContactMessages,
   updateContactMessage,
 } from "../inbox";
+import { MESSAGE_TEMPLATES, mailtoLink, whatsappLink } from "../templates";
+
+export type InboxAbilities = {
+  canReply: boolean;
+  canStatus: boolean;
+  canNote: boolean;
+  canExport: boolean;
+  canDelete: boolean;
+};
 
 const FILTERS: { key: "all" | ContactMessageStatus; label: string }[] = [
   { key: "all", label: "الكل" },
@@ -46,7 +63,7 @@ function formatDate(value: string) {
 }
 
 /** Staff workspace for messages submitted through the public contact form. */
-export function MessagesInbox({ canDelete }: { canDelete: boolean }) {
+export function MessagesInbox({ abilities }: { abilities: InboxAbilities }) {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<"all" | ContactMessageStatus>("all");
   const [term, setTerm] = useState("");
@@ -58,7 +75,22 @@ export function MessagesInbox({ canDelete }: { canDelete: boolean }) {
     queryFn: fetchContactMessages,
   });
 
+  const { data: events } = useQuery({
+    queryKey: ["inbox-events", "message"],
+    queryFn: () => fetchInboxEvents("message"),
+  });
+
   const rows = data ?? [];
+
+  const eventsBySubject = useMemo(() => {
+    const map = new Map<string, InboxEvent[]>();
+    for (const event of events ?? []) {
+      const list = map.get(event.subject_id) ?? [];
+      list.push(event);
+      map.set(event.subject_id, list);
+    }
+    return map;
+  }, [events]);
 
   const stats = useMemo(
     () => ({
@@ -82,22 +114,62 @@ export function MessagesInbox({ canDelete }: { canDelete: boolean }) {
     });
   }, [rows, filter, term]);
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["contact-messages"] });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["contact-messages"] });
+    queryClient.invalidateQueries({ queryKey: ["inbox-events"] });
+  };
 
   const update = useMutation({
-    mutationFn: (input: {
+    mutationFn: async (input: {
       id: string;
+      before: ContactMessage;
       patch: { status?: ContactMessageStatus; priority?: string; staff_note?: string };
-    }) => updateContactMessage(input.id, input.patch),
+    }) => {
+      await updateContactMessage(input.id, input.patch);
+      if (input.patch.status) {
+        await logInboxEvent({
+          subjectType: "message",
+          subjectId: input.id,
+          action: "status",
+          fromValue: MESSAGE_STATUS_LABELS[input.before.status] ?? input.before.status,
+          toValue: MESSAGE_STATUS_LABELS[input.patch.status] ?? input.patch.status,
+        });
+      }
+      if (input.patch.priority) {
+        await logInboxEvent({
+          subjectType: "message",
+          subjectId: input.id,
+          action: "priority",
+          fromValue: MESSAGE_PRIORITY_LABELS[input.before.priority] ?? input.before.priority,
+          toValue: MESSAGE_PRIORITY_LABELS[input.patch.priority] ?? input.patch.priority,
+        });
+      }
+      if (input.patch.staff_note !== undefined) {
+        await logInboxEvent({
+          subjectType: "message",
+          subjectId: input.id,
+          action: "note",
+          note: input.patch.staff_note || "—",
+        });
+      }
+    },
     onSuccess: () => {
-      toast.success("تم تحديث الرسالة");
+      toast.success("تم تحديث الرسالة وتسجيلها في سجل التدقيق");
       invalidate();
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "تعذّر التحديث"),
   });
 
   const remove = useMutation({
-    mutationFn: (id: string) => deleteContactMessage(id),
+    mutationFn: async (row: ContactMessage) => {
+      await logInboxEvent({
+        subjectType: "message",
+        subjectId: row.id,
+        action: "delete",
+        note: `${row.name} — ${row.phone}`,
+      });
+      await deleteContactMessage(row.id);
+    },
     onSuccess: () => {
       toast.success("تم حذف الرسالة نهائيًا");
       invalidate();
@@ -157,17 +229,24 @@ export function MessagesInbox({ canDelete }: { canDelete: boolean }) {
             </button>
           ))}
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="rounded-2xl font-bold"
-          disabled={visible.length === 0}
-          onClick={() => exportMessagesCsv(visible)}
-        >
-          <Download className="size-4" />
-          تصدير CSV
-        </Button>
+        {abilities.canExport ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-2xl font-bold"
+            disabled={visible.length === 0}
+            onClick={() => exportMessagesCsv(visible)}
+          >
+            <Download className="size-4" />
+            تصدير CSV
+          </Button>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-2xl bg-accent px-3 py-2 text-[11px] font-bold text-muted-foreground">
+            <Lock className="size-3.5" />
+            التصدير غير متاح لصلاحيتك
+          </span>
+        )}
       </div>
 
       {/* List */}
@@ -186,13 +265,14 @@ export function MessagesInbox({ canDelete }: { canDelete: boolean }) {
               key={row.id}
               row={row}
               open={openId === row.id}
-              canDelete={canDelete}
+              abilities={abilities}
+              trail={eventsBySubject.get(row.id) ?? []}
               busy={update.isPending || remove.isPending}
               note={noteDraft[row.id] ?? row.staff_note ?? ""}
               onNoteChange={(value) => setNoteDraft((prev) => ({ ...prev, [row.id]: value }))}
               onToggle={() => setOpenId((prev) => (prev === row.id ? null : row.id))}
-              onUpdate={(patch) => update.mutate({ id: row.id, patch })}
-              onDelete={() => remove.mutate(row.id)}
+              onUpdate={(patch) => update.mutate({ id: row.id, before: row, patch })}
+              onDelete={() => remove.mutate(row)}
             />
           ))}
         </div>
@@ -204,7 +284,8 @@ export function MessagesInbox({ canDelete }: { canDelete: boolean }) {
 function MessageCard({
   row,
   open,
-  canDelete,
+  abilities,
+  trail,
   busy,
   note,
   onNoteChange,
@@ -214,7 +295,8 @@ function MessageCard({
 }: {
   row: ContactMessage;
   open: boolean;
-  canDelete: boolean;
+  abilities: InboxAbilities;
+  trail: InboxEvent[];
   busy: boolean;
   note: string;
   onNoteChange: (value: string) => void;
@@ -222,6 +304,10 @@ function MessageCard({
   onUpdate: (patch: { status?: ContactMessageStatus; priority?: string; staff_note?: string }) => void;
   onDelete: () => void;
 }) {
+  const [templateKey, setTemplateKey] = useState(MESSAGE_TEMPLATES[0].key);
+  const template = MESSAGE_TEMPLATES.find((item) => item.key === templateKey) ?? MESSAGE_TEMPLATES[0];
+  const body = template.build({ name: row.name, subject: row.subject, program: row.program });
+
   return (
     <div className="rounded-[1.5rem] border border-border/60 bg-card/80 p-4 shadow-soft">
       <button type="button" onClick={onToggle} className="w-full text-start">
@@ -269,22 +355,73 @@ function MessageCard({
             {row.handled_at && <span>أُغلقت بتاريخ {formatDate(row.handled_at)}</span>}
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button asChild variant="soft" size="sm" className="rounded-2xl">
-              <a href={`https://wa.me/${row.phone.replace(/\D/g, "").replace(/^0/, "966")}`} target="_blank" rel="noreferrer">
-                <Phone className="size-4" />
-                رد عبر واتساب
-              </a>
-            </Button>
-            {row.email && (
-              <Button asChild variant="outline" size="sm" className="rounded-2xl">
-                <a href={`mailto:${row.email}?subject=${encodeURIComponent(row.subject ?? "رد من روضة ومدارس المنال")}`}>
-                  <Mail className="size-4" />
-                  رد بالبريد
-                </a>
-              </Button>
-            )}
-          </div>
+          {/* Ready-made replies */}
+          {abilities.canReply ? (
+            <div className="space-y-2 rounded-2xl bg-beige/50 p-3">
+              <p className="text-[11px] font-black text-muted-foreground">قوالب الردود الجاهزة</p>
+              <div className="flex flex-wrap gap-1.5">
+                {MESSAGE_TEMPLATES.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setTemplateKey(item.key)}
+                    className={`rounded-full px-3 py-1.5 text-[11px] font-black transition-colors ${
+                      templateKey === item.key
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+              <p className="whitespace-pre-line rounded-2xl bg-card/80 p-3 text-xs leading-relaxed text-foreground">
+                {body}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild variant="soft" size="sm" className="rounded-2xl">
+                  <a
+                    href={whatsappLink(row.phone, body)}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() =>
+                      logInboxEvent({
+                        subjectType: "message",
+                        subjectId: row.id,
+                        action: "reply_whatsapp",
+                        note: template.label,
+                      })
+                    }
+                  >
+                    <Phone className="size-4" />
+                    رد عبر واتساب
+                  </a>
+                </Button>
+                {row.email && (
+                  <Button asChild variant="outline" size="sm" className="rounded-2xl">
+                    <a
+                      href={mailtoLink(row.email, template.subject, body)}
+                      onClick={() =>
+                        logInboxEvent({
+                          subjectType: "message",
+                          subjectId: row.id,
+                          action: "reply_email",
+                          note: template.label,
+                        })
+                      }
+                    >
+                      <Mail className="size-4" />
+                      رد بالبريد
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="rounded-2xl bg-accent px-3 py-2 text-[11px] font-bold text-muted-foreground">
+              لا تملك صلاحية الرد على المراسلات — يمكنك الاطلاع فقط.
+            </p>
+          )}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
@@ -297,7 +434,7 @@ function MessageCard({
                     size="sm"
                     variant={row.status === status ? "default" : "outline"}
                     className="rounded-2xl text-[11px]"
-                    disabled={busy || row.status === status}
+                    disabled={busy || row.status === status || !abilities.canStatus}
                     onClick={() => onUpdate({ status })}
                   >
                     {MESSAGE_STATUS_LABELS[status]}
@@ -315,7 +452,7 @@ function MessageCard({
                     size="sm"
                     variant={row.priority === priority ? "default" : "outline"}
                     className="rounded-2xl text-[11px]"
-                    disabled={busy || row.priority === priority}
+                    disabled={busy || row.priority === priority || !abilities.canStatus}
                     onClick={() => onUpdate({ priority })}
                   >
                     {MESSAGE_PRIORITY_LABELS[priority]}
@@ -330,22 +467,25 @@ function MessageCard({
             <Textarea
               value={note}
               maxLength={1000}
+              disabled={!abilities.canNote}
               onChange={(event) => onNoteChange(event.target.value)}
               placeholder="سجّل ما تم مع ولي الأمر…"
               className="min-h-20 rounded-2xl"
             />
             <div className="flex flex-wrap justify-end gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="soft"
-                className="rounded-2xl"
-                disabled={busy}
-                onClick={() => onUpdate({ staff_note: note.trim() })}
-              >
-                حفظ الملاحظة
-              </Button>
-              {canDelete && (
+              {abilities.canNote && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="soft"
+                  className="rounded-2xl"
+                  disabled={busy}
+                  onClick={() => onUpdate({ staff_note: note.trim() })}
+                >
+                  حفظ الملاحظة
+                </Button>
+              )}
+              {abilities.canDelete && (
                 <Button
                   type="button"
                   size="sm"
@@ -362,7 +502,51 @@ function MessageCard({
               )}
             </div>
           </div>
+
+          <AuditTrail trail={trail} />
         </div>
+      )}
+    </div>
+  );
+}
+
+/** Who handled the item, when, and what exactly changed. */
+export function AuditTrail({ trail }: { trail: InboxEvent[] }) {
+  return (
+    <div className="space-y-2 rounded-2xl border border-border/60 bg-card/60 p-3">
+      <p className="inline-flex items-center gap-1.5 text-[11px] font-black text-muted-foreground">
+        <History className="size-3.5" />
+        سجل التدقيق ({trail.length})
+      </p>
+      {trail.length === 0 ? (
+        <p className="text-[11px] font-semibold text-muted-foreground">
+          لم يتم تسجيل أي إجراء على هذا العنصر بعد.
+        </p>
+      ) : (
+        <ul className="space-y-1.5">
+          {trail.map((event) => (
+            <li key={event.id} className="flex flex-wrap items-center gap-2 text-[11px]">
+              <span className="rounded-full bg-accent px-2.5 py-1 font-black text-primary">
+                {INBOX_ACTION_LABELS[event.action] ?? event.action}
+              </span>
+              <span className="font-bold text-foreground">{event.actor_name ?? "مستخدم"}</span>
+              {event.from_value && event.to_value && (
+                <span className="font-semibold text-muted-foreground">
+                  {event.from_value} ← {event.to_value}
+                </span>
+              )}
+              {!event.from_value && event.to_value && (
+                <span className="font-semibold text-muted-foreground">{event.to_value}</span>
+              )}
+              {event.note && (
+                <span className="line-clamp-1 font-semibold text-muted-foreground">{event.note}</span>
+              )}
+              <span className="ms-auto font-semibold text-muted-foreground">
+                {formatDate(event.created_at)}
+              </span>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
