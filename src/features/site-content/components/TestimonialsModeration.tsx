@@ -271,6 +271,22 @@ export function TestimonialsModeration({
           })
         )}
       </CardContent>
+      <WhatsappConfirmDialog
+        draft={waDraft}
+        onClose={() => {
+          setWaDraft(null);
+          setWaSubject(null);
+        }}
+        onSent={() => {
+          if (!waSubject) return;
+          logInboxEvent({
+            subjectType: "testimonial",
+            subjectId: waSubject.id,
+            action: "reply_whatsapp",
+            note: waSubject.label,
+          });
+        }}
+      />
     </Card>
   );
 }
