@@ -29,7 +29,7 @@ export function StatsBand() {
       />
 
       <div className="relative z-20 mx-auto max-w-7xl px-4 md:px-8">
-        <div className="grid items-stretch gap-8 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="grid items-start gap-8 lg:grid-cols-[0.85fr_1.15fr]">
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
