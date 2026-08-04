@@ -32,7 +32,7 @@ export function Hero() {
         overlay={hero.overlay}
       />
 
-      <div className="relative z-20 mx-auto w-full max-w-7xl px-4 pt-32 pb-44 md:px-8 md:pt-36 md:pb-52">
+      <div className="relative z-20 mx-auto w-full max-w-7xl px-4 pt-32 pb-56 md:px-8 md:pt-36 md:pb-64">
         <motion.span
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
