@@ -16,12 +16,17 @@ export function FaqAccordion({ limit }: { limit?: number }) {
         <AccordionItem
           key={item.q}
           value={`item-${index}`}
-          className="overflow-hidden rounded-3xl border border-border/60 bg-card px-6 shadow-soft"
+          className="group overflow-hidden rounded-[1.75rem] border border-border/60 bg-card px-6 shadow-soft transition-all duration-400 hover:border-gold/50 hover:shadow-card data-[state=open]:border-gold/60 data-[state=open]:shadow-card"
         >
           <AccordionTrigger className="py-5 text-start text-base font-bold text-foreground hover:no-underline">
-            {item.q}
+            <span className="flex items-center gap-3">
+              <span className="font-latin text-xs font-black text-gold">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              {item.q}
+            </span>
           </AccordionTrigger>
-          <AccordionContent className="pb-5 text-sm leading-relaxed text-muted-foreground">
+          <AccordionContent className="pb-5 ps-8 text-sm leading-relaxed text-muted-foreground">
             {item.a}
           </AccordionContent>
         </AccordionItem>
