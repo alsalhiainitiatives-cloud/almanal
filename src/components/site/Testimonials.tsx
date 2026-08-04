@@ -210,7 +210,7 @@ export function Testimonials({
   if (variant === "carousel") {
     return (
       <>
-        <TestimonialCarousel cards={cards} perView={isMobile ? 1 : 2} invert={invert} />
+        <TestimonialCarousel cards={cards} perView={isMobile ? 1 : 4} invert={invert} />
         {moreLink ? (
           <div className="mt-10 text-center">
             <Button asChild variant={invert ? "hero" : "soft"} size="lg">
@@ -228,10 +228,10 @@ export function Testimonials({
 
   return (
     <>
-      <StaggerGroup className="grid gap-6 md:grid-cols-2">
+      <StaggerGroup className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         {cards.map((item, index) => (
           <motion.div key={item.key} variants={staggerItem}>
-            <TestimonialCard item={item} tilt={index % 2 === 0 ? -1 : 1} invert={invert} />
+            <TestimonialCard item={item} invert={invert} />
           </motion.div>
         ))}
       </StaggerGroup>
@@ -242,38 +242,35 @@ export function Testimonials({
 
 function TestimonialCard({
   item,
-  tilt = 0,
   invert = false,
 }: {
   item: Card;
-  tilt?: number;
   invert?: boolean;
 }) {
   return (
     <motion.figure
-      whileHover={{ y: -8, rotate: 0 }}
+      whileHover={{ y: -6 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className={`relative flex h-full flex-col overflow-hidden rounded-[2.5rem] p-8 pt-10 shadow-card ${
+      className={`relative flex h-full flex-col overflow-hidden rounded-[2rem] p-6 shadow-card ${
         invert ? "glass-dark" : "border border-border/60 bg-card"
       }`}
-      style={{ rotate: `${tilt * 0.8}deg` }}
     >
       <span
         aria-hidden
-        className={`pointer-events-none absolute -end-10 -top-10 size-32 rounded-full blur-2xl ${invert ? "bg-gold/25" : "bg-accent/70"}`}
+        className={`pointer-events-none absolute -end-10 -top-10 size-28 rounded-full blur-2xl ${invert ? "bg-gold/25" : "bg-accent/60"}`}
       />
-      <span className="absolute -top-6 start-8 grid size-14 place-items-center rounded-2xl gradient-gold shadow-card">
-        <Quote className="size-6 text-gold-foreground" />
+      <span className="relative grid size-11 place-items-center rounded-2xl gradient-gold shadow-card">
+        <Quote className="size-5 text-gold-foreground" />
       </span>
       <blockquote
-        className={`relative mt-4 flex-1 text-base leading-relaxed ${invert ? "text-primary-foreground/90" : "text-foreground/85"}`}
+        className={`relative mt-5 flex-1 text-sm leading-relaxed ${invert ? "text-primary-foreground/90" : "text-foreground/85"}`}
       >
         {item.quote}
       </blockquote>
       <figcaption
-        className={`relative mt-6 flex items-center gap-3 border-t border-dashed pt-5 ${invert ? "border-primary-foreground/25" : "border-border"}`}
+        className={`relative mt-5 flex flex-wrap items-center gap-3 border-t border-dashed pt-4 ${invert ? "border-primary-foreground/25" : "border-border"}`}
       >
-        <span className="grid size-12 shrink-0 place-items-center rounded-full bg-accent text-sm font-black text-primary ring-2 ring-gold/40">
+        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-accent text-sm font-black text-primary ring-2 ring-gold/40">
           {item.name.slice(0, 1)}
         </span>
         <span className="min-w-0">
@@ -330,10 +327,10 @@ function TestimonialCarousel({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: dir > 0 ? -60 : 60 }}
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="grid gap-6 md:grid-cols-2"
+            className="grid items-stretch gap-6 md:grid-cols-2 xl:grid-cols-4"
           >
-            {slice.map((item, i) => (
-              <TestimonialCard key={item.key} item={item} tilt={i % 2 === 0 ? -1 : 1} invert={invert} />
+            {slice.map((item) => (
+              <TestimonialCard key={item.key} item={item} invert={invert} />
             ))}
           </motion.div>
         </AnimatePresence>
