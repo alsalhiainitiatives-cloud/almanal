@@ -20,10 +20,9 @@ export function NewsCards({ limit }: { limit?: number }) {
           <motion.article
             key={item.slug}
             variants={staggerItem}
-            whileHover={{ y: -8 }}
-            className="group flex flex-col overflow-hidden rounded-[2.5rem] bg-card shadow-soft transition-shadow hover:shadow-card"
+            className="premium-card group flex flex-col overflow-hidden rounded-[2.25rem]"
           >
-            <div className="relative aspect-16/10 overflow-hidden rounded-[2.5rem] rounded-b-[3.5rem]">
+            <div className="relative aspect-16/10 overflow-hidden">
               {video ? (
                 <video
                   src={video}
@@ -42,18 +41,28 @@ export function NewsCards({ limit }: { limit?: number }) {
                   className="size-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
               )}
-              <span className="absolute top-4 end-4 rounded-full bg-card/90 px-3 py-1 text-xs font-black text-primary shadow-soft backdrop-blur">
+              {video ? null : (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-linear-to-t from-primary/60 via-primary/10 to-transparent opacity-70 transition-opacity duration-500 group-hover:opacity-90"
+                />
+              )}
+              <span className="absolute top-4 end-4 rounded-full bg-card/90 px-3.5 py-1.5 text-xs font-black text-primary shadow-soft backdrop-blur ring-gold-soft">
                 {item.category}
               </span>
+              <span className="absolute bottom-4 start-4 inline-flex items-center gap-1.5 rounded-full bg-primary/70 px-3 py-1 text-xs font-bold text-primary-foreground backdrop-blur">
+                <CalendarDays className="size-3.5" />
+                <time dateTime={item.date}>{item.dateLabel}</time>
+              </span>
             </div>
-            <div className="-mt-6 flex flex-1 flex-col rounded-[2.5rem] bg-card p-7 pt-6">
-              <div className="flex flex-wrap items-center gap-3 text-xs">
-                <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                  <CalendarDays className="size-3.5" />
-                  <time dateTime={item.date}>{item.dateLabel}</time>
-                </span>
-              </div>
-              <h3 className="mt-4 text-xl leading-snug text-foreground">{item.title}</h3>
+            <div className="flex flex-1 flex-col p-7">
+              <h3 className="text-xl leading-snug font-extrabold text-foreground transition-colors duration-300 group-hover:text-secondary">
+                {item.title}
+              </h3>
+              <span
+                aria-hidden
+                className="mt-3 block h-0.5 w-10 rounded-full bg-gold transition-all duration-500 group-hover:w-20"
+              />
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.excerpt}</p>
               {item.body ? (
                 <p className="mt-3 flex-1 whitespace-pre-line text-sm leading-relaxed text-muted-foreground/90">
