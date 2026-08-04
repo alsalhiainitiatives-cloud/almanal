@@ -8,7 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type InboxEvent, fetchInboxEvents, logInboxEvent } from "@/features/inbox/audit";
 import { AuditTrail } from "@/features/inbox/components/MessagesInbox";
 import { REVIEW_TEMPLATES, mailtoLink } from "@/features/inbox/templates";
-import { openWhatsapp } from "@/lib/whatsapp";
+import {
+  WhatsappConfirmDialog,
+  type WhatsappDraft,
+} from "@/components/whatsapp-confirm-dialog";
 import {
   deleteTestimonial,
   fetchAllTestimonials,
@@ -34,6 +37,7 @@ export function TestimonialsModeration({
 }) {
   const queryClient = useQueryClient();
   const [templateKey, setTemplateKey] = useState(REVIEW_TEMPLATES[0].key);
+  const [waDraft, setWaDraft] = useState<WhatsappDraft | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["site-testimonials", "all"],
@@ -186,15 +190,14 @@ export function TestimonialsModeration({
                       variant="soft"
                       size="sm"
                       className="rounded-2xl"
-                      onClick={() => {
-                        openWhatsapp(contact.phone, body);
-                        logInboxEvent({
-                          subjectType: "testimonial",
+                      onClick={() =>
+                        setWaDraft({
+                          phone: contact.phone,
+                          text: body,
+                          recipient: row.name,
                           subjectId: row.id,
-                          action: "reply_whatsapp",
-                          note: template.label,
-                        });
-                      }}
+                        } as WhatsappDraft & { subjectId: string })
+                      }
                     >
                       <Phone className="size-4" />
                       رد واتساب
