@@ -1,4 +1,5 @@
 import {
+  Award,
   BookOpenText,
   Building2,
   Compass,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 
 export const SITE_ICONS: Record<string, LucideIcon> = {
+  Award,
   BookOpenText,
   Building2,
   Compass,
