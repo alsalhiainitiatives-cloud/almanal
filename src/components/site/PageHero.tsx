@@ -41,7 +41,7 @@ export function PageHero({
         className="absolute inset-0 size-full object-cover"
       />
       <div aria-hidden className="absolute inset-0 gradient-hero-veil-soft" />
-      <div aria-hidden className="absolute inset-0 bg-primary/45" />
+      <div aria-hidden className="absolute inset-0 bg-primary/25" />
       <div aria-hidden className="pattern-grid-light absolute inset-0 opacity-25" />
       <div
         aria-hidden

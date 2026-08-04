@@ -19,11 +19,11 @@ const CHIP_ICONS = [Star, ShieldCheck, HeartHandshake];
 
 /** Landing hero: full-bleed cinematic slider with an overlaid editorial headline. */
 export function Hero() {
-  const { hero, stats } = useSiteContent();
+  const { hero } = useSiteContent();
   const words = hero.headline.split(" ");
 
   return (
-    <section className="relative isolate min-h-[92svh] overflow-hidden bg-primary pb-28 md:min-h-[88svh] md:pb-36">
+    <section className="relative isolate flex min-h-[640px] flex-col justify-center overflow-hidden bg-primary md:min-h-[86svh]">
       <HeroSlider
         slides={hero.slides}
         autoplay={hero.autoplay}
@@ -32,7 +32,7 @@ export function Hero() {
         overlay={hero.overlay}
       />
 
-      <div className="relative z-20 mx-auto flex min-h-[92svh] max-w-7xl flex-col justify-center px-4 pt-28 pb-40 md:min-h-[88svh] md:px-8 md:pt-32 md:pb-48">
+      <div className="relative z-20 mx-auto w-full max-w-7xl px-4 pt-32 pb-44 md:px-8 md:pt-36 md:pb-52">
         <motion.span
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -146,26 +146,6 @@ export function Hero() {
           })}
         </motion.div>
       </div>
-
-      {/* Floating stats rail bridging hero and page body */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.85, ease: EASE }}
-        className="absolute inset-x-0 bottom-16 z-30 hidden px-8 lg:block"
-      >
-        <div className="mx-auto grid max-w-5xl grid-cols-4 divide-x divide-primary-foreground/15 overflow-hidden rounded-[2rem] glass-dark">
-          {stats.slice(0, 4).map((stat) => (
-            <div key={stat.label} className="px-6 py-5 text-center">
-              <p className="font-latin text-2xl font-black text-gold">
-                {stat.value}
-                {stat.suffix}
-              </p>
-              <p className="mt-1 text-xs font-bold text-primary-foreground/80">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-      </motion.div>
 
       <WaveDivider className="z-30 text-background" />
     </section>

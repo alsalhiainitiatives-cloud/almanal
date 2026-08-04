@@ -235,7 +235,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     autoplay: true,
     intervalMs: 6000,
     effect: "zoom",
-    overlay: 55,
+    overlay: 26,
   },
   pages: {
     about: {
