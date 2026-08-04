@@ -151,7 +151,7 @@ export function HeroSlider({
       <div aria-hidden className="pattern-grid-light absolute inset-0 opacity-30" />
 
       {chrome && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 px-4 pb-14 md:px-10 md:pb-20">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-4 pb-24 md:px-10 md:pb-32">
           <div className="mx-auto flex max-w-7xl flex-col gap-4">
             <AnimatePresence mode="wait">
               <motion.div
