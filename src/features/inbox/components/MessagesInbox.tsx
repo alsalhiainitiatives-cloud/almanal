@@ -309,6 +309,7 @@ function MessageCard({
   onDelete: () => void;
 }) {
   const [templateKey, setTemplateKey] = useState(MESSAGE_TEMPLATES[0].key);
+  const [waDraft, setWaDraft] = useState<WhatsappDraft | null>(null);
   const template = MESSAGE_TEMPLATES.find((item) => item.key === templateKey) ?? MESSAGE_TEMPLATES[0];
   const body = template.build({ name: row.name, subject: row.subject, program: row.program });
 
@@ -388,7 +389,7 @@ function MessageCard({
                   size="sm"
                   className="rounded-2xl"
                   onClick={() =>
-                    setWaDraft({ phone: row.phone, text: body, recipient: row.full_name })
+                    setWaDraft({ phone: row.phone, text: body, recipient: row.name })
                   }
                 >
                   <Phone className="size-4" />
