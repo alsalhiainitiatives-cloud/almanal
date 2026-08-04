@@ -28,7 +28,38 @@ export type NewsItem = {
 };
 export type FaqItem = { q: string; a: string };
 export type IconCard = { icon: string; title: string; body: string };
-export type PageHeroContent = { eyebrow: string; title: string; description: string };
+export type PageHeroContent = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  /** Optional hero background (https URL or `classroom-media` storage path). */
+  image?: string;
+};
+export type HeroSlide = {
+  id: string;
+  kind: "image" | "video";
+  /** https URL or `classroom-media` storage path. */
+  src: string;
+  /** Overlay caption shown on the slide. */
+  title: string;
+  subtitle: string;
+};
+export type HeroContent = {
+  badge: string;
+  headline: string;
+  highlight: string;
+  description: string;
+  primaryCta: { label: string; to: string };
+  secondaryCta: { label: string; to: string };
+  chips: string[];
+  slides: HeroSlide[];
+  autoplay: boolean;
+  /** Slide duration in milliseconds. */
+  intervalMs: number;
+  effect: "fade" | "zoom" | "slide";
+  /** Dark veil strength over the media, 0–90. */
+  overlay: number;
+};
 export type SectionContent = { eyebrow: string; title: string; description: string };
 export type ScheduleRow = { time: string; title: string; body: string };
 export type MediaItem = {
@@ -83,6 +114,7 @@ export type SiteContent = {
   gallery: MediaItem[];
   testimonialsForm: { enabled: boolean; title: string; note: string };
   pages: Record<string, PageHeroContent>;
+  hero: HeroContent;
   home: {
     missionCards: IconCard[];
     marquee: string[];
@@ -161,38 +193,101 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     title: "شاركنا تجربتك",
     note: "رأيك يساعد أسرًا أخرى — تُنشر المشاركات بعد مراجعة إدارة الروضة.",
   },
+  hero: {
+    badge: school.organization,
+    headline: "مدارس وروضة المنال",
+    highlight: "حيث تكبر الطفولة بأمان ومحبة وتعليم راقٍ",
+    description:
+      "في عنيزة، نمنح أطفالنا بيئة تعليمية مستوحاة من قيمنا الإسلامية ومعايير الطفولة المبكرة العالمية — من الحضانة إلى المرحلة الابتدائية.",
+    primaryCta: { label: "التسجيل الآن", to: "/apply/new" },
+    secondaryCta: { label: "استكشف المراحل التعليمية", to: "/admissions" },
+    chips: ["ثقة أكثر من 400 أسرة", "بيئة آمنة ومراقبة", "برنامج مونتيسوري معتمد"],
+    slides: [
+      {
+        id: "hero-1",
+        kind: "image",
+        src: images.heroClassroom,
+        title: "تعلّم بمحبة داخل فصولنا",
+        subtitle: "معلمات مؤهلات وبيئة صفية مهيأة لكل طفل",
+      },
+      {
+        id: "hero-2",
+        kind: "image",
+        src: images.stageMontessori,
+        title: "بيئة مونتيسوري معتمدة",
+        subtitle: "الطفل يختار عمله ويتعلّم بالتجربة والاستقلال",
+      },
+      {
+        id: "hero-3",
+        kind: "image",
+        src: images.lifeStem,
+        title: "استكشاف وعلوم صغيرة",
+        subtitle: "تجارب آمنة تنمّي التفكير العلمي والفضول",
+      },
+      {
+        id: "hero-4",
+        kind: "image",
+        src: images.campus,
+        title: "حرم مدرسي آمن بحي الخزامي",
+        subtitle: "مبانٍ مهيأة وإجراءات سلامة دقيقة كل يوم",
+      },
+    ],
+    autoplay: true,
+    intervalMs: 6000,
+    effect: "zoom",
+    overlay: 26,
+  },
   pages: {
     about: {
       eyebrow: "عن المنال",
       title: "مشروع تربوي وُلد من قلب المجتمع",
       description: `${school.name} مشروع تعليمي تابع لـ${school.organization}، يقدّم تعليمًا نوعيًا للطفولة المبكرة والمرحلة الابتدائية في محافظة عنيزة.`,
+      image: images.campus,
     },
     contact: {
       eyebrow: "تواصل معنا",
       title: "نرحّب بكم في حي الخزامي بعنيزة",
       description:
         "يمكنكم الاتصال بنا أو زيارة المدرسة خلال أوقات العمل، وسنكون سعداء باستقبالكم في جولة تعريفية.",
+      image: images.heroClassroom,
     },
     faq: {
       eyebrow: "الأسئلة الشائعة",
       title: "إجابات لأكثر ما يسأل عنه أولياء الأمور",
       description: "جمعنا لكم أهم الأسئلة حول القبول والبرامج والسلامة والتواصل.",
+      image: images.lifeReading,
     },
     gallery: {
       eyebrow: "معرض الصور",
       title: "لحظات من حياة أطفالنا",
       description: "صور ومقاطع تحكي يوميات المنال: التعلّم، اللعب، الإبداع، والصداقة.",
+      image: images.lifeArt,
     },
     news: {
       eyebrow: "الأخبار",
       title: "آخر ما يحدث في المنال",
       description: "نشارككم فعالياتنا وبرامجنا وإنجازات طلابنا ومعلماتنا خلال العام الدراسي.",
+      image: images.lifeMusic,
     },
     "school-life": {
       eyebrow: "الحياة المدرسية",
       title: "يوم مليء بالتعلّم والفرح",
       description:
         "نصمم يوم الطفل ليكون متوازنًا بين التركيز والحركة، بين المعرفة والقيم، وبين العمل الفردي والجماعي.",
+      image: images.lifeSports,
+    },
+    admissions: {
+      eyebrow: "المراحل والتسجيل",
+      title: "ابدأ رحلة طفلك في المنال",
+      description:
+        "اختر المرحلة المناسبة لعمر طفلك وتعرّف على الفصول المتاحة، ثم أكمل التسجيل إلكترونيًا بخطوات واضحة.",
+      image: images.stagePrimary,
+    },
+    testimonials: {
+      eyebrow: "آراء أولياء الأمور",
+      title: "ثقة الأسر هي أجمل شهادة",
+      description: "تجارب حقيقية لأسر رافقت أطفالها في المنال — نشرناها بعد مراجعة إدارة المدرسة.",
+      image: images.stageToddlers,
     },
   },
   home: {

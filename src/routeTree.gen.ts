@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TestimonialsRouteImport } from './routes/testimonials'
 import { Route as StagesRouteImport } from './routes/stages'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SchoolLifeRouteImport } from './routes/school-life'
@@ -54,6 +55,11 @@ import { Route as AuthenticatedAmsStudentsChildIdRouteImport } from './routes/_a
 import { Route as AuthenticatedAmsApplicationsApplicationIdRouteImport } from './routes/_authenticated/ams/applications.$applicationId'
 import { Route as AdmissionsStageSlugClassroomClassroomSlugRouteImport } from './routes/admissions.stage.$slug.classroom.$classroomSlug'
 
+const TestimonialsRoute = TestimonialsRouteImport.update({
+  id: '/testimonials',
+  path: '/testimonials',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StagesRoute = StagesRouteImport.update({
   id: '/stages',
   path: '/stages',
@@ -303,6 +309,7 @@ export interface FileRoutesByFullPath {
   '/school-life': typeof SchoolLifeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
+  '/testimonials': typeof TestimonialsRoute
   '/child-file': typeof AuthenticatedChildFileRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
@@ -348,6 +355,7 @@ export interface FileRoutesByTo {
   '/school-life': typeof SchoolLifeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
+  '/testimonials': typeof TestimonialsRoute
   '/child-file': typeof AuthenticatedChildFileRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
@@ -395,6 +403,7 @@ export interface FileRoutesById {
   '/school-life': typeof SchoolLifeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stages': typeof StagesRoute
+  '/testimonials': typeof TestimonialsRoute
   '/_authenticated/child-file': typeof AuthenticatedChildFileRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/my-applications': typeof AuthenticatedMyApplicationsRoute
@@ -442,6 +451,7 @@ export interface FileRouteTypes {
     | '/school-life'
     | '/sitemap.xml'
     | '/stages'
+    | '/testimonials'
     | '/child-file'
     | '/dashboard'
     | '/my-applications'
@@ -487,6 +497,7 @@ export interface FileRouteTypes {
     | '/school-life'
     | '/sitemap.xml'
     | '/stages'
+    | '/testimonials'
     | '/child-file'
     | '/dashboard'
     | '/my-applications'
@@ -533,6 +544,7 @@ export interface FileRouteTypes {
     | '/school-life'
     | '/sitemap.xml'
     | '/stages'
+    | '/testimonials'
     | '/_authenticated/child-file'
     | '/_authenticated/dashboard'
     | '/_authenticated/my-applications'
@@ -580,6 +592,7 @@ export interface RootRouteChildren {
   SchoolLifeRoute: typeof SchoolLifeRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StagesRoute: typeof StagesRoute
+  TestimonialsRoute: typeof TestimonialsRoute
   AdmissionsIndexRoute: typeof AdmissionsIndexRoute
   TrackIndexRoute: typeof TrackIndexRoute
   AdmissionsStageSlugClassroomsRoute: typeof AdmissionsStageSlugClassroomsRoute
@@ -589,6 +602,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/testimonials': {
+      id: '/testimonials'
+      path: '/testimonials'
+      fullPath: '/testimonials'
+      preLoaderRoute: typeof TestimonialsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/stages': {
       id: '/stages'
       path: '/stages'
@@ -974,6 +994,7 @@ const rootRouteChildren: RootRouteChildren = {
   SchoolLifeRoute: SchoolLifeRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StagesRoute: StagesRoute,
+  TestimonialsRoute: TestimonialsRoute,
   AdmissionsIndexRoute: AdmissionsIndexRoute,
   TrackIndexRoute: TrackIndexRoute,
   AdmissionsStageSlugClassroomsRoute: AdmissionsStageSlugClassroomsRoute,

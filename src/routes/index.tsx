@@ -202,15 +202,19 @@ function Index() {
       <StatsBand />
 
       {/* Testimonials */}
-      <section className="section-y">
-        <div className="mx-auto max-w-7xl px-4 md:px-8">
+      <section className="section-y relative overflow-hidden">
+        <div
+          aria-hidden
+          className="animate-float-slower pointer-events-none absolute -top-10 start-1/4 size-72 rounded-full bg-lavender/50 blur-3xl"
+        />
+        <div className="relative z-10 mx-auto max-w-6xl px-4 md:px-8">
           <SectionHeading
             eyebrow={sections.testimonials.eyebrow}
             title={sections.testimonials.title}
             description={sections.testimonials.description || undefined}
           />
           <div className="mt-14">
-            <Testimonials />
+            <Testimonials variant="carousel" limit={8} showForm={false} moreLink />
           </div>
         </div>
       </section>

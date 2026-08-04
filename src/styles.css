@@ -291,6 +291,110 @@
   color: transparent;
 }
 
+/* ---------- Premium hero / section craft ---------- */
+
+@utility gradient-hero-veil {
+  background-image: linear-gradient(
+      to top,
+      oklch(0.22 0.07 5.5 / 0.9) 0%,
+      oklch(0.24 0.06 5.5 / 0.55) 45%,
+      oklch(0.26 0.05 5.5 / 0.2) 100%
+    ),
+    radial-gradient(80% 70% at 90% 10%, oklch(0.79 0.12 82 / 0.28) 0%, transparent 65%);
+}
+
+@utility gradient-hero-veil-soft {
+  background-image: linear-gradient(
+      to top,
+      oklch(0.22 0.07 5.5 / 0.88) 0%,
+      oklch(0.24 0.06 5.5 / 0.55) 55%,
+      oklch(0.26 0.05 5.5 / 0.35) 100%
+    ),
+    radial-gradient(70% 60% at 10% 0%, oklch(0.95 0.035 220 / 0.22) 0%, transparent 60%);
+}
+
+@utility glass-dark {
+  background-color: oklch(1 0 0 / 0.1);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid oklch(1 0 0 / 0.22);
+}
+
+@keyframes ken-burns {
+  0% {
+    transform: scale(1.04) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1.18) translate3d(-1.5%, -1.5%, 0);
+  }
+}
+
+@utility animate-ken-burns {
+  animation: ken-burns 14s ease-out forwards;
+}
+
+@keyframes shine-sweep {
+  0% {
+    transform: translateX(-140%) skewX(-18deg);
+  }
+  100% {
+    transform: translateX(240%) skewX(-18deg);
+  }
+}
+
+@utility animate-shine {
+  animation: shine-sweep 3.4s ease-in-out infinite;
+}
+
+@keyframes gradient-pan {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@utility animate-gradient-pan {
+  background-size: 200% 200%;
+  animation: gradient-pan 9s ease-in-out infinite;
+}
+
+/* Subtle 3D lift used on premium cards */
+@utility card-lift {
+  transition:
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-glow);
+  }
+}
+
+@utility ring-gold-soft {
+  box-shadow: 0 0 0 1px oklch(0.79 0.12 82 / 0.45);
+}
+
+@utility pattern-grid-light {
+  background-image:
+    linear-gradient(oklch(1 0 0 / 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(1 0 0 / 0.08) 1px, transparent 1px);
+  background-size: 46px 46px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-ken-burns,
+  .animate-shine,
+  .animate-gradient-pan,
+  .animate-blob,
+  .animate-float-slow,
+  .animate-float-slower,
+  .animate-spin-slow,
+  .animate-marquee {
+    animation: none !important;
+  }
+}
+
 .dark {
   --background: oklch(0.129 0.042 264.695);
   --foreground: oklch(0.984 0.003 247.858);

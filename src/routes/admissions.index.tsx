@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { CalendarCheck, FileCheck2, ShieldCheck, Sparkles } from "lucide-react";
 
 import { PageHero } from "@/components/site/PageHero";
+import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 import { Reveal } from "@/components/site/Reveal";
 import { SectionHeading } from "@/components/site/SectionHeading";
 import { Button } from "@/components/ui/button";
@@ -48,13 +49,18 @@ const steps = [
 
 function AdmissionsPage() {
   const { data: stages } = useSuspenseQuery(stagesQuery);
+  const hero = useSiteContent().pages.admissions;
 
   return (
     <>
       <PageHero
-        eyebrow="المراحل والتسجيل"
-        title="المراحل التعليمية والتسجيل"
-        description="خطوتان فقط: تصفّح المراحل واختر الفصل المناسب لطفلك، أو تابع طلباتك السابقة."
+        eyebrow={hero?.eyebrow ?? "المراحل والتسجيل"}
+        title={hero?.title ?? "المراحل التعليمية والتسجيل"}
+        description={
+          hero?.description ??
+          "خطوتان فقط: تصفّح المراحل واختر الفصل المناسب لطفلك، أو تابع طلباتك السابقة."
+        }
+        image={hero?.image}
       >
         <Button asChild variant="hero" size="lg">
           <Link to="/apply/new">ابدأ التسجيل الآن</Link>

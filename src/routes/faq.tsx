@@ -52,6 +52,7 @@ function FaqPage() {
           hero?.description ??
           "جمعنا لكم أكثر الأسئلة التي تصلنا من الأسر، وإن لم تجدوا إجابتكم فنحن على بعد مكالمة."
         }
+        image={hero?.image}
       />
       <section className="section-y">
         <div className="mx-auto max-w-3xl px-4 md:px-8">

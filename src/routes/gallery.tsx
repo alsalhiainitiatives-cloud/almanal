@@ -48,6 +48,7 @@ function GalleryPage() {
         eyebrow={hero?.eyebrow ?? "معرض الصور"}
         title={hero?.title ?? "لحظات من حياة أطفالنا"}
         description={hero?.description ?? ""}
+        image={hero?.image}
       />
 
       <section className="section-y">

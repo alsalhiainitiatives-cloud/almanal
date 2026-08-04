@@ -36,6 +36,7 @@ function ContactPage() {
           hero?.description ??
           "يمكنكم الاتصال بنا أو زيارة المدرسة خلال أوقات العمل، وسنكون سعداء باستقبالكم في جولة تعريفية."
         }
+        image={hero?.image}
       />
       <section className="section-y">
         <div className="mx-auto max-w-7xl px-4 md:px-8">

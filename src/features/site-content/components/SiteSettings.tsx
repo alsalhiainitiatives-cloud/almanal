@@ -397,6 +397,7 @@ export function SiteSettings() {
   const setContact = (patch: Partial<SiteContent["contact"]>) =>
     set("contact", { ...draft.contact, ...patch });
   const setHome = (patch: Partial<SiteContent["home"]>) => set("home", { ...draft.home, ...patch });
+  const setHero = (patch: Partial<SiteContent["hero"]>) => set("hero", { ...draft.hero, ...patch });
   const setAbout = (patch: Partial<SiteContent["about"]>) =>
     set("about", { ...draft.about, ...patch });
   const setPage = (key: string, patch: Partial<SiteContent["pages"][string]>) =>
@@ -446,6 +447,7 @@ export function SiteSettings() {
       <Tabs defaultValue="brand" className="space-y-6">
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 rounded-[1.5rem] bg-beige/70 p-1.5">
           <TabsTrigger value="brand" className="rounded-2xl">الهوية</TabsTrigger>
+          <TabsTrigger value="hero" className="rounded-2xl">الهيرو والسلايدر</TabsTrigger>
           <TabsTrigger value="contact" className="rounded-2xl">التواصل والفوتر</TabsTrigger>
           <TabsTrigger value="nav" className="rounded-2xl">القائمة</TabsTrigger>
           <TabsTrigger value="home" className="rounded-2xl">الرئيسية</TabsTrigger>
@@ -562,6 +564,178 @@ export function SiteSettings() {
               <>
                 <Field label="النص" value={item.label} onChange={(v) => update({ label: v })} />
                 <Field label="المسار" value={item.to} dir="ltr" onChange={(v) => update({ to: v })} />
+              </>
+            )}
+          />
+        </TabsContent>
+
+        {/* Hero + slider */}
+        <TabsContent value="hero" className="space-y-6">
+          <Card className="rounded-[1.75rem] border-border/60 shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-base font-extrabold">نصوص قسم الهيرو</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="الشارة العليا" value={draft.hero.badge} onChange={(v) => setHero({ badge: v })} />
+                <Field label="العنوان الرئيسي" value={draft.hero.headline} onChange={(v) => setHero({ headline: v })} />
+              </div>
+              <Field label="العنوان الفرعي البارز" value={draft.hero.highlight} onChange={(v) => setHero({ highlight: v })} />
+              <AreaField label="الوصف" value={draft.hero.description} onChange={(v) => setHero({ description: v })} />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field
+                  label="زر أساسي — النص"
+                  value={draft.hero.primaryCta.label}
+                  onChange={(v) => setHero({ primaryCta: { ...draft.hero.primaryCta, label: v } })}
+                />
+                <Field
+                  label="زر أساسي — المسار"
+                  dir="ltr"
+                  value={draft.hero.primaryCta.to}
+                  onChange={(v) => setHero({ primaryCta: { ...draft.hero.primaryCta, to: v } })}
+                />
+                <Field
+                  label="زر ثانوي — النص"
+                  value={draft.hero.secondaryCta.label}
+                  onChange={(v) => setHero({ secondaryCta: { ...draft.hero.secondaryCta, label: v } })}
+                />
+                <Field
+                  label="زر ثانوي — المسار"
+                  dir="ltr"
+                  value={draft.hero.secondaryCta.to}
+                  onChange={(v) => setHero({ secondaryCta: { ...draft.hero.secondaryCta, to: v } })}
+                />
+              </div>
+              <AreaField
+                label="الشارات الصغيرة (كل شارة في سطر)"
+                rows={4}
+                value={draft.hero.chips.join("\n")}
+                onChange={(v) =>
+                  setHero({ chips: v.split("\n").map((s) => s.trim()).filter(Boolean) })
+                }
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-[1.75rem] border-border/60 shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-base font-extrabold">إعدادات السلايدر</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={draft.hero.autoplay}
+                  onCheckedChange={(v) => setHero({ autoplay: v })}
+                />
+                <span className="text-xs font-bold text-muted-foreground">
+                  التقليب التلقائي بين الشرائح
+                </span>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-muted-foreground">
+                    سرعة السلايدر (ثانية لكل شريحة)
+                  </Label>
+                  <Input
+                    type="number"
+                    min={2}
+                    max={30}
+                    step={0.5}
+                    dir="ltr"
+                    value={draft.hero.intervalMs / 1000}
+                    onChange={(e) =>
+                      setHero({
+                        intervalMs: Math.round(
+                          Math.min(30, Math.max(2, Number(e.target.value) || 6)) * 1000,
+                        ),
+                      })
+                    }
+                    className="rounded-2xl"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-muted-foreground">نمط الانتقال</Label>
+                  <Select
+                    value={draft.hero.effect}
+                    onValueChange={(v) => setHero({ effect: v as SiteContent["hero"]["effect"] })}
+                  >
+                    <SelectTrigger className="rounded-2xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="zoom">تكبير سينمائي (Ken Burns)</SelectItem>
+                      <SelectItem value="fade">تلاشٍ ناعم</SelectItem>
+                      <SelectItem value="slide">انزلاق أفقي</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-muted-foreground">
+                    شدة التعتيم على الصور (0–90)
+                  </Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={90}
+                    dir="ltr"
+                    value={draft.hero.overlay}
+                    onChange={(e) =>
+                      setHero({ overlay: Math.min(90, Math.max(0, Number(e.target.value) || 0)) })
+                    }
+                    className="rounded-2xl"
+                  />
+                </div>
+              </div>
+              <p className="rounded-2xl bg-beige/60 px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
+                يمكن إضافة صور أو مقاطع فيديو للسلايدر — الفيديو يُشغّل تلقائيًا وبدون صوت. يُنصح
+                بصور بعرض 1920 بكسل على الأقل.
+              </p>
+            </CardContent>
+          </Card>
+
+          <ListSection
+            title="شرائح السلايدر"
+            items={draft.hero.slides}
+            onChange={(next) => setHero({ slides: next })}
+            blank={() => ({
+              id: `hero-${Date.now()}`,
+              kind: "image" as const,
+              src: "",
+              title: "",
+              subtitle: "",
+            })}
+            addLabel="إضافة شريحة"
+            render={(item, update) => (
+              <>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-muted-foreground">نوع الشريحة</Label>
+                  <Select
+                    value={item.kind}
+                    onValueChange={(v) => update({ kind: v as "image" | "video" })}
+                  >
+                    <SelectTrigger className="rounded-2xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="image">صورة</SelectItem>
+                      <SelectItem value="video">فيديو</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Field label="العنوان على الشريحة" value={item.title} onChange={(v) => update({ title: v })} />
+                <div className="sm:col-span-2">
+                  <Field label="الوصف المختصر" value={item.subtitle} onChange={(v) => update({ subtitle: v })} />
+                </div>
+                <div className="sm:col-span-2">
+                  <MediaField
+                    label={item.kind === "video" ? "ملف الفيديو" : "ملف الصورة"}
+                    value={item.src}
+                    kind={item.kind}
+                    accept={item.kind === "video" ? "video/*" : "image/*"}
+                    folder="site/hero"
+                    onChange={(v) => update({ src: v })}
+                  />
+                </div>
               </>
             )}
           />
@@ -873,6 +1047,12 @@ export function SiteSettings() {
                   <Field label="العنوان الرئيسي" value={hero.title} onChange={(v) => setPage(key, { title: v })} />
                 </div>
                 <AreaField label="الوصف" value={hero.description} onChange={(v) => setPage(key, { description: v })} />
+                <MediaField
+                  label="خلفية رأس الصفحة"
+                  value={hero.image ?? ""}
+                  folder="site/pages"
+                  onChange={(v) => setPage(key, { image: v })}
+                />
               </CardContent>
             </Card>
           ))}
