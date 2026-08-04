@@ -38,7 +38,8 @@ import {
   fetchContactMessages,
   updateContactMessage,
 } from "../inbox";
-import { MESSAGE_TEMPLATES, mailtoLink, whatsappLink } from "../templates";
+import { MESSAGE_TEMPLATES, mailtoLink } from "../templates";
+import { openWhatsapp } from "@/lib/whatsapp";
 
 export type InboxAbilities = {
   canReply: boolean;
