@@ -251,10 +251,16 @@ function TestimonialCard({
     <motion.figure
       whileHover={{ y: -6 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className={`relative flex h-full flex-col overflow-hidden rounded-[2rem] p-6 shadow-card ${
-        invert ? "glass-dark" : "border border-border/60 bg-card"
+      className={`relative flex h-full flex-col overflow-hidden rounded-[2rem] p-6 transition-shadow duration-500 ${
+        invert
+          ? "glass-dark shadow-card"
+          : "border-2 border-secondary/20 bg-card shadow-card ring-gold-soft hover:border-gold/60 hover:shadow-glow"
       }`}
     >
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute inset-x-0 top-0 h-1 ${invert ? "bg-gold/50" : "gradient-burgundy"}`}
+      />
       <span
         aria-hidden
         className={`pointer-events-none absolute -end-10 -top-10 size-28 rounded-full blur-2xl ${invert ? "bg-gold/25" : "bg-accent/60"}`}
