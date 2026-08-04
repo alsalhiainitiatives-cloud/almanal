@@ -35,12 +35,13 @@ export function StatsBand() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="relative flex flex-col justify-between overflow-hidden rounded-[2.25rem] glass-dark p-8 ring-gold-soft md:p-10"
+            className="relative flex flex-col items-center justify-between overflow-hidden rounded-[2.25rem] glass-dark p-8 text-center ring-gold-soft md:p-10"
           >
-            <div>
+            <div className="flex flex-col items-center">
               <span className="inline-flex items-center gap-3 text-xs font-black tracking-[0.2em] text-gold uppercase">
                 <span aria-hidden className="h-px w-10 gradient-gold-hairline" />
                 المنال بالأرقام
+                <span aria-hidden className="h-px w-10 gradient-gold-hairline" />
               </span>
               <h2 className="mt-5 text-2xl leading-snug font-black text-primary-foreground md:text-[2.1rem]">
                 ثقة تكبر عامًا بعد عام
@@ -50,11 +51,11 @@ export function StatsBand() {
               </p>
             </div>
             {lead ? (
-              <div className="mt-10">
-                <p className="font-latin text-[4.5rem] leading-none font-black text-gold md:text-[5.5rem]">
+              <div className="mt-10 flex flex-col items-center">
+                <p className="font-latin text-[3.6rem] leading-none font-black text-gold md:text-[4.5rem]">
                   <Counter value={lead.value} suffix={lead.suffix} />
                 </p>
-                <span aria-hidden className="mt-4 block h-0.5 w-16 rounded-full bg-gold" />
+                <span aria-hidden className="mt-4 h-0.5 w-16 rounded-full bg-gold" />
                 <p className="mt-4 text-base font-bold text-primary-foreground/85">{lead.label}</p>
               </div>
             ) : null}
@@ -67,7 +68,7 @@ export function StatsBand() {
                 <motion.div
                   key={stat.label}
                   variants={staggerItem}
-                  className="group relative overflow-hidden rounded-[1.75rem] border border-primary-foreground/12 bg-primary-foreground/8 p-6 backdrop-blur-sm transition-colors duration-500 hover:border-gold/50 hover:bg-primary-foreground/12"
+                  className="group relative flex flex-col items-center overflow-hidden rounded-[1.75rem] border border-primary-foreground/12 bg-primary-foreground/8 p-6 text-center backdrop-blur-sm transition-colors duration-500 hover:border-gold/50 hover:bg-primary-foreground/12"
                 >
                   <span
                     aria-hidden
@@ -77,17 +78,17 @@ export function StatsBand() {
                         "radial-gradient(70% 70% at 50% 0%, oklch(0.79 0.12 82 / 0.2) 0%, transparent 70%)",
                     }}
                   />
-                  <span className="relative grid size-11 place-items-center rounded-[0.9rem] glass-dark text-gold transition-transform duration-500 group-hover:-rotate-6">
-                    <Icon className="size-5" strokeWidth={1.8} />
+                  <span className="relative grid size-14 place-items-center rounded-2xl glass-dark text-gold ring-gold-soft transition-transform duration-500 group-hover:-rotate-6">
+                    <Icon className="size-7" strokeWidth={1.8} />
                   </span>
-                  <p className="relative mt-6 font-latin text-[2.4rem] leading-none font-black text-primary-foreground">
+                  <p className="relative mt-5 font-latin text-[2rem] leading-none font-black text-primary-foreground">
                     <Counter value={stat.value} suffix={stat.suffix} />
                   </p>
                   <span
                     aria-hidden
-                    className="relative mt-3 block h-0.5 w-8 rounded-full bg-gold transition-all duration-500 group-hover:w-16"
+                    className="relative mt-3 h-0.5 w-8 rounded-full bg-gold transition-all duration-500 group-hover:w-16"
                   />
-                  <p className="relative mt-3 text-sm font-bold text-primary-foreground/75">
+                  <p className="relative mt-3 text-sm leading-snug font-bold text-primary-foreground/75">
                     {stat.label}
                   </p>
                 </motion.div>
