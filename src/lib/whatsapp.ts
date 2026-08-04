@@ -2,7 +2,7 @@
  * Opens WhatsApp directly without relying on api.whatsapp.com (which is blocked
  * inside embedded previews and some corporate networks).
  *
- * - Desktop: web.whatsapp.com/send (WhatsApp Web / Desktop app)
+ * - Desktop: wa.me short link (opens WhatsApp Web / Desktop app)
  * - Mobile: whatsapp://send deep link
  */
 
