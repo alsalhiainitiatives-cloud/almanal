@@ -12,6 +12,7 @@ import {
   LogOut,
   Search,
   SlidersHorizontal,
+  UserRoundPlus,
   Wallet,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -69,7 +70,14 @@ const NAV_GROUP_ORDER = [
 
 /** Student Affairs is a separate operational module — no admissions links. */
 const STUDENTS_NAV: NavItem[] = [
-  { to: "/ams/students", label: "سجل الطلاب", icon: GraduationCap, exact: false, group: "شؤون الطلاب" },
+  { to: "/ams/students", label: "سجل الطلاب", icon: GraduationCap, exact: true, group: "شؤون الطلاب" },
+  {
+    to: "/ams/students/promotions",
+    label: "نقل الطلاب بين المراحل",
+    icon: UserRoundPlus,
+    exact: false,
+    group: "شؤون الطلاب",
+  },
 ];
 
 /** Finance is a separate operational module — no admissions links. */

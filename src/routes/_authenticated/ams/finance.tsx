@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Settings2, Wallet } from "lucide-react";
+import { ReceiptText, Settings2, Wallet } from "lucide-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AmsShell } from "@/features/ams/components/AmsShell";
+import { ClaimsBoard } from "@/features/ams/components/finance/ClaimsBoard";
 import { FinanceBoard } from "@/features/ams/components/finance/FinanceBoard";
 import { FinanceSettings } from "@/features/ams/components/finance/FinanceSettings";
 import { useAuth } from "@/features/auth/AuthProvider";
@@ -41,6 +42,9 @@ function AmsFinancePage() {
             <TabsTrigger value="board" className="rounded-xl text-xs font-bold">
               <Wallet className="ms-1 size-4" /> متابعة الفواتير والدفعات
             </TabsTrigger>
+            <TabsTrigger value="claims" className="rounded-xl text-xs font-bold">
+              <ReceiptText className="ms-1 size-4" /> المطالبات المالية السنوية
+            </TabsTrigger>
             {canManage ? (
               <TabsTrigger value="settings" className="rounded-xl text-xs font-bold">
                 <Settings2 className="ms-1 size-4" /> الإعدادات المالية
@@ -50,6 +54,10 @@ function AmsFinancePage() {
 
           <TabsContent value="board" className="m-0">
             <FinanceBoard canManage={canManage} />
+          </TabsContent>
+
+          <TabsContent value="claims" className="m-0">
+            <ClaimsBoard canManage={canManage} />
           </TabsContent>
 
           {canManage ? (
