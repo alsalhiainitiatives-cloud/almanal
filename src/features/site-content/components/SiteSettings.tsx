@@ -397,6 +397,7 @@ export function SiteSettings() {
   const setContact = (patch: Partial<SiteContent["contact"]>) =>
     set("contact", { ...draft.contact, ...patch });
   const setHome = (patch: Partial<SiteContent["home"]>) => set("home", { ...draft.home, ...patch });
+  const setHero = (patch: Partial<SiteContent["hero"]>) => set("hero", { ...draft.hero, ...patch });
   const setAbout = (patch: Partial<SiteContent["about"]>) =>
     set("about", { ...draft.about, ...patch });
   const setPage = (key: string, patch: Partial<SiteContent["pages"][string]>) =>
@@ -446,6 +447,7 @@ export function SiteSettings() {
       <Tabs defaultValue="brand" className="space-y-6">
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 rounded-[1.5rem] bg-beige/70 p-1.5">
           <TabsTrigger value="brand" className="rounded-2xl">الهوية</TabsTrigger>
+          <TabsTrigger value="hero" className="rounded-2xl">الهيرو والسلايدر</TabsTrigger>
           <TabsTrigger value="contact" className="rounded-2xl">التواصل والفوتر</TabsTrigger>
           <TabsTrigger value="nav" className="rounded-2xl">القائمة</TabsTrigger>
           <TabsTrigger value="home" className="rounded-2xl">الرئيسية</TabsTrigger>
