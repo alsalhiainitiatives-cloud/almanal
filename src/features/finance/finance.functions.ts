@@ -3,6 +3,8 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
+  cancelClaim,
+  createClaim,
   createOrUpdateInvoice,
   deleteBankAccount,
   deleteDiscountRule,
@@ -10,6 +12,7 @@ import {
   deleteService,
   financeOverview,
   getFinanceConfig,
+  listClaimTargets,
   listInvoiceMessages,
   myFinance,
   notifyOverdue,
@@ -301,3 +304,33 @@ export const invoiceMessageSend = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) =>
     postInvoiceMessage(context.supabase, context.userId, data),
   );
+/* ---------------- Annual financial claims ---------------- */
+
+export const financeClaimsGet = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => listClaimTargets(context.supabase, context.userId));
+
+export const financeClaimCreate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        applicationId: uuid,
+        academicYear: z.string().trim().min(4).max(60),
+        planType,
+        installments: z.number().int().min(1).max(12),
+        tuitionTotal: z.number().min(0).max(1_000_000),
+        admissionFee: z.number().min(0).max(200_000),
+        servicesTotal: z.number().min(0).max(200_000),
+        discountTotal: z.number().min(0).max(1_000_000),
+        startDate: z.string().trim().max(20).nullish(),
+        note: z.string().trim().max(500).nullish(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => createClaim(context.supabase, context.userId, data));
+
+export const financeClaimCancel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ invoiceId: uuid }).parse(data))
+  .handler(async ({ data, context }) => cancelClaim(context.supabase, context.userId, data.invoiceId));

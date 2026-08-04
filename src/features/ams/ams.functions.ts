@@ -35,6 +35,14 @@ import {
 } from "./ams.server";
 import { getReports } from "./reports.server";
 import {
+  applyPromotion,
+  deletePromotionRule,
+  dismissPromotion,
+  listPromotions,
+  notifyPromotionsDue,
+  savePromotionRule,
+} from "./promotions.server";
+import {
   getMyStudentFile,
   getStudentFile,
   listMyChildren,
@@ -380,3 +388,56 @@ export const amsStudentPhoto = createServerFn({ method: "POST" })
     z.object({ childId: uuid, photoUrl: z.string().max(400).nullable() }).parse(data),
   )
   .handler(async ({ data, context }) => setStudentPhoto(context.supabase, context.userId, data));
+
+/* ---------------- Age-based stage transfers ---------------- */
+
+export const amsPromotions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => listPromotions(context.supabase, context.userId));
+
+export const amsPromotionRuleSave = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        id: uuid.nullish(),
+        from_stage_id: uuid.nullable(),
+        to_stage_id: uuid,
+        min_age_months: z.number().int().min(1).max(240),
+        notice_months: z.number().int().min(0).max(24),
+        is_active: z.boolean().optional(),
+        sort_order: z.number().int().min(0).max(999).optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => savePromotionRule(context.supabase, context.userId, data));
+
+export const amsPromotionRuleDelete = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ id: uuid }).parse(data))
+  .handler(async ({ data, context }) => deletePromotionRule(context.supabase, context.userId, data.id));
+
+export const amsPromotionApply = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        childId: uuid,
+        toStageId: uuid,
+        classroomId: uuid.nullish(),
+        note: z.string().trim().max(500).nullish(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => applyPromotion(context.supabase, context.userId, data));
+
+export const amsPromotionDismiss = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ childId: uuid, toStageId: uuid, note: z.string().trim().max(500).nullish() }).parse(data),
+  )
+  .handler(async ({ data, context }) => dismissPromotion(context.supabase, context.userId, data));
+
+export const amsPromotionsNotify = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => notifyPromotionsDue(context.supabase, context.userId));
