@@ -123,7 +123,7 @@ function StudentsPage() {
                     <th className="px-4 py-3 text-start">العمر</th>
                     <th className="px-4 py-3 text-start">المرحلة / الفصل</th>
                     <th className="px-4 py-3 text-start">ولي الأمر</th>
-                    <th className="px-4 py-3 text-start">رقم الطلب</th>
+                    <th className="px-4 py-3 text-start">الرقم الأكاديمي</th>
                     <th className="px-4 py-3 text-start">الملف</th>
                   </tr>
                 </thead>
@@ -154,7 +154,7 @@ function StudentsPage() {
                         </p>
                       </td>
                       <td className="px-4 py-3 text-xs font-extrabold" dir="ltr">
-                        {formatApplicationCode(s.applicationNumber)}
+                        {s.studentNumber?.trim() || formatApplicationCode(s.applicationNumber)}
                       </td>
                       <td className="px-4 py-3">
                         <Button asChild size="sm" variant="outline" className={cn("rounded-xl text-xs font-bold")}>
