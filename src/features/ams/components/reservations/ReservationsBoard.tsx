@@ -1,0 +1,234 @@
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { CheckCircle2, Clock, Loader2, XCircle } from "lucide-react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  decideSeatReservation,
+  staffSeatReservations,
+} from "@/features/admissions/reservation.functions";
+import {
+  RESERVATION_STATUS_COLORS,
+  RESERVATION_STATUS_LABELS,
+} from "@/features/admissions/reservation-schema";
+import { ageInMonths, formatAge } from "@/features/admissions/eligibility";
+import { cn } from "@/lib/utils";
+
+type Filter = "pending_review" | "approved" | "rejected";
+
+export function ReservationsBoard() {
+  const queryClient = useQueryClient();
+  const decide = useServerFn(decideSeatReservation);
+  const [filter, setFilter] = useState<Filter>("pending_review");
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["ams", "reservations"],
+    queryFn: () => staffSeatReservations(),
+  });
+
+  const classrooms = useMemo(() => data?.classrooms ?? [], [data]);
+  const rows = (data?.rows ?? []).filter((row) => row.status === filter);
+
+  const roomOf = (id: string | null) => classrooms.find((c) => c.id === id) ?? null;
+
+  /** Preference 1 → 2 → 3; mirrors the server-side placement rule. */
+  function suggestion(child: {
+    birth_date: string | null;
+    preference_1_classroom_id: string | null;
+    preference_2_classroom_id: string | null;
+    preference_3_classroom_id: string | null;
+  }) {
+    const months = ageInMonths(child.birth_date);
+    const prefs = [
+      child.preference_1_classroom_id,
+      child.preference_2_classroom_id,
+      child.preference_3_classroom_id,
+    ];
+    for (let i = 0; i < prefs.length; i++) {
+      const room = roomOf(prefs[i]);
+      if (!room || room.is_active === false) continue;
+      const free = Math.max(0, room.capacity - room.taken_seats);
+      const ageOk =
+        months === null || (months >= room.min_age_months && months <= room.max_age_months);
+      if (ageOk && free > 0) {
+        return { text: `تسكين مباشر في «${room.name_ar}» (الرغبة ${i + 1}) — ${free} مقعد متاح`, ok: true };
+      }
+    }
+    const first = roomOf(prefs.find(Boolean) ?? null);
+    return {
+      text: first
+        ? `لا يوجد مقعد مطابق — الاقتراح: قائمة انتظار «${first.name_ar}»`
+        : "لم يتم اختيار فصول",
+      ok: false,
+    };
+  }
+
+  async function run(id: string, action: "approve" | "reject") {
+    setBusy(id + action);
+    try {
+      const result = await decide({ data: { id, action, note: notes[id]?.trim() || null } });
+      toast.success(
+        action === "approve"
+          ? `تم قبول الحجز — ${result.placements.map((p) => `${p.name}: ${p.classroom ?? "بدون فصل"}${p.waitlisted ? " (انتظار)" : ""}`).join(" · ")}`
+          : "تم رفض طلب الحجز وإشعار ولي الأمر.",
+      );
+      await queryClient.invalidateQueries({ queryKey: ["ams", "reservations"] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذّر تنفيذ القرار");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
+        <TabsList className="rounded-2xl">
+          <TabsTrigger value="pending_review" className="text-xs font-bold">
+            <Clock className="size-3.5" />
+            بانتظار المراجعة
+          </TabsTrigger>
+          <TabsTrigger value="approved" className="text-xs font-bold">
+            <CheckCircle2 className="size-3.5" />
+            المقبولة
+          </TabsTrigger>
+          <TabsTrigger value="rejected" className="text-xs font-bold">
+            <XCircle className="size-3.5" />
+            المرفوضة
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {isLoading && (
+        <div className="grid place-items-center rounded-3xl border border-border/60 bg-card p-10">
+          <Loader2 className="size-6 animate-spin text-primary" />
+        </div>
+      )}
+
+      {!isLoading && !rows.length && (
+        <div className="rounded-3xl border border-dashed border-border/60 bg-card p-10 text-center text-sm font-bold text-muted-foreground">
+          لا توجد طلبات حجز في هذه الحالة.
+        </div>
+      )}
+
+      {rows.map((row) => {
+        const fullEverywhere = (row.children ?? []).every((child) => !suggestion(child).ok);
+        return (
+          <div key={row.id} className="rounded-3xl border border-border/60 bg-card p-5 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-black text-foreground">{row.parent_name}</p>
+                <p className="text-[11px] text-muted-foreground" dir="ltr">
+                  {row.parent_national_id} · {new Date(row.created_at).toLocaleString("ar-SA")}
+                </p>
+              </div>
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-1 text-[10px] font-black",
+                  RESERVATION_STATUS_COLORS[row.status] ?? "bg-muted",
+                )}
+              >
+                {RESERVATION_STATUS_LABELS[row.status] ?? row.status}
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {(row.children ?? []).map((child) => {
+                const hint = suggestion(child);
+                return (
+                  <div key={child.id} className="rounded-2xl bg-muted/40 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-black text-foreground">
+                        {child.name_ar}
+                        <span className="ms-2 font-bold text-muted-foreground">
+                          {formatAge(ageInMonths(child.birth_date))} ·{" "}
+                          {child.gender === "female" ? "أنثى" : "ذكر"}
+                        </span>
+                      </p>
+                      <p className="text-[11px] font-bold text-muted-foreground" dir="ltr">
+                        {child.national_id}
+                      </p>
+                    </div>
+                    <p className="mt-2 text-[11px] font-bold text-muted-foreground">
+                      الرغبات:{" "}
+                      {[
+                        child.preference_1_classroom_id,
+                        child.preference_2_classroom_id,
+                        child.preference_3_classroom_id,
+                      ]
+                        .map((id, i) => (id ? `${i + 1}. ${roomOf(id)?.name_ar ?? "—"}` : null))
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                    <p
+                      className={cn(
+                        "mt-2 text-[11px] font-black",
+                        hint.ok ? "text-primary" : "text-destructive",
+                      )}
+                    >
+                      {hint.text}
+                    </p>
+                    {row.status === "approved" && (
+                      <p className="mt-1 text-[11px] font-bold text-foreground">
+                        القرار: {roomOf(child.assigned_classroom_id)?.name_ar ?? "بدون فصل"}
+                        {child.waitlisted ? " (قائمة انتظار)" : ""}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {row.status === "pending_review" ? (
+              <div className="mt-4 space-y-3">
+                {fullEverywhere && (
+                  <p className="rounded-2xl bg-destructive/10 px-4 py-2 text-[11px] font-black text-destructive">
+                    وصل الفصل وقائمة الانتظار إلى الطاقة الاستيعابية القصوى
+                  </p>
+                )}
+                <Textarea
+                  rows={2}
+                  placeholder="ملاحظة لولي الأمر (اختياري)"
+                  value={notes[row.id] ?? ""}
+                  onChange={(e) => setNotes((n) => ({ ...n, [row.id]: e.target.value }))}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="hero"
+                    className="rounded-2xl text-xs font-bold"
+                    disabled={busy !== null}
+                    onClick={() => run(row.id, "approve")}
+                  >
+                    {busy === row.id + "approve" ? <Loader2 className="size-3.5 animate-spin" /> : null}
+                    قبول الحجز وتسكين الطفل
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="rounded-2xl text-xs font-bold text-destructive"
+                    disabled={busy !== null}
+                    onClick={() => run(row.id, "reject")}
+                  >
+                    {busy === row.id + "reject" ? <Loader2 className="size-3.5 animate-spin" /> : null}
+                    رفض الحجز
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              row.decision_note && (
+                <p className="mt-4 rounded-2xl bg-muted/40 px-4 py-2 text-[11px] font-bold text-muted-foreground">
+                  ملاحظة القرار: {row.decision_note}
+                </p>
+              )
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}

@@ -30,6 +30,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TrackIndexRouteImport } from './routes/track.index'
 import { Route as AdmissionsIndexRouteImport } from './routes/admissions.index'
 import { Route as LegalSlugRouteImport } from './routes/legal.$slug'
+import { Route as AuthenticatedReserveRouteImport } from './routes/_authenticated/reserve'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
 import { Route as AuthenticatedMyApplicationsRouteImport } from './routes/_authenticated/my-applications'
@@ -162,6 +163,11 @@ const LegalSlugRoute = LegalSlugRouteImport.update({
   id: '/legal/$slug',
   path: '/legal/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedReserveRoute = AuthenticatedReserveRouteImport.update({
+  id: '/reserve',
+  path: '/reserve',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
@@ -342,6 +348,7 @@ export interface FileRoutesByFullPath {
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/reserve': typeof AuthenticatedReserveRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/admissions/': typeof AdmissionsIndexRoute
   '/track/': typeof TrackIndexRoute
@@ -392,6 +399,7 @@ export interface FileRoutesByTo {
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/reserve': typeof AuthenticatedReserveRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/admissions': typeof AdmissionsIndexRoute
   '/track': typeof TrackIndexRoute
@@ -444,6 +452,7 @@ export interface FileRoutesById {
   '/_authenticated/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/reserve': typeof AuthenticatedReserveRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/admissions/': typeof AdmissionsIndexRoute
   '/track/': typeof TrackIndexRoute
@@ -496,6 +505,7 @@ export interface FileRouteTypes {
     | '/my-applications'
     | '/payments'
     | '/profile'
+    | '/reserve'
     | '/legal/$slug'
     | '/admissions/'
     | '/track/'
@@ -546,6 +556,7 @@ export interface FileRouteTypes {
     | '/my-applications'
     | '/payments'
     | '/profile'
+    | '/reserve'
     | '/legal/$slug'
     | '/admissions'
     | '/track'
@@ -597,6 +608,7 @@ export interface FileRouteTypes {
     | '/_authenticated/my-applications'
     | '/_authenticated/payments'
     | '/_authenticated/profile'
+    | '/_authenticated/reserve'
     | '/legal/$slug'
     | '/admissions/'
     | '/track/'
@@ -800,6 +812,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/legal/$slug'
       preLoaderRoute: typeof LegalSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/reserve': {
+      id: '/_authenticated/reserve'
+      path: '/reserve'
+      fullPath: '/reserve'
+      preLoaderRoute: typeof AuthenticatedReserveRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
@@ -1006,6 +1025,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMyApplicationsRoute: typeof AuthenticatedMyApplicationsRoute
   AuthenticatedPaymentsRoute: typeof AuthenticatedPaymentsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedReserveRoute: typeof AuthenticatedReserveRoute
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminInboxRoute: typeof AuthenticatedAdminInboxRoute
   AuthenticatedAdminPermissionsRoute: typeof AuthenticatedAdminPermissionsRoute
@@ -1034,6 +1054,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMyApplicationsRoute: AuthenticatedMyApplicationsRoute,
   AuthenticatedPaymentsRoute: AuthenticatedPaymentsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedReserveRoute: AuthenticatedReserveRoute,
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminInboxRoute: AuthenticatedAdminInboxRoute,
   AuthenticatedAdminPermissionsRoute: AuthenticatedAdminPermissionsRoute,
@@ -1091,13 +1112,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
