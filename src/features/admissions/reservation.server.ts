@@ -11,6 +11,11 @@ import type { Database } from "@/integrations/supabase/types";
 import { ageInMonths } from "./eligibility";
 import { ACADEMIC_YEAR } from "./application.server";
 import type { ReservationInput, ReservationPreferencesInput } from "./reservation-schema";
+import {
+  CHILD_MATCHES_PARENT_MESSAGE,
+  DUPLICATE_CHILD_MESSAGE,
+  type ReservationStaffUpdateInput,
+} from "./reservation-schema";
 import { notify, STAFF_ROLES } from "@/features/notifications/notifications.server";
 
 type Db = SupabaseClient<Database>;
@@ -79,6 +84,17 @@ export async function assertRegistrationOpen(supabase: Db) {
 
 export async function createReservation(supabase: Db, userId: string, input: ReservationInput) {
   await assertRegistrationOpen(supabase);
+
+  /* Early validation (Step 0): never let a duplicate child reach the wizard. */
+  for (const child of input.children) {
+    if (child.nationalId === input.parentNationalId) throw new Error(CHILD_MATCHES_PARENT_MESSAGE);
+  }
+  const duplicates = await findDuplicateChildIds(
+    supabase,
+    input.children.map((c) => c.nationalId),
+  );
+  if (duplicates.length) throw new Error(DUPLICATE_CHILD_MESSAGE);
+
   const { data: existing } = await supabase
     .from("seat_reservations")
     .select("id")
