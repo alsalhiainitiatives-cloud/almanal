@@ -53,6 +53,7 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "no_plan" | "pending" | "paid">("all");
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [waDraft, setWaDraft] = useState<WhatsappDraft | null>(null);
@@ -62,6 +63,7 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
   const invoices = data?.invoices ?? [];
   const installments = (data?.installments ?? []) as unknown as InstallmentRow[];
   const receipts = data?.receipts ?? [];
+  const unplanned = data?.unplanned ?? [];
   const lateAfter = data?.planSettings?.late_after_days ?? 0;
 
   const profileOf = (parentId: string) => (data?.profiles ?? []).find((p) => p.id === parentId);
@@ -85,6 +87,9 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
   }, [invoices, installments, receipts, lateAfter]);
 
   const filtered = invoices.filter((invoice) => {
+    if (statusFilter === "no_plan") return false;
+    if (statusFilter === "paid" && invoice.status !== "paid") return false;
+    if (statusFilter === "pending" && invoice.status === "paid") return false;
     if (!search.trim()) return true;
     const q = search.trim();
     const app = (invoice as unknown as { applications?: { application_number: string | null } })
@@ -95,6 +100,20 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
       (profile?.full_name ?? "").includes(q) ||
       (profile?.phone ?? "").includes(q) ||
       childOf(invoice.application_id).includes(q)
+    );
+  });
+
+  /* Completed applications with no payment plan yet — early follow-up targets. */
+  const filteredUnplanned = unplanned.filter((app) => {
+    if (statusFilter === "paid" || statusFilter === "pending") return false;
+    if (!search.trim()) return true;
+    const q = search.trim();
+    const profile = profileOf(app.parent_id);
+    return (
+      (app.application_number ?? "").includes(q) ||
+      (profile?.full_name ?? "").includes(q) ||
+      (profile?.phone ?? "").includes(q) ||
+      childOf(app.id).includes(q)
     );
   });
 
