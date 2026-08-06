@@ -390,6 +390,12 @@ export async function startFromReservation(supabase: Db, userId: string, reserva
     metadata: { reservationId: reservation.id } as never,
   });
 
+  await logEvent(supabase, reservation.id, userId, {
+    action: "application_started",
+    title: "تم بدء طلب التسجيل من الحجز المقبول",
+    body: "البيانات المثبتة من الخطوة صفر أصبحت غير قابلة للتعديل في النموذج.",
+  });
+
   return { id: application.id };
 }
 
@@ -413,5 +419,88 @@ export async function cancelMyReservation(supabase: Db, userId: string, id: stri
     .eq("parent_id", userId)
     .eq("status", "pending_review");
   if (error) throw new Error("تعذّر إلغاء طلب الحجز.");
+  return { ok: true as const };
+}
+
+/** Parent self-service — reorder/replace classroom preferences before review. */
+export async function updateMyReservationPreferences(
+  supabase: Db,
+  userId: string,
+  input: ReservationPreferencesInput,
+) {
+  const { data: reservation } = await supabase
+    .from("seat_reservations")
+    .select(`id, parent_id, status, children:seat_reservation_children(${CHILD_COLUMNS})`)
+    .eq("id", input.id)
+    .maybeSingle();
+  if (!reservation || reservation.parent_id !== userId) throw new Error("لم يتم العثور على طلب الحجز.");
+  if (reservation.status !== "pending_review")
+    throw new Error("لا يمكن تعديل الرغبات بعد اتخاذ قرار بشأن الطلب.");
+
+  const known = new Set((reservation.children ?? []).map((c) => c.id));
+  for (const row of input.children) {
+    if (!known.has(row.childId)) throw new Error("بيانات الطفل غير مطابقة لطلب الحجز.");
+    const { error } = await supabase
+      .from("seat_reservation_children")
+      .update({
+        preference_1_classroom_id: row.preference1,
+        preference_2_classroom_id: row.preference2 || null,
+        preference_3_classroom_id: row.preference3 || null,
+      })
+      .eq("id", row.childId)
+      .eq("reservation_id", input.id);
+    if (error) throw new Error("تعذّر تحديث رغبات الفصول.");
+  }
+
+  await logEvent(supabase, input.id, userId, {
+    action: "preferences_updated",
+    title: "تم تعديل رغبات الفصول",
+    body: `تم تحديث رغبات ${input.children.length} طفل قبل المراجعة.`,
+  });
+
+  await notify(supabase, {
+    roles: STAFF_ROLES,
+    kind: "reservation.updated",
+    title: "تم تعديل رغبات طلب حجز مقعد",
+    body: "قام ولي الأمر بتحديث رغبات الفصول قبل المراجعة.",
+    link: "/ams/reservations",
+    severity: "info",
+  });
+
+  return { ok: true as const };
+}
+
+/** Parent self-service — withdraw a request that is still pending review. */
+export async function withdrawMyReservation(supabase: Db, userId: string, id: string, note?: string | null) {
+  const { data: reservation } = await supabase
+    .from("seat_reservations")
+    .select("id, parent_id, status")
+    .eq("id", id)
+    .maybeSingle();
+  if (!reservation || reservation.parent_id !== userId) throw new Error("لم يتم العثور على طلب الحجز.");
+  if (reservation.status !== "pending_review") throw new Error("لا يمكن سحب الطلب بعد اتخاذ قرار بشأنه.");
+
+  const { error } = await supabase
+    .from("seat_reservations")
+    .update({ status: "withdrawn", decision_note: note ?? null })
+    .eq("id", id)
+    .eq("parent_id", userId);
+  if (error) throw new Error("تعذّر سحب طلب الحجز.");
+
+  await logEvent(supabase, id, userId, {
+    action: "withdrawn",
+    title: "تم سحب طلب الحجز من ولي الأمر",
+    body: note ?? null,
+  });
+
+  await notify(supabase, {
+    roles: STAFF_ROLES,
+    kind: "reservation.withdrawn",
+    title: "تم سحب طلب حجز مقعد",
+    body: note || "قام ولي الأمر بسحب طلب حجز المقعد.",
+    link: "/ams/reservations",
+    severity: "info",
+  });
+
   return { ok: true as const };
 }
