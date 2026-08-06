@@ -157,6 +157,16 @@ export function ActionCenter({ data }: { data: WorkspaceData }) {
   /* -------------------------------------------------------------- children */
   const child = data.children[Math.min(childIdx, Math.max(0, data.children.length - 1))] ?? null;
   const childMonths = ageInMonths(child?.birth_date ?? null);
+
+  /**
+   * The class approved at seat reservation (Step 0) — or the parent's first
+   * preference — is selected by default so staff only confirm it.
+   */
+  const defaultClassroomId = child?.classroom_id ?? child?.preference_1_classroom_id ?? "";
+  useEffect(() => {
+    setClassroomId(defaultClassroomId);
+  }, [defaultClassroomId]);
+
   const preferences = [
     child?.preference_1_classroom_id ?? null,
     child?.preference_2_classroom_id ?? null,
