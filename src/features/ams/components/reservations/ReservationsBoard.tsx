@@ -1,9 +1,20 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, Clock, Loader2, Undo2, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Loader2, Trash2, Undo2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import {
   decideSeatReservation,
+  deleteSeatReservationByStaff,
   staffSeatReservations,
 } from "@/features/admissions/reservation.functions";
 import {
@@ -27,6 +39,7 @@ import {
   type ReservationEvent,
 } from "@/features/admissions/components/ReservationAuditLog";
 import { ageInMonths, formatAge } from "@/features/admissions/eligibility";
+import { ReservationEditDialog } from "./ReservationEditDialog";
 import { cn } from "@/lib/utils";
 
 type Filter = "pending_review" | "approved" | "rejected" | "withdrawn";
@@ -34,11 +47,25 @@ type Filter = "pending_review" | "approved" | "rejected" | "withdrawn";
 export function ReservationsBoard() {
   const queryClient = useQueryClient();
   const decide = useServerFn(decideSeatReservation);
+  const removeReservation = useServerFn(deleteSeatReservationByStaff);
   const [filter, setFilter] = useState<Filter>("pending_review");
   const [notes, setNotes] = useState<Record<string, string>>({});
   /** childId → "auto" | "seat:<classroomId>" | "wait:<classroomId>" */
   const [placements, setPlacements] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
+
+  async function onDelete(id: string) {
+    setBusy(id + "delete");
+    try {
+      await removeReservation({ data: id });
+      await queryClient.invalidateQueries({ queryKey: ["ams", "reservations"] });
+      toast.success("تم حذف طلب الحجز وتحرير المقعد ورقم الهوية");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذّر حذف طلب الحجز");
+    } finally {
+      setBusy(null);
+    }
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ["ams", "reservations"],
