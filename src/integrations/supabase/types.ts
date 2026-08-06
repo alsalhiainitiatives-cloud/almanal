@@ -1780,6 +1780,153 @@ export type Database = {
           },
         ]
       }
+      seat_reservation_children: {
+        Row: {
+          assigned_classroom_id: string | null
+          birth_date: string | null
+          created_at: string
+          gender: string | null
+          id: string
+          name_ar: string
+          national_id: string | null
+          preference_1_classroom_id: string | null
+          preference_2_classroom_id: string | null
+          preference_3_classroom_id: string | null
+          reservation_id: string
+          sort_order: number
+          stage_id: string | null
+          waitlisted: boolean
+        }
+        Insert: {
+          assigned_classroom_id?: string | null
+          birth_date?: string | null
+          created_at?: string
+          gender?: string | null
+          id?: string
+          name_ar: string
+          national_id?: string | null
+          preference_1_classroom_id?: string | null
+          preference_2_classroom_id?: string | null
+          preference_3_classroom_id?: string | null
+          reservation_id: string
+          sort_order?: number
+          stage_id?: string | null
+          waitlisted?: boolean
+        }
+        Update: {
+          assigned_classroom_id?: string | null
+          birth_date?: string | null
+          created_at?: string
+          gender?: string | null
+          id?: string
+          name_ar?: string
+          national_id?: string | null
+          preference_1_classroom_id?: string | null
+          preference_2_classroom_id?: string | null
+          preference_3_classroom_id?: string | null
+          reservation_id?: string
+          sort_order?: number
+          stage_id?: string | null
+          waitlisted?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seat_reservation_children_assigned_classroom_id_fkey"
+            columns: ["assigned_classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seat_reservation_children_preference_1_classroom_id_fkey"
+            columns: ["preference_1_classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seat_reservation_children_preference_2_classroom_id_fkey"
+            columns: ["preference_2_classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seat_reservation_children_preference_3_classroom_id_fkey"
+            columns: ["preference_3_classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seat_reservation_children_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "seat_reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seat_reservation_children_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seat_reservations: {
+        Row: {
+          academic_year: string
+          application_id: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          id: string
+          parent_id: string
+          parent_name: string
+          parent_national_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year?: string
+          application_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          id?: string
+          parent_id?: string
+          parent_name: string
+          parent_national_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          application_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          id?: string
+          parent_id?: string
+          parent_name?: string
+          parent_national_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seat_reservations_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           category: Database["public"]["Enums"]["service_category"]
