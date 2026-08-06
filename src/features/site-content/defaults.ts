@@ -133,6 +133,13 @@ export type SiteContent = {
   faqs: FaqItem[];
   gallery: MediaItem[];
   testimonialsForm: { enabled: boolean; title: string; note: string };
+  /** Global switch for the public registration journey (Step 0 included). */
+  admissions: {
+    registrationOpen: boolean;
+    closureReason: "capacity" | "period_ended" | "maintenance" | "technical" | "custom";
+    closureTitle: string;
+    closureMessage: string;
+  };
   pages: Record<string, PageHeroContent>;
   hero: HeroContent;
   home: {
