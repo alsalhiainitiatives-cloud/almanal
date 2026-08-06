@@ -54,15 +54,29 @@ export function ReservationBanner() {
     );
   }
 
-  if (reservation.application_id) return null;
+  const startedId = reservation.application_id as string | null;
 
+  /* Approved reservation stays visible in the portal — before AND after the
+     parent starts the full application, so the provisional seat never "disappears". */
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-3xl border border-primary/30 bg-primary/5 p-5">
       <PartyPopper className="size-5 text-primary" />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-black text-foreground">تم قبول حجز المقعد — أكمل التسجيل</p>
-        <p className="text-xs text-muted-foreground">
-          بياناتك المُدخلة في خطوة الحجز ستظهر معبأة تلقائيًا في النموذج.
+        <span className="inline-flex rounded-full bg-mint px-3 py-1 text-[10px] font-black text-foreground">
+          تم القبول المبدئي - بانتظار استكمال البيانات
+        </span>
+        <p className="mt-2 text-sm font-black text-foreground">حجز مقعد مبدئي — الخطوة صفر</p>
+        <ul className="mt-1 space-y-0.5 text-xs font-bold text-muted-foreground">
+          {(reservation.children ?? []).map((child) => (
+            <li key={child.id}>
+              {child.name_ar}
+              {child.waitlisted ? " · قائمة انتظار" : ""}
+            </li>
+          ))}
+          <li dir="ltr">REF: {reservation.id.slice(0, 8).toUpperCase()}</li>
+        </ul>
+        <p className="mt-1 text-xs text-muted-foreground">
+          بياناتك المُدخلة في خطوة الحجز تظهر معبأة تلقائيًا في النموذج.
         </p>
       </div>
       <Button
@@ -72,6 +86,10 @@ export function ReservationBanner() {
         onClick={async () => {
           setBusy(true);
           try {
+            if (startedId) {
+              navigate({ to: "/apply/$applicationId", params: { applicationId: startedId } });
+              return;
+            }
             const { id } = await continueFn({ data: reservation.id });
             navigate({ to: "/apply/$applicationId", params: { applicationId: id } });
           } catch (error) {
