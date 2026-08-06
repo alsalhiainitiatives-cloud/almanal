@@ -20,6 +20,7 @@ import {
   FieldGrid,
   FormSection,
   LockedField,
+  LockedGroup,
   SelectField,
   StatusNote,
   TextField,
@@ -33,10 +34,13 @@ type Errors = Partial<Record<keyof ParentInfoInput, string>>;
 export function ParentStep({
   value,
   errors,
+  locked,
   onChange,
 }: {
   value: ParentInfoInput;
   errors: Errors;
+  /** Identity fields confirmed at seat reservation → read-only. */
+  locked?: boolean;
   onChange: (patch: Partial<ParentInfoInput>) => void;
 }) {
   const detected = detectNationality(value.nationalId);
@@ -57,6 +61,7 @@ export function ParentStep({
         icon={IdCard}
         tone="accent"
       >
+        <LockedGroup locked={locked}>
         <FieldGrid>
           <TextField
             label="رقم الهوية / الإقامة"
@@ -107,6 +112,7 @@ export function ParentStep({
             />
           ) : null}
         </FieldGrid>
+        </LockedGroup>
       </FormSection>
 
       {/* ---------------------------------------------------------------- */}
