@@ -327,7 +327,14 @@ function ReservePage() {
                     dir="ltr"
                     value={child.nationalId}
                     onChange={(e) => patch(index, { nationalId: e.target.value.replace(/\D/g, "") })}
+                    onBlur={() => void verifyIds([child.nationalId])}
+                    aria-invalid={Boolean(idIssue(child))}
                   />
+                  {idIssue(child) ? (
+                    <p className="rounded-xl bg-destructive/10 px-3 py-2 text-xs font-bold leading-6 text-destructive">
+                      {idIssue(child)}
+                    </p>
+                  ) : null}
                   {errors[`children.${index}.nationalId`] && (
                     <p className="text-xs font-bold text-destructive">
                       {errors[`children.${index}.nationalId`]}
