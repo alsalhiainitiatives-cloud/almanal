@@ -137,6 +137,10 @@ export function ReservationsBoard() {
             <XCircle className="size-3.5" />
             المرفوضة
           </TabsTrigger>
+          <TabsTrigger value="withdrawn" className="text-xs font-bold">
+            <Undo2 className="size-3.5" />
+            المسحوبة
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -192,15 +196,33 @@ export function ReservationsBoard() {
                     </div>
                     <p className="mt-2 text-[11px] font-bold text-muted-foreground">
                       الرغبات:{" "}
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap gap-2">
                       {[
                         child.preference_1_classroom_id,
                         child.preference_2_classroom_id,
                         child.preference_3_classroom_id,
-                      ]
-                        .map((id, i) => (id ? `${i + 1}. ${roomOf(id)?.name_ar ?? "—"}` : null))
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
+                      ].map((id, i) => {
+                        if (!id) return null;
+                        const room = roomOf(id);
+                        const free = room ? Math.max(0, room.capacity - room.taken_seats) : 0;
+                        const open = Boolean(room) && free > 0 && room?.is_active !== false;
+                        return (
+                          <span
+                            key={`${child.id}-${i}`}
+                            className={cn(
+                              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black",
+                              open
+                                ? "bg-mint text-foreground"
+                                : "bg-destructive/15 text-destructive",
+                            )}
+                          >
+                            {i + 1}. {room?.name_ar ?? "—"} ·{" "}
+                            {open ? `متاح (${free})` : "مكتمل"}
+                          </span>
+                        );
+                      })}
+                    </div>
                     <p
                       className={cn(
                         "mt-2 text-[11px] font-black",
@@ -209,6 +231,48 @@ export function ReservationsBoard() {
                     >
                       {hint.text}
                     </p>
+                    {row.status === "pending_review" ? (
+                      <div className="mt-3 max-w-sm">
+                        <p className="mb-1.5 text-[10px] font-black text-muted-foreground">
+                          قرار التسكين
+                        </p>
+                        <Select
+                          value={placements[child.id] ?? "auto"}
+                          onValueChange={(v) =>
+                            setPlacements((prev) => ({ ...prev, [child.id]: v }))
+                          }
+                        >
+                          <SelectTrigger className="h-9 text-xs font-bold">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">تلقائي حسب الرغبات المتاحة</SelectItem>
+                            {[
+                              child.preference_1_classroom_id,
+                              child.preference_2_classroom_id,
+                              child.preference_3_classroom_id,
+                            ].flatMap((id, i) => {
+                              if (!id) return [];
+                              const room = roomOf(id);
+                              if (!room) return [];
+                              const free = Math.max(0, room.capacity - room.taken_seats);
+                              return [
+                                <SelectItem
+                                  key={`seat-${id}`}
+                                  value={`seat:${id}`}
+                                  disabled={free <= 0}
+                                >
+                                  تسكين مباشر — {room.name_ar} (الرغبة {i + 1})
+                                </SelectItem>,
+                                <SelectItem key={`wait-${id}`} value={`wait:${id}`}>
+                                  قائمة انتظار — {room.name_ar} (الرغبة {i + 1})
+                                </SelectItem>,
+                              ];
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : null}
                     {row.status === "approved" && (
                       <p className="mt-1 text-[11px] font-bold text-foreground">
                         القرار: {roomOf(child.assigned_classroom_id)?.name_ar ?? "بدون فصل"}
