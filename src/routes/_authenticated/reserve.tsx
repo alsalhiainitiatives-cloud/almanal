@@ -49,9 +49,10 @@ import {
 export const Route = createFileRoute("/_authenticated/reserve")({
   ssr: false,
   /** `?new=1` forces a clean Step 0 form even when a reservation already exists. */
-  validateSearch: (search: Record<string, unknown>) => ({
-    new: search["new"] === true || search["new"] === "1" || search["new"] === "true",
-  }),
+  validateSearch: (search: Record<string, unknown>): { new?: boolean } => {
+    const fresh = search["new"] === true || search["new"] === "1" || search["new"] === "true";
+    return fresh ? { new: true } : {};
+  },
   head: () => ({
     meta: [
       { title: "حجز مقعد مبدئي | مدارس وروضة المنال" },
@@ -168,7 +169,7 @@ function ReservePage() {
     try {
       await submit({ data: parsed.data });
       setSuccess(true);
-      if (freshRequest) navigate({ to: "/reserve", search: { new: false } });
+      if (freshRequest) navigate({ to: "/reserve", search: {} });
       await refetchGate();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "تعذّر إرسال طلب الحجز");
