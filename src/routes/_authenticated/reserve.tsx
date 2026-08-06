@@ -482,9 +482,6 @@ function ReservePage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={farewell} onOpenChange={setFarewell}>
-        {null}
-      </Dialog>
       <Dialog open={dupOpen} onOpenChange={setDupOpen}>
         <DialogContent className="text-center sm:max-w-md">
           <DialogHeader>
