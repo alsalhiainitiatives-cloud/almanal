@@ -14,6 +14,7 @@ import {
   HeartHandshake,
   Loader2,
   PartyPopper,
+  Plus,
   Sparkles,
   UserRound,
   Wallet,
