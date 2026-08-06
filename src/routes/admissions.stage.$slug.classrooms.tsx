@@ -89,6 +89,11 @@ function ClassroomsPage() {
 
       <section className="section-y">
         <div className="mx-auto max-w-6xl px-4 md:px-8">
+          {!registration.open ? (
+            <div className="mb-10">
+              <RegistrationClosedNotice compact />
+            </div>
+          ) : null}
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {classrooms.map((c, i) => {
               const left = seatsLeft(c);
