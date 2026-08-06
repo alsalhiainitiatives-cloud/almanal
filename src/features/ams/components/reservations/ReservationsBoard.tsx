@@ -325,6 +325,13 @@ export function ReservationsBoard() {
                 </p>
               )
             )}
+
+            <div className="mt-4">
+              <ReservationAuditLog
+                reservationId={row.id}
+                events={(row as { events?: ReservationEvent[] }).events ?? []}
+              />
+            </div>
           </div>
         );
       })}
