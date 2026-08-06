@@ -35,7 +35,6 @@ import {
   eligibleClassrooms,
   formatAgeDetailed,
   isStageEligible,
-  seatsLeft,
 } from "../../eligibility";
 import { SAUDI_PARENT_CHILD_MISMATCH, emptyChild, type ChildInput } from "../../schemas";
 
