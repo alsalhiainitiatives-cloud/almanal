@@ -12,6 +12,7 @@ import {
   LogOut,
   Search,
   SlidersHorizontal,
+  TicketCheck,
   UserRoundPlus,
   Wallet,
 } from "lucide-react";
@@ -46,6 +47,13 @@ type NavItem = {
 /** Ordered by daily workflow: overview → processing → seats → money → insights → setup. */
 const NAV: NavItem[] = [
   { to: "/ams", label: "لوحة المتابعة", icon: LayoutDashboard, exact: true, group: "نظرة عامة" },
+  {
+    to: "/ams/reservations",
+    label: "طلبات حجز المقاعد",
+    icon: TicketCheck,
+    exact: false,
+    group: "معالجة الطلبات",
+  },
   { to: "/ams/queue", label: "قائمة الطلبات", icon: Inbox, exact: false, group: "معالجة الطلبات" },
   { to: "/ams/seats", label: "الفصول والمقاعد", icon: Armchair, exact: false, group: "معالجة الطلبات" },
   { to: "/ams/waiting-list", label: "قائمة الانتظار", icon: ListOrdered, exact: false, group: "معالجة الطلبات" },
