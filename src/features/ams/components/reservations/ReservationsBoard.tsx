@@ -237,6 +237,7 @@ export function ReservationsBoard() {
                 <th className="p-3 text-start">الفصل / الرغبة</th>
                 <th className="p-3 text-start">تاريخ الطلب</th>
                 <th className="p-3 text-start">الحالة</th>
+                <th className="p-3 text-start">استكمال التسجيل</th>
               </tr>
             </thead>
             <tbody>
@@ -245,6 +246,7 @@ export function ReservationsBoard() {
                   const room =
                     roomOf(child.assigned_classroom_id) ?? roomOf(child.preference_1_classroom_id);
                   const free = room ? Math.max(0, room.capacity - room.taken_seats) : 0;
+                  const progress = progressOf(row.application_id);
                   return (
                     <tr key={child.id} className="border-t border-border/50 font-bold">
                       <td className="p-3 text-foreground">{child.name_ar}</td>
@@ -274,6 +276,23 @@ export function ReservationsBoard() {
                         >
                           {RESERVATION_STATUS_LABELS[row.status] ?? row.status}
                         </span>
+                      </td>
+                      <td className="p-3">
+                        {row.status === "approved" ? (
+                          <span
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-[10px] font-black",
+                              progress.done
+                                ? "bg-mint text-foreground"
+                                : "bg-amber-100 text-amber-800",
+                            )}
+                          >
+                            {progress.label}
+                            {progress.number ? ` · ${progress.number}` : ""}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-muted-foreground">—</span>
+                        )}
                       </td>
                     </tr>
                   );
