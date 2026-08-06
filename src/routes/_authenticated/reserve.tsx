@@ -141,7 +141,7 @@ function ReservePage() {
 
   const reservation = gate?.reservation ?? null;
 
-  if (reservation && reservation.status !== "rejected") {
+  if (reservation && reservation.status !== "rejected" && reservation.status !== "withdrawn") {
     return (
       <section className="section-y">
         <div className="mx-auto max-w-2xl px-4">
