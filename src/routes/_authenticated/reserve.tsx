@@ -483,6 +483,32 @@ function ReservePage() {
       </Dialog>
 
       <Dialog open={farewell} onOpenChange={setFarewell}>
+        {null}
+      </Dialog>
+      <Dialog open={dupOpen} onOpenChange={setDupOpen}>
+        <DialogContent className="text-center sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto grid size-16 place-items-center rounded-full bg-destructive/10">
+              <HeartCrack className="size-8 text-destructive" />
+            </div>
+            <DialogTitle className="mt-3 text-center text-lg font-black">
+              بيانات مكررة — تعذّر إرسال طلب الحجز
+            </DialogTitle>
+            <DialogDescription className="text-center text-sm leading-7">
+              {DUPLICATE_CHILD_MESSAGE}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button variant="hero" onClick={() => navigate({ to: "/my-applications" })}>
+              متابعة طلباتي
+            </Button>
+            <Button variant="ghost" onClick={() => setDupOpen(false)}>
+              إغلاق
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={farewell} onOpenChange={setFarewell}>
         <DialogContent className="text-center sm:max-w-md">
           <DialogHeader>
             <div className="mx-auto grid size-16 place-items-center rounded-full bg-destructive/10">
