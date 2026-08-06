@@ -46,14 +46,19 @@ export function LockHint() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button
-        type="button"
+      {/* A span (not a button) so it stays clickable inside a disabled fieldset. */}
+      <span
+        role="button"
+        tabIndex={0}
         onClick={() => setOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") setOpen(true);
+        }}
         aria-label="لماذا هذا الحقل مقفل؟"
-        className="grid size-5 shrink-0 place-items-center rounded-full bg-primary/12 text-primary transition hover:bg-primary/25"
+        className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-full bg-primary/12 text-primary transition hover:bg-primary/25"
       >
         <Lock className="size-3" />
-      </button>
+      </span>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md" dir="rtl">
           <DialogHeader>
