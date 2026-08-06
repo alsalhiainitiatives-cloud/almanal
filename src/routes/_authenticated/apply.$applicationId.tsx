@@ -287,7 +287,11 @@ function WizardPage() {
     children?: ChildInput[];
     qurra?: Partial<QurraInput>;
     custom?: CustomValues;
+    /** Set when the application was created from an approved seat reservation. */
+    reservationId?: string;
   };
+  /** Step-0 data is admin-approved → read-only inside the journey. */
+  const lockedFromReservation = Boolean(draft.reservationId);
 
   /* Live registration-form configuration (steps + custom fields). */
   const { data: formConfig } = useFormConfig();
@@ -825,6 +829,7 @@ function WizardPage() {
               <ParentStep
                 value={parent}
                 errors={errors as Partial<Record<keyof ParentInfoInput, string>>}
+                locked={lockedFromReservation}
                 onChange={(p) => setParent((prev) => ({ ...prev, ...p }))}
               />
             ) : null}
@@ -837,6 +842,7 @@ function WizardPage() {
                 stages={catalog.stages}
                 classrooms={catalog.classrooms}
                 parentNationality={parent.nationality}
+                locked={lockedFromReservation}
                 onChange={setChildren}
               />
             ) : null}
