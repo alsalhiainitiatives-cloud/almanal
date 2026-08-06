@@ -5,7 +5,10 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { createApplication } from "@/features/admissions/application.functions";
+import {
+  seatReservationGate,
+  startApplicationFromReservation,
+} from "@/features/admissions/reservation.functions";
 
 export const Route = createFileRoute("/_authenticated/apply/new")({
   ssr: false,
@@ -32,7 +35,8 @@ export const Route = createFileRoute("/_authenticated/apply/new")({
 
 function StartApplicationPage() {
   const navigate = useNavigate();
-  const start = useServerFn(createApplication);
+  const gate = useServerFn(seatReservationGate);
+  const startFromReservation = useServerFn(startApplicationFromReservation);
   const once = useRef(false);
 
   useEffect(() => {
@@ -40,22 +44,28 @@ function StartApplicationPage() {
     once.current = true;
     (async () => {
       try {
-        const { id } = await start({ data: { stageId: null, classroomId: null } });
-        navigate({ to: "/apply/$applicationId", params: { applicationId: id }, replace: true });
+        const status = await gate();
+        // Step 0 gate: the full journey opens only after the seat is reserved.
+        if (status.approved && status.reservation) {
+          const { id } = await startFromReservation({ data: status.reservation.id });
+          navigate({ to: "/apply/$applicationId", params: { applicationId: id }, replace: true });
+          return;
+        }
+        navigate({ to: "/reserve", replace: true });
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "تعذّر بدء الطلب");
-        navigate({ to: "/admissions", replace: true });
+        navigate({ to: "/reserve", replace: true });
       }
     })();
-  }, [navigate, start]);
+  }, [navigate, gate, startFromReservation]);
 
   return (
     <section className="section-y">
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 text-center">
         <Loader2 className="size-8 animate-spin text-primary" />
-        <p className="text-lg font-black text-foreground">جارٍ تجهيز نموذج التسجيل…</p>
+        <p className="text-lg font-black text-foreground">جارٍ تجهيز خطوات التسجيل…</p>
         <p className="text-sm text-muted-foreground">
-          ستحدد المرحلة والفصول المفضّلة لكل طفل داخل النموذج حسب عمره.
+          نتحقق من حالة حجز المقعد قبل فتح نموذج التسجيل الكامل.
         </p>
       </div>
     </section>
