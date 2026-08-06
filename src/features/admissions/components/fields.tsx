@@ -1,7 +1,23 @@
-import { useId, useState, type ComponentType, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useId,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from "react";
 import { AlertCircle, Check, ChevronsUpDown, Lock, Search } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +34,42 @@ import { cn } from "@/lib/utils";
 import { COUNTRIES } from "../countries";
 
 type Icon = ComponentType<{ className?: string }>;
+
+/** True inside a <LockedGroup> — every Field below shows the lock affordance. */
+const LockedFieldsContext = createContext(false);
+
+const LOCK_EXPLAINER =
+  "تم ملء هذه البيانات عند حجز المقعد المبدئي وهي معتمدة حالياً من إدارة الروضة. في حال الرغبة في تغيير الرغبات، يرجى التواصل مع إدارة الروضة.";
+
+/** Small 🔒 next to a locked field label; opens the explainer + contact action. */
+export function LockHint() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="لماذا هذا الحقل مقفل؟"
+        className="grid size-5 shrink-0 place-items-center rounded-full bg-primary/12 text-primary transition hover:bg-primary/25"
+      >
+        <Lock className="size-3" />
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-black">بيانات مثبتة من حجز المقعد</DialogTitle>
+            <DialogDescription className="text-sm leading-7">{LOCK_EXPLAINER}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-start">
+            <Button asChild variant="hero" className="rounded-2xl">
+              <Link to="/contact">صفحة اتصل بنا</Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 
 /* -------------------------------------------------------------------------- */
 /*  Layout primitives                                                          */
@@ -83,6 +135,7 @@ export function Field({
   className,
   icon: IconCmp,
   htmlFor,
+  locked,
   children,
 }: {
   label: string;
@@ -92,8 +145,11 @@ export function Field({
   className?: string;
   icon?: Icon;
   htmlFor?: string;
+  locked?: boolean;
   children: ReactNode;
 }) {
+  const groupLocked = useContext(LockedFieldsContext);
+  const showLock = locked ?? groupLocked;
   return (
     <div className={cn("space-y-2", className)}>
       <Label
@@ -103,6 +159,7 @@ export function Field({
         {IconCmp ? <IconCmp className="size-4 text-primary" /> : null}
         <span>{label}</span>
         {required ? <span className="text-destructive">*</span> : null}
+        {showLock ? <LockHint /> : null}
       </Label>
       {children}
       {error ? (
