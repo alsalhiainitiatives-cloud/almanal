@@ -97,8 +97,8 @@ export async function findDuplicateChildIds(
   const { data } = await supabase.rpc("duplicate_child_national_ids", {
     _ids: ids,
     _academic_year: ACADEMIC_YEAR,
-    _ignore_reservation: ignore?.reservationId ?? null,
-    _ignore_application: ignore?.applicationId ?? null,
+    ...(ignore?.reservationId ? { _ignore_reservation: ignore.reservationId } : {}),
+    ...(ignore?.applicationId ? { _ignore_application: ignore.applicationId } : {}),
   });
   return ((data ?? []) as { national_id: string }[]).map((r) => r.national_id);
 }
