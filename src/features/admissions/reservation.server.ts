@@ -198,7 +198,17 @@ export async function listReservations(supabase: Db) {
       .select("id, stage_id, name_ar, capacity, taken_seats, max_waiting, min_age_months, max_age_months, is_active")
       .order("sort_order"),
   ]);
-  return { rows: data ?? [], classrooms: classrooms ?? [] };
+
+  /* Registration progress: did the parent actually submit the full form? */
+  const appIds = (data ?? []).map((r) => r.application_id).filter((id): id is string => Boolean(id));
+  const { data: applications } = appIds.length
+    ? await supabase
+        .from("applications")
+        .select("id, application_number, status, current_step, submitted_at")
+        .in("id", appIds)
+    : { data: [] as { id: string; application_number: string | null; status: string; current_step: number; submitted_at: string | null }[] };
+
+  return { rows: data ?? [], classrooms: classrooms ?? [], applications: applications ?? [] };
 }
 
 type ClassroomRow = {
