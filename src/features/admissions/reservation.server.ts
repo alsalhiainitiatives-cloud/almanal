@@ -18,6 +18,47 @@ type Db = SupabaseClient<Database>;
 const CHILD_COLUMNS =
   "id, name_ar, national_id, gender, birth_date, stage_id, preference_1_classroom_id, preference_2_classroom_id, preference_3_classroom_id, assigned_classroom_id, waitlisted, sort_order";
 
+const EVENT_COLUMNS = "id, reservation_id, actor_name, actor_kind, action, title_ar, body_ar, created_at";
+
+async function actorName(supabase: Db, userId: string) {
+  const { data } = await supabase.from("profiles").select("full_name, email").eq("id", userId).maybeSingle();
+  return data?.full_name?.trim() || data?.email || null;
+}
+
+/** Append one entry to the reservation audit log (سجل التدقيق). */
+async function logEvent(
+  supabase: Db,
+  reservationId: string,
+  userId: string | null,
+  entry: {
+    action: string;
+    title: string;
+    body?: string | null;
+    kind?: "parent" | "staff" | "system";
+    metadata?: Record<string, unknown>;
+  },
+) {
+  await supabase.from("reservation_events").insert({
+    reservation_id: reservationId,
+    actor_id: userId,
+    actor_name: userId ? await actorName(supabase, userId) : null,
+    actor_kind: entry.kind ?? "parent",
+    action: entry.action,
+    title_ar: entry.title,
+    body_ar: entry.body ?? null,
+    metadata: (entry.metadata ?? {}) as never,
+  });
+}
+
+export async function listReservationEvents(supabase: Db, reservationId: string) {
+  const { data } = await supabase
+    .from("reservation_events")
+    .select(EVENT_COLUMNS)
+    .eq("reservation_id", reservationId)
+    .order("created_at", { ascending: true });
+  return data ?? [];
+}
+
 export async function createReservation(supabase: Db, userId: string, input: ReservationInput) {
   const { data: existing } = await supabase
     .from("seat_reservations")
@@ -58,6 +99,12 @@ export async function createReservation(supabase: Db, userId: string, input: Res
     await supabase.from("seat_reservations").delete().eq("id", reservation.id);
     throw new Error("تعذّر حفظ بيانات الأطفال في طلب الحجز.");
   }
+
+  await logEvent(supabase, reservation.id, userId, {
+    action: "created",
+    title: "تم إنشاء طلب حجز المقعد",
+    body: `${input.children.length} طفل — بانتظار مراجعة الإدارة`,
+  });
 
   await notify(supabase, {
     roles: STAFF_ROLES,
