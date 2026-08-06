@@ -329,6 +329,12 @@ function ReservePage() {
                     | "preference1"
                     | "preference2"
                     | "preference3";
+                  /* Hide classrooms already picked in the other preference slots. */
+                  const taken = (["preference1", "preference2", "preference3"] as const)
+                    .filter((k) => k !== key)
+                    .map((k) => child[k])
+                    .filter(Boolean);
+                  const rankOptions = options.filter((room) => !taken.includes(room.id));
                   return (
                     <div key={rank} className="space-y-1.5">
                       <Label>
@@ -338,13 +344,13 @@ function ReservePage() {
                       <Select
                         value={child[key] || undefined}
                         onValueChange={(v) => patch(index, { [key]: v } as Partial<ReservationChildInput>)}
-                        disabled={!options.length}
+                        disabled={!rankOptions.length && !child[key]}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={options.length ? "اختر الفصل" : "أدخل تاريخ الميلاد"} />
                         </SelectTrigger>
                         <SelectContent>
-                          {options.map((room) => (
+                          {rankOptions.map((room) => (
                             <SelectItem key={room.id} value={room.id}>
                               {room.name_ar}
                             </SelectItem>
