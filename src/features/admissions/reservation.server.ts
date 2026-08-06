@@ -132,7 +132,9 @@ export async function listReservations(supabase: Db) {
   const [{ data }, { data: classrooms }] = await Promise.all([
     supabase
       .from("seat_reservations")
-      .select(`*, children:seat_reservation_children(${CHILD_COLUMNS})`)
+      .select(
+        `*, children:seat_reservation_children(${CHILD_COLUMNS}), events:reservation_events(${EVENT_COLUMNS})`,
+      )
       .order("created_at", { ascending: false })
       .limit(300),
     supabase
@@ -405,7 +407,7 @@ export async function reservationGate(supabase: Db, userId: string) {
   const current = rows.find((r) => r.academic_year === ACADEMIC_YEAR) ?? rows[0] ?? null;
   return {
     reservation: current,
-    needsReservation: !current || current.status === "rejected",
+    needsReservation: !current || current.status === "rejected" || current.status === "withdrawn",
     pending: current?.status === "pending_review",
     approved: current?.status === "approved",
   };
