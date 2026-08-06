@@ -194,14 +194,53 @@ export function ReservationsBoard() {
                   {row.parent_national_id} · {new Date(row.created_at).toLocaleString("ar-SA")}
                 </p>
               </div>
-              <span
-                className={cn(
-                  "rounded-full px-2.5 py-1 text-[10px] font-black",
-                  RESERVATION_STATUS_COLORS[row.status] ?? "bg-muted",
-                )}
-              >
-                {RESERVATION_STATUS_LABELS[row.status] ?? row.status}
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={cn(
+                    "rounded-full px-2.5 py-1 text-[10px] font-black",
+                    RESERVATION_STATUS_COLORS[row.status] ?? "bg-muted",
+                  )}
+                >
+                  {RESERVATION_STATUS_LABELS[row.status] ?? row.status}
+                </span>
+                <ReservationEditDialog reservation={row} classrooms={classrooms} />
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="rounded-2xl text-xs font-bold text-destructive hover:bg-destructive/10"
+                      disabled={busy !== null}
+                    >
+                      {busy === row.id + "delete" ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="size-3.5" />
+                      )}
+                      حذف
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent dir="rtl" className="text-right">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-destructive">
+                        حذف طلب حجز المقعد نهائيًا؟
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="leading-relaxed">
+                        سيتم حذف الطلب وسجل التدقيق الخاص به، وتحرير المقعد وإلغاء حجب رقم هوية الطفل
+                        ليتمكن ولي الأمر من إرسال طلب جديد.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="gap-2 sm:flex-row-reverse sm:justify-start">
+                      <AlertDialogAction
+                        onClick={() => onDelete(row.id)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        نعم، احذف الطلب
+                      </AlertDialogAction>
+                      <AlertDialogCancel>تراجع</AlertDialogCancel>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
 
             <div className="mt-4 space-y-3">
