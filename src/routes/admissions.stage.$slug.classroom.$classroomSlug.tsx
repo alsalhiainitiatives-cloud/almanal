@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Clock, Loader2, Sparkles, Users } from "lucide-react";
 import { toast } from "sonner";
 
@@ -9,10 +8,8 @@ import { PageHero } from "@/components/site/PageHero";
 import { Reveal } from "@/components/site/Reveal";
 import { Button } from "@/components/ui/button";
 import { getStageBundle } from "@/features/admissions/catalog.functions";
-import { createApplication } from "@/features/admissions/application.functions";
 import { seatsLeft } from "@/features/admissions/eligibility";
 import { stageGallery } from "@/features/admissions/media";
-import { supabase } from "@/integrations/supabase/client";
 import { useClassroomMediaUrls } from "@/lib/classroom-media";
 
 const stageQuery = (slug: string) =>
@@ -67,8 +64,7 @@ function ClassroomDetailPage() {
   const { slug, classroomSlug } = Route.useParams();
   const { data } = useSuspenseQuery(stageQuery(slug));
   const navigate = useNavigate();
-  const start = useServerFn(createApplication);
-  const [busy, setBusy] = useState(false);
+  const registration = useRegistrationGate();
 
   const classroom = data?.classrooms.find((c) => c.slug === classroomSlug);
   const cover = (classroom as { cover_image?: string | null } | undefined)?.cover_image ?? null;
@@ -104,23 +100,13 @@ function ClassroomDetailPage() {
     activity: string;
   }[];
 
-  async function handleStart() {
-    if (!classroom) return;
-    setBusy(true);
-    try {
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) {
-        toast.info("سجّل الدخول أو أنشئ حسابًا لمتابعة الطلب");
-        navigate({ to: "/auth" });
-        return;
-      }
-      const res = await start({ data: { stageId: stage.id, classroomId: classroom.id } });
-      navigate({ to: "/apply/$applicationId", params: { applicationId: res.id } });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "تعذّر بدء الطلب");
-    } finally {
-      setBusy(false);
+  /** Every registration CTA goes through Step 0 (حجز المقعد) first. */
+  function handleStart() {
+    if (!registration.open) {
+      toast.info(registration.message);
+      return;
     }
+    navigate({ to: "/reserve" });
   }
 
   const ageLabel = `${Math.round(classroom.min_age_months / 12 * 10) / 10} – ${
@@ -262,8 +248,12 @@ function ClassroomDetailPage() {
               )}
 
               <div className="mt-10 flex flex-wrap gap-3">
-                <Button variant="hero" size="lg" onClick={handleStart} disabled={busy || left <= 0}>
-                  {busy ? <Loader2 className="size-4 animate-spin" /> : null}
+                <Button
+                  variant="hero"
+                  size="lg"
+                  onClick={handleStart}
+                  disabled={left <= 0 || !registration.open}
+                >
                   ابدأ التسجيل في هذا الفصل
                   <ArrowLeft className="size-4" />
                 </Button>
