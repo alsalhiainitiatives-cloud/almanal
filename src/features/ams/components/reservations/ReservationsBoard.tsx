@@ -183,6 +183,65 @@ export function ReservationsBoard() {
         </div>
       )}
 
+      {/* Clean overview table — staff-only, seat availability included. */}
+      {!isLoading && rows.length ? (
+        <div className="overflow-x-auto rounded-3xl border border-border/60 bg-card shadow-sm">
+          <table className="w-full min-w-[720px] text-start text-xs">
+            <thead className="bg-muted/50 text-[11px] font-black text-muted-foreground">
+              <tr>
+                <th className="p-3 text-start">الطفل</th>
+                <th className="p-3 text-start">هوية الطفل</th>
+                <th className="p-3 text-start">ولي الأمر</th>
+                <th className="p-3 text-start">الفصل / الرغبة</th>
+                <th className="p-3 text-start">تاريخ الطلب</th>
+                <th className="p-3 text-start">الحالة</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.flatMap((row) =>
+                (row.children ?? []).map((child) => {
+                  const room =
+                    roomOf(child.assigned_classroom_id) ?? roomOf(child.preference_1_classroom_id);
+                  const free = room ? Math.max(0, room.capacity - room.taken_seats) : 0;
+                  return (
+                    <tr key={child.id} className="border-t border-border/50 font-bold">
+                      <td className="p-3 text-foreground">{child.name_ar}</td>
+                      <td className="p-3 text-muted-foreground" dir="ltr">
+                        {child.national_id ?? "—"}
+                      </td>
+                      <td className="p-3 text-muted-foreground">{row.parent_name}</td>
+                      <td className="p-3">
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-[10px] font-black",
+                            free > 0 ? "bg-mint text-foreground" : "bg-destructive/15 text-destructive",
+                          )}
+                        >
+                          {room ? `${room.name_ar} · متاح ${free}` : "بدون فصل"}
+                        </span>
+                      </td>
+                      <td className="p-3 text-muted-foreground" dir="ltr">
+                        {new Date(row.created_at).toLocaleDateString("ar-SA")}
+                      </td>
+                      <td className="p-3">
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-[10px] font-black",
+                            RESERVATION_STATUS_COLORS[row.status] ?? "bg-muted",
+                          )}
+                        >
+                          {RESERVATION_STATUS_LABELS[row.status] ?? row.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                }),
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
       {rows.map((row) => {
         const fullEverywhere = (row.children ?? []).every((child) => !suggestion(child).ok);
         return (
