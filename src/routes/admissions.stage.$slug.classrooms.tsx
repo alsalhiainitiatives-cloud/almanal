@@ -7,6 +7,10 @@ import { toast } from "sonner";
 
 import { PageHero } from "@/components/site/PageHero";
 import { Button } from "@/components/ui/button";
+import {
+  RegistrationClosedNotice,
+  useRegistrationGate,
+} from "@/features/admissions/components/RegistrationGate";
 import { getStageBundle } from "@/features/admissions/catalog.functions";
 import { seatsLeft } from "@/features/admissions/eligibility";
 
