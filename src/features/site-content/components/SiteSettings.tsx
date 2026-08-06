@@ -17,6 +17,18 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+/** Ready-made Arabic closure notices per reason. */
+const CLOSURE_PRESETS: Record<string, string> = {
+  capacity:
+    "نحيطكم علماً بأن باب التسجيل مغلق حالياً لاكتمال الطاقة الاستيعابية، نشكر لكم اهتمامكم بانضمام طفلكم لمجتمع المنال.",
+  period_ended:
+    "نحيطكم علماً بانتهاء فترة التسجيل للعام الدراسي الحالي، وسيتم الإعلان عن فتح التسجيل للعام القادم قريباً.",
+  maintenance:
+    "نظام التسجيل تحت الصيانة حالياً لتحسين تجربتكم، نأمل المحاولة لاحقاً وشكراً لتفهمكم.",
+  technical:
+    "نعتذر عن تعطّل التسجيل مؤقتاً لأسباب فنية، يعمل فريقنا على حل المشكلة في أسرع وقت.",
+};
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { P } from "@/features/auth/rbac";
