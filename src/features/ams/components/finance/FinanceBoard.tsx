@@ -200,7 +200,72 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
             />
           </div>
 
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {(
+              [
+                ["all", `الكل (${invoices.length + unplanned.length})`],
+                ["no_plan", `لم يتم اختيار خطة سداد (${unplanned.length})`],
+                ["pending", "بانتظار السداد"],
+                ["paid", "مكتمل / مسدد"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setStatusFilter(value)}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-[10px] font-black transition-colors",
+                  statusFilter === value
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border/60 text-muted-foreground hover:border-primary/40",
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           <ul className="mt-3 max-h-[70vh] space-y-2 overflow-y-auto">
+            {filteredUnplanned.map((app) => {
+              const profile = profileOf(app.parent_id);
+              return (
+                <li key={app.id}>
+                  <div className="w-full rounded-2xl border border-dashed border-border/70 p-3 text-start">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-black text-foreground">
+                        {app.application_number ?? "بدون رقم"}
+                      </span>
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black text-amber-800">
+                        لم يتم اختيار خطة سداد
+                      </span>
+                    </span>
+                    <span className="mt-1 block truncate text-[11px] font-bold text-muted-foreground">
+                      {profile?.full_name ?? "ولي أمر"} — {childOf(app.id)}
+                    </span>
+                    <span className="mt-1 block text-[11px] font-bold text-muted-foreground" dir="ltr">
+                      {profile?.phone ?? "بدون جوال"}
+                    </span>
+                    {profile?.phone ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-2 rounded-xl"
+                        onClick={() =>
+                          setWaDraft({
+                            phone: profile.phone,
+                            text: `السلام عليكم ${profile.full_name ?? ""}، نأمل اختيار خطة السداد لطلب رقم ${app.application_number ?? ""} لاستكمال إجراءات التسجيل.`,
+                            recipient: profile.full_name ?? undefined,
+                          })
+                        }
+                      >
+                        <MessageCircle className="size-3.5" />
+                        متابعة واتساب
+                      </Button>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
             {filtered.map((invoice) => {
               const app = (
                 invoice as unknown as { applications?: { application_number: string | null } }
@@ -243,7 +308,7 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
                 </li>
               );
             })}
-            {!filtered.length ? (
+            {!filtered.length && !filteredUnplanned.length ? (
               <li className="rounded-2xl border-2 border-dashed border-border/70 p-6 text-center text-xs font-bold text-muted-foreground">
                 لا توجد فواتير مطابقة.
               </li>
