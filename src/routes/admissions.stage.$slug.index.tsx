@@ -123,7 +123,7 @@ function StageDetailPage() {
                 className="aspect-4/3 w-full object-cover"
               />
               <span className="absolute bottom-5 start-5 rounded-full bg-card/95 px-4 py-2 text-sm font-black text-primary shadow-soft backdrop-blur">
-                {left > 0 ? `${left} مقعد متاح` : "اكتمل العدد"}
+                {left > 0 ? "التسجيل متاح" : "اكتمل العدد"}
               </span>
             </div>
           </Reveal>
@@ -237,7 +237,7 @@ function StageDetailPage() {
                 </div>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{c.description_ar}</p>
                 <p className="mt-3 text-xs font-bold text-primary">
-                  {seatsLeft(c) > 0 ? `${seatsLeft(c)} مقعد متاح من ${c.capacity}` : "اكتمل العدد"}
+                  {seatsLeft(c) > 0 ? "التسجيل متاح" : "اكتمل العدد"}
                 </p>
               </div>
             ))}
