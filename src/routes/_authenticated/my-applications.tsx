@@ -97,7 +97,7 @@ function MyApplicationsPage() {
                 ابدأ رحلة تسجيل طفلك واختر المرحلة المناسبة.
               </p>
               <Button asChild variant="hero" className="mt-6">
-                <Link to="/apply/new">ابدأ التسجيل</Link>
+                <Link to="/reserve">ابدأ التسجيل</Link>
               </Button>
             </div>
           ) : (

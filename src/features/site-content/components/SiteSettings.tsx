@@ -17,6 +17,18 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+/** Ready-made Arabic closure notices per reason. */
+const CLOSURE_PRESETS: Record<string, string> = {
+  capacity:
+    "نحيطكم علماً بأن باب التسجيل مغلق حالياً لاكتمال الطاقة الاستيعابية، نشكر لكم اهتمامكم بانضمام طفلكم لمجتمع المنال.",
+  period_ended:
+    "نحيطكم علماً بانتهاء فترة التسجيل للعام الدراسي الحالي، وسيتم الإعلان عن فتح التسجيل للعام القادم قريباً.",
+  maintenance:
+    "نظام التسجيل تحت الصيانة حالياً لتحسين تجربتكم، نأمل المحاولة لاحقاً وشكراً لتفهمكم.",
+  technical:
+    "نعتذر عن تعطّل التسجيل مؤقتاً لأسباب فنية، يعمل فريقنا على حل المشكلة في أسرع وقت.",
+};
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { P } from "@/features/auth/rbac";
@@ -399,6 +411,9 @@ export function SiteSettings() {
   const setHome = (patch: Partial<SiteContent["home"]>) => set("home", { ...draft.home, ...patch });
   const legal = draft.legal ?? DEFAULT_SITE_CONTENT.legal;
   const setLegal = (patch: Partial<SiteContent["legal"]>) => set("legal", { ...legal, ...patch });
+  const admissions = draft.admissions ?? DEFAULT_SITE_CONTENT.admissions;
+  const setAdmissions = (patch: Partial<SiteContent["admissions"]>) =>
+    set("admissions", { ...admissions, ...patch });
   const setHero = (patch: Partial<SiteContent["hero"]>) => set("hero", { ...draft.hero, ...patch });
   const setAbout = (patch: Partial<SiteContent["about"]>) =>
     set("about", { ...draft.about, ...patch });
@@ -457,6 +472,7 @@ export function SiteSettings() {
           <TabsTrigger value="school-life" className="rounded-2xl">الحياة المدرسية</TabsTrigger>
           <TabsTrigger value="gallery" className="rounded-2xl">المعرض</TabsTrigger>
           <TabsTrigger value="reviews" className="rounded-2xl">آراء الأولياء</TabsTrigger>
+          <TabsTrigger value="admissions" className="rounded-2xl">التسجيل</TabsTrigger>
           <TabsTrigger value="pages" className="rounded-2xl">رؤوس الصفحات</TabsTrigger>
           <TabsTrigger value="content" className="rounded-2xl">المحتوى</TabsTrigger>
           <TabsTrigger value="legal" className="rounded-2xl">السياسات القانونية</TabsTrigger>
@@ -1197,6 +1213,71 @@ export function SiteSettings() {
             canDelete={hasPermission(P.reviewsModerate) && hasPermission(P.inboxDelete)}
             canReply={hasPermission(P.inboxReply)}
           />
+        </TabsContent>
+
+        {/* Registration availability */}
+        <TabsContent value="admissions" className="space-y-6">
+          <Card className="rounded-[1.75rem] border-border/60 shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-base font-extrabold">إتاحة التسجيل في الموقع</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={admissions.registrationOpen}
+                  onCheckedChange={(v) => setAdmissions({ registrationOpen: v })}
+                />
+                <span className="text-xs font-bold text-muted-foreground">
+                  فتح باب التسجيل وحجز المقعد لأولياء الأمور
+                </span>
+              </div>
+
+              {!admissions.registrationOpen ? (
+                <>
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-muted-foreground">سبب الإغلاق</p>
+                    <Select
+                      value={admissions.closureReason}
+                      onValueChange={(v) =>
+                        setAdmissions({
+                          closureReason: v as SiteContent["admissions"]["closureReason"],
+                          ...(v !== "custom"
+                            ? { closureMessage: CLOSURE_PRESETS[v] ?? admissions.closureMessage }
+                            : {}),
+                        })
+                      }
+                    >
+                      <SelectTrigger className="rounded-2xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="capacity">اكتمال الطاقة الاستيعابية</SelectItem>
+                        <SelectItem value="period_ended">انتهاء فترة التسجيل</SelectItem>
+                        <SelectItem value="maintenance">صيانة النظام</SelectItem>
+                        <SelectItem value="technical">عطل فني</SelectItem>
+                        <SelectItem value="custom">رسالة مخصصة</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Field
+                    label="عنوان الإشعار"
+                    value={admissions.closureTitle}
+                    onChange={(v) => setAdmissions({ closureTitle: v })}
+                  />
+                  <AreaField
+                    label="نص الإشعار الظاهر لأولياء الأمور"
+                    value={admissions.closureMessage}
+                    onChange={(v) => setAdmissions({ closureMessage: v })}
+                  />
+                </>
+              ) : (
+                <p className="rounded-2xl bg-beige/60 px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
+                  التسجيل مفتوح حالياً — عند الإغلاق يتم منع الوصول إلى حجز المقعد ونماذج التسجيل
+                  وإظهار إشعار احترافي بالسبب.
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Page heroes */}

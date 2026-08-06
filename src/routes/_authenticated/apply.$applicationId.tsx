@@ -14,6 +14,7 @@ import {
   HeartHandshake,
   Loader2,
   PartyPopper,
+  Plus,
   Sparkles,
   UserRound,
   Wallet,
@@ -287,7 +288,11 @@ function WizardPage() {
     children?: ChildInput[];
     qurra?: Partial<QurraInput>;
     custom?: CustomValues;
+    /** Set when the application was created from an approved seat reservation. */
+    reservationId?: string;
   };
+  /** Step-0 data is admin-approved → read-only inside the journey. */
+  const lockedFromReservation = Boolean(draft.reservationId);
 
   /* Live registration-form configuration (steps + custom fields). */
   const { data: formConfig } = useFormConfig();
@@ -745,6 +750,10 @@ function WizardPage() {
               <Button variant="hero" onClick={() => navigate({ to: "/my-applications" })}>
                 متابعة طلباتي
               </Button>
+              <Button variant="outline" className="rounded-2xl" onClick={() => navigate({ to: "/reserve" })}>
+                <Plus className="size-4" />
+                إضافة طلب جديد
+              </Button>
               <Button asChild variant="soft">
                 <Link to="/">العودة للرئيسية</Link>
               </Button>
@@ -825,6 +834,7 @@ function WizardPage() {
               <ParentStep
                 value={parent}
                 errors={errors as Partial<Record<keyof ParentInfoInput, string>>}
+                locked={lockedFromReservation}
                 onChange={(p) => setParent((prev) => ({ ...prev, ...p }))}
               />
             ) : null}
@@ -837,6 +847,7 @@ function WizardPage() {
                 stages={catalog.stages}
                 classrooms={catalog.classrooms}
                 parentNationality={parent.nationality}
+                locked={lockedFromReservation}
                 onChange={setChildren}
               />
             ) : null}

@@ -8,6 +8,10 @@ import { Reveal } from "@/components/site/Reveal";
 import { SectionHeading } from "@/components/site/SectionHeading";
 import { Button } from "@/components/ui/button";
 import { StageCatalogCard } from "@/features/admissions/components/StageCatalogCard";
+import {
+  RegistrationClosedNotice,
+  useRegistrationGate,
+} from "@/features/admissions/components/RegistrationGate";
 import { listStages } from "@/features/admissions/catalog.functions";
 
 const title = "المراحل التعليمية والتسجيل | مدارس وروضة المنال";
@@ -50,6 +54,7 @@ const steps = [
 function AdmissionsPage() {
   const { data: stages } = useSuspenseQuery(stagesQuery);
   const hero = useSiteContent().pages.admissions;
+  const registration = useRegistrationGate();
 
   return (
     <>
@@ -63,7 +68,7 @@ function AdmissionsPage() {
         image={hero?.image}
       >
         <Button asChild variant="hero" size="lg">
-          <Link to="/apply/new">ابدأ التسجيل الآن</Link>
+          <Link to="/reserve">ابدأ التسجيل الآن</Link>
         </Button>
         <Button asChild variant="soft" size="lg">
           <a href="#stages">تصفّح المراحل</a>
@@ -75,6 +80,11 @@ function AdmissionsPage() {
 
       <section id="stages" className="section-y scroll-mt-24">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
+          {!registration.open ? (
+            <div className="mb-12">
+              <RegistrationClosedNotice />
+            </div>
+          ) : null}
           <SectionHeading
             eyebrow="المراحل المتاحة"
             title="اختر المرحلة المناسبة لعمر طفلك"

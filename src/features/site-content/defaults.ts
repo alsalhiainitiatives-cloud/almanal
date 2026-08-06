@@ -133,6 +133,13 @@ export type SiteContent = {
   faqs: FaqItem[];
   gallery: MediaItem[];
   testimonialsForm: { enabled: boolean; title: string; note: string };
+  /** Global switch for the public registration journey (Step 0 included). */
+  admissions: {
+    registrationOpen: boolean;
+    closureReason: "capacity" | "period_ended" | "maintenance" | "technical" | "custom";
+    closureTitle: string;
+    closureMessage: string;
+  };
   pages: Record<string, PageHeroContent>;
   hero: HeroContent;
   home: {
@@ -220,13 +227,20 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     title: "شاركنا تجربتك",
     note: "رأيك يساعد أسرًا أخرى — تُنشر المشاركات بعد مراجعة إدارة الروضة.",
   },
+  admissions: {
+    registrationOpen: true,
+    closureReason: "capacity" as const,
+    closureTitle: "التسجيل مغلق حالياً",
+    closureMessage:
+      "نحيطكم علماً بأن باب التسجيل مغلق حالياً لاكتمال الطاقة الاستيعابية، نشكر لكم اهتمامكم بانضمام طفلكم لمجتمع المنال.",
+  },
   hero: {
     badge: school.organization,
     headline: "مدارس وروضة المنال",
     highlight: "حيث تكبر الطفولة بأمان ومحبة وتعليم راقٍ",
     description:
       "في عنيزة، نمنح أطفالنا بيئة تعليمية مستوحاة من قيمنا الإسلامية ومعايير الطفولة المبكرة العالمية — من الحضانة إلى المرحلة الابتدائية.",
-    primaryCta: { label: "التسجيل الآن", to: "/apply/new" },
+    primaryCta: { label: "التسجيل الآن", to: "/reserve" },
     secondaryCta: { label: "استكشف المراحل التعليمية", to: "/admissions" },
     chips: ["ثقة أكثر من 400 أسرة", "بيئة آمنة ومراقبة", "برنامج مونتيسوري معتمد"],
     slides: [

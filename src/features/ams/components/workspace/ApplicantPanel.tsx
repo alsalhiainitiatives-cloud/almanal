@@ -36,9 +36,23 @@ export function ApplicantPanel({ data }: { data: WorkspaceData }) {
   const parentDocs = documentCompletion(data, null);
   const draft = (data.application.draft_data ?? {}) as Record<string, Record<string, string>>;
   const parentDraft = (draft.parent ?? {}) as Record<string, string>;
+  const fromReservation = Boolean(
+    (data.application.draft_data as { reservationId?: string } | null)?.reservationId,
+  );
   const docLabel = (slug: string) => data.documentTypes.find((t) => t.slug === slug)?.name_ar ?? slug;
   return (
     <Accordion type="multiple" defaultValue={["parent", "children"]} className="space-y-3">
+      {fromReservation ? (
+        <div className="flex items-center gap-2 rounded-3xl border border-mint bg-mint/40 px-4 py-3">
+          <ShieldCheck className="size-4 shrink-0 text-primary" />
+          <div className="min-w-0">
+            <p className="text-xs font-extrabold text-foreground">المقعد: محجوز مبدئياً</p>
+            <p className="text-[11px] font-bold text-muted-foreground">
+              تم اعتماد المرحلة والفصل في خطوة حجز المقعد — لا حاجة لإعادة الاختيار.
+            </p>
+          </div>
+        </div>
+      ) : null}
       <AccordionItem value="parent" className="rounded-3xl border border-border/60 bg-card px-4">
         <AccordionTrigger className="text-sm font-extrabold">
           <span className="flex items-center gap-2">

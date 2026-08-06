@@ -38,6 +38,10 @@ import {
 } from "@/features/admissions/reservation.functions";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ReservationSelfService } from "@/features/admissions/components/ReservationSelfService";
+import {
+  RegistrationClosedNotice,
+  useRegistrationGate,
+} from "@/features/admissions/components/RegistrationGate";
 
 export const Route = createFileRoute("/_authenticated/reserve")({
   ssr: false,
@@ -60,6 +64,7 @@ function ReservePage() {
   const { profile } = useAuth();
   const submit = useServerFn(submitSeatReservation);
   const continueFn = useServerFn(startApplicationFromReservation);
+  const registration = useRegistrationGate();
 
   const { data: catalog } = useQuery({
     queryKey: ["admissions", "catalog"],
@@ -141,6 +146,17 @@ function ReservePage() {
   }
 
   const reservation = gate?.reservation ?? null;
+
+  /* Registration closed by the admin → block Step 0 entirely. */
+  if (!registration.open && !reservation) {
+    return (
+      <section className="section-y">
+        <div className="mx-auto max-w-3xl px-4">
+          <RegistrationClosedNotice />
+        </div>
+      </section>
+    );
+  }
 
   if (reservation && reservation.status !== "rejected" && reservation.status !== "withdrawn") {
     return (
