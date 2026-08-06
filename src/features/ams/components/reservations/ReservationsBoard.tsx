@@ -1,12 +1,19 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, Clock, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Loader2, Undo2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   decideSeatReservation,
   staffSeatReservations,
@@ -15,16 +22,22 @@ import {
   RESERVATION_STATUS_COLORS,
   RESERVATION_STATUS_LABELS,
 } from "@/features/admissions/reservation-schema";
+import {
+  ReservationAuditLog,
+  type ReservationEvent,
+} from "@/features/admissions/components/ReservationAuditLog";
 import { ageInMonths, formatAge } from "@/features/admissions/eligibility";
 import { cn } from "@/lib/utils";
 
-type Filter = "pending_review" | "approved" | "rejected";
+type Filter = "pending_review" | "approved" | "rejected" | "withdrawn";
 
 export function ReservationsBoard() {
   const queryClient = useQueryClient();
   const decide = useServerFn(decideSeatReservation);
   const [filter, setFilter] = useState<Filter>("pending_review");
   const [notes, setNotes] = useState<Record<string, string>>({});
+  /** childId → "auto" | "seat:<classroomId>" | "wait:<classroomId>" */
+  const [placements, setPlacements] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
@@ -72,7 +85,23 @@ export function ReservationsBoard() {
   async function run(id: string, action: "approve" | "reject") {
     setBusy(id + action);
     try {
-      const result = await decide({ data: { id, action, note: notes[id]?.trim() || null } });
+      const row = (data?.rows ?? []).find((r) => r.id === id);
+      const manual = (row?.children ?? [])
+        .map((child) => {
+          const choice = placements[child.id];
+          if (!choice || choice === "auto") return null;
+          const [mode, classroomId] = choice.split(":");
+          return { childId: child.id, classroomId: classroomId ?? null, waitlisted: mode === "wait" };
+        })
+        .filter((p): p is { childId: string; classroomId: string | null; waitlisted: boolean } => p !== null);
+      const result = await decide({
+        data: {
+          id,
+          action,
+          note: notes[id]?.trim() || null,
+          ...(action === "approve" && manual.length ? { placements: manual } : {}),
+        },
+      });
       toast.success(
         action === "approve"
           ? `تم قبول الحجز — ${result.placements.map((p) => `${p.name}: ${p.classroom ?? "بدون فصل"}${p.waitlisted ? " (انتظار)" : ""}`).join(" · ")}`
