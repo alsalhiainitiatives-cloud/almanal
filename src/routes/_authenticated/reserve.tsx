@@ -37,6 +37,7 @@ import {
   submitSeatReservation,
 } from "@/features/admissions/reservation.functions";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { ReservationSelfService } from "@/features/admissions/components/ReservationSelfService";
 
 export const Route = createFileRoute("/_authenticated/reserve")({
   ssr: false,
@@ -154,6 +155,12 @@ function ReservePage() {
                   تم إرسال طلب حجز المقعد بنجاح إلى إدارة الروضة! سيتم مراجعة الطلب وإشعارك فورًا
                   بالخطوة التالية.
                 </p>
+                <div className="mt-6 text-start">
+                  <ReservationSelfService
+                    reservationId={reservation.id}
+                    children={reservation.children ?? []}
+                  />
+                </div>
               </>
             ) : (
               <>
