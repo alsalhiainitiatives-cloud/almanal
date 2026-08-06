@@ -240,7 +240,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     highlight: "حيث تكبر الطفولة بأمان ومحبة وتعليم راقٍ",
     description:
       "في عنيزة، نمنح أطفالنا بيئة تعليمية مستوحاة من قيمنا الإسلامية ومعايير الطفولة المبكرة العالمية — من الحضانة إلى المرحلة الابتدائية.",
-    primaryCta: { label: "التسجيل الآن", to: "/apply/new" },
+    primaryCta: { label: "التسجيل الآن", to: "/reserve" },
     secondaryCta: { label: "استكشف المراحل التعليمية", to: "/admissions" },
     chips: ["ثقة أكثر من 400 أسرة", "بيئة آمنة ومراقبة", "برنامج مونتيسوري معتمد"],
     slides: [
