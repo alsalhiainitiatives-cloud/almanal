@@ -1,0 +1,54 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { reservationSchema } from "./reservation-schema";
+import {
+  cancelMyReservation,
+  createReservation,
+  decideReservation,
+  listMyReservations,
+  listReservations,
+  reservationGate,
+  startFromReservation,
+} from "./reservation.server";
+
+export const submitSeatReservation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => reservationSchema.parse(data))
+  .handler(async ({ data, context }) => createReservation(context.supabase, context.userId, data));
+
+export const mySeatReservations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => listMyReservations(context.supabase, context.userId));
+
+export const seatReservationGate = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => reservationGate(context.supabase, context.userId));
+
+export const staffSeatReservations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => listReservations(context.supabase));
+
+export const decideSeatReservation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        action: z.enum(["approve", "reject"]),
+        note: z.string().trim().max(500).nullable().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => decideReservation(context.supabase, context.userId, data));
+
+export const startApplicationFromReservation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((id: unknown) => z.string().uuid().parse(id))
+  .handler(async ({ data, context }) => startFromReservation(context.supabase, context.userId, data));
+
+export const cancelSeatReservation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((id: unknown) => z.string().uuid().parse(id))
+  .handler(async ({ data, context }) => cancelMyReservation(context.supabase, context.userId, data));

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { PortalLayout } from "@/features/auth/components/PortalLayout";
+import { ReservationBanner } from "@/features/admissions/components/ReservationBanner";
 import {
   deleteDraftApplicationFn,
   getMyApplications,
@@ -85,6 +86,8 @@ function MyApplicationsPage() {
           </Link>
         </Button>
       </div>
+
+      <ReservationBanner />
 
       <div>
         {apps.length === 0 ? (
