@@ -399,6 +399,9 @@ export function SiteSettings() {
   const setHome = (patch: Partial<SiteContent["home"]>) => set("home", { ...draft.home, ...patch });
   const legal = draft.legal ?? DEFAULT_SITE_CONTENT.legal;
   const setLegal = (patch: Partial<SiteContent["legal"]>) => set("legal", { ...legal, ...patch });
+  const admissions = draft.admissions ?? DEFAULT_SITE_CONTENT.admissions;
+  const setAdmissions = (patch: Partial<SiteContent["admissions"]>) =>
+    set("admissions", { ...admissions, ...patch });
   const setHero = (patch: Partial<SiteContent["hero"]>) => set("hero", { ...draft.hero, ...patch });
   const setAbout = (patch: Partial<SiteContent["about"]>) =>
     set("about", { ...draft.about, ...patch });
