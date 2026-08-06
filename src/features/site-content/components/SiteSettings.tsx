@@ -457,6 +457,7 @@ export function SiteSettings() {
           <TabsTrigger value="school-life" className="rounded-2xl">الحياة المدرسية</TabsTrigger>
           <TabsTrigger value="gallery" className="rounded-2xl">المعرض</TabsTrigger>
           <TabsTrigger value="reviews" className="rounded-2xl">آراء الأولياء</TabsTrigger>
+          <TabsTrigger value="admissions" className="rounded-2xl">التسجيل</TabsTrigger>
           <TabsTrigger value="pages" className="rounded-2xl">رؤوس الصفحات</TabsTrigger>
           <TabsTrigger value="content" className="rounded-2xl">المحتوى</TabsTrigger>
           <TabsTrigger value="legal" className="rounded-2xl">السياسات القانونية</TabsTrigger>
