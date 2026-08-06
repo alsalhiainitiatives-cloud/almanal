@@ -130,6 +130,7 @@ export function ParentStep({
             placeholder="الاسم كما في الهوية"
             required
             icon={User}
+            locked={locked}
           />
 
           <SelectField
