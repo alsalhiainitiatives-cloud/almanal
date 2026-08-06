@@ -227,6 +227,13 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     title: "شاركنا تجربتك",
     note: "رأيك يساعد أسرًا أخرى — تُنشر المشاركات بعد مراجعة إدارة الروضة.",
   },
+  admissions: {
+    registrationOpen: true,
+    closureReason: "capacity" as const,
+    closureTitle: "التسجيل مغلق حالياً",
+    closureMessage:
+      "نحيطكم علماً بأن باب التسجيل مغلق حالياً لاكتمال الطاقة الاستيعابية، نشكر لكم اهتمامكم بانضمام طفلكم لمجتمع المنال.",
+  },
   hero: {
     badge: school.organization,
     headline: "مدارس وروضة المنال",
