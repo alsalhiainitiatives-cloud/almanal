@@ -63,7 +63,7 @@ function AdmissionsPage() {
         image={hero?.image}
       >
         <Button asChild variant="hero" size="lg">
-          <Link to="/apply/new">ابدأ التسجيل الآن</Link>
+          <Link to="/reserve">ابدأ التسجيل الآن</Link>
         </Button>
         <Button asChild variant="soft" size="lg">
           <a href="#stages">تصفّح المراحل</a>
