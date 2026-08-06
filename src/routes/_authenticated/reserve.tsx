@@ -48,6 +48,10 @@ import {
 
 export const Route = createFileRoute("/_authenticated/reserve")({
   ssr: false,
+  /** `?new=1` forces a clean Step 0 form even when a reservation already exists. */
+  validateSearch: (search: Record<string, unknown>) => ({
+    new: search["new"] === true || search["new"] === "1" || search["new"] === "true",
+  }),
   head: () => ({
     meta: [
       { title: "حجز مقعد مبدئي | مدارس وروضة المنال" },
@@ -64,6 +68,7 @@ export const Route = createFileRoute("/_authenticated/reserve")({
 
 function ReservePage() {
   const navigate = useNavigate();
+  const { new: freshRequest } = Route.useSearch();
   const { profile } = useAuth();
   const submit = useServerFn(submitSeatReservation);
   const continueFn = useServerFn(startApplicationFromReservation);
@@ -163,6 +168,7 @@ function ReservePage() {
     try {
       await submit({ data: parsed.data });
       setSuccess(true);
+      if (freshRequest) navigate({ to: "/reserve", search: { new: false } });
       await refetchGate();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "تعذّر إرسال طلب الحجز");
@@ -183,7 +189,7 @@ function ReservePage() {
     }
   }
 
-  const reservation = gate?.reservation ?? null;
+  const reservation = freshRequest ? null : (gate?.reservation ?? null);
 
   /* Registration closed by the admin → block Step 0 entirely. */
   if (!registration.open && !reservation) {
