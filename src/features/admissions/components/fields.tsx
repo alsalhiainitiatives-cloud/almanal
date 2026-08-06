@@ -424,27 +424,15 @@ export function LockedGroup({
   if (!locked) return <>{children}</>;
   return (
     <div className={cn("relative rounded-3xl border-2 border-dashed border-primary/30 bg-primary/[0.04] p-4 sm:p-5", className)}>
-      <Popover>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-black text-primary transition hover:bg-primary/20"
-          >
-            <Lock className="size-3.5" />
-            {title}
-          </button>
-        </PopoverTrigger>
-        <PopoverContent align="start" className="w-72 text-xs leading-6 font-bold">
-          هذه البيانات تم تثبيتها بعد قبول حجز المقعد ولا يمكن تعديلها من النموذج. لتعديلها يرجى
-          <a href="/contact" className="mx-1 text-primary underline">
-            التواصل معنا
-          </a>
-          وسيقوم فريق التسجيل بتحديثها.
-        </PopoverContent>
-      </Popover>
-      <fieldset disabled className="min-w-0 opacity-90">
-        {children}
-      </fieldset>
+      <span className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-black text-primary">
+        <Lock className="size-3.5" />
+        {title}
+      </span>
+      <LockedFieldsContext.Provider value>
+        <fieldset disabled className="min-w-0 opacity-90">
+          {children}
+        </fieldset>
+      </LockedFieldsContext.Provider>
     </div>
   );
 }
