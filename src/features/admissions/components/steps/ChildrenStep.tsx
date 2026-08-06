@@ -281,6 +281,10 @@ export function ChildrenStep({
                             المراحل المتاحة: {fit.map((s) => s.name_ar).join("، ")}
                           </StatusNote>
 
+                          <LockedGroup
+                            locked={locked}
+                            title="المرحلة والفصل مثبتان من حجز المقعد"
+                          >
                           <FieldGrid>
                             <SelectField
                               label="المرحلة الدراسية"
@@ -344,6 +348,7 @@ export function ChildrenStep({
                               disabled={!child.stageId}
                             />
                           </FieldGrid>
+                          </LockedGroup>
 
                           {child.stageId && rooms.length === 0 ? (
                             <StatusNote tone="warning" title="لا توجد فصول شاغرة حاليًا" icon={AlertTriangle}>
