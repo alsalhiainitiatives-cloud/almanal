@@ -206,6 +206,8 @@ type TextProps = {
   className?: string;
   icon?: Icon;
   disabled?: boolean;
+  /** Confirmed at seat reservation → read-only with a 🔒 explainer. */
+  locked?: boolean;
 };
 
 export function TextField({
@@ -223,6 +225,7 @@ export function TextField({
   className,
   icon,
   disabled,
+  locked,
 }: TextProps) {
   const id = useId();
   return (
@@ -234,6 +237,7 @@ export function TextField({
       className={className}
       icon={icon}
       htmlFor={id}
+      locked={locked}
     >
       <Input
         id={id}
@@ -244,7 +248,7 @@ export function TextField({
         type={type}
         inputMode={inputMode}
         maxLength={maxLength}
-        disabled={disabled}
+        disabled={disabled || locked}
         aria-invalid={Boolean(error)}
         className={cn(controlBase, controlState(error), "h-13 min-h-12 px-4 py-3 text-start", className && "")}
       />
