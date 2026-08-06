@@ -749,6 +749,10 @@ function WizardPage() {
               <Button variant="hero" onClick={() => navigate({ to: "/my-applications" })}>
                 متابعة طلباتي
               </Button>
+              <Button variant="outline" className="rounded-2xl" onClick={() => navigate({ to: "/reserve" })}>
+                <Plus className="size-4" />
+                إضافة طلب جديد
+              </Button>
               <Button asChild variant="soft">
                 <Link to="/">العودة للرئيسية</Link>
               </Button>
