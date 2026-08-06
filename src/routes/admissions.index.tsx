@@ -75,6 +75,11 @@ function AdmissionsPage() {
 
       <section id="stages" className="section-y scroll-mt-24">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
+          {!registration.open ? (
+            <div className="mb-12">
+              <RegistrationClosedNotice />
+            </div>
+          ) : null}
           <SectionHeading
             eyebrow="المراحل المتاحة"
             title="اختر المرحلة المناسبة لعمر طفلك"
