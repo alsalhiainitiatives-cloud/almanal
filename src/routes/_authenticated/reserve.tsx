@@ -29,9 +29,12 @@ import { ageParts, formatAgeDetailed, ageInMonths } from "@/features/admissions/
 import {
   emptyReservationChild,
   reservationSchema,
+  CHILD_MATCHES_PARENT_MESSAGE,
+  DUPLICATE_CHILD_MESSAGE,
   type ReservationChildInput,
 } from "@/features/admissions/reservation-schema";
 import {
+  checkReservationChildIds,
   seatReservationGate,
   startApplicationFromReservation,
   submitSeatReservation,
@@ -64,6 +67,7 @@ function ReservePage() {
   const { profile } = useAuth();
   const submit = useServerFn(submitSeatReservation);
   const continueFn = useServerFn(startApplicationFromReservation);
+  const checkIds = useServerFn(checkReservationChildIds);
   const registration = useRegistrationGate();
 
   const { data: catalog } = useQuery({
@@ -82,12 +86,36 @@ function ReservePage() {
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState(false);
   const [farewell, setFarewell] = useState(false);
+  /** Child IDs already registered this academic year (early Step 0 validation). */
+  const [takenIds, setTakenIds] = useState<string[]>([]);
+  const [dupOpen, setDupOpen] = useState(false);
 
   const stages = catalog?.stages ?? [];
   const classrooms = useMemo(() => catalog?.classrooms ?? [], [catalog]);
 
   const patch = (index: number, next: Partial<ReservationChildInput>) =>
     setChildren((rows) => rows.map((row, i) => (i === index ? { ...row, ...next } : row)));
+
+  /** Live duplicate lookup as soon as a complete child ID is entered. */
+  async function verifyIds(ids: string[]) {
+    const valid = ids.filter((id) => /^[12]\d{9}$/.test(id));
+    if (!valid.length) return [] as string[];
+    try {
+      const { duplicates } = await checkIds({ data: { nationalIds: valid } });
+      setTakenIds((prev) => Array.from(new Set([...prev.filter((v) => !valid.includes(v)), ...duplicates])));
+      return duplicates;
+    } catch {
+      return [] as string[];
+    }
+  }
+
+  /** Inline, per-child blocking message shown before any submission attempt. */
+  const idIssue = (child: ReservationChildInput) => {
+    if (!child.nationalId) return null;
+    if (child.nationalId === parentNationalId) return CHILD_MATCHES_PARENT_MESSAGE;
+    if (takenIds.includes(child.nationalId)) return DUPLICATE_CHILD_MESSAGE;
+    return null;
+  };
 
   /** Age-eligible classrooms only — seat counts are never surfaced to parents. */
   const optionsFor = (child: ReservationChildInput) => {
@@ -105,6 +133,16 @@ function ReservePage() {
   };
 
   async function onSubmit() {
+    /* Early validation: block at Step 0, never at the final submission. */
+    const duplicates = await verifyIds(children.map((c) => c.nationalId));
+    if (duplicates.length) {
+      setDupOpen(true);
+      return;
+    }
+    if (children.some((c) => c.nationalId && c.nationalId === parentNationalId)) {
+      toast.error(CHILD_MATCHES_PARENT_MESSAGE);
+      return;
+    }
     const payload = {
       parentName,
       parentNationalId,
@@ -289,7 +327,14 @@ function ReservePage() {
                     dir="ltr"
                     value={child.nationalId}
                     onChange={(e) => patch(index, { nationalId: e.target.value.replace(/\D/g, "") })}
+                    onBlur={() => void verifyIds([child.nationalId])}
+                    aria-invalid={Boolean(idIssue(child))}
                   />
+                  {idIssue(child) ? (
+                    <p className="rounded-xl bg-destructive/10 px-3 py-2 text-xs font-bold leading-6 text-destructive">
+                      {idIssue(child)}
+                    </p>
+                  ) : null}
                   {errors[`children.${index}.nationalId`] && (
                     <p className="text-xs font-bold text-destructive">
                       {errors[`children.${index}.nationalId`]}
@@ -437,6 +482,29 @@ function ReservePage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={dupOpen} onOpenChange={setDupOpen}>
+        <DialogContent className="text-center sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto grid size-16 place-items-center rounded-full bg-destructive/10">
+              <HeartCrack className="size-8 text-destructive" />
+            </div>
+            <DialogTitle className="mt-3 text-center text-lg font-black">
+              بيانات مكررة — تعذّر إرسال طلب الحجز
+            </DialogTitle>
+            <DialogDescription className="text-center text-sm leading-7">
+              {DUPLICATE_CHILD_MESSAGE}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button variant="hero" onClick={() => navigate({ to: "/my-applications" })}>
+              متابعة طلباتي
+            </Button>
+            <Button variant="ghost" onClick={() => setDupOpen(false)}>
+              إغلاق
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={farewell} onOpenChange={setFarewell}>
         <DialogContent className="text-center sm:max-w-md">
           <DialogHeader>

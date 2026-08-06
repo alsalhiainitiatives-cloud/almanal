@@ -2,15 +2,22 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { reservationPreferencesSchema, reservationSchema } from "./reservation-schema";
+import {
+  reservationPreferencesSchema,
+  reservationSchema,
+  reservationStaffUpdateSchema,
+} from "./reservation-schema";
 import {
   cancelMyReservation,
   createReservation,
   decideReservation,
+  findDuplicateChildIds,
   listMyReservations,
   listReservationEvents,
   listReservations,
   reservationGate,
+  staffDeleteReservation,
+  staffUpdateReservation,
   startFromReservation,
   updateMyReservationPreferences,
   withdrawMyReservation,
@@ -87,3 +94,21 @@ export const seatReservationEvents = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((id: unknown) => z.string().uuid().parse(id))
   .handler(async ({ data, context }) => listReservationEvents(context.supabase, data));
+
+/** Live Step 0 check: which of these child IDs already exist this academic year. */
+export const checkReservationChildIds = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ nationalIds: z.array(z.string()) }).parse(data))
+  .handler(async ({ data, context }) => ({
+    duplicates: await findDuplicateChildIds(context.supabase, data.nationalIds),
+  }));
+
+export const updateSeatReservationByStaff = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => reservationStaffUpdateSchema.parse(data))
+  .handler(async ({ data, context }) => staffUpdateReservation(context.supabase, context.userId, data));
+
+export const deleteSeatReservationByStaff = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((id: unknown) => z.string().uuid().parse(id))
+  .handler(async ({ data, context }) => staffDeleteReservation(context.supabase, context.userId, data));

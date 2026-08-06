@@ -1,9 +1,20 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, Clock, Loader2, Undo2, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Loader2, Trash2, Undo2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import {
   decideSeatReservation,
+  deleteSeatReservationByStaff,
   staffSeatReservations,
 } from "@/features/admissions/reservation.functions";
 import {
@@ -27,6 +39,7 @@ import {
   type ReservationEvent,
 } from "@/features/admissions/components/ReservationAuditLog";
 import { ageInMonths, formatAge } from "@/features/admissions/eligibility";
+import { ReservationEditDialog } from "./ReservationEditDialog";
 import { cn } from "@/lib/utils";
 
 type Filter = "pending_review" | "approved" | "rejected" | "withdrawn";
@@ -34,11 +47,25 @@ type Filter = "pending_review" | "approved" | "rejected" | "withdrawn";
 export function ReservationsBoard() {
   const queryClient = useQueryClient();
   const decide = useServerFn(decideSeatReservation);
+  const removeReservation = useServerFn(deleteSeatReservationByStaff);
   const [filter, setFilter] = useState<Filter>("pending_review");
   const [notes, setNotes] = useState<Record<string, string>>({});
   /** childId → "auto" | "seat:<classroomId>" | "wait:<classroomId>" */
   const [placements, setPlacements] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
+
+  async function onDelete(id: string) {
+    setBusy(id + "delete");
+    try {
+      await removeReservation({ data: id });
+      await queryClient.invalidateQueries({ queryKey: ["ams", "reservations"] });
+      toast.success("تم حذف طلب الحجز وتحرير المقعد ورقم الهوية");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذّر حذف طلب الحجز");
+    } finally {
+      setBusy(null);
+    }
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ["ams", "reservations"],
@@ -156,6 +183,65 @@ export function ReservationsBoard() {
         </div>
       )}
 
+      {/* Clean overview table — staff-only, seat availability included. */}
+      {!isLoading && rows.length ? (
+        <div className="overflow-x-auto rounded-3xl border border-border/60 bg-card shadow-sm">
+          <table className="w-full min-w-[720px] text-start text-xs">
+            <thead className="bg-muted/50 text-[11px] font-black text-muted-foreground">
+              <tr>
+                <th className="p-3 text-start">الطفل</th>
+                <th className="p-3 text-start">هوية الطفل</th>
+                <th className="p-3 text-start">ولي الأمر</th>
+                <th className="p-3 text-start">الفصل / الرغبة</th>
+                <th className="p-3 text-start">تاريخ الطلب</th>
+                <th className="p-3 text-start">الحالة</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.flatMap((row) =>
+                (row.children ?? []).map((child) => {
+                  const room =
+                    roomOf(child.assigned_classroom_id) ?? roomOf(child.preference_1_classroom_id);
+                  const free = room ? Math.max(0, room.capacity - room.taken_seats) : 0;
+                  return (
+                    <tr key={child.id} className="border-t border-border/50 font-bold">
+                      <td className="p-3 text-foreground">{child.name_ar}</td>
+                      <td className="p-3 text-muted-foreground" dir="ltr">
+                        {child.national_id ?? "—"}
+                      </td>
+                      <td className="p-3 text-muted-foreground">{row.parent_name}</td>
+                      <td className="p-3">
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-[10px] font-black",
+                            free > 0 ? "bg-mint text-foreground" : "bg-destructive/15 text-destructive",
+                          )}
+                        >
+                          {room ? `${room.name_ar} · متاح ${free}` : "بدون فصل"}
+                        </span>
+                      </td>
+                      <td className="p-3 text-muted-foreground" dir="ltr">
+                        {new Date(row.created_at).toLocaleDateString("ar-SA")}
+                      </td>
+                      <td className="p-3">
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-[10px] font-black",
+                            RESERVATION_STATUS_COLORS[row.status] ?? "bg-muted",
+                          )}
+                        >
+                          {RESERVATION_STATUS_LABELS[row.status] ?? row.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                }),
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
       {rows.map((row) => {
         const fullEverywhere = (row.children ?? []).every((child) => !suggestion(child).ok);
         return (
@@ -167,14 +253,53 @@ export function ReservationsBoard() {
                   {row.parent_national_id} · {new Date(row.created_at).toLocaleString("ar-SA")}
                 </p>
               </div>
-              <span
-                className={cn(
-                  "rounded-full px-2.5 py-1 text-[10px] font-black",
-                  RESERVATION_STATUS_COLORS[row.status] ?? "bg-muted",
-                )}
-              >
-                {RESERVATION_STATUS_LABELS[row.status] ?? row.status}
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={cn(
+                    "rounded-full px-2.5 py-1 text-[10px] font-black",
+                    RESERVATION_STATUS_COLORS[row.status] ?? "bg-muted",
+                  )}
+                >
+                  {RESERVATION_STATUS_LABELS[row.status] ?? row.status}
+                </span>
+                <ReservationEditDialog reservation={row} classrooms={classrooms} />
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="rounded-2xl text-xs font-bold text-destructive hover:bg-destructive/10"
+                      disabled={busy !== null}
+                    >
+                      {busy === row.id + "delete" ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="size-3.5" />
+                      )}
+                      حذف
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent dir="rtl" className="text-right">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-destructive">
+                        حذف طلب حجز المقعد نهائيًا؟
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="leading-relaxed">
+                        سيتم حذف الطلب وسجل التدقيق الخاص به، وتحرير المقعد وإلغاء حجب رقم هوية الطفل
+                        ليتمكن ولي الأمر من إرسال طلب جديد.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="gap-2 sm:flex-row-reverse sm:justify-start">
+                      <AlertDialogAction
+                        onClick={() => onDelete(row.id)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        نعم، احذف الطلب
+                      </AlertDialogAction>
+                      <AlertDialogCancel>تراجع</AlertDialogCancel>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
 
             <div className="mt-4 space-y-3">

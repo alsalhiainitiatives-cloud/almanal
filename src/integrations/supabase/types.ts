@@ -2473,6 +2473,17 @@ export type Database = {
         }
         Returns: number
       }
+      duplicate_child_national_ids: {
+        Args: {
+          _academic_year: string
+          _ids: string[]
+          _ignore_application?: string
+          _ignore_reservation?: string
+        }
+        Returns: {
+          national_id: string
+        }[]
+      }
       has_permission: {
         Args: { _permission: string; _user_id: string }
         Returns: boolean

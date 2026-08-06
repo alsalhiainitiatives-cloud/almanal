@@ -122,7 +122,7 @@ function ClassroomsPage() {
                   </p>
                   <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-beige px-3 py-1 text-xs font-black text-foreground">
                     <Users className="size-3.5" />
-                    {full ? "اكتمل العدد" : `${left} مقعد من ${c.capacity}`}
+                    {full ? "اكتمل العدد" : "التسجيل متاح"}
                   </p>
                   <div className="mt-6 flex flex-wrap gap-2.5">
                     <Button

@@ -151,7 +151,7 @@ function ClassroomDetailPage() {
                     left > 0 ? "bg-mint text-foreground" : "bg-destructive/90 text-primary-foreground"
                   }`}
                 >
-                  {left > 0 ? `${left} مقعد متاح من ${classroom.capacity}` : "اكتمل العدد"}
+                  {left > 0 ? "التسجيل متاح" : "اكتمل العدد"}
                 </span>
               </div>
 

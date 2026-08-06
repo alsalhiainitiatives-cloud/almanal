@@ -11,6 +11,11 @@ import type { Database } from "@/integrations/supabase/types";
 import { ageInMonths } from "./eligibility";
 import { ACADEMIC_YEAR } from "./application.server";
 import type { ReservationInput, ReservationPreferencesInput } from "./reservation-schema";
+import {
+  CHILD_MATCHES_PARENT_MESSAGE,
+  DUPLICATE_CHILD_MESSAGE,
+  type ReservationStaffUpdateInput,
+} from "./reservation-schema";
 import { notify, STAFF_ROLES } from "@/features/notifications/notifications.server";
 
 type Db = SupabaseClient<Database>;
@@ -77,8 +82,40 @@ export async function assertRegistrationOpen(supabase: Db) {
   }
 }
 
+/**
+ * Early duplicate detection — one child national ID can only appear once per
+ * academic year across reservations AND applications, whichever parent filed it.
+ * Runs through a security-definer RPC so cross-parent conflicts are visible.
+ */
+export async function findDuplicateChildIds(
+  supabase: Db,
+  nationalIds: string[],
+  ignore?: { reservationId?: string | null; applicationId?: string | null },
+): Promise<string[]> {
+  const ids = Array.from(new Set(nationalIds.filter((v) => /^[12]\d{9}$/.test(v))));
+  if (!ids.length) return [];
+  const { data } = await supabase.rpc("duplicate_child_national_ids", {
+    _ids: ids,
+    _academic_year: ACADEMIC_YEAR,
+    ...(ignore?.reservationId ? { _ignore_reservation: ignore.reservationId } : {}),
+    ...(ignore?.applicationId ? { _ignore_application: ignore.applicationId } : {}),
+  });
+  return ((data ?? []) as { national_id: string }[]).map((r) => r.national_id);
+}
+
 export async function createReservation(supabase: Db, userId: string, input: ReservationInput) {
   await assertRegistrationOpen(supabase);
+
+  /* Early validation (Step 0): never let a duplicate child reach the wizard. */
+  for (const child of input.children) {
+    if (child.nationalId === input.parentNationalId) throw new Error(CHILD_MATCHES_PARENT_MESSAGE);
+  }
+  const duplicates = await findDuplicateChildIds(
+    supabase,
+    input.children.map((c) => c.nationalId),
+  );
+  if (duplicates.length) throw new Error(DUPLICATE_CHILD_MESSAGE);
+
   const { data: existing } = await supabase
     .from("seat_reservations")
     .select("id")
@@ -521,6 +558,81 @@ export async function withdrawMyReservation(supabase: Db, userId: string, id: st
     body: note || "قام ولي الأمر بسحب طلب حجز المقعد.",
     link: "/ams/reservations",
     severity: "info",
+  });
+
+  return { ok: true as const };
+}
+
+/** Staff correction of a reservation (typos, IDs, placement) at any status. */
+export async function staffUpdateReservation(
+  supabase: Db,
+  userId: string,
+  input: ReservationStaffUpdateInput,
+) {
+  await assertStaff(supabase, userId);
+
+  const duplicates = await findDuplicateChildIds(
+    supabase,
+    input.children.map((c) => c.nationalId),
+    { reservationId: input.id },
+  );
+  if (duplicates.length) throw new Error(DUPLICATE_CHILD_MESSAGE);
+
+  const { error } = await supabase
+    .from("seat_reservations")
+    .update({ parent_name: input.parentName, parent_national_id: input.parentNationalId })
+    .eq("id", input.id);
+  if (error) throw new Error("تعذّر تحديث بيانات ولي الأمر في طلب الحجز.");
+
+  for (const child of input.children) {
+    const { error: childErr } = await supabase
+      .from("seat_reservation_children")
+      .update({
+        name_ar: child.nameAr,
+        national_id: child.nationalId,
+        gender: child.gender,
+        birth_date: child.birthDate,
+        preference_1_classroom_id: child.preference1,
+        assigned_classroom_id: child.assignedClassroomId ?? null,
+      })
+      .eq("id", child.childId)
+      .eq("reservation_id", input.id);
+    if (childErr) throw new Error("تعذّر تحديث بيانات الطفل في طلب الحجز.");
+  }
+
+  await logEvent(supabase, input.id, userId, {
+    action: "staff_updated",
+    kind: "staff",
+    title: "تم تعديل طلب الحجز من الإدارة",
+    body: `تحديث بيانات ولي الأمر و${input.children.length} طفل.`,
+  });
+
+  return { ok: true as const };
+}
+
+/** Staff delete/cancel — frees the slot and unblocks the child's national ID. */
+export async function staffDeleteReservation(supabase: Db, userId: string, id: string) {
+  await assertStaff(supabase, userId);
+
+  const { data: reservation } = await supabase
+    .from("seat_reservations")
+    .select("id, parent_id, parent_name, application_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!reservation) throw new Error("لم يتم العثور على طلب الحجز.");
+  if (reservation.application_id)
+    throw new Error("لا يمكن حذف الحجز بعد بدء طلب التسجيل — يرجى التعامل مع الطلب نفسه.");
+
+  const { error } = await supabase.from("seat_reservations").delete().eq("id", id);
+  if (error) throw new Error("تعذّر حذف طلب الحجز.");
+
+  await notify(supabase, {
+    userIds: [reservation.parent_id],
+    kind: "reservation.deleted",
+    title: "تم إلغاء طلب حجز المقعد",
+    body: "تم إلغاء طلب حجز المقعد من إدارة القبول. يمكنك إرسال طلب جديد في أي وقت.",
+    link: "/reserve",
+    severity: "warning",
   });
 
   return { ok: true as const };

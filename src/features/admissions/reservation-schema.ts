@@ -1,6 +1,12 @@
 /** Step 0 — lightweight seat reservation request (client-safe schemas). */
 import { z } from "zod";
 
+/** Early-validation messages surfaced at Step 0 (حجز المقعد). */
+export const DUPLICATE_CHILD_MESSAGE =
+  "يوجد طلب مسجّل بنفس رقم هوية الطفل لهذا العام الدراسي. يرجى متابعة الطلب من صفحة (طلباتي) أو التواصل مع إدارة القبول.";
+export const CHILD_MATCHES_PARENT_MESSAGE =
+  "تنبيه: رقم هوية الطفل مطابقة لرقم هوية ولي الأمر، يرجى التأكد من إدخال رقم هوية الطفل الصحيحة.";
+
 export const reservationChildSchema = z.object({
   nameAr: z.string().trim().min(3, "أدخل اسم الطفل").max(120),
   nationalId: z
@@ -41,6 +47,23 @@ export const reservationSchema = z.object({
       }
     });
   }
+  v.children.forEach((c, i) => {
+    if (c.nationalId && c.nationalId === v.parentNationalId) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["children", i, "nationalId"],
+        message: CHILD_MATCHES_PARENT_MESSAGE,
+      });
+    }
+    const twin = v.children.findIndex((o, j) => j < i && o.nationalId === c.nationalId);
+    if (c.nationalId && twin !== -1) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["children", i, "nationalId"],
+        message: "تم إدخال نفس رقم الهوية لطفلين في الطلب.",
+      });
+    }
+  });
 });
 
 export type ReservationChildInput = z.infer<typeof reservationChildSchema>;
@@ -96,6 +119,34 @@ export const reservationPreferencesSchema = z.object({
 });
 
 export type ReservationPreferencesInput = z.infer<typeof reservationPreferencesSchema>;
+
+/** Staff edit of a reservation (typo fixes, ID corrections, placement change). */
+export const reservationStaffUpdateSchema = z.object({
+  id: z.string().uuid(),
+  parentName: z.string().trim().min(3, "أدخل اسم ولي الأمر").max(120),
+  parentNationalId: z
+    .string()
+    .trim()
+    .regex(/^[12]\d{9}$/, "رقم هوية ولي الأمر يجب أن يكون 10 أرقام ويبدأ بـ 1 أو 2"),
+  children: z
+    .array(
+      z.object({
+        childId: z.string().uuid(),
+        nameAr: z.string().trim().min(3, "أدخل اسم الطفل").max(120),
+        nationalId: z
+          .string()
+          .trim()
+          .regex(/^[12]\d{9}$/, "رقم هوية الطفل يجب أن يكون 10 أرقام ويبدأ بـ 1 أو 2"),
+        gender: z.enum(["male", "female"]),
+        birthDate: z.string().trim().min(4, "أدخل تاريخ الميلاد"),
+        preference1: z.string().uuid("اختر الفصل / الرغبة الأولى"),
+        assignedClassroomId: z.string().uuid().nullable().optional(),
+      }),
+    )
+    .min(1),
+});
+
+export type ReservationStaffUpdateInput = z.infer<typeof reservationStaffUpdateSchema>;
 
 /** Audit-log action labels (سجل التدقيق). */
 export const RESERVATION_ACTION_LABELS: Record<string, string> = {
