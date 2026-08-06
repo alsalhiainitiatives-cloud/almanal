@@ -8,6 +8,10 @@ import { Reveal } from "@/components/site/Reveal";
 import { SectionHeading } from "@/components/site/SectionHeading";
 import { Button } from "@/components/ui/button";
 import { StageCatalogCard } from "@/features/admissions/components/StageCatalogCard";
+import {
+  RegistrationClosedNotice,
+  useRegistrationGate,
+} from "@/features/admissions/components/RegistrationGate";
 import { listStages } from "@/features/admissions/catalog.functions";
 
 const title = "المراحل التعليمية والتسجيل | مدارس وروضة المنال";
@@ -50,6 +54,7 @@ const steps = [
 function AdmissionsPage() {
   const { data: stages } = useSuspenseQuery(stagesQuery);
   const hero = useSiteContent().pages.admissions;
+  const registration = useRegistrationGate();
 
   return (
     <>
