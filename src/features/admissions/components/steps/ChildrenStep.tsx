@@ -95,9 +95,10 @@ export function ChildrenStep({
           const nat = detectNationality(child.nationalId);
           const nationalityConflict = parentNationality === "saudi" && nat === "resident";
           const selectedStage = stages.find((s) => s.id === child.stageId);
-          const roomOption = (c: { id: string; name_ar: string; capacity?: number; taken_seats: number }) => ({
+          /* Parent-facing dropdowns show the name only — seat counts are staff-only. */
+          const roomOption = (c: { id: string; name_ar: string }) => ({
             value: c.id,
-            label: `${c.name_ar} — ${seatsLeft(c)} مقعد متاح`,
+            label: c.name_ar,
           });
 
           return (
@@ -299,10 +300,7 @@ export function ChildrenStep({
                               }
                               options={[
                                 { value: "", label: "اختر المرحلة" },
-                                ...fit.map((s) => ({
-                                  value: s.id,
-                                  label: `${s.name_ar} — ${seatsLeft(s)} مقعد متاح`,
-                                })),
+                                ...fit.map((s) => ({ value: s.id, label: s.name_ar })),
                               ]}
                               error={errors[`${index}.stageId`]}
                               required
