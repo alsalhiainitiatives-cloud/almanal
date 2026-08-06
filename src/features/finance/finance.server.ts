@@ -693,12 +693,47 @@ export async function financeOverview(supabase: Db, userId: string) {
     supabase.from("payment_plan_settings").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
+  /**
+   * Every completed application is visible to finance — including the ones
+   * where the parent has not chosen a payment plan yet (no invoice), so the
+   * team can start the follow-up early.
+   */
+  const { data: completedApps } = await supabase
+    .from("applications")
+    .select("id, application_number, student_number, parent_id, academic_year, status, submitted_at, created_at")
+    .in("status", ["submitted", "under_review", "principal_review", "approved"])
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  const invoicedAppIds = new Set((invoices ?? []).map((i) => i.application_id));
+  const unplannedApps = (completedApps ?? []).filter((a) => !invoicedAppIds.has(a.id));
+  const unplannedParentIds = [...new Set(unplannedApps.map((a) => a.parent_id))];
+  const unplannedAppIds = unplannedApps.map((a) => a.id);
+
+  const [extraProfiles, extraChildren] = await Promise.all([
+    unplannedParentIds.length
+      ? supabase.from("profiles").select("id, full_name, phone, email").in("id", unplannedParentIds)
+      : Promise.resolve({ data: [] }),
+    unplannedAppIds.length
+      ? supabase.from("application_children").select("application_id, name_ar").in("application_id", unplannedAppIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const seenProfiles = new Set((profiles.data ?? []).map((p) => p.id));
+  const mergedProfiles = [
+    ...(profiles.data ?? []),
+    ...((extraProfiles.data ?? []) as typeof profiles.data extends null ? never[] : never[] | typeof profiles.data extends undefined ? never[] : NonNullable<typeof extraProfiles.data>).filter(
+      (p) => !seenProfiles.has(p.id),
+    ),
+  ];
+
   return {
     invoices: invoices ?? [],
     installments: installments.data ?? [],
     receipts: receipts.data ?? [],
-    profiles: profiles.data ?? [],
-    children: children.data ?? [],
+    profiles: mergedProfiles,
+    children: [...(children.data ?? []), ...(extraChildren.data ?? [])],
+    unplanned: unplannedApps,
     settings: settings.data ?? null,
     planSettings: plan.data ?? null,
   };
