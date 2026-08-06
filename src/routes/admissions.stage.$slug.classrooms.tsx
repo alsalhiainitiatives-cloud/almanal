@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Loader2, Users } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -9,9 +8,7 @@ import { toast } from "sonner";
 import { PageHero } from "@/components/site/PageHero";
 import { Button } from "@/components/ui/button";
 import { getStageBundle } from "@/features/admissions/catalog.functions";
-import { createApplication } from "@/features/admissions/application.functions";
 import { seatsLeft } from "@/features/admissions/eligibility";
-import { supabase } from "@/integrations/supabase/client";
 
 const stageQuery = (slug: string) =>
   queryOptions({
@@ -64,29 +61,18 @@ function ClassroomsPage() {
   const { slug } = Route.useParams();
   const { data } = useSuspenseQuery(stageQuery(slug));
   const navigate = useNavigate();
-  const start = useServerFn(createApplication);
-  const [busy, setBusy] = useState<string | null>(null);
+  const registration = useRegistrationGate();
 
   if (!data) return null;
   const { stage, classrooms } = data;
 
-  async function handleStart(classroomId: string) {
-    if (!data) return;
-    setBusy(classroomId);
-    try {
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) {
-        toast.info("سجّل الدخول أو أنشئ حسابًا لمتابعة الطلب");
-        navigate({ to: "/auth" });
-        return;
-      }
-      const res = await start({ data: { stageId: data.stage.id, classroomId } });
-      navigate({ to: "/apply/$applicationId", params: { applicationId: res.id } });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "تعذّر بدء الطلب");
-    } finally {
-      setBusy(null);
+  /** Unified journey: every registration CTA starts at Step 0 (حجز المقعد). */
+  function handleStart() {
+    if (!registration.open) {
+      toast.info(registration.message);
+      return;
     }
+    navigate({ to: "/reserve" });
   }
 
   return (
@@ -133,10 +119,9 @@ function ClassroomsPage() {
                     <Button
                       variant="hero"
                       className="flex-1"
-                      disabled={full || busy === c.id}
-                      onClick={() => handleStart(c.id)}
+                      disabled={full || !registration.open}
+                      onClick={handleStart}
                     >
-                      {busy === c.id ? <Loader2 className="size-4 animate-spin" /> : null}
                       ابدأ التسجيل
                       <ArrowLeft className="size-4" />
                     </Button>
