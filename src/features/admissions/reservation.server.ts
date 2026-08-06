@@ -83,6 +83,7 @@ export async function assertRegistrationOpen(supabase: Db) {
 }
 
 export async function createReservation(supabase: Db, userId: string, input: ReservationInput) {
+  /* --- early validation helpers live above; see findDuplicateChildIds --- */
   await assertRegistrationOpen(supabase);
 
   /* Early validation (Step 0): never let a duplicate child reach the wizard. */
