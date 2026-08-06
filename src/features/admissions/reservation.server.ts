@@ -82,8 +82,28 @@ export async function assertRegistrationOpen(supabase: Db) {
   }
 }
 
+/**
+ * Early duplicate detection — one child national ID can only appear once per
+ * academic year across reservations AND applications, whichever parent filed it.
+ * Runs through a security-definer RPC so cross-parent conflicts are visible.
+ */
+export async function findDuplicateChildIds(
+  supabase: Db,
+  nationalIds: string[],
+  ignore?: { reservationId?: string | null; applicationId?: string | null },
+): Promise<string[]> {
+  const ids = Array.from(new Set(nationalIds.filter((v) => /^[12]\d{9}$/.test(v))));
+  if (!ids.length) return [];
+  const { data } = await supabase.rpc("duplicate_child_national_ids", {
+    _ids: ids,
+    _academic_year: ACADEMIC_YEAR,
+    _ignore_reservation: ignore?.reservationId ?? null,
+    _ignore_application: ignore?.applicationId ?? null,
+  });
+  return ((data ?? []) as { national_id: string }[]).map((r) => r.national_id);
+}
+
 export async function createReservation(supabase: Db, userId: string, input: ReservationInput) {
-  /* --- early validation helpers live above; see findDuplicateChildIds --- */
   await assertRegistrationOpen(supabase);
 
   /* Early validation (Step 0): never let a duplicate child reach the wizard. */
