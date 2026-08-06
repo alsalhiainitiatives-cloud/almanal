@@ -59,7 +59,26 @@ export async function listReservationEvents(supabase: Db, reservationId: string)
   return data ?? [];
 }
 
+/**
+ * Global admin switch — when registration is closed no new seat reservation can
+ * be created, whatever entry point the parent used.
+ */
+export async function assertRegistrationOpen(supabase: Db) {
+  const { data } = await supabase.from("site_content").select("data").eq("key", "site").maybeSingle();
+  const content = (data?.data ?? {}) as {
+    admissions?: { registrationOpen?: boolean; closureMessage?: string };
+  };
+  const gate = content.admissions;
+  if (gate && gate.registrationOpen === false) {
+    throw new Error(
+      gate.closureMessage?.trim() ||
+        "باب التسجيل مغلق حالياً. نشكر لكم اهتمامكم بانضمام طفلكم لمجتمع المنال.",
+    );
+  }
+}
+
 export async function createReservation(supabase: Db, userId: string, input: ReservationInput) {
+  await assertRegistrationOpen(supabase);
   const { data: existing } = await supabase
     .from("seat_reservations")
     .select("id")
