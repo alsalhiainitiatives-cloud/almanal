@@ -86,14 +86,20 @@ export function ReservationsBoard() {
     setBusy(id + action);
     try {
       const row = (data?.rows ?? []).find((r) => r.id === id);
-      const manual = (row?.children ?? [])
+      type Placement = { childId: string; classroomId: string | null; waitlisted: boolean };
+      const manual: Placement[] = (row?.children ?? [])
         .map((child) => {
           const choice = placements[child.id];
           if (!choice || choice === "auto") return null;
           const [mode, classroomId] = choice.split(":");
-          return { childId: child.id, classroomId: classroomId ?? null, waitlisted: mode === "wait" };
+          const placement: Placement = {
+            childId: child.id,
+            classroomId: classroomId ?? null,
+            waitlisted: mode === "wait",
+          };
+          return placement;
         })
-        .filter((p): p is { childId: string; classroomId: string | null; waitlisted: boolean } => p !== null);
+        .filter((p): p is Placement => p !== null);
       const result = await decide({
         data: {
           id,
