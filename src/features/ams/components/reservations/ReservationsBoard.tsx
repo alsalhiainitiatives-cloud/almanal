@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, Clock, Loader2, Trash2, Undo2, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Loader2, Search, Trash2, Undo2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -16,6 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -49,6 +50,7 @@ export function ReservationsBoard() {
   const decide = useServerFn(decideSeatReservation);
   const removeReservation = useServerFn(deleteSeatReservationByStaff);
   const [filter, setFilter] = useState<Filter>("pending_review");
+  const [search, setSearch] = useState("");
   const [notes, setNotes] = useState<Record<string, string>>({});
   /** childId → "auto" | "seat:<classroomId>" | "wait:<classroomId>" */
   const [placements, setPlacements] = useState<Record<string, string>>({});
@@ -73,7 +75,37 @@ export function ReservationsBoard() {
   });
 
   const classrooms = useMemo(() => data?.classrooms ?? [], [data]);
-  const rows = (data?.rows ?? []).filter((row) => row.status === filter);
+  const applications = useMemo(() => data?.applications ?? [], [data]);
+
+  /** Approved reservation → has the parent submitted the full registration? */
+  const progressOf = (applicationId: string | null) => {
+    const app = applicationId ? applications.find((a) => a.id === applicationId) : null;
+    const done = Boolean(app && app.status !== "draft");
+    return {
+      done,
+      label: done ? "تم استكمال البيانات" : "بانتظار استكمال البيانات",
+      number: app?.application_number ?? null,
+    };
+  };
+
+  const rowsAll = data?.rows ?? [];
+  const q = search.trim().toLowerCase();
+  const matches = (row: (typeof rowsAll)[number]) => {
+    if (!q) return true;
+    const app = progressOf(row.application_id);
+    const haystack = [
+      row.parent_name,
+      row.parent_national_id,
+      app.number ?? "",
+      row.application_id ?? "",
+      ...(row.children ?? []).flatMap((c) => [c.name_ar, c.national_id ?? ""]),
+    ]
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(q);
+  };
+
+  const rows = rowsAll.filter((row) => row.status === filter && matches(row));
 
   const roomOf = (id: string | null) => classrooms.find((c) => c.id === id) ?? null;
 
@@ -171,6 +203,16 @@ export function ReservationsBoard() {
         </TabsList>
       </Tabs>
 
+      <div className="relative">
+        <Search className="absolute inset-inline-start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="ابحث باسم الطفل أو هويته أو اسم ولي الأمر أو رقم الطلب"
+          className="rounded-2xl ps-9 text-xs font-bold"
+        />
+      </div>
+
       {isLoading && (
         <div className="grid place-items-center rounded-3xl border border-border/60 bg-card p-10">
           <Loader2 className="size-6 animate-spin text-primary" />
@@ -195,6 +237,7 @@ export function ReservationsBoard() {
                 <th className="p-3 text-start">الفصل / الرغبة</th>
                 <th className="p-3 text-start">تاريخ الطلب</th>
                 <th className="p-3 text-start">الحالة</th>
+                <th className="p-3 text-start">استكمال التسجيل</th>
               </tr>
             </thead>
             <tbody>
@@ -203,6 +246,7 @@ export function ReservationsBoard() {
                   const room =
                     roomOf(child.assigned_classroom_id) ?? roomOf(child.preference_1_classroom_id);
                   const free = room ? Math.max(0, room.capacity - room.taken_seats) : 0;
+                  const progress = progressOf(row.application_id);
                   return (
                     <tr key={child.id} className="border-t border-border/50 font-bold">
                       <td className="p-3 text-foreground">{child.name_ar}</td>
@@ -232,6 +276,23 @@ export function ReservationsBoard() {
                         >
                           {RESERVATION_STATUS_LABELS[row.status] ?? row.status}
                         </span>
+                      </td>
+                      <td className="p-3">
+                        {row.status === "approved" ? (
+                          <span
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-[10px] font-black",
+                              progress.done
+                                ? "bg-mint text-foreground"
+                                : "bg-amber-100 text-amber-800",
+                            )}
+                          >
+                            {progress.label}
+                            {progress.number ? ` · ${progress.number}` : ""}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-muted-foreground">—</span>
+                        )}
                       </td>
                     </tr>
                   );

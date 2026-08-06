@@ -750,7 +750,15 @@ function WizardPage() {
               <Button variant="hero" onClick={() => navigate({ to: "/my-applications" })}>
                 متابعة طلباتي
               </Button>
-              <Button variant="outline" className="rounded-2xl" onClick={() => navigate({ to: "/reserve" })}>
+              {/* Full reset → a clean Step 0 form, never the acceptance card of the previous reservation. */}
+              <Button
+                variant="outline"
+                className="rounded-2xl"
+                onClick={async () => {
+                  await queryClient.resetQueries({ queryKey: ["reservations"] });
+                  navigate({ to: "/reserve", search: { new: true } });
+                }}
+              >
                 <Plus className="size-4" />
                 إضافة طلب جديد
               </Button>
