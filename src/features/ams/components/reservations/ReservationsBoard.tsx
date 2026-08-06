@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, Clock, Loader2, Trash2, Undo2, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Loader2, Search, Trash2, Undo2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -88,6 +88,7 @@ export function ReservationsBoard() {
     };
   };
 
+  const rowsAll = data?.rows ?? [];
   const q = search.trim().toLowerCase();
   const matches = (row: (typeof rowsAll)[number]) => {
     if (!q) return true;
@@ -104,7 +105,6 @@ export function ReservationsBoard() {
     return haystack.includes(q);
   };
 
-  const rowsAll = data?.rows ?? [];
   const rows = rowsAll.filter((row) => row.status === filter && matches(row));
 
   const roomOf = (id: string | null) => classrooms.find((c) => c.id === id) ?? null;
