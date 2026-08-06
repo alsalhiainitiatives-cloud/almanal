@@ -288,6 +288,14 @@ export async function decideReservation(
     )
     .join(" · ");
 
+  await logEvent(supabase, input.id, userId, {
+    action: "approved",
+    kind: "staff",
+    title: "تم قبول الحجز وتسكين الأطفال",
+    body: [summary, input.note].filter(Boolean).join(" — "),
+    metadata: { placements },
+  });
+
   await notify(supabase, {
     userIds: [reservation.parent_id],
     kind: "reservation.approved",
