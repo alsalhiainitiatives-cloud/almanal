@@ -29,9 +29,12 @@ import { ageParts, formatAgeDetailed, ageInMonths } from "@/features/admissions/
 import {
   emptyReservationChild,
   reservationSchema,
+  CHILD_MATCHES_PARENT_MESSAGE,
+  DUPLICATE_CHILD_MESSAGE,
   type ReservationChildInput,
 } from "@/features/admissions/reservation-schema";
 import {
+  checkReservationChildIds,
   seatReservationGate,
   startApplicationFromReservation,
   submitSeatReservation,
@@ -64,6 +67,7 @@ function ReservePage() {
   const { profile } = useAuth();
   const submit = useServerFn(submitSeatReservation);
   const continueFn = useServerFn(startApplicationFromReservation);
+  const checkIds = useServerFn(checkReservationChildIds);
   const registration = useRegistrationGate();
 
   const { data: catalog } = useQuery({
@@ -82,12 +86,36 @@ function ReservePage() {
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState(false);
   const [farewell, setFarewell] = useState(false);
+  /** Child IDs already registered this academic year (early Step 0 validation). */
+  const [takenIds, setTakenIds] = useState<string[]>([]);
+  const [dupOpen, setDupOpen] = useState(false);
 
   const stages = catalog?.stages ?? [];
   const classrooms = useMemo(() => catalog?.classrooms ?? [], [catalog]);
 
   const patch = (index: number, next: Partial<ReservationChildInput>) =>
     setChildren((rows) => rows.map((row, i) => (i === index ? { ...row, ...next } : row)));
+
+  /** Live duplicate lookup as soon as a complete child ID is entered. */
+  async function verifyIds(ids: string[]) {
+    const valid = ids.filter((id) => /^[12]\d{9}$/.test(id));
+    if (!valid.length) return [] as string[];
+    try {
+      const { duplicates } = await checkIds({ data: { nationalIds: valid } });
+      setTakenIds((prev) => Array.from(new Set([...prev.filter((v) => !valid.includes(v)), ...duplicates])));
+      return duplicates;
+    } catch {
+      return [] as string[];
+    }
+  }
+
+  /** Inline, per-child blocking message shown before any submission attempt. */
+  const idIssue = (child: ReservationChildInput) => {
+    if (!child.nationalId) return null;
+    if (child.nationalId === parentNationalId) return CHILD_MATCHES_PARENT_MESSAGE;
+    if (takenIds.includes(child.nationalId)) return DUPLICATE_CHILD_MESSAGE;
+    return null;
+  };
 
   /** Age-eligible classrooms only — seat counts are never surfaced to parents. */
   const optionsFor = (child: ReservationChildInput) => {
@@ -105,6 +133,16 @@ function ReservePage() {
   };
 
   async function onSubmit() {
+    /* Early validation: block at Step 0, never at the final submission. */
+    const duplicates = await verifyIds(children.map((c) => c.nationalId));
+    if (duplicates.length) {
+      setDupOpen(true);
+      return;
+    }
+    if (children.some((c) => c.nationalId && c.nationalId === parentNationalId)) {
+      toast.error(CHILD_MATCHES_PARENT_MESSAGE);
+      return;
+    }
     const payload = {
       parentName,
       parentNationalId,
