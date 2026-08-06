@@ -120,6 +120,34 @@ export const reservationPreferencesSchema = z.object({
 
 export type ReservationPreferencesInput = z.infer<typeof reservationPreferencesSchema>;
 
+/** Staff edit of a reservation (typo fixes, ID corrections, placement change). */
+export const reservationStaffUpdateSchema = z.object({
+  id: z.string().uuid(),
+  parentName: z.string().trim().min(3, "أدخل اسم ولي الأمر").max(120),
+  parentNationalId: z
+    .string()
+    .trim()
+    .regex(/^[12]\d{9}$/, "رقم هوية ولي الأمر يجب أن يكون 10 أرقام ويبدأ بـ 1 أو 2"),
+  children: z
+    .array(
+      z.object({
+        childId: z.string().uuid(),
+        nameAr: z.string().trim().min(3, "أدخل اسم الطفل").max(120),
+        nationalId: z
+          .string()
+          .trim()
+          .regex(/^[12]\d{9}$/, "رقم هوية الطفل يجب أن يكون 10 أرقام ويبدأ بـ 1 أو 2"),
+        gender: z.enum(["male", "female"]),
+        birthDate: z.string().trim().min(4, "أدخل تاريخ الميلاد"),
+        preference1: z.string().uuid("اختر الفصل / الرغبة الأولى"),
+        assignedClassroomId: z.string().uuid().nullable().optional(),
+      }),
+    )
+    .min(1),
+});
+
+export type ReservationStaffUpdateInput = z.infer<typeof reservationStaffUpdateSchema>;
+
 /** Audit-log action labels (سجل التدقيق). */
 export const RESERVATION_ACTION_LABELS: Record<string, string> = {
   created: "تم إنشاء طلب الحجز",
