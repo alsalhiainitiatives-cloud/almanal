@@ -10,7 +10,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { ageInMonths } from "./eligibility";
 import { ACADEMIC_YEAR } from "./application.server";
-import type { ReservationInput } from "./reservation-schema";
+import type { ReservationInput, ReservationPreferencesInput } from "./reservation-schema";
 import { notify, STAFF_ROLES } from "@/features/notifications/notifications.server";
 
 type Db = SupabaseClient<Database>;
