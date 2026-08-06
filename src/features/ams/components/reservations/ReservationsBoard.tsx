@@ -16,6 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -49,6 +50,7 @@ export function ReservationsBoard() {
   const decide = useServerFn(decideSeatReservation);
   const removeReservation = useServerFn(deleteSeatReservationByStaff);
   const [filter, setFilter] = useState<Filter>("pending_review");
+  const [search, setSearch] = useState("");
   const [notes, setNotes] = useState<Record<string, string>>({});
   /** childId → "auto" | "seat:<classroomId>" | "wait:<classroomId>" */
   const [placements, setPlacements] = useState<Record<string, string>>({});
@@ -73,7 +75,37 @@ export function ReservationsBoard() {
   });
 
   const classrooms = useMemo(() => data?.classrooms ?? [], [data]);
-  const rows = (data?.rows ?? []).filter((row) => row.status === filter);
+  const applications = useMemo(() => data?.applications ?? [], [data]);
+
+  /** Approved reservation → has the parent submitted the full registration? */
+  const progressOf = (applicationId: string | null) => {
+    const app = applicationId ? applications.find((a) => a.id === applicationId) : null;
+    const done = Boolean(app && app.status !== "draft");
+    return {
+      done,
+      label: done ? "تم استكمال البيانات" : "بانتظار استكمال البيانات",
+      number: app?.application_number ?? null,
+    };
+  };
+
+  const q = search.trim().toLowerCase();
+  const matches = (row: (typeof rowsAll)[number]) => {
+    if (!q) return true;
+    const app = progressOf(row.application_id);
+    const haystack = [
+      row.parent_name,
+      row.parent_national_id,
+      app.number ?? "",
+      row.application_id ?? "",
+      ...(row.children ?? []).flatMap((c) => [c.name_ar, c.national_id ?? ""]),
+    ]
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(q);
+  };
+
+  const rowsAll = data?.rows ?? [];
+  const rows = rowsAll.filter((row) => row.status === filter && matches(row));
 
   const roomOf = (id: string | null) => classrooms.find((c) => c.id === id) ?? null;
 
@@ -170,6 +202,16 @@ export function ReservationsBoard() {
           </TabsTrigger>
         </TabsList>
       </Tabs>
+
+      <div className="relative">
+        <Search className="absolute inset-inline-start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="ابحث باسم الطفل أو هويته أو اسم ولي الأمر أو رقم الطلب"
+          className="rounded-2xl ps-9 text-xs font-bold"
+        />
+      </div>
 
       {isLoading && (
         <div className="grid place-items-center rounded-3xl border border-border/60 bg-card p-10">
