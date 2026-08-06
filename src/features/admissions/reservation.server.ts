@@ -177,7 +177,13 @@ async function assertStaff(supabase: Db, userId: string) {
 export async function decideReservation(
   supabase: Db,
   userId: string,
-  input: { id: string; action: "approve" | "reject"; note?: string | null },
+  input: {
+    id: string;
+    action: "approve" | "reject";
+    note?: string | null;
+    /** Optional manual placement chosen by staff (overrides the auto rule). */
+    placements?: { childId: string; classroomId: string | null; waitlisted: boolean }[];
+  },
 ) {
   await assertStaff(supabase, userId);
 
@@ -201,6 +207,13 @@ export async function decideReservation(
       .eq("id", input.id);
     if (error) throw new Error("تعذّر تحديث حالة طلب الحجز.");
 
+    await logEvent(supabase, input.id, userId, {
+      action: "rejected",
+      kind: "staff",
+      title: "تم رفض طلب الحجز",
+      body: input.note ?? null,
+    });
+
     await notify(supabase, {
       userIds: [reservation.parent_id],
       kind: "reservation.rejected",
@@ -222,11 +235,20 @@ export async function decideReservation(
 
   for (const child of reservation.children ?? []) {
     const months = ageInMonths(child.birth_date);
-    const pick = pickClassroom(
+    const manual = input.placements?.find((p) => p.childId === child.id);
+    const auto = pickClassroom(
       [child.preference_1_classroom_id, child.preference_2_classroom_id, child.preference_3_classroom_id],
       months,
       classrooms,
     );
+    const manualRoom = manual?.classroomId
+      ? classrooms.find((r) => r.id === manual.classroomId)
+      : undefined;
+    const pick = manual
+      ? manualRoom
+        ? { room: manualRoom, waitlisted: manual.waitlisted }
+        : null
+      : auto;
     await supabase
       .from("seat_reservation_children")
       .update({
