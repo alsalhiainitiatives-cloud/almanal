@@ -720,12 +720,9 @@ export async function financeOverview(supabase: Db, userId: string) {
   ]);
 
   const seenProfiles = new Set((profiles.data ?? []).map((p) => p.id));
-  const mergedProfiles = [
-    ...(profiles.data ?? []),
-    ...((extraProfiles.data ?? []) as typeof profiles.data extends null ? never[] : never[] | typeof profiles.data extends undefined ? never[] : NonNullable<typeof extraProfiles.data>).filter(
-      (p) => !seenProfiles.has(p.id),
-    ),
-  ];
+  const mergedProfiles = (profiles.data ?? []).concat(
+    (extraProfiles.data ?? []).filter((p) => !seenProfiles.has(p.id)),
+  );
 
   return {
     invoices: invoices ?? [],
