@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { PageHero } from "@/components/site/PageHero";
 import { Reveal } from "@/components/site/Reveal";
 import { Button } from "@/components/ui/button";
+import { useRegistrationGate } from "@/features/admissions/components/RegistrationGate";
 import { getStageBundle } from "@/features/admissions/catalog.functions";
 import { seatsLeft } from "@/features/admissions/eligibility";
 import { stageGallery } from "@/features/admissions/media";
