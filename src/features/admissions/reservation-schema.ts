@@ -1,6 +1,12 @@
 /** Step 0 — lightweight seat reservation request (client-safe schemas). */
 import { z } from "zod";
 
+/** Early-validation messages surfaced at Step 0 (حجز المقعد). */
+export const DUPLICATE_CHILD_MESSAGE =
+  "يوجد طلب مسجّل بنفس رقم هوية الطفل لهذا العام الدراسي. يرجى متابعة الطلب من صفحة (طلباتي) أو التواصل مع إدارة القبول.";
+export const CHILD_MATCHES_PARENT_MESSAGE =
+  "تنبيه: رقم هوية الطفل مطابقة لرقم هوية ولي الأمر، يرجى التأكد من إدخال رقم هوية الطفل الصحيحة.";
+
 export const reservationChildSchema = z.object({
   nameAr: z.string().trim().min(3, "أدخل اسم الطفل").max(120),
   nationalId: z
@@ -41,6 +47,23 @@ export const reservationSchema = z.object({
       }
     });
   }
+  v.children.forEach((c, i) => {
+    if (c.nationalId && c.nationalId === v.parentNationalId) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["children", i, "nationalId"],
+        message: CHILD_MATCHES_PARENT_MESSAGE,
+      });
+    }
+    const twin = v.children.findIndex((o, j) => j < i && o.nationalId === c.nationalId);
+    if (c.nationalId && twin !== -1) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["children", i, "nationalId"],
+        message: "تم إدخال نفس رقم الهوية لطفلين في الطلب.",
+      });
+    }
+  });
 });
 
 export type ReservationChildInput = z.infer<typeof reservationChildSchema>;
