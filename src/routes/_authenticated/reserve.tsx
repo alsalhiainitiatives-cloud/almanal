@@ -37,6 +37,7 @@ import {
   submitSeatReservation,
 } from "@/features/admissions/reservation.functions";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { ReservationSelfService } from "@/features/admissions/components/ReservationSelfService";
 
 export const Route = createFileRoute("/_authenticated/reserve")({
   ssr: false,
@@ -141,7 +142,7 @@ function ReservePage() {
 
   const reservation = gate?.reservation ?? null;
 
-  if (reservation && reservation.status !== "rejected") {
+  if (reservation && reservation.status !== "rejected" && reservation.status !== "withdrawn") {
     return (
       <section className="section-y">
         <div className="mx-auto max-w-2xl px-4">
@@ -154,6 +155,12 @@ function ReservePage() {
                   تم إرسال طلب حجز المقعد بنجاح إلى إدارة الروضة! سيتم مراجعة الطلب وإشعارك فورًا
                   بالخطوة التالية.
                 </p>
+                <div className="mt-6 text-start">
+                  <ReservationSelfService
+                    reservationId={reservation.id}
+                    children={reservation.children ?? []}
+                  />
+                </div>
               </>
             ) : (
               <>
@@ -329,6 +336,12 @@ function ReservePage() {
                     | "preference1"
                     | "preference2"
                     | "preference3";
+                  /* Hide classrooms already picked in the other preference slots. */
+                  const taken = (["preference1", "preference2", "preference3"] as const)
+                    .filter((k) => k !== key)
+                    .map((k) => child[k])
+                    .filter(Boolean);
+                  const rankOptions = options.filter((room) => !taken.includes(room.id));
                   return (
                     <div key={rank} className="space-y-1.5">
                       <Label>
@@ -338,13 +351,13 @@ function ReservePage() {
                       <Select
                         value={child[key] || undefined}
                         onValueChange={(v) => patch(index, { [key]: v } as Partial<ReservationChildInput>)}
-                        disabled={!options.length}
+                        disabled={!rankOptions.length && !child[key]}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={options.length ? "اختر الفصل" : "أدخل تاريخ الميلاد"} />
                         </SelectTrigger>
                         <SelectContent>
-                          {options.map((room) => (
+                          {rankOptions.map((room) => (
                             <SelectItem key={room.id} value={room.id}>
                               {room.name_ar}
                             </SelectItem>

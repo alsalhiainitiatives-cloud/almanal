@@ -1,12 +1,19 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, Clock, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Loader2, Undo2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   decideSeatReservation,
   staffSeatReservations,
@@ -15,16 +22,22 @@ import {
   RESERVATION_STATUS_COLORS,
   RESERVATION_STATUS_LABELS,
 } from "@/features/admissions/reservation-schema";
+import {
+  ReservationAuditLog,
+  type ReservationEvent,
+} from "@/features/admissions/components/ReservationAuditLog";
 import { ageInMonths, formatAge } from "@/features/admissions/eligibility";
 import { cn } from "@/lib/utils";
 
-type Filter = "pending_review" | "approved" | "rejected";
+type Filter = "pending_review" | "approved" | "rejected" | "withdrawn";
 
 export function ReservationsBoard() {
   const queryClient = useQueryClient();
   const decide = useServerFn(decideSeatReservation);
   const [filter, setFilter] = useState<Filter>("pending_review");
   const [notes, setNotes] = useState<Record<string, string>>({});
+  /** childId → "auto" | "seat:<classroomId>" | "wait:<classroomId>" */
+  const [placements, setPlacements] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
@@ -72,7 +85,29 @@ export function ReservationsBoard() {
   async function run(id: string, action: "approve" | "reject") {
     setBusy(id + action);
     try {
-      const result = await decide({ data: { id, action, note: notes[id]?.trim() || null } });
+      const row = (data?.rows ?? []).find((r) => r.id === id);
+      type Placement = { childId: string; classroomId: string | null; waitlisted: boolean };
+      const manual: Placement[] = (row?.children ?? [])
+        .map((child) => {
+          const choice = placements[child.id];
+          if (!choice || choice === "auto") return null;
+          const [mode, classroomId] = choice.split(":");
+          const placement: Placement = {
+            childId: child.id,
+            classroomId: classroomId ?? null,
+            waitlisted: mode === "wait",
+          };
+          return placement;
+        })
+        .filter((p): p is Placement => p !== null);
+      const result = await decide({
+        data: {
+          id,
+          action,
+          note: notes[id]?.trim() || null,
+          ...(action === "approve" && manual.length ? { placements: manual } : {}),
+        },
+      });
       toast.success(
         action === "approve"
           ? `تم قبول الحجز — ${result.placements.map((p) => `${p.name}: ${p.classroom ?? "بدون فصل"}${p.waitlisted ? " (انتظار)" : ""}`).join(" · ")}`
@@ -101,6 +136,10 @@ export function ReservationsBoard() {
           <TabsTrigger value="rejected" className="text-xs font-bold">
             <XCircle className="size-3.5" />
             المرفوضة
+          </TabsTrigger>
+          <TabsTrigger value="withdrawn" className="text-xs font-bold">
+            <Undo2 className="size-3.5" />
+            المسحوبة
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -157,15 +196,33 @@ export function ReservationsBoard() {
                     </div>
                     <p className="mt-2 text-[11px] font-bold text-muted-foreground">
                       الرغبات:{" "}
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap gap-2">
                       {[
                         child.preference_1_classroom_id,
                         child.preference_2_classroom_id,
                         child.preference_3_classroom_id,
-                      ]
-                        .map((id, i) => (id ? `${i + 1}. ${roomOf(id)?.name_ar ?? "—"}` : null))
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
+                      ].map((id, i) => {
+                        if (!id) return null;
+                        const room = roomOf(id);
+                        const free = room ? Math.max(0, room.capacity - room.taken_seats) : 0;
+                        const open = Boolean(room) && free > 0 && room?.is_active !== false;
+                        return (
+                          <span
+                            key={`${child.id}-${i}`}
+                            className={cn(
+                              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black",
+                              open
+                                ? "bg-mint text-foreground"
+                                : "bg-destructive/15 text-destructive",
+                            )}
+                          >
+                            {i + 1}. {room?.name_ar ?? "—"} ·{" "}
+                            {open ? `متاح (${free})` : "مكتمل"}
+                          </span>
+                        );
+                      })}
+                    </div>
                     <p
                       className={cn(
                         "mt-2 text-[11px] font-black",
@@ -174,6 +231,48 @@ export function ReservationsBoard() {
                     >
                       {hint.text}
                     </p>
+                    {row.status === "pending_review" ? (
+                      <div className="mt-3 max-w-sm">
+                        <p className="mb-1.5 text-[10px] font-black text-muted-foreground">
+                          قرار التسكين
+                        </p>
+                        <Select
+                          value={placements[child.id] ?? "auto"}
+                          onValueChange={(v) =>
+                            setPlacements((prev) => ({ ...prev, [child.id]: v }))
+                          }
+                        >
+                          <SelectTrigger className="h-9 text-xs font-bold">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">تلقائي حسب الرغبات المتاحة</SelectItem>
+                            {[
+                              child.preference_1_classroom_id,
+                              child.preference_2_classroom_id,
+                              child.preference_3_classroom_id,
+                            ].flatMap((id, i) => {
+                              if (!id) return [];
+                              const room = roomOf(id);
+                              if (!room) return [];
+                              const free = Math.max(0, room.capacity - room.taken_seats);
+                              return [
+                                <SelectItem
+                                  key={`seat-${id}`}
+                                  value={`seat:${id}`}
+                                  disabled={free <= 0}
+                                >
+                                  تسكين مباشر — {room.name_ar} (الرغبة {i + 1})
+                                </SelectItem>,
+                                <SelectItem key={`wait-${id}`} value={`wait:${id}`}>
+                                  قائمة انتظار — {room.name_ar} (الرغبة {i + 1})
+                                </SelectItem>,
+                              ];
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : null}
                     {row.status === "approved" && (
                       <p className="mt-1 text-[11px] font-bold text-foreground">
                         القرار: {roomOf(child.assigned_classroom_id)?.name_ar ?? "بدون فصل"}
@@ -226,6 +325,13 @@ export function ReservationsBoard() {
                 </p>
               )
             )}
+
+            <div className="mt-4">
+              <ReservationAuditLog
+                reservationId={row.id}
+                events={(row as { events?: ReservationEvent[] }).events ?? []}
+              />
+            </div>
           </div>
         );
       })}

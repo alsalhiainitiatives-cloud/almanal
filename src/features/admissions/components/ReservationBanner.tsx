@@ -10,6 +10,7 @@ import {
   seatReservationGate,
   startApplicationFromReservation,
 } from "@/features/admissions/reservation.functions";
+import { ReservationSelfService } from "./ReservationSelfService";
 
 /** Parent-side status of the Step 0 seat reservation, with the continue action. */
 export function ReservationBanner() {
@@ -35,14 +36,20 @@ export function ReservationBanner() {
 
   if (reservation.status === "pending_review") {
     return (
-      <div className="flex flex-wrap items-center gap-3 rounded-3xl border border-border/60 bg-card p-5">
-        <CalendarHeart className="size-5 text-primary" />
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-black text-foreground">طلب حجز المقعد قيد المراجعة</p>
-          <p className="text-xs text-muted-foreground">
-            سيتم إشعارك فورًا بالخطوة التالية لاستكمال بيانات التسجيل.
-          </p>
+      <div className="space-y-4 rounded-3xl border border-border/60 bg-card p-5">
+        <div className="flex flex-wrap items-center gap-3">
+          <CalendarHeart className="size-5 text-primary" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-black text-foreground">طلب حجز المقعد قيد المراجعة</p>
+            <p className="text-xs text-muted-foreground">
+              سيتم إشعارك فورًا بالخطوة التالية لاستكمال بيانات التسجيل.
+            </p>
+          </div>
         </div>
+        <ReservationSelfService
+          reservationId={reservation.id}
+          children={reservation.children ?? []}
+        />
       </div>
     );
   }

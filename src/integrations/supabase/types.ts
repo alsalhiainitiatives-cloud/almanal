@@ -1709,6 +1709,53 @@ export type Database = {
           },
         ]
       }
+      reservation_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_kind: string
+          actor_name: string | null
+          body_ar: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          reservation_id: string
+          title_ar: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_kind?: string
+          actor_name?: string | null
+          body_ar?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          reservation_id: string
+          title_ar: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_kind?: string
+          actor_name?: string | null
+          body_ar?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          reservation_id?: string
+          title_ar?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservation_events_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "seat_reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           created_at: string

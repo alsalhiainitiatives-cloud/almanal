@@ -23,6 +23,7 @@ import {
   FieldGrid,
   FormSection,
   LockedField,
+  LockedGroup,
   SelectField,
   StatusNote,
   TextAreaField,
@@ -67,6 +68,7 @@ export function ChildrenStep({
   stages,
   classrooms,
   parentNationality,
+  locked,
   onChange,
 }: {
   children: ChildInput[];
@@ -75,6 +77,8 @@ export function ChildrenStep({
   stages: Stage[];
   classrooms: Classroom[];
   parentNationality?: string;
+  /** Pre-filled from an approved seat reservation → read-only. */
+  locked?: boolean;
   onChange: (next: ChildInput[]) => void;
 }) {
   const patch = (index: number, p: Partial<ChildInput>) =>
@@ -140,6 +144,7 @@ export function ChildrenStep({
                 {/* Identity ------------------------------------------------ */}
                 <div className="space-y-5">
                   <SubTitle icon={IdCard} title="هوية الطفل" />
+                  <LockedGroup locked={locked}>
                   <FieldGrid>
                     <TextField
                       label="اسم الطفل بالعربية"
@@ -237,6 +242,7 @@ export function ChildrenStep({
                       required
                     />
                   </FieldGrid>
+                  </LockedGroup>
 
                   {duplicates[index] ? (
                     <StatusNote tone="error" title="طلب مكرر لنفس رقم الهوية" icon={AlertTriangle}>
@@ -275,6 +281,10 @@ export function ChildrenStep({
                             المراحل المتاحة: {fit.map((s) => s.name_ar).join("، ")}
                           </StatusNote>
 
+                          <LockedGroup
+                            locked={locked}
+                            title="المرحلة والفصل مثبتان من حجز المقعد"
+                          >
                           <FieldGrid>
                             <SelectField
                               label="المرحلة الدراسية"
@@ -338,6 +348,7 @@ export function ChildrenStep({
                               disabled={!child.stageId}
                             />
                           </FieldGrid>
+                          </LockedGroup>
 
                           {child.stageId && rooms.length === 0 ? (
                             <StatusNote tone="warning" title="لا توجد فصول شاغرة حاليًا" icon={AlertTriangle}>

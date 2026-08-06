@@ -10,13 +10,54 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { ageInMonths } from "./eligibility";
 import { ACADEMIC_YEAR } from "./application.server";
-import type { ReservationInput } from "./reservation-schema";
+import type { ReservationInput, ReservationPreferencesInput } from "./reservation-schema";
 import { notify, STAFF_ROLES } from "@/features/notifications/notifications.server";
 
 type Db = SupabaseClient<Database>;
 
 const CHILD_COLUMNS =
   "id, name_ar, national_id, gender, birth_date, stage_id, preference_1_classroom_id, preference_2_classroom_id, preference_3_classroom_id, assigned_classroom_id, waitlisted, sort_order";
+
+const EVENT_COLUMNS = "id, reservation_id, actor_name, actor_kind, action, title_ar, body_ar, created_at";
+
+async function actorName(supabase: Db, userId: string) {
+  const { data } = await supabase.from("profiles").select("full_name, email").eq("id", userId).maybeSingle();
+  return data?.full_name?.trim() || data?.email || null;
+}
+
+/** Append one entry to the reservation audit log (سجل التدقيق). */
+async function logEvent(
+  supabase: Db,
+  reservationId: string,
+  userId: string | null,
+  entry: {
+    action: string;
+    title: string;
+    body?: string | null;
+    kind?: "parent" | "staff" | "system";
+    metadata?: Record<string, unknown>;
+  },
+) {
+  await supabase.from("reservation_events").insert({
+    reservation_id: reservationId,
+    actor_id: userId,
+    actor_name: userId ? await actorName(supabase, userId) : null,
+    actor_kind: entry.kind ?? "parent",
+    action: entry.action,
+    title_ar: entry.title,
+    body_ar: entry.body ?? null,
+    metadata: (entry.metadata ?? {}) as never,
+  });
+}
+
+export async function listReservationEvents(supabase: Db, reservationId: string) {
+  const { data } = await supabase
+    .from("reservation_events")
+    .select(EVENT_COLUMNS)
+    .eq("reservation_id", reservationId)
+    .order("created_at", { ascending: true });
+  return data ?? [];
+}
 
 export async function createReservation(supabase: Db, userId: string, input: ReservationInput) {
   const { data: existing } = await supabase
@@ -59,6 +100,12 @@ export async function createReservation(supabase: Db, userId: string, input: Res
     throw new Error("تعذّر حفظ بيانات الأطفال في طلب الحجز.");
   }
 
+  await logEvent(supabase, reservation.id, userId, {
+    action: "created",
+    title: "تم إنشاء طلب حجز المقعد",
+    body: `${input.children.length} طفل — بانتظار مراجعة الإدارة`,
+  });
+
   await notify(supabase, {
     roles: STAFF_ROLES,
     kind: "reservation.created",
@@ -85,7 +132,9 @@ export async function listReservations(supabase: Db) {
   const [{ data }, { data: classrooms }] = await Promise.all([
     supabase
       .from("seat_reservations")
-      .select(`*, children:seat_reservation_children(${CHILD_COLUMNS})`)
+      .select(
+        `*, children:seat_reservation_children(${CHILD_COLUMNS}), events:reservation_events(${EVENT_COLUMNS})`,
+      )
       .order("created_at", { ascending: false })
       .limit(300),
     supabase
@@ -130,7 +179,13 @@ async function assertStaff(supabase: Db, userId: string) {
 export async function decideReservation(
   supabase: Db,
   userId: string,
-  input: { id: string; action: "approve" | "reject"; note?: string | null },
+  input: {
+    id: string;
+    action: "approve" | "reject";
+    note?: string | null;
+    /** Optional manual placement chosen by staff (overrides the auto rule). */
+    placements?: { childId: string; classroomId: string | null; waitlisted: boolean }[];
+  },
 ) {
   await assertStaff(supabase, userId);
 
@@ -154,6 +209,13 @@ export async function decideReservation(
       .eq("id", input.id);
     if (error) throw new Error("تعذّر تحديث حالة طلب الحجز.");
 
+    await logEvent(supabase, input.id, userId, {
+      action: "rejected",
+      kind: "staff",
+      title: "تم رفض طلب الحجز",
+      body: input.note ?? null,
+    });
+
     await notify(supabase, {
       userIds: [reservation.parent_id],
       kind: "reservation.rejected",
@@ -175,11 +237,20 @@ export async function decideReservation(
 
   for (const child of reservation.children ?? []) {
     const months = ageInMonths(child.birth_date);
-    const pick = pickClassroom(
+    const manual = input.placements?.find((p) => p.childId === child.id);
+    const auto = pickClassroom(
       [child.preference_1_classroom_id, child.preference_2_classroom_id, child.preference_3_classroom_id],
       months,
       classrooms,
     );
+    const manualRoom = manual?.classroomId
+      ? classrooms.find((r) => r.id === manual.classroomId)
+      : undefined;
+    const pick = manual
+      ? manualRoom
+        ? { room: manualRoom, waitlisted: manual.waitlisted }
+        : null
+      : auto;
     await supabase
       .from("seat_reservation_children")
       .update({
@@ -218,6 +289,14 @@ export async function decideReservation(
         : `${p.name}: بانتظار تحديد الفصل`,
     )
     .join(" · ");
+
+  await logEvent(supabase, input.id, userId, {
+    action: "approved",
+    kind: "staff",
+    title: "تم قبول الحجز وتسكين الأطفال",
+    body: [summary, input.note].filter(Boolean).join(" — "),
+    metadata: { placements },
+  });
 
   await notify(supabase, {
     userIds: [reservation.parent_id],
@@ -313,6 +392,12 @@ export async function startFromReservation(supabase: Db, userId: string, reserva
     metadata: { reservationId: reservation.id } as never,
   });
 
+  await logEvent(supabase, reservation.id, userId, {
+    action: "application_started",
+    title: "تم بدء طلب التسجيل من الحجز المقبول",
+    body: "البيانات المثبتة من الخطوة صفر أصبحت غير قابلة للتعديل في النموذج.",
+  });
+
   return { id: application.id };
 }
 
@@ -322,7 +407,7 @@ export async function reservationGate(supabase: Db, userId: string) {
   const current = rows.find((r) => r.academic_year === ACADEMIC_YEAR) ?? rows[0] ?? null;
   return {
     reservation: current,
-    needsReservation: !current || current.status === "rejected",
+    needsReservation: !current || current.status === "rejected" || current.status === "withdrawn",
     pending: current?.status === "pending_review",
     approved: current?.status === "approved",
   };
@@ -336,5 +421,88 @@ export async function cancelMyReservation(supabase: Db, userId: string, id: stri
     .eq("parent_id", userId)
     .eq("status", "pending_review");
   if (error) throw new Error("تعذّر إلغاء طلب الحجز.");
+  return { ok: true as const };
+}
+
+/** Parent self-service — reorder/replace classroom preferences before review. */
+export async function updateMyReservationPreferences(
+  supabase: Db,
+  userId: string,
+  input: ReservationPreferencesInput,
+) {
+  const { data: reservation } = await supabase
+    .from("seat_reservations")
+    .select(`id, parent_id, status, children:seat_reservation_children(${CHILD_COLUMNS})`)
+    .eq("id", input.id)
+    .maybeSingle();
+  if (!reservation || reservation.parent_id !== userId) throw new Error("لم يتم العثور على طلب الحجز.");
+  if (reservation.status !== "pending_review")
+    throw new Error("لا يمكن تعديل الرغبات بعد اتخاذ قرار بشأن الطلب.");
+
+  const known = new Set((reservation.children ?? []).map((c) => c.id));
+  for (const row of input.children) {
+    if (!known.has(row.childId)) throw new Error("بيانات الطفل غير مطابقة لطلب الحجز.");
+    const { error } = await supabase
+      .from("seat_reservation_children")
+      .update({
+        preference_1_classroom_id: row.preference1,
+        preference_2_classroom_id: row.preference2 || null,
+        preference_3_classroom_id: row.preference3 || null,
+      })
+      .eq("id", row.childId)
+      .eq("reservation_id", input.id);
+    if (error) throw new Error("تعذّر تحديث رغبات الفصول.");
+  }
+
+  await logEvent(supabase, input.id, userId, {
+    action: "preferences_updated",
+    title: "تم تعديل رغبات الفصول",
+    body: `تم تحديث رغبات ${input.children.length} طفل قبل المراجعة.`,
+  });
+
+  await notify(supabase, {
+    roles: STAFF_ROLES,
+    kind: "reservation.updated",
+    title: "تم تعديل رغبات طلب حجز مقعد",
+    body: "قام ولي الأمر بتحديث رغبات الفصول قبل المراجعة.",
+    link: "/ams/reservations",
+    severity: "info",
+  });
+
+  return { ok: true as const };
+}
+
+/** Parent self-service — withdraw a request that is still pending review. */
+export async function withdrawMyReservation(supabase: Db, userId: string, id: string, note?: string | null) {
+  const { data: reservation } = await supabase
+    .from("seat_reservations")
+    .select("id, parent_id, status")
+    .eq("id", id)
+    .maybeSingle();
+  if (!reservation || reservation.parent_id !== userId) throw new Error("لم يتم العثور على طلب الحجز.");
+  if (reservation.status !== "pending_review") throw new Error("لا يمكن سحب الطلب بعد اتخاذ قرار بشأنه.");
+
+  const { error } = await supabase
+    .from("seat_reservations")
+    .update({ status: "withdrawn", decision_note: note ?? null })
+    .eq("id", id)
+    .eq("parent_id", userId);
+  if (error) throw new Error("تعذّر سحب طلب الحجز.");
+
+  await logEvent(supabase, id, userId, {
+    action: "withdrawn",
+    title: "تم سحب طلب الحجز من ولي الأمر",
+    body: note ?? null,
+  });
+
+  await notify(supabase, {
+    roles: STAFF_ROLES,
+    kind: "reservation.withdrawn",
+    title: "تم سحب طلب حجز مقعد",
+    body: note || "قام ولي الأمر بسحب طلب حجز المقعد.",
+    link: "/ams/reservations",
+    severity: "info",
+  });
+
   return { ok: true as const };
 }
