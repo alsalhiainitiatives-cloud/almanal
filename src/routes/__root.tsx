@@ -17,6 +17,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { school } from "@/data/site";
 import { AuthProvider } from "@/features/auth/AuthProvider";
 import { SiteContentProvider } from "@/features/site-content/SiteContentProvider";
+import { DEFAULT_SITE_CONTENT } from "@/features/site-content/defaults";
 import { siteContentGet } from "@/features/site-content/site-content.functions";
 
 function NotFoundComponent() {
@@ -148,7 +149,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   }),
   shellComponent: RootShell,
   component: RootComponent,
-  loader: () => siteContentGet(),
+  // A transient network failure on this RPC must never blank the whole app:
+  // fall back to the built-in defaults and let the UI render.
+  loader: async () => {
+    try {
+      return await siteContentGet();
+    } catch (error) {
+      console.error("siteContentGet failed; using default content", error);
+      return DEFAULT_SITE_CONTENT;
+    }
+  },
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
