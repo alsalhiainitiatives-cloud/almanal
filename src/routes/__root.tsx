@@ -17,6 +17,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { school } from "@/data/site";
 import { AuthProvider } from "@/features/auth/AuthProvider";
 import { SiteContentProvider } from "@/features/site-content/SiteContentProvider";
+import { DEFAULT_SITE_CONTENT } from "@/features/site-content/defaults";
 import { siteContentGet } from "@/features/site-content/site-content.functions";
 
 function NotFoundComponent() {
