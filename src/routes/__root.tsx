@@ -148,7 +148,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   }),
   shellComponent: RootShell,
   component: RootComponent,
-  loader: () => siteContentGet(),
+  // A transient network failure on this RPC must never blank the whole app:
+  // fall back to the built-in defaults and let the UI render.
+  loader: async () => {
+    try {
+      return await siteContentGet();
+    } catch (error) {
+      console.error("siteContentGet failed; using default content", error);
+      return DEFAULT_SITE_CONTENT;
+    }
+  },
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
