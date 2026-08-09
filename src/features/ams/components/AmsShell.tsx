@@ -55,7 +55,6 @@ const NAV: NavItem[] = [
     group: "معالجة الطلبات",
   },
   { to: "/ams/queue", label: "طلبات الحجز النهائية", icon: Inbox, exact: false, group: "معالجة الطلبات" },
-  { to: "/ams/seats", label: "الفصول والمقاعد", icon: Armchair, exact: false, group: "معالجة الطلبات" },
   { to: "/ams/waiting-list", label: "قائمة الانتظار", icon: ListOrdered, exact: false, group: "معالجة الطلبات" },
   { to: "/ams/activity", label: "الحركة اللحظية", icon: Activity, exact: false, group: "المتابعة والتقارير" },
   { to: "/ams/reports", label: "التقارير", icon: BarChart3, exact: false, group: "المتابعة والتقارير" },
@@ -79,6 +78,7 @@ const NAV_GROUP_ORDER = [
 /** Student Affairs is a separate operational module — no admissions links. */
 const STUDENTS_NAV: NavItem[] = [
   { to: "/ams/students", label: "سجل الطلاب", icon: GraduationCap, exact: true, group: "شؤون الطلاب" },
+  { to: "/ams/seats", label: "الفصول والمقاعد", icon: Armchair, exact: false, group: "شؤون الطلاب" },
   {
     to: "/ams/students/promotions",
     label: "نقل الطلاب بين المراحل",
@@ -106,6 +106,7 @@ const MODULES: Record<
 
 function moduleFor(pathname: string): ModuleKey {
   if (pathname.startsWith("/ams/students")) return "students";
+  if (pathname.startsWith("/ams/seats")) return "students";
   if (pathname.startsWith("/ams/finance")) return "finance";
   return "admissions";
 }

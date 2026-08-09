@@ -1,5 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Armchair, CalendarClock, GripVertical, Pencil, Plus, RotateCcw, Search, Settings2, Trash2, TriangleAlert, UserPlus, X } from "lucide-react";
+import {
+  Armchair,
+  CalendarClock,
+  GripVertical,
+  ListOrdered,
+  Lock,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Search,
+  Settings2,
+  Trash2,
+  TriangleAlert,
+  UserPlus,
+  X,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -7,6 +22,7 @@ import {
   amsClassroomSave,
   amsSeatAssign,
   amsSeatBoard,
+  amsSeatPromote,
   amsSeatRemove,
   amsSeatUpdateChild,
 } from "@/features/ams/ams.functions";
@@ -148,6 +164,9 @@ export function SeatBoard() {
   const [editing, setEditing] = useState<SeatChild | null>(null);
   const [removing, setRemoving] = useState<SeatChild | null>(null);
   const [rejection, setRejection] = useState<{ classroomId: string; child: SeatChild; check: PlacementCheck } | null>(null);
+  const [fullNotice, setFullNotice] = useState<{ classroomName: string; capacity: number; childName: string } | null>(
+    null,
+  );
   const [classroomDraft, setClassroomDraft] = useState<ClassroomDraft | null>(null);
   const [deletingClassroom, setDeletingClassroom] = useState<BoardClassroom | null>(null);
 
@@ -172,6 +191,12 @@ export function SeatBoard() {
   const tryAssign = (child: SeatChild, classroom: BoardClassroom) => {
     const check = validatePlacement(child, asRule(classroom));
     if (!check.ok) {
+      // A full classroom is a workflow decision, not a data error: staff must
+      // acknowledge that the next applicants go to the waiting list.
+      if (check.code === "full") {
+        setFullNotice({ classroomName: classroom.name_ar, capacity: classroom.capacity, childName: child.name_ar });
+        return false;
+      }
       setRejection({ classroomId: classroom.id, child, check });
       return false;
     }
@@ -186,6 +211,15 @@ export function SeatBoard() {
     onSuccess: () => {
       toast.success("تمت إزالة الطالب من الفصل");
       setRemoving(null);
+      refresh();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const promote = useMutation({
+    mutationFn: (input: { classroomId: string; entryId?: string | null }) => amsSeatPromote({ data: input }),
+    onSuccess: (result) => {
+      toast.success(`تم تسكين ${result.childName} في فصل ${result.classroomName}`);
       refresh();
     },
     onError: (err: Error) => toast.error(err.message),
@@ -243,7 +277,7 @@ export function SeatBoard() {
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
         {[
           { label: "السعة الكلية", value: data.totals.capacity },
-          { label: "المسجلون فعليًا", value: data.totals.enrolled },
+          { label: "المقاعد المشغولة", value: data.totals.enrolled },
           { label: "مقاعد متاحة", value: data.totals.available },
           { label: "بانتظار التسكين", value: data.totals.unplaced },
           { label: "قوائم الانتظار", value: data.totals.waiting },
@@ -313,6 +347,7 @@ export function SeatBoard() {
                 ? Math.min(100, Math.round((classroom.enrolled / classroom.capacity) * 100))
                 : 0;
               const left = Math.max(0, classroom.capacity - classroom.enrolled);
+              const isFull = left === 0;
               const locked = lockedBy(classroom.id);
               return (
                 <div
@@ -344,10 +379,29 @@ export function SeatBoard() {
                       </p>
                     </div>
                     <span
-                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold"
-                      style={{ background: `${classroom.color_hex}22`, color: classroom.color_hex }}
+                      className={
+                        isFull
+                          ? "inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2.5 py-1 text-[11px] font-extrabold text-destructive"
+                          : "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold"
+                      }
+                      style={isFull ? undefined : { background: `${classroom.color_hex}22`, color: classroom.color_hex }}
                     >
-                      <Armchair className="size-3" /> {left} متاح
+                      {isFull ? <Lock className="size-3" /> : <Armchair className="size-3" />}
+                      {isFull ? "مكتمل العدد" : `${left} متاح`}
+                    </span>
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] font-extrabold">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-muted-foreground">
+                      <Armchair className="size-3" /> مسكَّن {classroom.placed}
+                    </span>
+                    {classroom.reserved > 0 ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-gold/15 px-2 py-1 text-foreground">
+                        <Lock className="size-3" /> محجوز مبدئيًا {classroom.reserved}
+                      </span>
+                    ) : null}
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-primary">
+                      <ListOrdered className="size-3" /> انتظار {classroom.waiting}
                     </span>
                   </div>
 
@@ -386,8 +440,54 @@ export function SeatBoard() {
                     <div className="h-full rounded-full" style={{ width: `${percent}%`, background: classroom.color_hex }} />
                   </div>
                   <p className="mt-1.5 text-[11px] font-bold text-muted-foreground">
-                    المسجلون {classroom.enrolled} من {classroom.capacity} · قائمة الانتظار {classroom.waiting}
+                    المقاعد المشغولة {classroom.enrolled} من {classroom.capacity} (مسكَّن {classroom.placed} + محجوز{" "}
+                    {classroom.reserved}) · قائمة الانتظار {classroom.waiting}
                   </p>
+
+                  {classroom.waitingEntries.length > 0 ? (
+                    <div className="mt-3 rounded-2xl border border-primary/25 bg-primary/5 p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="flex items-center gap-1.5 text-[11px] font-extrabold text-foreground">
+                          <ListOrdered className="size-3.5 text-primary" /> قائمة انتظار الفصل
+                        </p>
+                        <button
+                          type="button"
+                          disabled={promote.isPending || isFull}
+                          onClick={() => promote.mutate({ classroomId: classroom.id })}
+                          title={isFull ? "الفصل مكتمل العدد" : "تسكين الأول في قائمة الانتظار تلقائيًا"}
+                          className="rounded-xl border border-primary/40 px-2.5 py-1 text-[10px] font-extrabold text-primary disabled:opacity-50"
+                        >
+                          تسكين تلقائي للأول
+                        </button>
+                      </div>
+                      <ol className="mt-2 space-y-1.5">
+                        {classroom.waitingEntries.map((entry, index) => (
+                          <li
+                            key={entry.entryId}
+                            className="flex items-center gap-2 rounded-xl bg-card px-2.5 py-1.5"
+                          >
+                            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary/10 text-[10px] font-extrabold text-primary">
+                              {index + 1}
+                            </span>
+                            <span className="min-w-0 flex-1 truncate text-[11px] font-extrabold text-foreground">
+                              {entry.childName}
+                              {entry.applicationNumber ? (
+                                <span className="font-bold text-muted-foreground"> · {entry.applicationNumber}</span>
+                              ) : null}
+                            </span>
+                            <button
+                              type="button"
+                              disabled={promote.isPending || isFull}
+                              onClick={() => promote.mutate({ classroomId: classroom.id, entryId: entry.entryId })}
+                              className="rounded-lg border border-border/60 px-2 py-0.5 text-[10px] font-extrabold text-primary disabled:opacity-50"
+                            >
+                              تسكين
+                            </button>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ) : null}
 
                   <ul className="mt-3 space-y-2">
                     {(classroom.children as SeatChild[]).filter(matches).map((child) => (
@@ -413,6 +513,7 @@ export function SeatBoard() {
       ))}
 
       {moving ? (
+        <>
         <MoveDialog
           child={moving}
           classrooms={data.classrooms}
@@ -424,6 +525,32 @@ export function SeatBoard() {
             if (classroom) tryAssign(moving, classroom);
           }}
         />
+        </>
+      ) : null}
+
+      {fullNotice ? (
+        <div className="fixed inset-0 z-[60] grid place-items-center bg-foreground/50 p-4">
+          <div className="w-full max-w-md rounded-3xl bg-card p-6 text-center shadow-xl">
+            <span className="mx-auto grid size-14 place-items-center rounded-3xl bg-destructive/10 text-destructive">
+              <Lock className="size-6" />
+            </span>
+            <h3 className="mt-4 text-base font-extrabold text-foreground">
+              تم الوصول إلى الحد الأقصى لفصل «{fullNotice.classroomName}»
+            </h3>
+            <p className="mt-2 text-xs font-bold leading-6 text-muted-foreground">
+              الفصل مكتمل العدد ({fullNotice.capacity} من {fullNotice.capacity} مقعدًا)، ولا يمكن تسكين «
+              {fullNotice.childName}» فيه الآن. سيتم نقل الطلبات التالية إلى قائمة انتظار الفصل حسب أسبقية التسجيل، ويُسكَّن
+              الأول في القائمة تلقائيًا عند تحرّر أي مقعد.
+            </p>
+            <button
+              type="button"
+              onClick={() => setFullNotice(null)}
+              className="mt-5 w-full rounded-2xl bg-primary px-4 py-2.5 text-xs font-extrabold text-primary-foreground"
+            >
+              فهمت
+            </button>
+          </div>
+        </div>
       ) : null}
 
       {editing ? (
