@@ -443,7 +443,7 @@ export async function submitApplication(supabase: Db, userId: string, id: string
     { qurraStatus: qurra?.status ?? "not_requested" },
   );
 
-  return { applicationNumber, trackingNumber, grandTotal };
+  return { applicationNumber, trackingNumber, trackToken: app.track_token ?? null, grandTotal };
 }
 
 export async function withdrawApplication(supabase: Db, userId: string, id: string) {

@@ -25,6 +25,7 @@ import {
   reviewDocument,
   saveClassroom,
   seatAssignChild,
+  seatPromoteFromWaitlist,
   seatRemoveChild,
   seatUpdateChild,
   setPaymentStatus,
@@ -99,6 +100,13 @@ export const amsSeatRemove = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ childId: uuid, note: z.string().max(500).optional() }).parse(data))
   .handler(async ({ data, context }) => seatRemoveChild(context.supabase, context.userId, data));
+
+export const amsSeatPromote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ classroomId: uuid, entryId: uuid.nullable().optional() }).parse(data),
+  )
+  .handler(async ({ data, context }) => seatPromoteFromWaitlist(context.supabase, context.userId, data));
 
 export const amsSeatUpdateChild = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
