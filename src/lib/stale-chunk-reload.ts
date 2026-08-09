@@ -27,8 +27,26 @@ export function recoverFromStaleChunk(error: unknown, chunkUrl?: string): boolea
     // sessionStorage unavailable (private mode): fall through to a single reload.
   }
 
-  // Bypass any cached HTML that still references the removed chunk.
-  window.location.reload();
+  // A plain reload can be served the cached index.html that still references the
+  // removed chunk. Drop caches/service workers and reload with a cache-busting
+  // query param so the fresh asset manifest is fetched.
+  void (async () => {
+    try {
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      if (navigator.serviceWorker?.getRegistrations) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+    } catch {
+      // best effort
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.set("_v", Date.now().toString(36));
+    window.location.replace(url.toString());
+  })();
   return true;
 }
 
@@ -37,5 +55,11 @@ export function installStaleChunkReload() {
   window.addEventListener("vite:preloadError", (event) => {
     const payload = (event as unknown as { payload?: unknown }).payload ?? event;
     if (recoverFromStaleChunk(payload)) event.preventDefault();
+  });
+  window.addEventListener("unhandledrejection", (event) => {
+    recoverFromStaleChunk((event as PromiseRejectionEvent).reason);
+  });
+  window.addEventListener("error", (event) => {
+    recoverFromStaleChunk((event as ErrorEvent).error ?? (event as ErrorEvent).message);
   });
 }
