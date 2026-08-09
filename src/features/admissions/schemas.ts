@@ -137,7 +137,8 @@ export const childSchema = z.object({
     .regex(/^[12]\d{9}$/, "رقم هوية الطفل يجب أن يكون 10 أرقام ويبدأ بـ 1 أو 2"),
   gender: z.enum(["male", "female"]),
   birthDate: z.string().trim().min(4, "أدخل تاريخ الميلاد"),
-  nationality: z.string().trim().min(2, "الجنسية تُحدَّد تلقائيًا من رقم الهوية").max(60),
+  /* Derived from the national ID below — never blocks the step. */
+  nationality: z.string().trim().max(60).optional().or(z.literal("")),
   country: z.string().trim().max(60).optional().or(z.literal("")),
   birthPlace: z.string().trim().max(80).optional().or(z.literal("")),
   photoUrl: z.string().trim().max(500).optional().or(z.literal("")),
@@ -165,7 +166,14 @@ export const childSchema = z.object({
   if (v.classroomId && v.preference3 && v.classroomId === v.preference3) {
     ctx.addIssue({ code: "custom", path: ["preference3"], message: "لا يمكن تكرار الرغبة الأولى" });
   }
-});
+}).transform((v) => ({
+  ...v,
+  nationality: v.nationality?.trim()
+    ? v.nationality.trim()
+    : v.nationalId.startsWith("1")
+      ? "سعودي"
+      : "مقيم",
+}));
 
 export const childrenSchema = z.array(childSchema).min(1, "أضف طفلًا واحدًا على الأقل").max(6);
 

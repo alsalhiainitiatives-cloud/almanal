@@ -565,7 +565,10 @@ function WizardPage() {
           const next: Record<string, string> = {};
           for (const issue of parsed.error.issues) next[issue.path.join(".")] = issue.message;
           setErrors(next);
-          toast.error("يرجى استكمال بيانات الأبناء");
+          /* Surface the actual reasons — some fields are read-only and can't show inline errors. */
+          toast.error(
+            `يرجى استكمال بيانات الأبناء: ${[...new Set(Object.values(next))].slice(0, 3).join(" — ")}`,
+          );
           return;
         }
         const conflicts = childNationalityConflicts(parsed.data, parent.nationality);
