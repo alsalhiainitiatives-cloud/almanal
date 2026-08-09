@@ -43,9 +43,9 @@ export function recoverFromStaleChunk(error: unknown, chunkUrl?: string): boolea
     } catch {
       // best effort
     }
-    const url = new URL(window.location.href);
-    url.searchParams.set("_v", Date.now().toString(36));
-    window.location.replace(url.toString());
+    const next = new URL(window.location.href);
+    next.searchParams.set("_v", Date.now().toString(36));
+    window.location.replace(next.toString());
   })();
   return true;
 }
