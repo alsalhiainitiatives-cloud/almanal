@@ -65,6 +65,12 @@ export async function seasonClosureMessage(supabase: Db): Promise<string | null>
   return data?.closure_message?.trim() || null;
 }
 
+/** Academic year that new records must belong to (open season, else fallback). */
+export async function resolveAcademicYear(supabase: Db, fallback: string): Promise<string> {
+  const season = await resolveActiveSeason(supabase);
+  return season?.academicYear ?? fallback;
+}
+
 export async function listSeasons(supabase: Db, userId: string) {
   await guardSeasons(supabase, userId);
   const [seasons, active] = await Promise.all([
