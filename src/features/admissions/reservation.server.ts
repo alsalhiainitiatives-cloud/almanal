@@ -18,6 +18,7 @@ import {
 } from "./reservation-schema";
 import { notify, STAFF_ROLES } from "@/features/notifications/notifications.server";
 import { DEFAULT_SITE_CONTENT } from "@/features/site-content/defaults";
+import { resolveActiveSeason, seasonClosureMessage } from "@/features/ams/seasons.server";
 
 type Db = SupabaseClient<Database>;
 
@@ -70,6 +71,19 @@ export async function listReservationEvents(supabase: Db, reservationId: string)
  * be created, whatever entry point the parent used.
  */
 export async function assertRegistrationOpen(supabase: Db) {
+  // Governance first: a season must be open (and inside its dates).
+  const { count: seasonCount } = await supabase
+    .from("admission_seasons")
+    .select("id", { count: "exact", head: true });
+  if ((seasonCount ?? 0) > 0) {
+    const season = await resolveActiveSeason(supabase);
+    if (!season) {
+      throw new Error(
+        (await seasonClosureMessage(supabase)) ||
+          "باب التسجيل مغلق حالياً. نشكر لكم اهتمامكم بانضمام طفلكم لمجتمع المنال.",
+      );
+    }
+  }
   const { data } = await supabase.from("site_content").select("data").eq("key", "site").maybeSingle();
   const content = (data?.data ?? {}) as {
     admissions?: { registrationOpen?: boolean; closureMessage?: string };
