@@ -204,7 +204,10 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
             {(
               [
                 ["all", `الكل (${invoices.length + unplanned.length})`],
-                ["no_plan", `لم يتم اختيار خطة سداد (${unplanned.length})`],
+                [
+                  "no_plan",
+                  `لم يتم اختيار خطة سداد (${unplanned.filter((a) => !a.qurraFullyCovered).length})`,
+                ],
                 ["pending", "بانتظار السداد"],
                 ["paid", "مكتمل / مسدد"],
               ] as const
@@ -235,9 +238,15 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
                       <span className="text-xs font-black text-foreground">
                         {app.application_number ?? "بدون رقم"}
                       </span>
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black text-amber-800">
-                        لم يتم اختيار خطة سداد
-                      </span>
+                      {app.qurraFullyCovered ? (
+                        <span className="rounded-full bg-mint px-2 py-0.5 text-[10px] font-black text-mint-foreground">
+                          مشمول بدعم قرة — لا مستحقات
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black text-amber-800">
+                          لم يتم اختيار خطة سداد
+                        </span>
+                      )}
                     </span>
                     <span className="mt-1 block truncate text-[11px] font-bold text-muted-foreground">
                       {profile?.full_name ?? "ولي أمر"} — {childOf(app.id)}
@@ -245,7 +254,7 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
                     <span className="mt-1 block text-[11px] font-bold text-muted-foreground" dir="ltr">
                       {profile?.phone ?? "بدون جوال"}
                     </span>
-                    {profile?.phone ? (
+                    {profile?.phone && !app.qurraFullyCovered ? (
                       <Button
                         size="sm"
                         variant="outline"

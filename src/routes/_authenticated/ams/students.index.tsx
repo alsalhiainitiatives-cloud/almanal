@@ -9,6 +9,7 @@ import { amsStudents } from "@/features/ams/ams.functions";
 import { AmsShell } from "@/features/ams/components/AmsShell";
 import { EmptyState, SkeletonRows } from "@/features/ams/components/atoms";
 import { formatApplicationCode } from "@/features/admissions/application-code";
+import { isValidAcademicNumber } from "@/features/ams/academic-number";
 import { ageInMonths, formatAge } from "@/features/admissions/eligibility";
 import { cn } from "@/lib/utils";
 
@@ -154,7 +155,9 @@ function StudentsPage() {
                         </p>
                       </td>
                       <td className="px-4 py-3 text-xs font-extrabold" dir="ltr">
-                        {s.studentNumber?.trim() || formatApplicationCode(s.applicationNumber)}
+                        {isValidAcademicNumber(s.studentNumber)
+                          ? (s.studentNumber ?? "").trim().toUpperCase()
+                          : formatApplicationCode(s.applicationNumber)}
                       </td>
                       <td className="px-4 py-3">
                         <Button asChild size="sm" variant="outline" className={cn("rounded-xl text-xs font-bold")}>
