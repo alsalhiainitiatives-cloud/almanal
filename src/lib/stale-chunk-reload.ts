@@ -35,8 +35,7 @@ export function recoverFromStaleChunk(error: unknown, chunkUrl?: string): boolea
 export function installStaleChunkReload() {
   if (typeof window === "undefined") return;
   window.addEventListener("vite:preloadError", (event) => {
-    const detail = (event as CustomEvent<{ payload?: unknown }>).detail;
-    const payload = (detail as { payload?: unknown } | undefined)?.payload ?? detail;
+    const payload = (event as unknown as { payload?: unknown }).payload ?? event;
     if (recoverFromStaleChunk(payload)) event.preventDefault();
   });
 }
