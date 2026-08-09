@@ -122,17 +122,23 @@ export function ReservationsBoard() {
   async function bulkDelete() {
     setBulkBusy(true);
     let done = 0;
+    let blocked = 0;
     try {
       for (const id of selected) {
         try {
-          await removeReservation({ data: id });
-          done += 1;
+          const result = await removeReservation({ data: id });
+          if (result.ok) done += 1;
+          else blocked += 1;
         } catch {
           /* keep going — report the total at the end */
         }
       }
       await queryClient.invalidateQueries({ queryKey: ["ams", "reservations"] });
-      toast.success(`تم حذف ${done} من ${selected.length} طلب`);
+      toast.success(
+        `تم حذف ${done} من ${selected.length} طلب${
+          blocked ? ` — تم تجاهل ${blocked} لبدء طلب التسجيل` : ""
+        }`,
+      );
       setSelected([]);
     } finally {
       setBulkBusy(false);

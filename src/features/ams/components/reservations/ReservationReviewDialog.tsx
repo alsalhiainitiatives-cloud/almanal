@@ -131,7 +131,11 @@ export function ReservationReviewDialog({
   async function onDelete() {
     setBusy("delete");
     try {
-      await removeReservation({ data: row.id });
+      const result = await removeReservation({ data: row.id });
+      if (!result.ok) {
+        toast.error(result.reason ?? "تعذّر حذف طلب الحجز");
+        return;
+      }
       toast.success("تم حذف طلب الحجز وتحرير المقعد ورقم الهوية");
       await refresh();
       onClose();
