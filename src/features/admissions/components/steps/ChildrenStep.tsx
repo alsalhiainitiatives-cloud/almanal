@@ -68,6 +68,7 @@ export function ChildrenStep({
   classrooms,
   parentNationality,
   locked,
+  lockedCount,
   onChange,
 }: {
   children: ChildInput[];
@@ -78,6 +79,8 @@ export function ChildrenStep({
   parentNationality?: string;
   /** Pre-filled from an approved seat reservation → read-only. */
   locked?: boolean;
+  /** How many of the first children came from the reservation (only those lock). */
+  lockedCount?: number;
   onChange: (next: ChildInput[]) => void;
 }) {
   const patch = (index: number, p: Partial<ChildInput>) =>
@@ -94,6 +97,8 @@ export function ChildrenStep({
           const nat = detectNationality(child.nationalId);
           const nationalityConflict = parentNationality === "saudi" && nat === "resident";
           const selectedStage = stages.find((s) => s.id === child.stageId);
+          /* Only children carried over from the approved reservation are locked. */
+          const childLocked = Boolean(locked) && index < (lockedCount ?? children.length);
           /* Parent-facing dropdowns show the name only — seat counts are staff-only. */
           const roomOption = (c: { id: string; name_ar: string }) => ({
             value: c.id,
@@ -144,7 +149,7 @@ export function ChildrenStep({
                 {/* Identity ------------------------------------------------ */}
                 <div className="space-y-5">
                   <SubTitle icon={IdCard} title="هوية الطفل" />
-                  <LockedGroup locked={locked}>
+                  <LockedGroup locked={childLocked}>
                   <FieldGrid>
                     <TextField
                       label="اسم الطفل بالعربية"
@@ -201,16 +206,6 @@ export function ChildrenStep({
                     ) : (
                       <LockedField label="جنسية الطفل" value="—" icon={Globe2} note="أدخل رقم الهوية أولًا." />
                     )}
-                    {nat === "resident" ? (
-                      <CountryField
-                        label="بلد الجنسية"
-                        value={child.country ?? ""}
-                        onChange={(v) => patch(index, { country: v })}
-                        error={errors[`${index}.country`]}
-                        icon={Globe2}
-                        required
-                      />
-                    ) : null}
                     <TextField
                       label="تاريخ الميلاد"
                       value={child.birthDate}
@@ -243,6 +238,20 @@ export function ChildrenStep({
                     />
                   </FieldGrid>
                   </LockedGroup>
+
+                  {/* Nationality country stays editable — required for residents. */}
+                  {nat === "resident" ? (
+                    <FieldGrid>
+                      <CountryField
+                        label="بلد الجنسية"
+                        value={child.country ?? ""}
+                        onChange={(v) => patch(index, { country: v })}
+                        error={errors[`${index}.country`]}
+                        icon={Globe2}
+                        required
+                      />
+                    </FieldGrid>
+                  ) : null}
 
                   {duplicates[index] ? (
                     <StatusNote tone="error" title="طلب مكرر لنفس رقم الهوية" icon={AlertTriangle}>
@@ -282,7 +291,7 @@ export function ChildrenStep({
                           </StatusNote>
 
                           <LockedGroup
-                            locked={locked}
+                            locked={childLocked}
                             title="المرحلة والفصل مثبتان من حجز المقعد"
                           >
                           <FieldGrid>
