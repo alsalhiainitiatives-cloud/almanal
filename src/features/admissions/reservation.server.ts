@@ -17,6 +17,7 @@ import {
   type ReservationStaffUpdateInput,
 } from "./reservation-schema";
 import { notify, STAFF_ROLES } from "@/features/notifications/notifications.server";
+import { DEFAULT_SITE_CONTENT } from "@/features/site-content/defaults";
 
 type Db = SupabaseClient<Database>;
 
@@ -105,6 +106,21 @@ export async function findDuplicateChildIds(
 
 export async function createReservation(supabase: Db, userId: string, input: ReservationInput) {
   await assertRegistrationOpen(supabase);
+  const settings = await getReservationSettings(supabase);
+  if (!settings.enabled) {
+    throw new Error(
+      settings.closedMessage?.trim() || "خطوة الحجز المبدئي مغلقة حالياً، يسعدنا استقبال طلبكم لاحقًا.",
+    );
+  }
+  if (input.children.length > settings.maxChildren) {
+    throw new Error(`الحد الأقصى ${settings.maxChildren} طفل في طلب الحجز الواحد.`);
+  }
+  for (const child of input.children) {
+    const chosen = [child.preference1, child.preference2, child.preference3].filter(Boolean).length;
+    if (chosen < settings.requiredPreferences) {
+      throw new Error(`يجب اختيار ${settings.requiredPreferences} رغبة/رغبات للفصول لكل طفل.`);
+    }
+  }
 
   /* Early validation (Step 0): never let a duplicate child reach the wizard. */
   for (const child of input.children) {
@@ -170,6 +186,8 @@ export async function createReservation(supabase: Db, userId: string, input: Res
     link: "/ams/reservations",
     severity: "warning",
   });
+
+  if (settings.autoApprove) await autoApproveReservation(supabase, reservation.id);
 
   return { id: reservation.id };
 }
