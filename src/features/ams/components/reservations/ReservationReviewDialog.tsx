@@ -96,8 +96,8 @@ export function ReservationReviewDialog({
     setBusy(action);
     try {
       type Placement = { childId: string; classroomId: string | null; waitlisted: boolean };
-      const manual: Placement[] = children
-        .map((child) => {
+      const manual = children
+        .map((child): Placement | null => {
           const choice = placements[child.id];
           if (!choice || choice === "auto") return null;
           const [mode, classroomId] = choice.split(":");
