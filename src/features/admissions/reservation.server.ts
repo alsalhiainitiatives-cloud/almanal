@@ -761,12 +761,16 @@ export async function staffDeleteReservation(supabase: Db, userId: string, id: s
     .select("id, parent_id, parent_name, application_id")
     .eq("id", id)
     .maybeSingle();
-  if (!reservation) throw new Error("لم يتم العثور على طلب الحجز.");
+  if (!reservation)
+    return { ok: false as const, reason: "لم يتم العثور على طلب الحجز." };
   if (reservation.application_id)
-    throw new Error("لا يمكن حذف الحجز بعد بدء طلب التسجيل — يرجى التعامل مع الطلب نفسه.");
+    return {
+      ok: false as const,
+      reason: "لا يمكن حذف الحجز بعد بدء طلب التسجيل — يرجى التعامل مع الطلب نفسه.",
+    };
 
   const { error } = await supabase.from("seat_reservations").delete().eq("id", id);
-  if (error) throw new Error("تعذّر حذف طلب الحجز.");
+  if (error) return { ok: false as const, reason: "تعذّر حذف طلب الحجز." };
 
   await notify(supabase, {
     userIds: [reservation.parent_id],
@@ -777,5 +781,5 @@ export async function staffDeleteReservation(supabase: Db, userId: string, id: s
     severity: "warning",
   });
 
-  return { ok: true as const };
+  return { ok: true as const, reason: null };
 }
