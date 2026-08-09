@@ -17,6 +17,7 @@ import {
   type ReservationStaffUpdateInput,
 } from "./reservation-schema";
 import { notify, STAFF_ROLES } from "@/features/notifications/notifications.server";
+import { DEFAULT_SITE_CONTENT } from "@/features/site-content/defaults";
 
 type Db = SupabaseClient<Database>;
 
@@ -105,6 +106,21 @@ export async function findDuplicateChildIds(
 
 export async function createReservation(supabase: Db, userId: string, input: ReservationInput) {
   await assertRegistrationOpen(supabase);
+  const settings = await getReservationSettings(supabase);
+  if (!settings.enabled) {
+    throw new Error(
+      settings.closedMessage?.trim() || "خطوة الحجز المبدئي مغلقة حالياً، يسعدنا استقبال طلبكم لاحقًا.",
+    );
+  }
+  if (input.children.length > settings.maxChildren) {
+    throw new Error(`الحد الأقصى ${settings.maxChildren} طفل في طلب الحجز الواحد.`);
+  }
+  for (const child of input.children) {
+    const chosen = [child.preference1, child.preference2, child.preference3].filter(Boolean).length;
+    if (chosen < settings.requiredPreferences) {
+      throw new Error(`يجب اختيار ${settings.requiredPreferences} رغبة/رغبات للفصول لكل طفل.`);
+    }
+  }
 
   /* Early validation (Step 0): never let a duplicate child reach the wizard. */
   for (const child of input.children) {
@@ -170,6 +186,8 @@ export async function createReservation(supabase: Db, userId: string, input: Res
     link: "/ams/reservations",
     severity: "warning",
   });
+
+  if (settings.autoApprove) await autoApproveReservation(supabase, reservation.id);
 
   return { id: reservation.id };
 }
@@ -240,6 +258,120 @@ function pickClassroom(prefs: (string | null)[], months: number | null, rooms: C
 async function assertStaff(supabase: Db, userId: string) {
   const { data } = await supabase.rpc("is_school_staff", { _user_id: userId });
   if (!data) throw new Error("غير مصرح لك بمراجعة طلبات حجز المقاعد.");
+}
+
+export type ReservationSettings = (typeof DEFAULT_SITE_CONTENT)["admissions"]["reservation"];
+
+/** Step 0 settings live in site content (تخصيص نظام التسجيل ← التسجيل المبدئي). */
+export async function getReservationSettings(supabase: Db): Promise<ReservationSettings> {
+  const fallback = DEFAULT_SITE_CONTENT.admissions.reservation;
+  try {
+    const { data } = await supabase.from("site_content").select("content").maybeSingle();
+    const content = (data as { content?: unknown } | null)?.content as
+      | { admissions?: { reservation?: Partial<ReservationSettings> } }
+      | undefined;
+    const stored = content?.admissions?.reservation ?? {};
+    return {
+      ...fallback,
+      ...stored,
+      maxChildren: Math.min(6, Math.max(1, Number(stored.maxChildren ?? fallback.maxChildren))),
+      requiredPreferences: Math.min(
+        3,
+        Math.max(1, Number(stored.requiredPreferences ?? fallback.requiredPreferences)),
+      ),
+      retentionDays: Math.max(1, Number(stored.retentionDays ?? fallback.retentionDays)),
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+/** Auto-decision used when staff enable "القبول التلقائي" for Step 0. */
+async function autoApproveReservation(supabase: Db, reservationId: string) {
+  const { data: reservation } = await supabase
+    .from("seat_reservations")
+    .select(`*, children:seat_reservation_children(${CHILD_COLUMNS})`)
+    .eq("id", reservationId)
+    .maybeSingle();
+  if (!reservation || reservation.status !== "pending_review") return;
+
+  const { data: rooms } = await supabase
+    .from("classrooms")
+    .select("id, name_ar, capacity, taken_seats, min_age_months, max_age_months, is_active");
+  const classrooms = (rooms ?? []) as ClassroomRow[];
+
+  const picks = (reservation.children ?? []).map((child) => {
+    const pick = pickClassroom(
+      [
+        child.preference_1_classroom_id,
+        child.preference_2_classroom_id,
+        child.preference_3_classroom_id,
+      ],
+      ageInMonths(child.birth_date),
+      classrooms,
+    );
+    if (pick && !pick.waitlisted) {
+      const room = classrooms.find((r) => r.id === pick.room.id);
+      if (room) room.taken_seats += 1;
+    }
+    return { child, pick };
+  });
+  /* Only auto-approve when every child gets a real seat — otherwise leave it for staff. */
+  if (!picks.length || picks.some((p) => !p.pick || p.pick.waitlisted)) return;
+
+  for (const { child, pick } of picks) {
+    await supabase
+      .from("seat_reservation_children")
+      .update({ assigned_classroom_id: pick!.room.id, waitlisted: false })
+      .eq("id", child.id);
+  }
+  await supabase
+    .from("seat_reservations")
+    .update({
+      status: "approved",
+      decided_at: new Date().toISOString(),
+      decision_note: "قبول تلقائي — توفّر مقعد مطابق للرغبة والفئة العمرية.",
+    })
+    .eq("id", reservationId);
+
+  const summary = picks.map(({ child, pick }) => `${child.name_ar}: ${pick!.room.name_ar}`).join(" · ");
+  await logEvent(supabase, reservationId, reservation.parent_id, {
+    action: "approved",
+    kind: "system",
+    title: "قبول تلقائي للحجز المبدئي",
+    body: summary,
+  });
+  await notify(supabase, {
+    userIds: [reservation.parent_id],
+    kind: "reservation.approved",
+    title: "تم قبول حجز المقعد — أكمل التسجيل",
+    body: `${summary}. تابع لاستكمال بيانات طلب التسجيل.`,
+    link: "/my-applications",
+    severity: "success",
+  });
+}
+
+/** Bulk cleanup for old Step 0 requests (never touches ones tied to an application). */
+export async function purgeOldReservations(
+  supabase: Db,
+  userId: string,
+  input: { days: number; statuses: string[] },
+) {
+  await assertStaff(supabase, userId);
+  const cutoff = new Date(Date.now() - input.days * 86_400_000).toISOString();
+  const { data } = await supabase
+    .from("seat_reservations")
+    .select("id, application_id")
+    .in("status", input.statuses)
+    .lt("created_at", cutoff);
+  const rows = (data ?? []) as { id: string; application_id: string | null }[];
+  const deletable = rows.filter((r) => !r.application_id).map((r) => r.id);
+  const skipped = rows.length - deletable.length;
+  if (deletable.length) {
+    const { error } = await supabase.from("seat_reservations").delete().in("id", deletable);
+    if (error) throw new Error("تعذّر حذف الطلبات القديمة.");
+  }
+  return { deleted: deletable.length, skipped };
 }
 
 export async function decideReservation(

@@ -1,7 +1,17 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, Clock, Loader2, Search, Trash2, Undo2, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  Download,
+  Loader2,
+  Search,
+  Trash2,
+  Undo2,
+  Users,
+  XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -16,9 +26,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -26,8 +35,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  decideSeatReservation,
   deleteSeatReservationByStaff,
   staffSeatReservations,
 } from "@/features/admissions/reservation.functions";
@@ -35,492 +44,361 @@ import {
   RESERVATION_STATUS_COLORS,
   RESERVATION_STATUS_LABELS,
 } from "@/features/admissions/reservation-schema";
-import {
-  ReservationAuditLog,
-  type ReservationEvent,
-} from "@/features/admissions/components/ReservationAuditLog";
-import { ageInMonths, formatAge } from "@/features/admissions/eligibility";
-import { ReservationEditDialog } from "./ReservationEditDialog";
 import { cn } from "@/lib/utils";
+import { ReservationReviewDialog } from "./ReservationReviewDialog";
+import {
+  matchesReservation,
+  progressOf,
+  reservationsToCsv,
+  RESERVATION_SORT_LABELS,
+  sortReservations,
+  waitingDays,
+  type ApplicationLite,
+  type ClassroomRow,
+  type ReservationRow,
+  type ReservationSort,
+} from "./reservation-view";
 
 type Filter = "pending_review" | "approved" | "rejected" | "withdrawn";
 
+const TABS: { value: Filter; label: string; icon: typeof Clock }[] = [
+  { value: "pending_review", label: "بانتظار المراجعة", icon: Clock },
+  { value: "approved", label: "المقبولة", icon: CheckCircle2 },
+  { value: "rejected", label: "المرفوضة", icon: XCircle },
+  { value: "withdrawn", label: "المسحوبة", icon: Undo2 },
+];
+
+/**
+ * Step 0 staff board — mirrors the final applications queue: filter tabs,
+ * one compact row per request, and a review dialog for the actual decision.
+ */
 export function ReservationsBoard() {
   const queryClient = useQueryClient();
-  const decide = useServerFn(decideSeatReservation);
   const removeReservation = useServerFn(deleteSeatReservationByStaff);
   const [filter, setFilter] = useState<Filter>("pending_review");
   const [search, setSearch] = useState("");
-  const [notes, setNotes] = useState<Record<string, string>>({});
-  /** childId → "auto" | "seat:<classroomId>" | "wait:<classroomId>" */
-  const [placements, setPlacements] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState<string | null>(null);
-
-  async function onDelete(id: string) {
-    setBusy(id + "delete");
-    try {
-      await removeReservation({ data: id });
-      await queryClient.invalidateQueries({ queryKey: ["ams", "reservations"] });
-      toast.success("تم حذف طلب الحجز وتحرير المقعد ورقم الهوية");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "تعذّر حذف طلب الحجز");
-    } finally {
-      setBusy(null);
-    }
-  }
+  const [sort, setSort] = useState<ReservationSort>("oldest");
+  const [selected, setSelected] = useState<string[]>([]);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["ams", "reservations"],
     queryFn: () => staffSeatReservations(),
   });
 
-  const classrooms = useMemo(() => data?.classrooms ?? [], [data]);
-  const applications = useMemo(() => data?.applications ?? [], [data]);
+  const classrooms = useMemo(() => (data?.classrooms ?? []) as ClassroomRow[], [data]);
+  const applications = useMemo(() => (data?.applications ?? []) as ApplicationLite[], [data]);
+  const all = useMemo(() => (data?.rows ?? []) as unknown as ReservationRow[], [data]);
 
-  /** Approved reservation → has the parent submitted the full registration? */
-  const progressOf = (applicationId: string | null) => {
-    const app = applicationId ? applications.find((a) => a.id === applicationId) : null;
-    const done = Boolean(app && app.status !== "draft");
-    return {
-      done,
-      label: done ? "تم استكمال البيانات" : "بانتظار استكمال البيانات",
-      number: app?.application_number ?? null,
+  const counts = useMemo(() => {
+    const base: Record<Filter, number> = {
+      pending_review: 0,
+      approved: 0,
+      rejected: 0,
+      withdrawn: 0,
     };
-  };
+    for (const row of all) if (row.status in base) base[row.status as Filter] += 1;
+    return base;
+  }, [all]);
 
-  const rowsAll = data?.rows ?? [];
-  const q = search.trim().toLowerCase();
-  const matches = (row: (typeof rowsAll)[number]) => {
-    if (!q) return true;
-    const app = progressOf(row.application_id);
-    const haystack = [
-      row.parent_name,
-      row.parent_national_id,
-      app.number ?? "",
-      row.application_id ?? "",
-      ...(row.children ?? []).flatMap((c) => [c.name_ar, c.national_id ?? ""]),
-    ]
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(q);
-  };
+  const rows = useMemo(
+    () =>
+      sortReservations(
+        all.filter((row) => row.status === filter && matchesReservation(row, search, applications)),
+        sort,
+      ),
+    [all, filter, search, sort, applications],
+  );
 
-  const rows = rowsAll.filter((row) => row.status === filter && matches(row));
+  const visibleIds = rows.map((r) => r.id);
+  const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selected.includes(id));
+  const current = openId ? (all.find((r) => r.id === openId) ?? null) : null;
 
-  const roomOf = (id: string | null) => classrooms.find((c) => c.id === id) ?? null;
-
-  /** Preference 1 → 2 → 3; mirrors the server-side placement rule. */
-  function suggestion(child: {
-    birth_date: string | null;
-    preference_1_classroom_id: string | null;
-    preference_2_classroom_id: string | null;
-    preference_3_classroom_id: string | null;
-  }) {
-    const months = ageInMonths(child.birth_date);
-    const prefs = [
-      child.preference_1_classroom_id,
-      child.preference_2_classroom_id,
-      child.preference_3_classroom_id,
-    ];
-    for (let i = 0; i < prefs.length; i++) {
-      const room = roomOf(prefs[i]);
-      if (!room || room.is_active === false) continue;
-      const free = Math.max(0, room.capacity - room.taken_seats);
-      const ageOk =
-        months === null || (months >= room.min_age_months && months <= room.max_age_months);
-      if (ageOk && free > 0) {
-        return { text: `تسكين مباشر في «${room.name_ar}» (الرغبة ${i + 1}) — ${free} مقعد متاح`, ok: true };
-      }
-    }
-    const first = roomOf(prefs.find(Boolean) ?? null);
-    return {
-      text: first
-        ? `لا يوجد مقعد مطابق — الاقتراح: قائمة انتظار «${first.name_ar}»`
-        : "لم يتم اختيار فصول",
-      ok: false,
-    };
+  function toggle(id: string) {
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
-  async function run(id: string, action: "approve" | "reject") {
-    setBusy(id + action);
+  async function bulkDelete() {
+    setBulkBusy(true);
+    let done = 0;
     try {
-      const row = (data?.rows ?? []).find((r) => r.id === id);
-      type Placement = { childId: string; classroomId: string | null; waitlisted: boolean };
-      const manual: Placement[] = (row?.children ?? [])
-        .map((child) => {
-          const choice = placements[child.id];
-          if (!choice || choice === "auto") return null;
-          const [mode, classroomId] = choice.split(":");
-          const placement: Placement = {
-            childId: child.id,
-            classroomId: classroomId ?? null,
-            waitlisted: mode === "wait",
-          };
-          return placement;
-        })
-        .filter((p): p is Placement => p !== null);
-      const result = await decide({
-        data: {
-          id,
-          action,
-          note: notes[id]?.trim() || null,
-          ...(action === "approve" && manual.length ? { placements: manual } : {}),
-        },
-      });
-      toast.success(
-        action === "approve"
-          ? `تم قبول الحجز — ${result.placements.map((p) => `${p.name}: ${p.classroom ?? "بدون فصل"}${p.waitlisted ? " (انتظار)" : ""}`).join(" · ")}`
-          : "تم رفض طلب الحجز وإشعار ولي الأمر.",
-      );
+      for (const id of selected) {
+        try {
+          await removeReservation({ data: id });
+          done += 1;
+        } catch {
+          /* keep going — report the total at the end */
+        }
+      }
       await queryClient.invalidateQueries({ queryKey: ["ams", "reservations"] });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "تعذّر تنفيذ القرار");
+      toast.success(`تم حذف ${done} من ${selected.length} طلب`);
+      setSelected([]);
     } finally {
-      setBusy(null);
+      setBulkBusy(false);
     }
+  }
+
+  function exportCsv() {
+    const csv = reservationsToCsv(rows, classrooms, applications);
+    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `reservations-${filter}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
     <div className="space-y-4">
-      <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-        <TabsList className="rounded-2xl">
-          <TabsTrigger value="pending_review" className="text-xs font-bold">
-            <Clock className="size-3.5" />
-            بانتظار المراجعة
-          </TabsTrigger>
-          <TabsTrigger value="approved" className="text-xs font-bold">
-            <CheckCircle2 className="size-3.5" />
-            المقبولة
-          </TabsTrigger>
-          <TabsTrigger value="rejected" className="text-xs font-bold">
-            <XCircle className="size-3.5" />
-            المرفوضة
-          </TabsTrigger>
-          <TabsTrigger value="withdrawn" className="text-xs font-bold">
-            <Undo2 className="size-3.5" />
-            المسحوبة
-          </TabsTrigger>
+      <Tabs
+        value={filter}
+        onValueChange={(v) => {
+          setFilter(v as Filter);
+          setSelected([]);
+        }}
+      >
+        <TabsList className="flex-wrap rounded-2xl">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <TabsTrigger key={tab.value} value={tab.value} className="text-xs font-bold">
+                <Icon className="size-3.5" />
+                {tab.label}
+                <span className="ms-1 rounded-full bg-background/70 px-1.5 text-[10px] font-black">
+                  {counts[tab.value]}
+                </span>
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
       </Tabs>
 
-      <div className="relative">
-        <Search className="absolute inset-inline-start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="ابحث باسم الطفل أو هويته أو اسم ولي الأمر أو الرقم الأكاديمي"
-          className="rounded-2xl ps-9 text-xs font-bold"
-        />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[16rem] flex-1">
+          <Search className="absolute inset-inline-start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="ابحث باسم الطفل أو هويته أو اسم ولي الأمر أو الرقم الأكاديمي"
+            className="rounded-2xl ps-9 text-xs font-bold"
+          />
+        </div>
+        <Select value={sort} onValueChange={(v) => setSort(v as ReservationSort)}>
+          <SelectTrigger className="h-10 w-52 rounded-2xl text-xs font-bold">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(RESERVATION_SORT_LABELS).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button variant="soft" className="h-10 rounded-2xl text-xs font-bold" onClick={exportCsv}>
+          <Download className="size-3.5" />
+          تصدير CSV
+        </Button>
       </div>
 
-      {isLoading && (
+      {selected.length ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/60 bg-muted/40 px-4 py-3">
+          <p className="text-xs font-black text-foreground">
+            تم تحديد {selected.length} طلب
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              className="rounded-2xl text-xs font-bold"
+              onClick={() => setSelected([])}
+            >
+              إلغاء التحديد
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="rounded-2xl text-xs font-bold text-destructive"
+                  disabled={bulkBusy}
+                >
+                  {bulkBusy ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="size-3.5" />
+                  )}
+                  حذف المحدد
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent dir="rtl" className="text-right">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-destructive">
+                    حذف {selected.length} طلب حجز نهائيًا؟
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="leading-relaxed">
+                    سيتم تحرير المقاعد وإلغاء حجب أرقام الهوية. لا يمكن التراجع عن هذا الإجراء.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="gap-2 sm:flex-row-reverse sm:justify-start">
+                  <AlertDialogAction
+                    onClick={bulkDelete}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    نعم، احذف
+                  </AlertDialogAction>
+                  <AlertDialogCancel>تراجع</AlertDialogCancel>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      ) : null}
+
+      {isLoading ? (
         <div className="grid place-items-center rounded-3xl border border-border/60 bg-card p-10">
           <Loader2 className="size-6 animate-spin text-primary" />
         </div>
-      )}
+      ) : null}
 
-      {!isLoading && !rows.length && (
+      {!isLoading && !rows.length ? (
         <div className="rounded-3xl border border-dashed border-border/60 bg-card p-10 text-center text-sm font-bold text-muted-foreground">
           لا توجد طلبات حجز في هذه الحالة.
         </div>
-      )}
+      ) : null}
 
-      {/* Clean overview table — staff-only, seat availability included. */}
       {!isLoading && rows.length ? (
         <div className="overflow-x-auto rounded-3xl border border-border/60 bg-card shadow-sm">
-          <table className="w-full min-w-[720px] text-start text-xs">
-            <thead className="bg-muted/50 text-[11px] font-black text-muted-foreground">
+          <table className="w-full min-w-[880px] text-start text-xs">
+            <thead className="sticky top-0 z-10 bg-muted/60 text-[11px] font-black text-muted-foreground backdrop-blur">
               <tr>
-                <th className="p-3 text-start">الطفل</th>
-                <th className="p-3 text-start">هوية الطفل</th>
+                <th className="w-10 p-3">
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={(v) => setSelected(v ? visibleIds : [])}
+                    aria-label="تحديد الكل"
+                  />
+                </th>
                 <th className="p-3 text-start">ولي الأمر</th>
-                <th className="p-3 text-start">الفصل / الرغبة</th>
-                <th className="p-3 text-start">تاريخ الطلب</th>
+                <th className="p-3 text-start">الأطفال</th>
+                <th className="p-3 text-start">الفصل / الرغبة الأولى</th>
+                <th className="p-3 text-start">مدة الانتظار</th>
                 <th className="p-3 text-start">الحالة</th>
                 <th className="p-3 text-start">استكمال التسجيل</th>
+                <th className="p-3 text-start">إجراء</th>
               </tr>
             </thead>
             <tbody>
-              {rows.flatMap((row) =>
-                (row.children ?? []).map((child) => {
-                  const room =
-                    roomOf(child.assigned_classroom_id) ?? roomOf(child.preference_1_classroom_id);
-                  const free = room ? Math.max(0, room.capacity - room.taken_seats) : 0;
-                  const progress = progressOf(row.application_id);
-                  return (
-                    <tr key={child.id} className="border-t border-border/50 font-bold">
-                      <td className="p-3 text-foreground">{child.name_ar}</td>
-                      <td className="p-3 text-muted-foreground" dir="ltr">
-                        {child.national_id ?? "—"}
-                      </td>
-                      <td className="p-3 text-muted-foreground">{row.parent_name}</td>
-                      <td className="p-3">
-                        <span
-                          className={cn(
-                            "rounded-full px-2 py-0.5 text-[10px] font-black",
-                            free > 0 ? "bg-mint text-foreground" : "bg-destructive/15 text-destructive",
-                          )}
-                        >
-                          {room ? `${room.name_ar} · متاح ${free}` : "بدون فصل"}
-                        </span>
-                      </td>
-                      <td className="p-3 text-muted-foreground" dir="ltr">
-                        {new Date(row.created_at).toLocaleDateString("ar-SA")}
-                      </td>
-                      <td className="p-3">
-                        <span
-                          className={cn(
-                            "rounded-full px-2 py-0.5 text-[10px] font-black",
-                            RESERVATION_STATUS_COLORS[row.status] ?? "bg-muted",
-                          )}
-                        >
-                          {RESERVATION_STATUS_LABELS[row.status] ?? row.status}
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        {row.status === "approved" ? (
-                          <span
-                            className={cn(
-                              "rounded-full px-2 py-0.5 text-[10px] font-black",
-                              progress.done
-                                ? "bg-mint text-foreground"
-                                : "bg-amber-100 text-amber-800",
-                            )}
-                          >
-                            {progress.label}
-                            {progress.number ? ` · ${progress.number}` : ""}
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-bold text-muted-foreground">—</span>
+              {rows.map((row) => {
+                const children = [...(row.children ?? [])].sort((a, b) => a.sort_order - b.sort_order);
+                const first = children[0];
+                const room = classrooms.find(
+                  (c) =>
+                    c.id === (first?.assigned_classroom_id ?? first?.preference_1_classroom_id ?? ""),
+                );
+                const free = room ? Math.max(0, room.capacity - room.taken_seats) : 0;
+                const progress = progressOf(row, applications);
+                const days = waitingDays(row);
+                return (
+                  <tr
+                    key={row.id}
+                    className="cursor-pointer border-t border-border/50 font-bold transition-colors hover:bg-muted/40"
+                    onClick={() => setOpenId(row.id)}
+                  >
+                    <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selected.includes(row.id)}
+                        onCheckedChange={() => toggle(row.id)}
+                        aria-label="تحديد الطلب"
+                      />
+                    </td>
+                    <td className="p-3">
+                      <p className="text-foreground">{row.parent_name}</p>
+                      <p className="text-[10px] text-muted-foreground" dir="ltr">
+                        {row.parent_national_id}
+                      </p>
+                    </td>
+                    <td className="p-3">
+                      <span className="inline-flex items-center gap-1 text-foreground">
+                        <Users className="size-3.5 text-primary" />
+                        {children.length}
+                      </span>
+                      <p className="mt-0.5 max-w-[14rem] truncate text-[10px] text-muted-foreground">
+                        {children.map((c) => c.name_ar).join(" · ")}
+                      </p>
+                    </td>
+                    <td className="p-3">
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-[10px] font-black",
+                          free > 0 ? "bg-mint text-foreground" : "bg-destructive/15 text-destructive",
                         )}
-                      </td>
-                    </tr>
-                  );
-                }),
-              )}
+                      >
+                        {room ? `${room.name_ar} · متاح ${free}` : "بدون فصل"}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <span
+                        className={cn(
+                          "text-[10px] font-black",
+                          row.status === "pending_review" && days >= 3
+                            ? "text-destructive"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {days === 0 ? "اليوم" : `${days} يوم`}
+                      </span>
+                      <p className="text-[10px] text-muted-foreground" dir="ltr">
+                        {new Date(row.created_at).toLocaleDateString("ar-SA")}
+                      </p>
+                    </td>
+                    <td className="p-3">
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-[10px] font-black",
+                          RESERVATION_STATUS_COLORS[row.status] ?? "bg-muted",
+                        )}
+                      >
+                        {RESERVATION_STATUS_LABELS[row.status] ?? row.status}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      {row.status === "approved" ? (
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-[10px] font-black",
+                            progress.done ? "bg-mint text-foreground" : "bg-amber-100 text-amber-800",
+                          )}
+                        >
+                          {progress.label}
+                          {progress.number ? ` · ${progress.number}` : ""}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="soft"
+                        className="h-8 rounded-xl text-[11px] font-bold"
+                        onClick={() => setOpenId(row.id)}
+                      >
+                        {row.status === "pending_review" ? "مراجعة واتخاذ قرار" : "عرض التفاصيل"}
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       ) : null}
 
-      {rows.map((row) => {
-        const fullEverywhere = (row.children ?? []).every((child) => !suggestion(child).ok);
-        return (
-          <div key={row.id} className="rounded-3xl border border-border/60 bg-card p-5 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-black text-foreground">{row.parent_name}</p>
-                <p className="text-[11px] text-muted-foreground" dir="ltr">
-                  {row.parent_national_id} · {new Date(row.created_at).toLocaleString("ar-SA")}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={cn(
-                    "rounded-full px-2.5 py-1 text-[10px] font-black",
-                    RESERVATION_STATUS_COLORS[row.status] ?? "bg-muted",
-                  )}
-                >
-                  {RESERVATION_STATUS_LABELS[row.status] ?? row.status}
-                </span>
-                <ReservationEditDialog reservation={row} classrooms={classrooms} />
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="rounded-2xl text-xs font-bold text-destructive hover:bg-destructive/10"
-                      disabled={busy !== null}
-                    >
-                      {busy === row.id + "delete" ? (
-                        <Loader2 className="size-3.5 animate-spin" />
-                      ) : (
-                        <Trash2 className="size-3.5" />
-                      )}
-                      حذف
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent dir="rtl" className="text-right">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="text-destructive">
-                        حذف طلب حجز المقعد نهائيًا؟
-                      </AlertDialogTitle>
-                      <AlertDialogDescription className="leading-relaxed">
-                        سيتم حذف الطلب وسجل التدقيق الخاص به، وتحرير المقعد وإلغاء حجب رقم هوية الطفل
-                        ليتمكن ولي الأمر من إرسال طلب جديد.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="gap-2 sm:flex-row-reverse sm:justify-start">
-                      <AlertDialogAction
-                        onClick={() => onDelete(row.id)}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        نعم، احذف الطلب
-                      </AlertDialogAction>
-                      <AlertDialogCancel>تراجع</AlertDialogCancel>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              {(row.children ?? []).map((child) => {
-                const hint = suggestion(child);
-                return (
-                  <div key={child.id} className="rounded-2xl bg-muted/40 p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-xs font-black text-foreground">
-                        {child.name_ar}
-                        <span className="ms-2 font-bold text-muted-foreground">
-                          {formatAge(ageInMonths(child.birth_date))} ·{" "}
-                          {child.gender === "female" ? "أنثى" : "ذكر"}
-                        </span>
-                      </p>
-                      <p className="text-[11px] font-bold text-muted-foreground" dir="ltr">
-                        {child.national_id}
-                      </p>
-                    </div>
-                    <p className="mt-2 text-[11px] font-bold text-muted-foreground">
-                      الرغبات:{" "}
-                    </p>
-                    <div className="mt-1.5 flex flex-wrap gap-2">
-                      {[
-                        child.preference_1_classroom_id,
-                        child.preference_2_classroom_id,
-                        child.preference_3_classroom_id,
-                      ].map((id, i) => {
-                        if (!id) return null;
-                        const room = roomOf(id);
-                        const free = room ? Math.max(0, room.capacity - room.taken_seats) : 0;
-                        const open = Boolean(room) && free > 0 && room?.is_active !== false;
-                        return (
-                          <span
-                            key={`${child.id}-${i}`}
-                            className={cn(
-                              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black",
-                              open
-                                ? "bg-mint text-foreground"
-                                : "bg-destructive/15 text-destructive",
-                            )}
-                          >
-                            {i + 1}. {room?.name_ar ?? "—"} ·{" "}
-                            {open ? `متاح (${free})` : "مكتمل"}
-                          </span>
-                        );
-                      })}
-                    </div>
-                    <p
-                      className={cn(
-                        "mt-2 text-[11px] font-black",
-                        hint.ok ? "text-primary" : "text-destructive",
-                      )}
-                    >
-                      {hint.text}
-                    </p>
-                    {row.status === "pending_review" ? (
-                      <div className="mt-3 max-w-sm">
-                        <p className="mb-1.5 text-[10px] font-black text-muted-foreground">
-                          قرار التسكين
-                        </p>
-                        <Select
-                          value={placements[child.id] ?? "auto"}
-                          onValueChange={(v) =>
-                            setPlacements((prev) => ({ ...prev, [child.id]: v }))
-                          }
-                        >
-                          <SelectTrigger className="h-9 text-xs font-bold">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="auto">تلقائي حسب الرغبات المتاحة</SelectItem>
-                            {[
-                              child.preference_1_classroom_id,
-                              child.preference_2_classroom_id,
-                              child.preference_3_classroom_id,
-                            ].flatMap((id, i) => {
-                              if (!id) return [];
-                              const room = roomOf(id);
-                              if (!room) return [];
-                              const free = Math.max(0, room.capacity - room.taken_seats);
-                              return [
-                                <SelectItem
-                                  key={`seat-${id}`}
-                                  value={`seat:${id}`}
-                                  disabled={free <= 0}
-                                >
-                                  تسكين مباشر — {room.name_ar} (الرغبة {i + 1})
-                                </SelectItem>,
-                                <SelectItem key={`wait-${id}`} value={`wait:${id}`}>
-                                  قائمة انتظار — {room.name_ar} (الرغبة {i + 1})
-                                </SelectItem>,
-                              ];
-                            })}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ) : null}
-                    {row.status === "approved" && (
-                      <p className="mt-1 text-[11px] font-bold text-foreground">
-                        القرار: {roomOf(child.assigned_classroom_id)?.name_ar ?? "بدون فصل"}
-                        {child.waitlisted ? " (قائمة انتظار)" : ""}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {row.status === "pending_review" ? (
-              <div className="mt-4 space-y-3">
-                {fullEverywhere && (
-                  <p className="rounded-2xl bg-destructive/10 px-4 py-2 text-[11px] font-black text-destructive">
-                    وصل الفصل وقائمة الانتظار إلى الطاقة الاستيعابية القصوى
-                  </p>
-                )}
-                <Textarea
-                  rows={2}
-                  placeholder="ملاحظة لولي الأمر (اختياري)"
-                  value={notes[row.id] ?? ""}
-                  onChange={(e) => setNotes((n) => ({ ...n, [row.id]: e.target.value }))}
-                />
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="hero"
-                    className="rounded-2xl text-xs font-bold"
-                    disabled={busy !== null}
-                    onClick={() => run(row.id, "approve")}
-                  >
-                    {busy === row.id + "approve" ? <Loader2 className="size-3.5 animate-spin" /> : null}
-                    قبول الحجز وتسكين الطفل
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="rounded-2xl text-xs font-bold text-destructive"
-                    disabled={busy !== null}
-                    onClick={() => run(row.id, "reject")}
-                  >
-                    {busy === row.id + "reject" ? <Loader2 className="size-3.5 animate-spin" /> : null}
-                    رفض الحجز
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              row.decision_note && (
-                <p className="mt-4 rounded-2xl bg-muted/40 px-4 py-2 text-[11px] font-bold text-muted-foreground">
-                  ملاحظة القرار: {row.decision_note}
-                </p>
-              )
-            )}
-
-            <div className="mt-4">
-              <ReservationAuditLog
-                reservationId={row.id}
-                events={(row as { events?: ReservationEvent[] }).events ?? []}
-              />
-            </div>
-          </div>
-        );
-      })}
+      <ReservationReviewDialog
+        reservation={current}
+        classrooms={classrooms}
+        applications={applications}
+        onClose={() => setOpenId(null)}
+      />
     </div>
   );
 }

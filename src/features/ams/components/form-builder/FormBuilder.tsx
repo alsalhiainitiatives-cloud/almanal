@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowDown,
   ArrowUp,
+  ClipboardList,
   Eye,
   EyeOff,
   FileText,
@@ -42,6 +43,7 @@ import {
   formStepsReorder,
 } from "../../form-config.functions";
 import { FieldDialog } from "./FieldDialog";
+import { ReservationSettingsPanel } from "./ReservationSettingsPanel";
 import { StepDialog } from "./StepDialog";
 import { DocTypeDialog } from "./DocTypeDialog";
 import { UploadSettingsPanel } from "./UploadSettingsPanel";
@@ -203,6 +205,9 @@ export function FormBuilder() {
       <TabsList className="rounded-2xl">
         <TabsTrigger value="steps" className="rounded-xl text-xs font-bold">
           <Settings2 className="ms-1 size-4" /> المراحل والحقول
+        </TabsTrigger>
+        <TabsTrigger value="reservation" className="rounded-xl text-xs font-bold">
+          <ClipboardList className="ms-1 size-4" /> التسجيل المبدئي
         </TabsTrigger>
         <TabsTrigger value="docs" className="rounded-xl text-xs font-bold">
           <FileText className="ms-1 size-4" /> أنواع المستندات
@@ -531,6 +536,10 @@ export function FormBuilder() {
 
       <TabsContent value="uploads" className="m-0">
         <UploadSettingsPanel />
+      </TabsContent>
+
+      <TabsContent value="reservation" className="m-0">
+        <ReservationSettingsPanel />
       </TabsContent>
 
       <TabsContent value="danger" className="m-0">
