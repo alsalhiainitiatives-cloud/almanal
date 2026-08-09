@@ -717,7 +717,11 @@ function WizardPage() {
 
       setDuplicates({});
       const res = await submit({ data: applicationId });
-      setDone({ applicationNumber: res.applicationNumber, trackingNumber: res.trackingNumber });
+      setDone({
+        applicationNumber: res.applicationNumber,
+        trackingNumber: res.trackingNumber,
+        trackToken: res.trackToken ?? null,
+      });
       await queryClient.invalidateQueries({ queryKey: ["application", applicationId] });
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
@@ -729,6 +733,7 @@ function WizardPage() {
 
   if (done || submitted) {
     const number = done?.applicationNumber ?? bundle.application.application_number ?? "—";
+    const token = done?.trackToken ?? bundle.application.track_token ?? null;
     return (
       <section className="section-y">
         <div className="mx-auto max-w-2xl px-4 text-center md:px-8">
@@ -751,6 +756,40 @@ function WizardPage() {
                 {number}
               </p>
             </div>
+            {token ? (
+              <div className="mt-3 rounded-2xl border border-dashed border-primary/40 bg-card p-5">
+                <p className="text-xs font-bold text-muted-foreground">رمز التحقق للتتبع السريع (بدون تسجيل دخول)</p>
+                <p className="mt-1 break-all text-sm font-black text-foreground" dir="ltr">
+                  {token}
+                </p>
+                <div className="mt-3 flex flex-wrap justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-2xl"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(`${number} · ${token}`);
+                        toast.success("تم نسخ الرقم الأكاديمي ورمز التحقق");
+                      } catch {
+                        toast.error("تعذّر النسخ — انسخ الرمز يدويًا");
+                      }
+                    }}
+                  >
+                    نسخ الرقم والرمز
+                  </Button>
+                  <Button asChild variant="soft" className="rounded-2xl">
+                    <Link to="/track" search={{ no: number, t: token }}>
+                      تتبّع الطلب الآن
+                    </Link>
+                  </Button>
+                </div>
+                <p className="mt-3 text-[11px] font-bold leading-5 text-muted-foreground">
+                  احتفظ بهذا الرمز في مكان آمن — يتيح لك متابعة حالة الطلب من صفحة التتبع دون تسجيل الدخول، ولا تشاركه مع
+                  أي شخص خارج الأسرة.
+                </p>
+              </div>
+            ) : null}
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Button variant="hero" onClick={() => navigate({ to: "/my-applications" })}>
                 متابعة طلباتي
