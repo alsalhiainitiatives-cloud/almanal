@@ -710,14 +710,37 @@ export async function financeOverview(supabase: Db, userId: string) {
   const unplannedParentIds = [...new Set(unplannedApps.map((a) => a.parent_id))];
   const unplannedAppIds = unplannedApps.map((a) => a.id);
 
-  const [extraProfiles, extraChildren] = await Promise.all([
+  const [extraProfiles, extraChildren, qurraRows, serviceRows] = await Promise.all([
     unplannedParentIds.length
       ? supabase.from("profiles").select("id, full_name, phone, email").in("id", unplannedParentIds)
       : Promise.resolve({ data: [] }),
     unplannedAppIds.length
       ? supabase.from("application_children").select("application_id, name_ar").in("application_id", unplannedAppIds)
       : Promise.resolve({ data: [] }),
+    unplannedAppIds.length
+      ? supabase
+          .from("qurra_requests")
+          .select("application_id, status, requested")
+          .in("application_id", unplannedAppIds)
+      : Promise.resolve({ data: [] }),
+    unplannedAppIds.length
+      ? supabase.from("application_services").select("application_id").in("application_id", unplannedAppIds)
+      : Promise.resolve({ data: [] }),
   ]);
+
+  /**
+   * Qurra covers the tuition in full. When the family also picked no paid
+   * service, nothing is due — so finance should see "مشمول بدعم قرة" instead of
+   * chasing a payment plan that has no amount behind it.
+   */
+  const qurraApproved = new Set(
+    ((qurraRows.data ?? []) as { application_id: string; status: string }[])
+      .filter((q) => q.status === "approved")
+      .map((q) => q.application_id),
+  );
+  const withServices = new Set(
+    ((serviceRows.data ?? []) as { application_id: string }[]).map((s) => s.application_id),
+  );
 
   const seenProfiles = new Set((profiles.data ?? []).map((p) => p.id));
   const mergedProfiles = (profiles.data ?? []).concat(
@@ -730,7 +753,10 @@ export async function financeOverview(supabase: Db, userId: string) {
     receipts: receipts.data ?? [],
     profiles: mergedProfiles,
     children: [...(children.data ?? []), ...(extraChildren.data ?? [])],
-    unplanned: unplannedApps,
+    unplanned: unplannedApps.map((a) => ({
+      ...a,
+      qurraFullyCovered: qurraApproved.has(a.id) && !withServices.has(a.id),
+    })),
     settings: settings.data ?? null,
     planSettings: plan.data ?? null,
   };
