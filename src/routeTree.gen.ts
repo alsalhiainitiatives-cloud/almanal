@@ -43,6 +43,7 @@ import { Route as AuthenticatedApplyNewRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedApplyApplicationIdRouteImport } from './routes/_authenticated/apply.$applicationId'
 import { Route as AuthenticatedAmsWaitingListRouteImport } from './routes/_authenticated/ams/waiting-list'
 import { Route as AuthenticatedAmsSeatsRouteImport } from './routes/_authenticated/ams/seats'
+import { Route as AuthenticatedAmsSeasonsRouteImport } from './routes/_authenticated/ams/seasons'
 import { Route as AuthenticatedAmsReservationsRouteImport } from './routes/_authenticated/ams/reservations'
 import { Route as AuthenticatedAmsReportsRouteImport } from './routes/_authenticated/ams/reports'
 import { Route as AuthenticatedAmsQueueRouteImport } from './routes/_authenticated/ams/queue'
@@ -235,6 +236,11 @@ const AuthenticatedAmsSeatsRoute = AuthenticatedAmsSeatsRouteImport.update({
   path: '/ams/seats',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAmsSeasonsRoute = AuthenticatedAmsSeasonsRouteImport.update({
+  id: '/ams/seasons',
+  path: '/ams/seasons',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAmsReservationsRoute =
   AuthenticatedAmsReservationsRouteImport.update({
     id: '/ams/reservations',
@@ -376,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/ams/queue': typeof AuthenticatedAmsQueueRoute
   '/ams/reports': typeof AuthenticatedAmsReportsRoute
   '/ams/reservations': typeof AuthenticatedAmsReservationsRoute
+  '/ams/seasons': typeof AuthenticatedAmsSeasonsRoute
   '/ams/seats': typeof AuthenticatedAmsSeatsRoute
   '/ams/waiting-list': typeof AuthenticatedAmsWaitingListRoute
   '/apply/$applicationId': typeof AuthenticatedApplyApplicationIdRoute
@@ -429,6 +436,7 @@ export interface FileRoutesByTo {
   '/ams/queue': typeof AuthenticatedAmsQueueRoute
   '/ams/reports': typeof AuthenticatedAmsReportsRoute
   '/ams/reservations': typeof AuthenticatedAmsReservationsRoute
+  '/ams/seasons': typeof AuthenticatedAmsSeasonsRoute
   '/ams/seats': typeof AuthenticatedAmsSeatsRoute
   '/ams/waiting-list': typeof AuthenticatedAmsWaitingListRoute
   '/apply/$applicationId': typeof AuthenticatedApplyApplicationIdRoute
@@ -484,6 +492,7 @@ export interface FileRoutesById {
   '/_authenticated/ams/queue': typeof AuthenticatedAmsQueueRoute
   '/_authenticated/ams/reports': typeof AuthenticatedAmsReportsRoute
   '/_authenticated/ams/reservations': typeof AuthenticatedAmsReservationsRoute
+  '/_authenticated/ams/seasons': typeof AuthenticatedAmsSeasonsRoute
   '/_authenticated/ams/seats': typeof AuthenticatedAmsSeatsRoute
   '/_authenticated/ams/waiting-list': typeof AuthenticatedAmsWaitingListRoute
   '/_authenticated/apply/$applicationId': typeof AuthenticatedApplyApplicationIdRoute
@@ -539,6 +548,7 @@ export interface FileRouteTypes {
     | '/ams/queue'
     | '/ams/reports'
     | '/ams/reservations'
+    | '/ams/seasons'
     | '/ams/seats'
     | '/ams/waiting-list'
     | '/apply/$applicationId'
@@ -592,6 +602,7 @@ export interface FileRouteTypes {
     | '/ams/queue'
     | '/ams/reports'
     | '/ams/reservations'
+    | '/ams/seasons'
     | '/ams/seats'
     | '/ams/waiting-list'
     | '/apply/$applicationId'
@@ -646,6 +657,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ams/queue'
     | '/_authenticated/ams/reports'
     | '/_authenticated/ams/reservations'
+    | '/_authenticated/ams/seasons'
     | '/_authenticated/ams/seats'
     | '/_authenticated/ams/waiting-list'
     | '/_authenticated/apply/$applicationId'
@@ -930,6 +942,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAmsSeatsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ams/seasons': {
+      id: '/_authenticated/ams/seasons'
+      path: '/ams/seasons'
+      fullPath: '/ams/seasons'
+      preLoaderRoute: typeof AuthenticatedAmsSeasonsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ams/reservations': {
       id: '/_authenticated/ams/reservations'
       path: '/ams/reservations'
@@ -1077,6 +1096,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAmsQueueRoute: typeof AuthenticatedAmsQueueRoute
   AuthenticatedAmsReportsRoute: typeof AuthenticatedAmsReportsRoute
   AuthenticatedAmsReservationsRoute: typeof AuthenticatedAmsReservationsRoute
+  AuthenticatedAmsSeasonsRoute: typeof AuthenticatedAmsSeasonsRoute
   AuthenticatedAmsSeatsRoute: typeof AuthenticatedAmsSeatsRoute
   AuthenticatedAmsWaitingListRoute: typeof AuthenticatedAmsWaitingListRoute
   AuthenticatedApplyApplicationIdRoute: typeof AuthenticatedApplyApplicationIdRoute
@@ -1107,6 +1127,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAmsQueueRoute: AuthenticatedAmsQueueRoute,
   AuthenticatedAmsReportsRoute: AuthenticatedAmsReportsRoute,
   AuthenticatedAmsReservationsRoute: AuthenticatedAmsReservationsRoute,
+  AuthenticatedAmsSeasonsRoute: AuthenticatedAmsSeasonsRoute,
   AuthenticatedAmsSeatsRoute: AuthenticatedAmsSeatsRoute,
   AuthenticatedAmsWaitingListRoute: AuthenticatedAmsWaitingListRoute,
   AuthenticatedApplyApplicationIdRoute: AuthenticatedApplyApplicationIdRoute,
