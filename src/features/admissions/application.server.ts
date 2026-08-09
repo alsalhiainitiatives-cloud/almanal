@@ -6,7 +6,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 import type { ChildInput, ParentInfoInput, QurraInput } from "./schemas";
-import { buildApplicationCode } from "./application-code";
+import { isValidAcademicNumber } from "@/features/ams/academic-number";
+import { issueAcademicNumber } from "@/features/ams/academic-number.server";
 
 type Db = SupabaseClient<Database>;
 
@@ -374,24 +375,6 @@ export async function removeDocument(supabase: Db, userId: string, input: { id: 
   return { ok: true as const };
 }
 
-/**
- * Issues a professional short code (MN-48-ABC123) and guarantees uniqueness by
- * re-rolling the serial whenever the database already holds it.
- */
-async function issueApplicationCode(supabase: Db) {
-  for (let attempt = 0; attempt < 8; attempt++) {
-    const candidate = buildApplicationCode(ACADEMIC_YEAR);
-    const { data, error } = await supabase
-      .from("applications")
-      .select("id")
-      .or(`application_number.eq.${candidate},tracking_number.eq.${candidate}`)
-      .limit(1);
-    if (error) throw new Error("تعذّر توليد رقم الطلب، حاول مرة أخرى.");
-    if (!data?.length) return candidate;
-  }
-  throw new Error("تعذّر توليد رقم طلب فريد، حاول مرة أخرى.");
-}
-
 export async function submitApplication(supabase: Db, userId: string, id: string) {
   const app = await loadApplicationRow(supabase, id, userId);
   if (app.status !== "draft" && app.status !== "needs_action") {
@@ -416,10 +399,14 @@ export async function submitApplication(supabase: Db, userId: string, id: string
   const discount = childCount > 1 ? tuition * 0.1 : 0;
   const grandTotal = admissionFee + tuition + servicesTotal - discount;
 
-  // One unified number is used for both the application and its tracking page.
+  // A single unified identifier: the academic number is also the application
+  // number and the tracking number — the platform never issues a second code.
   const wasCorrection = app.status === "needs_action";
-  // Keep the original number when the parent resubmits after corrections.
-  const applicationNumber = app.application_number ?? (await issueApplicationCode(supabase));
+  // Keep the original number when the parent resubmits after corrections,
+  // unless it is a legacy code that predates the academic-number scheme.
+  const applicationNumber = isValidAcademicNumber(app.application_number)
+    ? (app.application_number as string)
+    : await issueAcademicNumber(supabase, id, app.academic_year ?? ACADEMIC_YEAR);
   const trackingNumber = applicationNumber;
 
   const { error } = await supabase
@@ -428,6 +415,7 @@ export async function submitApplication(supabase: Db, userId: string, id: string
       status: "submitted",
       application_number: applicationNumber,
       tracking_number: trackingNumber,
+      student_number: applicationNumber,
       admission_fee: admissionFee,
       tuition_total: tuition,
       services_total: servicesTotal,
