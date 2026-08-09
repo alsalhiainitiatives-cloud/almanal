@@ -746,7 +746,7 @@ function WizardPage() {
               سيقوم مسؤول القبول بمراجعة الطلب والتواصل معك. احتفظ بالرقم الأكاديمي لمتابعة حالته.
             </p>
             <div className="mt-7 rounded-2xl bg-beige/70 p-5">
-              <p className="text-xs font-bold text-muted-foreground">الرقم الأكاديمي</p>
+              <p className="text-xs font-bold text-muted-foreground">الرقم الأكاديمي /&nbsp; رقم الطلب</p>
               <p className="mt-1 text-xl font-black text-primary" dir="ltr">
                 {number}
               </p>
