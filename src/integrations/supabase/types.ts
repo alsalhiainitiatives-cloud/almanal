@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      admission_seasons: {
+        Row: {
+          academic_year: string
+          closure_message: string | null
+          created_at: string
+          created_by: string | null
+          ends_at: string
+          id: string
+          kind: string
+          name_ar: string
+          notes: string | null
+          reservation_enabled: boolean
+          starts_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year: string
+          closure_message?: string | null
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string
+          id?: string
+          kind?: string
+          name_ar: string
+          notes?: string | null
+          reservation_enabled?: boolean
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          closure_message?: string | null
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string
+          id?: string
+          kind?: string
+          name_ar?: string
+          notes?: string | null
+          reservation_enabled?: boolean
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       application_children: {
         Row: {
           allergies: string | null
@@ -377,6 +425,7 @@ export type Database = {
           priority: string
           review_note: string | null
           reviewed_at: string | null
+          season_id: string | null
           seat_status: string
           services_total: number
           stage_id: string | null
@@ -417,6 +466,7 @@ export type Database = {
           priority?: string
           review_note?: string | null
           reviewed_at?: string | null
+          season_id?: string | null
           seat_status?: string
           services_total?: number
           stage_id?: string | null
@@ -457,6 +507,7 @@ export type Database = {
           priority?: string
           review_note?: string | null
           reviewed_at?: string | null
+          season_id?: string | null
           seat_status?: string
           services_total?: number
           stage_id?: string | null
@@ -474,6 +525,13 @@ export type Database = {
             columns: ["classroom_id"]
             isOneToOne: false
             referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applications_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "admission_seasons"
             referencedColumns: ["id"]
           },
           {
@@ -1933,6 +1991,7 @@ export type Database = {
           parent_id: string
           parent_name: string
           parent_national_id: string
+          season_id: string | null
           status: string
           updated_at: string
         }
@@ -1947,6 +2006,7 @@ export type Database = {
           parent_id?: string
           parent_name: string
           parent_national_id: string
+          season_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -1961,6 +2021,7 @@ export type Database = {
           parent_id?: string
           parent_name?: string
           parent_national_id?: string
+          season_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -1970,6 +2031,13 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: false
             referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seat_reservations_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "admission_seasons"
             referencedColumns: ["id"]
           },
         ]
@@ -2425,6 +2493,19 @@ export type Database = {
           expires_at: string
           user_id: string
           user_name: string
+        }[]
+      }
+      active_admission_season: {
+        Args: never
+        Returns: {
+          academic_year: string
+          closure_message: string
+          ends_at: string
+          id: string
+          kind: string
+          name_ar: string
+          reservation_enabled: boolean
+          starts_at: string
         }[]
       }
       active_classroom_locks: {

@@ -782,6 +782,27 @@ export async function decideApplication(
     link: meta.link,
     severity: approved ? "success" : "info",
   });
+  if (approved) {
+    // Approved applications flow automatically into Student Affairs (student
+    // file) and the finance module (invoice created on plan selection).
+    await logEvent(
+      supabase,
+      input.id,
+      userId,
+      "application.handoff",
+      "تم تحويل الطالب تلقائيًا إلى شؤون الطلاب والإدارة المالية",
+      `الرقم الأكاديمي ${academicNumber ?? meta.number} — أصبح ملف الطالب متاحًا في سجل الطلاب، وتُنشأ الفاتورة عند اختيار ولي الأمر لخطة السداد.`,
+    );
+    await notify(supabase, {
+      roles: ["accountant", "registration_officer", "principal", "supervisor", "admin"],
+      kind: "student.enrolled",
+      title: `طالب جديد في سجل الطلاب: ${academicNumber ?? meta.number}`,
+      body: "تم التحويل تلقائيًا من القبول إلى شؤون الطلاب والمالية.",
+      applicationId: input.id,
+      link: "/ams/students",
+      severity: "success",
+    });
+  }
   return { ok: true as const };
 }
 

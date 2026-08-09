@@ -4,6 +4,7 @@ import {
   Activity,
   Armchair,
   BarChart3,
+  CalendarClock,
   GraduationCap,
   Home,
   Inbox,
@@ -58,6 +59,14 @@ const NAV: NavItem[] = [
   { to: "/ams/waiting-list", label: "قائمة الانتظار", icon: ListOrdered, exact: false, group: "معالجة الطلبات" },
   { to: "/ams/activity", label: "الحركة اللحظية", icon: Activity, exact: false, group: "المتابعة والتقارير" },
   { to: "/ams/reports", label: "التقارير", icon: BarChart3, exact: false, group: "المتابعة والتقارير" },
+  {
+    to: "/ams/seasons",
+    label: "مواسم التسجيل",
+    icon: CalendarClock,
+    exact: false,
+    group: "الإعدادات",
+    roles: ["admin", "supervisor", "principal", "registration_officer"],
+  },
   {
     to: "/ams/form-builder",
     label: "تخصيص نظام التسجيل",

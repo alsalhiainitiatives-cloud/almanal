@@ -8,6 +8,7 @@ import type { Database } from "@/integrations/supabase/types";
 import type { ChildInput, ParentInfoInput, QurraInput } from "./schemas";
 import { isValidAcademicNumber } from "@/features/ams/academic-number";
 import { issueAcademicNumber } from "@/features/ams/academic-number.server";
+import { resolveActiveSeason } from "@/features/ams/seasons.server";
 
 type Db = SupabaseClient<Database>;
 
@@ -74,13 +75,15 @@ export async function startApplication(
     return { id: existing.id };
   }
 
+  const season = await resolveActiveSeason(supabase);
   const { data, error } = await supabase
     .from("applications")
     .insert({
       parent_id: userId,
       stage_id: input.stageId,
       classroom_id: input.classroomId,
-      academic_year: ACADEMIC_YEAR,
+      academic_year: season?.academicYear ?? ACADEMIC_YEAR,
+      season_id: season?.id ?? null,
       status: "draft",
       current_step: 3,
     })
