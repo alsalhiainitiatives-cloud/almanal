@@ -381,7 +381,7 @@ function ReportsPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="ابحث بالاسم أو الهوية أو الجوال أو رقم الطلب"
+              placeholder="ابحث بالاسم أو الهوية أو الجوال أو الرقم الأكاديمي"
               className="mt-3 rounded-2xl text-xs"
             />
 

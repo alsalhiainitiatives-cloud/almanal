@@ -26,7 +26,7 @@ export function voucherHtml(input: VoucherInput) {
   const bank = input.bank;
   const title = input.paid ? "إيصال سداد" : "نموذج سداد رسوم";
   const rows: [string, string][] = [
-    ["رقم الطلب", esc(input.applicationNumber)],
+    ["الرقم الأكاديمي", esc(input.applicationNumber)],
     ["ولي الأمر", esc(input.parentName)],
     ["الطالب/ة", esc(input.childName)],
     ["العام الدراسي", esc(input.academicYear)],

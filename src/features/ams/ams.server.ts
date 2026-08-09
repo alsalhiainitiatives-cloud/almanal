@@ -10,7 +10,8 @@ import type { AppRole } from "@/features/auth/rbac";
 import type { Database } from "@/integrations/supabase/types";
 import { DECIDERS, notify } from "@/features/notifications/notifications.server";
 import { QURRA_STATUS_LABELS } from "@/features/admissions/eligibility";
-import { academicNumberPrefix, isValidAcademicNumber, stageCode } from "./academic-number";
+import { isValidAcademicNumber } from "./academic-number";
+import { issueAcademicNumber } from "./academic-number.server";
 import { can, type Capability, PAYMENT_STATUS_LABELS } from "./roles";
 
 type Db = SupabaseClient<Database>;
@@ -698,42 +699,6 @@ export async function nudgePrincipal(supabase: Db, userId: string, input: { id: 
   return { ok: true as const };
 }
 
-/**
- * Issues the sequential academic number `MN-{stage}-{YY}-{NNN}`.
- * The stage comes from the child (falling back to the application) and the
- * sequence is allocated atomically by the database.
- */
-async function issueAcademicNumber(supabase: Db, applicationId: string, academicYear: string) {
-  const { data: child } = await supabase
-    .from("application_children")
-    .select("stage_id")
-    .eq("application_id", applicationId)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  const { data: app } = await supabase
-    .from("applications")
-    .select("stage_id")
-    .eq("id", applicationId)
-    .maybeSingle();
-
-  const stageId = child?.stage_id ?? app?.stage_id ?? null;
-  let code = 1;
-  if (stageId) {
-    const { data: stage } = await supabase
-      .from("stages")
-      .select("slug, sort_order")
-      .eq("id", stageId)
-      .maybeSingle();
-    code = stageCode(stage?.slug, stage?.sort_order);
-  }
-
-  const prefix = academicNumberPrefix(academicYear, code);
-  const { data, error } = await supabase.rpc("next_academic_number", { _prefix: prefix });
-  if (error || !data) throw new Error("تعذّر إصدار الرقم الأكاديمي للطالب.");
-  return data as string;
-}
-
 export async function decideApplication(
   supabase: Db,
   userId: string,
@@ -754,7 +719,7 @@ export async function decideApplication(
     (approvedDecision ? "تم اعتماد قبول الطلب." : "تم رفض الطلب.");
   const { data: app } = await supabase
     .from("applications")
-    .select("academic_year, student_number, classroom_id")
+    .select("academic_year, student_number, application_number, classroom_id")
     .eq("id", input.id)
     .maybeSingle();
 
@@ -762,7 +727,9 @@ export async function decideApplication(
   // Keep an already-issued number only when it matches the current scheme;
   // legacy values are replaced with a clean sequential academic number.
   const academicNumber = approved
-    ? isValidAcademicNumber(app?.student_number)
+    ? isValidAcademicNumber(app?.application_number)
+      ? (app?.application_number as string)
+      : isValidAcademicNumber(app?.student_number)
       ? (app?.student_number as string)
       : await issueAcademicNumber(supabase, input.id, app?.academic_year ?? "")
     : null;
@@ -773,6 +740,10 @@ export async function decideApplication(
     decision_note: note,
     seat_status: approved ? "reserved" : "released",
     student_number: academicNumber,
+    // The academic number is the single identifier used across the platform.
+    ...(academicNumber
+      ? { application_number: academicNumber, tracking_number: academicNumber }
+      : {}),
   });
 
   if (!approved) {

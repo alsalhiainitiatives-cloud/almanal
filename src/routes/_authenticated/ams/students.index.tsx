@@ -72,7 +72,7 @@ function StudentsPage() {
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="ابحث باسم الطالب أو الهوية أو رقم الطلب أو ولي الأمر…"
+                placeholder="ابحث باسم الطالب أو الهوية أو الرقم الأكاديمي أو ولي الأمر…"
                 className="h-11 rounded-2xl ps-9 text-sm"
               />
             </div>

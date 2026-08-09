@@ -390,7 +390,7 @@ function QueuePage() {
             <Input
               value={term}
               onChange={(event) => setTerm(event.target.value)}
-              placeholder="بحث برقم الطلب أو اسم الطالب أو ولي الأمر أو الهوية أو الجوال…"
+              placeholder="بحث بالرقم الأكاديمي أو اسم الطالب أو ولي الأمر أو الهوية أو الجوال…"
               className="rounded-2xl pe-9 text-xs"
             />
           </div>

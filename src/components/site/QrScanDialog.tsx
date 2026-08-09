@@ -136,7 +136,7 @@ export function QrScanDialog({ open, onClose, onResult }: Props) {
         </div>
 
         <p className="mt-3 text-center text-xs font-bold text-muted-foreground">
-          وجّه الكاميرا نحو رمز QR وسيتم تعبئة رقم الطلب ورمز التحقق تلقائيًا.
+          وجّه الكاميرا نحو رمز QR وسيتم تعبئة الرقم الأكاديمي ورمز التحقق تلقائيًا.
         </p>
 
         {error ? (

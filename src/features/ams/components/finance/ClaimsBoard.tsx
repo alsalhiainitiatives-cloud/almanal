@@ -97,7 +97,7 @@ export function ClaimsBoard({ canManage }: { canManage: boolean }) {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="ابحث باسم الطالب أو ولي الأمر أو رقم الطلب…"
+            placeholder="ابحث باسم الطالب أو ولي الأمر أو الرقم الأكاديمي…"
             className="h-11 rounded-2xl ps-9 text-sm"
           />
         </div>

@@ -93,16 +93,14 @@ function WorkspacePage() {
             <StatusPill status={data.application.status} />
             <PriorityPill priority={data.application.priority} />
             <span className="text-[11px] font-bold text-muted-foreground">
-              رقم الطلب: {data.application.application_number ?? "—"}
+              الرقم الأكاديمي:{" "}
+              <span dir="ltr">
+                {data.application.student_number ?? data.application.application_number ?? "—"}
+              </span>
             </span>
             <span className="text-[11px] font-bold text-muted-foreground">
               العام الدراسي: {data.application.academic_year}
             </span>
-            {data.application.student_number ? (
-              <span className="text-[11px] font-bold text-muted-foreground">
-                الرقم الأكاديمي: {data.application.student_number}
-              </span>
-            ) : null}
           </div>
           <InsightBar data={data} />
           <ReviewStepper data={data} />

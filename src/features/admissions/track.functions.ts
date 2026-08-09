@@ -9,8 +9,8 @@ const inputSchema = z.object({
   number: z
     .string()
     .trim()
-    .min(4, "رقم الطلب غير صحيح")
-    .max(40, "رقم الطلب غير صحيح")
+    .min(4, "الرقم الأكاديمي غير صحيح")
+    .max(40, "الرقم الأكاديمي غير صحيح")
     .transform((value) => normalizeApplicationCode(value) || value),
   token: z
     .string()

@@ -8,6 +8,8 @@
  * This module is client-safe and is the single source of truth for building,
  * normalizing, validating and displaying application codes.
  */
+import { ACADEMIC_NUMBER_PATTERN, ACADEMIC_NUMBER_EXAMPLE } from "@/features/ams/academic-number";
+
 export const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 export const APPLICATION_CODE_PREFIX = "MN";
 export const APPLICATION_CODE_SERIAL_LENGTH = 6;
@@ -36,6 +38,11 @@ export function normalizeApplicationCode(raw: string): string {
 
   if (cleaned.startsWith(APPLICATION_CODE_PREFIX)) {
     const rest = cleaned.slice(APPLICATION_CODE_PREFIX.length);
+    // Current scheme — the academic number: MN + stage(1) + year(2) + serial(3+)
+    const academic = rest.match(/^([1-9])(\d{2})(\d{3,})$/);
+    if (academic) {
+      return `${APPLICATION_CODE_PREFIX}-${academic[1]}-${academic[2]}-${academic[3]}`;
+    }
     const match = rest.match(/^(\d{2,4})([A-Z0-9]{4,8})$/);
     if (match) {
       const year = match[1].slice(-2);
@@ -46,17 +53,18 @@ export function normalizeApplicationCode(raw: string): string {
 }
 
 export function isValidApplicationCode(value: string): boolean {
-  return APPLICATION_CODE_PATTERN.test(normalizeApplicationCode(value));
+  const code = normalizeApplicationCode(value);
+  return ACADEMIC_NUMBER_PATTERN.test(code) || APPLICATION_CODE_PATTERN.test(code);
 }
 
 /** Arabic validation message, or null when the code is acceptable. */
 export function applicationCodeError(value: string): string | null {
   const code = normalizeApplicationCode(value);
-  if (!code) return "يرجى إدخال رقم الطلب";
-  if (APPLICATION_CODE_PATTERN.test(code)) return null;
+  if (!code) return "يرجى إدخال الرقم الأكاديمي";
+  if (ACADEMIC_NUMBER_PATTERN.test(code) || APPLICATION_CODE_PATTERN.test(code)) return null;
   // Legacy codes issued before the new scheme stay usable.
   if (code.startsWith(APPLICATION_CODE_PREFIX) && code.length >= 8) return null;
-  return `رقم الطلب غير صالح. الصيغة الصحيحة مثل ${APPLICATION_CODE_EXAMPLE}`;
+  return `الرقم غير صالح. الصيغة الصحيحة مثل ${ACADEMIC_NUMBER_EXAMPLE}`;
 }
 
 /** Random unambiguous serial using a cryptographic source. */

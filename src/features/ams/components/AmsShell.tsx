@@ -290,7 +290,7 @@ export function AmsShell({
       </div>
 
       <CommandDialog open={paletteOpen && activeModule.search} onOpenChange={setPaletteOpen}>
-        <CommandInput placeholder="ابحث برقم الطلب أو اسم الطالب أو ولي الأمر أو الهوية…" />
+        <CommandInput placeholder="ابحث بالرقم الأكاديمي أو اسم الطالب أو ولي الأمر أو الهوية…" />
         <CommandList>
           <CommandEmpty>لا توجد نتائج مطابقة.</CommandEmpty>
           <CommandGroup heading="الطلبات">

@@ -208,7 +208,7 @@ export function ReservationsBoard() {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="ابحث باسم الطفل أو هويته أو اسم ولي الأمر أو رقم الطلب"
+          placeholder="ابحث باسم الطفل أو هويته أو اسم ولي الأمر أو الرقم الأكاديمي"
           className="rounded-2xl ps-9 text-xs font-bold"
         />
       </div>

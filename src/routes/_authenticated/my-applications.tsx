@@ -76,7 +76,7 @@ function MyApplicationsPage() {
   return (
     <PortalLayout
       title="طلباتي وتتبع الطلب"
-      description="تابع حالة كل طلب خطوة بخطوة، أكمل المسودات، واطّلع على الملخص المالي ورقم الطلب."
+      description="تابع حالة كل طلب خطوة بخطوة، أكمل المسودات، واطّلع على الملخص المالي والرقم الأكاديمي."
     >
       <div className="flex justify-end">
         <Button asChild variant="hero">
