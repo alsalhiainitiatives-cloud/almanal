@@ -139,6 +139,18 @@ export type SiteContent = {
     closureReason: "capacity" | "period_ended" | "maintenance" | "technical" | "custom";
     closureTitle: string;
     closureMessage: string;
+    /** Step 0 (الحجز المبدئي) behaviour, managed from تخصيص نظام التسجيل. */
+    reservation: {
+      enabled: boolean;
+      closedMessage: string;
+      maxChildren: number;
+      /** How many classroom preferences the parent must choose (1–3). */
+      requiredPreferences: number;
+      /** Approve automatically when every child has an available seat. */
+      autoApprove: boolean;
+      /** Default age (in days) used by the "حذف الطلبات القديمة" tool. */
+      retentionDays: number;
+    };
   };
   pages: Record<string, PageHeroContent>;
   hero: HeroContent;
@@ -233,6 +245,15 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     closureTitle: "التسجيل مغلق حالياً",
     closureMessage:
       "نحيطكم علماً بأن باب التسجيل مغلق حالياً لاكتمال الطاقة الاستيعابية، نشكر لكم اهتمامكم بانضمام طفلكم لمجتمع المنال.",
+    reservation: {
+      enabled: true,
+      closedMessage:
+        "خطوة الحجز المبدئي مغلقة حالياً. يسعدنا استقبال طلبكم عند إعادة فتحها.",
+      maxChildren: 6,
+      requiredPreferences: 1,
+      autoApprove: false,
+      retentionDays: 90,
+    },
   },
   hero: {
     badge: school.organization,
