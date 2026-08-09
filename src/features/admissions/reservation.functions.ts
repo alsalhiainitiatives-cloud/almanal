@@ -15,6 +15,7 @@ import {
   listMyReservations,
   listReservationEvents,
   listReservations,
+  purgeOldReservations,
   reservationGate,
   staffDeleteReservation,
   staffUpdateReservation,
@@ -112,3 +113,20 @@ export const deleteSeatReservationByStaff = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((id: unknown) => z.string().uuid().parse(id))
   .handler(async ({ data, context }) => staffDeleteReservation(context.supabase, context.userId, data));
+
+/** Bulk cleanup of old Step 0 requests (staff tool in تخصيص نظام التسجيل). */
+export const purgeOldSeatReservations = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        days: z.number().int().min(1).max(3650),
+        statuses: z
+          .array(z.enum(["pending_review", "approved", "rejected", "withdrawn"]))
+          .min(1),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) =>
+    purgeOldReservations(context.supabase, context.userId, data),
+  );
