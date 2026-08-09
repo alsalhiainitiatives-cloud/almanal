@@ -1047,36 +1047,81 @@ async function seatChildren(supabase: Db) {
   return ((data ?? []) as unknown as ChildRow[]).filter((row) => !row.applications?.archived_at);
 }
 
-/** Recomputes `taken_seats` for the given classrooms from real placements. */
-async function recountSeats(supabase: Db, classroomIds: (string | null | undefined)[]) {
-  const ids = [...new Set(classroomIds.filter(Boolean) as string[])];
-  if (!ids.length) return;
-  const rows = await seatChildren(supabase);
-  for (const id of ids) {
-    const taken = rows.filter((r) => r.classroom_id === id).length;
-    await supabase.from("classrooms").update({ taken_seats: taken }).eq("id", id);
-  }
+/**
+ * Recomputes `taken_seats` for every classroom (and stage totals) from real
+ * placements *and* approved pre-reservations, so an occupied seat is never
+ * offered twice. The database owns the arithmetic (single source of truth) and
+ * triggers keep it fresh on every write.
+ */
+async function recountSeats(supabase: Db, _classroomIds?: (string | null | undefined)[]) {
+  await supabase.rpc("recount_classroom_seats");
+  await supabase.rpc("recount_stage_seats");
+}
+
+/** Seats blocked by approved Step-0 reservations that have no application yet. */
+async function reservedSeats(supabase: Db) {
+  const { data } = await supabase
+    .from("seat_reservation_children")
+    .select("id, name_ar, assigned_classroom_id, seat_reservations!inner(status, application_id)")
+    .eq("waitlisted", false)
+    .not("assigned_classroom_id", "is", null)
+    .eq("seat_reservations.status", "approved")
+    .is("seat_reservations.application_id", null)
+    .limit(2000);
+  return (data ?? []) as unknown as { id: string; name_ar: string; assigned_classroom_id: string }[];
 }
 
 export async function getSeatBoard(supabase: Db, userId: string) {
   await guard(supabase, userId, "view");
 
-  const [stagesRes, classroomsRes, waitlistRes, childRows] = await Promise.all([
+  const [stagesRes, classroomsRes, waitlistRes, childRows, reserved] = await Promise.all([
     supabase.from("stages").select("id, slug, name_ar, age_label").eq("is_active", true).order("sort_order"),
     supabase.from("classrooms").select("*").eq("is_active", true).order("sort_order"),
     supabase
       .from("waiting_list_entries")
-      .select("id, classroom_id, application_id, position, status")
+      .select(
+        "id, classroom_id, application_id, child_id, position, status, created_at, applications(application_number, application_children(id, name_ar, birth_date))",
+      )
       .eq("status", "waiting")
       .order("position"),
     seatChildren(supabase),
+    reservedSeats(supabase),
   ]);
 
   const children = childRows.map(toSeatChild);
-  const waiting = waitlistRes.data ?? [];
+  const waiting = (waitlistRes.data ?? []) as unknown as {
+    id: string;
+    classroom_id: string | null;
+    application_id: string;
+    child_id: string | null;
+    position: number;
+    created_at: string;
+    applications: {
+      application_number: string | null;
+      application_children: { id: string; name_ar: string; birth_date: string | null }[] | null;
+    } | null;
+  }[];
 
   const classrooms = (classroomsRes.data ?? []).map((c) => {
     const placed = children.filter((child) => child.classroom_id === c.id);
+    const held = reserved.filter((r) => r.assigned_classroom_id === c.id);
+    const queue = waiting
+      .filter((w) => w.classroom_id === c.id)
+      .map((w) => {
+        const kids = w.applications?.application_children ?? [];
+        const kid = (w.child_id ? kids.find((k) => k.id === w.child_id) : null) ?? kids[0] ?? null;
+        return {
+          entryId: w.id,
+          position: w.position,
+          createdAt: w.created_at,
+          applicationId: w.application_id,
+          applicationNumber: w.applications?.application_number ?? null,
+          childId: kid?.id ?? null,
+          childName: kid?.name_ar ?? "بدون اسم",
+          birthDate: kid?.birth_date ?? null,
+        };
+      })
+      .sort((a, b) => a.position - b.position || a.createdAt.localeCompare(b.createdAt));
     return {
       id: c.id,
       stage_id: c.stage_id,
@@ -1100,8 +1145,13 @@ export async function getSeatBoard(supabase: Db, userId: string) {
       capacity: c.capacity,
       min_age_months: c.min_age_months,
       max_age_months: c.max_age_months,
-      enrolled: placed.length,
-      waiting: waiting.filter((w) => w.classroom_id === c.id).length,
+      // `enrolled` is what consumes capacity: real placements + held reservations.
+      enrolled: placed.length + held.length,
+      placed: placed.length,
+      reserved: held.length,
+      reservedNames: held.map((r) => r.name_ar),
+      waiting: queue.length,
+      waitingEntries: queue,
       children: placed,
     };
   });
@@ -1116,11 +1166,61 @@ export async function getSeatBoard(supabase: Db, userId: string) {
     totals: {
       capacity: classrooms.reduce((s, c) => s + c.capacity, 0),
       enrolled: classrooms.reduce((s, c) => s + c.enrolled, 0),
+      reserved: classrooms.reduce((s, c) => s + c.reserved, 0),
       available: classrooms.reduce((s, c) => s + Math.max(0, c.capacity - c.enrolled), 0),
       unplaced: children.filter((child) => !child.classroom_id).length,
       waiting: waiting.length,
     },
   };
+}
+
+/**
+ * Moves a child from a classroom waiting list into a real seat.
+ * Without `entryId` the first-in-line entry (lowest position, earliest
+ * registration) is promoted — the fairness rule staff expect.
+ */
+export async function seatPromoteFromWaitlist(
+  supabase: Db,
+  userId: string,
+  input: { classroomId: string; entryId?: string | null },
+) {
+  await guard(supabase, userId, "seats");
+  const board = await getSeatBoard(supabase, userId);
+  const classroom = board.classrooms.find((c) => c.id === input.classroomId);
+  if (!classroom) throw new Error("الفصل غير موجود أو غير مفعّل.");
+  if (classroom.enrolled >= classroom.capacity) {
+    throw new Error(`فصل «${classroom.name_ar}» مكتمل العدد — حرّر مقعدًا أولًا.`);
+  }
+
+  const entry = input.entryId
+    ? classroom.waitingEntries.find((e) => e.entryId === input.entryId)
+    : classroom.waitingEntries[0];
+  if (!entry) throw new Error("لا يوجد طلب في قائمة انتظار هذا الفصل.");
+  if (!entry.childId) throw new Error("لا توجد بيانات طفل مرتبطة بهذا الطلب.");
+
+  await seatAssignChild(supabase, userId, { childId: entry.childId, classroomId: classroom.id });
+
+  await supabase
+    .from("waiting_list_entries")
+    .update({ status: "placed" })
+    .eq("id", entry.entryId);
+
+  await supabase
+    .from("applications")
+    .update({ status: "approved" })
+    .eq("id", entry.applicationId)
+    .eq("status", "waitlisted");
+
+  await logEvent(
+    supabase,
+    entry.applicationId,
+    userId,
+    "waitlist.promoted",
+    `تم ترقية ${entry.childName} من قائمة انتظار فصل ${classroom.name_ar} إلى مقعد ثابت`,
+    `الترتيب السابق في قائمة الانتظار: ${entry.position}`,
+  );
+
+  return { ok: true as const, childName: entry.childName, classroomName: classroom.name_ar };
 }
 
 export async function seatAssignChild(
