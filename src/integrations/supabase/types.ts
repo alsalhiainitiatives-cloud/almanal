@@ -2503,6 +2503,7 @@ export type Database = {
           permission_key: string
         }[]
       }
+      next_academic_number: { Args: { _prefix: string }; Returns: string }
       release_classroom_lock: {
         Args: { _classroom_id: string }
         Returns: boolean
