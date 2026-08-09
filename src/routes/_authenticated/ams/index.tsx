@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Activity, ArrowLeft, ChartPie, Inbox, LineChart } from "lucide-react";
+import { Activity, ArrowLeft, ChartPie, DoorOpen, Inbox, LineChart } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { AmsShell } from "@/features/ams/components/AmsShell";
@@ -65,12 +65,20 @@ function AmsDashboard() {
       title="لوحة قيادة القبول"
       description="نظرة شاملة على أداء القبول وسير العمل وإشغال الفصول"
       actions={
-        <Link
-          to="/ams/queue"
-          className="inline-flex items-center gap-1.5 rounded-2xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
-        >
-          <Inbox className="size-3.5" /> قائمة الطلبات
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/ams/seasons"
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-border/60 bg-card px-4 py-2 text-xs font-bold text-foreground"
+          >
+            <DoorOpen className="size-3.5" /> فتح / إغلاق باب التسجيل
+          </Link>
+          <Link
+            to="/ams/queue"
+            className="inline-flex items-center gap-1.5 rounded-2xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
+          >
+            <Inbox className="size-3.5" /> قائمة الطلبات
+          </Link>
+        </div>
       }
     >
       {error ? (
