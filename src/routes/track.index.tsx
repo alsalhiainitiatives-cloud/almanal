@@ -40,7 +40,7 @@ import {
 
 const title = "التتبع السريع للطلب | مدارس وروضة المنال";
 const description =
-  "تابع حالة طلب القبول مباشرة بالرقم الأكاديمي ورمز التحقق أو عبر رمز QR دون الحاجة إلى تسجيل الدخول.";
+  "تابع حالة طلب القبول مباشرة بالرقم الأكاديمي / رقم الطلب ورمز التحقق أو عبر رمز QR دون الحاجة إلى تسجيل الدخول.";
 
 export const Route = createFileRoute("/track/")({
   validateSearch: z.object({
@@ -153,7 +153,7 @@ function PublicTrackPage() {
       <PageHero
         eyebrow="تتبع سريع"
         title="تتبع طلب القبول"
-        description="أدخل الرقم الأكاديمي مع رمز التحقق الخاص به، أو امسح رمز QR الموجود على نموذج الطلب لعرض الحالة فورًا — بدون تسجيل دخول."
+        description="أدخل الرقم الأكاديمي / رقم الطلب مع رمز التحقق الخاص به، أو امسح رمز QR الموجود على نموذج الطلب لعرض الحالة فورًا — بدون تسجيل دخول."
       />
 
       <section className="relative z-30 container mx-auto -mt-20 px-4 pb-20 md:px-8">
@@ -162,7 +162,7 @@ function PublicTrackPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor="app-number" className="text-sm font-black text-foreground">
-                  الرقم الأكاديمي
+                  الرقم الأكاديمي / رقم الطلب
                 </label>
                 <p className="mt-1 text-xs text-muted-foreground">
                   مثال: <span dir="ltr">{APPLICATION_CODE_EXAMPLE}</span>
@@ -171,7 +171,7 @@ function PublicTrackPage() {
                   id="app-number"
                   value={number}
                   onChange={(e) => setNumber(e.target.value)}
-                  placeholder="الرقم الأكاديمي"
+                  placeholder="الرقم الأكاديمي / رقم الطلب"
                   dir="ltr"
                   className="mt-3 h-12 rounded-2xl text-center font-bold tracking-wide"
                 />

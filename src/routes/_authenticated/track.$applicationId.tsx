@@ -166,7 +166,7 @@ function TrackPage() {
                   آخر تحديث: {new Date(app.updated_at).toLocaleDateString("ar-SA")}
                 </span>
               </div>
-              <p className="mt-4 text-xs font-bold text-muted-foreground">الرقم الأكاديمي</p>
+              <p className="mt-4 text-xs font-bold text-muted-foreground">الرقم الأكاديمي / رقم الطلب</p>
               <p className="text-2xl font-black tracking-wide text-primary" dir="ltr">
                 {appNumber}
               </p>
