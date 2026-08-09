@@ -101,7 +101,13 @@ export function ParentStep({
             </div>
           )}
 
-          {detected === "resident" ? (
+        </FieldGrid>
+        </LockedGroup>
+
+        {/* Nationality country stays editable: residents must state it while
+            completing the full application, even after seat reservation. */}
+        {detected === "resident" ? (
+          <FieldGrid>
             <CountryField
               label="بلد الجنسية"
               value={value.country ?? ""}
@@ -110,9 +116,8 @@ export function ParentStep({
               icon={Globe2}
               required
             />
-          ) : null}
-        </FieldGrid>
-        </LockedGroup>
+          </FieldGrid>
+        ) : null}
       </FormSection>
 
       {/* ---------------------------------------------------------------- */}
