@@ -5,6 +5,7 @@
  * in a hidden A4 iframe — real selectable text and vector rules, not a
  * screenshot of the screen UI.
  */
+import { isValidAcademicNumber } from "./academic-number";
 
 export type StudentFileData = {
   student: {
