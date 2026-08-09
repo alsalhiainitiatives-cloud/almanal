@@ -271,7 +271,7 @@ function PublicTrackPage() {
                   </span>
                 </div>
 
-                <p className="mt-5 text-xs font-bold text-muted-foreground">الرقم الأكاديمي</p>
+                <p className="mt-5 text-xs font-bold text-muted-foreground">الرقم الأكاديمي / رقم الطلب</p>
                 <p className="text-2xl font-black tracking-wide text-primary" dir="ltr">
                   {app.application_number}
                 </p>
