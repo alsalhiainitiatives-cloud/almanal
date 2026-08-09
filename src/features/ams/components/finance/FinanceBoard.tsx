@@ -204,7 +204,10 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
             {(
               [
                 ["all", `الكل (${invoices.length + unplanned.length})`],
-                ["no_plan", `لم يتم اختيار خطة سداد (${unplanned.length})`],
+                [
+                  "no_plan",
+                  `لم يتم اختيار خطة سداد (${unplanned.filter((a) => !a.qurraFullyCovered).length})`,
+                ],
                 ["pending", "بانتظار السداد"],
                 ["paid", "مكتمل / مسدد"],
               ] as const
