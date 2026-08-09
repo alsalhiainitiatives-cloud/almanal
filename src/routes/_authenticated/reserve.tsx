@@ -261,11 +261,10 @@ function ReservePage() {
           animate={{ opacity: 1, y: 0 }}
           className="rounded-3xl border border-border/60 bg-card p-6 shadow-sm"
         >
-          <p className="text-[11px] font-black text-primary">الخطوة صفر</p>
+          <p className="text-[11px] font-black text-primary">الخطوة التمهيدية (استكشاف الأهلية)</p>
           <h1 className="mt-1 text-2xl font-black text-foreground">حجز مقعد مبدئي</h1>
           <p className="mt-2 text-sm leading-7 text-muted-foreground">
-            بيانات مختصرة فقط للتحقق من ملاءمة عمر طفلك وحجز مقعده مبدئيًا. بعد موافقة الإدارة تنتقل
-            مباشرة إلى نموذج التسجيل الكامل وتكون هذه البيانات معبأة تلقائيًا.
+            {"\n"}
           </p>
         </motion.header>
 
