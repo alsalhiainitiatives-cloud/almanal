@@ -2504,6 +2504,8 @@ export type Database = {
         }[]
       }
       next_academic_number: { Args: { _prefix: string }; Returns: string }
+      recount_classroom_seats: { Args: never; Returns: undefined }
+      recount_stage_seats: { Args: never; Returns: undefined }
       release_classroom_lock: {
         Args: { _classroom_id: string }
         Returns: boolean
