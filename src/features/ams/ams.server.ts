@@ -10,7 +10,8 @@ import type { AppRole } from "@/features/auth/rbac";
 import type { Database } from "@/integrations/supabase/types";
 import { DECIDERS, notify } from "@/features/notifications/notifications.server";
 import { QURRA_STATUS_LABELS } from "@/features/admissions/eligibility";
-import { academicNumberPrefix, isValidAcademicNumber, stageCode } from "./academic-number";
+import { isValidAcademicNumber } from "./academic-number";
+import { issueAcademicNumber } from "./academic-number.server";
 import { can, type Capability, PAYMENT_STATUS_LABELS } from "./roles";
 
 type Db = SupabaseClient<Database>;
