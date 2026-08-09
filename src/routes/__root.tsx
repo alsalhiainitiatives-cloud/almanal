@@ -177,7 +177,7 @@ function RootComponent() {
   const content = Route.useLoaderData();
 
   useEffect(() => {
-    sessionStorage.removeItem("stale-chunk-reloaded");
+    installStaleChunkReload();
   }, []);
 
   return (
