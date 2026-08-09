@@ -120,6 +120,11 @@ export async function findDuplicateChildIds(
 
 export async function createReservation(supabase: Db, userId: string, input: ReservationInput) {
   await assertRegistrationOpen(supabase);
+  const season = await resolveActiveSeason(supabase);
+  if (season && !season.reservationEnabled) {
+    throw new Error("خطوة الحجز المبدئي معطّلة في موسم التسجيل الحالي.");
+  }
+  const academicYear = season?.academicYear ?? ACADEMIC_YEAR;
   const settings = await getReservationSettings(supabase);
   if (!settings.enabled) {
     throw new Error(
@@ -150,7 +155,7 @@ export async function createReservation(supabase: Db, userId: string, input: Res
     .from("seat_reservations")
     .select("id")
     .eq("parent_id", userId)
-    .eq("academic_year", ACADEMIC_YEAR)
+    .eq("academic_year", academicYear)
     .eq("status", "pending_review")
     .maybeSingle();
   if (existing) throw new Error("لديك طلب حجز مقعد قيد المراجعة بالفعل — سنوافيك بالنتيجة قريبًا.");
@@ -159,7 +164,8 @@ export async function createReservation(supabase: Db, userId: string, input: Res
     .from("seat_reservations")
     .insert({
       parent_id: userId,
-      academic_year: ACADEMIC_YEAR,
+      academic_year: academicYear,
+      season_id: season?.id ?? null,
       parent_name: input.parentName,
       parent_national_id: input.parentNationalId,
       status: "pending_review",
