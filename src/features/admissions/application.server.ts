@@ -439,7 +439,7 @@ export async function submitApplication(supabase: Db, userId: string, id: string
     wasCorrection
       ? "أرسل ولي الأمر التصحيحات المطلوبة"
       : "تم إرسال الطلب إلى قائمة مراجعة مسؤول التسجيل",
-    `رقم الطلب ${applicationNumber}`,
+    `الرقم الأكاديمي ${applicationNumber}`,
     { qurraStatus: qurra?.status ?? "not_requested" },
   );
 

@@ -103,7 +103,7 @@ function PaymentsPage() {
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="ابحث برقم الطلب أو العام الدراسي"
+                  placeholder="ابحث بالرقم الأكاديمي أو العام الدراسي"
                   className="h-12 rounded-2xl bg-card pe-11"
                 />
               </div>

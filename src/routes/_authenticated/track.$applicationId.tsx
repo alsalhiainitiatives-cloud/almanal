@@ -166,7 +166,7 @@ function TrackPage() {
                   آخر تحديث: {new Date(app.updated_at).toLocaleDateString("ar-SA")}
                 </span>
               </div>
-              <p className="mt-4 text-xs font-bold text-muted-foreground">رقم الطلب</p>
+              <p className="mt-4 text-xs font-bold text-muted-foreground">الرقم الأكاديمي</p>
               <p className="text-2xl font-black tracking-wide text-primary" dir="ltr">
                 {appNumber}
               </p>
@@ -288,7 +288,7 @@ function TrackPage() {
                 <strong>حالة الطلب:</strong> {APPLICATION_STATUS_LABELS[app.status] ?? app.status}
               </p>
               <p>
-                <strong>رقم الطلب:</strong> <span dir="ltr">{appNumber}</span>
+                <strong>الرقم الأكاديمي:</strong> <span dir="ltr">{appNumber}</span>
               </p>
               <p>
                 <strong>تاريخ الطباعة:</strong> {printedAt}

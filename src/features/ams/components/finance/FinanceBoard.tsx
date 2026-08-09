@@ -195,7 +195,7 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="ابحث برقم الطلب أو اسم ولي الأمر"
+              placeholder="ابحث بالرقم الأكاديمي أو اسم ولي الأمر"
               className="rounded-2xl ps-9"
             />
           </div>

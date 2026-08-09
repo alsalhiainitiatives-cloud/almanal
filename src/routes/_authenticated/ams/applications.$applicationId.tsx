@@ -93,7 +93,7 @@ function WorkspacePage() {
             <StatusPill status={data.application.status} />
             <PriorityPill priority={data.application.priority} />
             <span className="text-[11px] font-bold text-muted-foreground">
-              رقم الطلب: {data.application.application_number ?? "—"}
+              الرقم الأكاديمي: {data.application.application_number ?? "—"}
             </span>
             <span className="text-[11px] font-bold text-muted-foreground">
               العام الدراسي: {data.application.academic_year}

@@ -261,7 +261,7 @@ export function SeatBoard() {
           <input
             value={term}
             onChange={(event) => setTerm(event.target.value)}
-            placeholder="ابحث باسم الطالب أو رقم الطلب أو الهوية…"
+            placeholder="ابحث باسم الطالب أو الرقم الأكاديمي أو الهوية…"
             className="w-full rounded-2xl border border-border/60 bg-card py-2.5 pe-4 ps-10 text-xs font-bold outline-none focus:border-primary"
           />
         </div>

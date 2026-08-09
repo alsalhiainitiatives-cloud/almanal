@@ -40,7 +40,7 @@ import {
 
 const title = "التتبع السريع للطلب | مدارس وروضة المنال";
 const description =
-  "تابع حالة طلب القبول مباشرة برقم الطلب ورمز التحقق أو عبر رمز QR دون الحاجة إلى تسجيل الدخول.";
+  "تابع حالة طلب القبول مباشرة بالرقم الأكاديمي ورمز التحقق أو عبر رمز QR دون الحاجة إلى تسجيل الدخول.";
 
 export const Route = createFileRoute("/track/")({
   validateSearch: z.object({
@@ -144,7 +144,7 @@ function PublicTrackPage() {
   const lookupError = useMemo(() => {
     if (query.error) return query.error instanceof Error ? query.error.message : "تعذّر البحث حاليًا";
     if (result && !result.found)
-      return "لا يوجد طلب مطابق لرقم الطلب ورمز التحقق. تأكد من البيانات أو سجّل الدخول لعرض طلباتك.";
+      return "لا يوجد طلب مطابق لالرقم الأكاديمي ورمز التحقق. تأكد من البيانات أو سجّل الدخول لعرض طلباتك.";
     return null;
   }, [query.error, result]);
 
@@ -153,7 +153,7 @@ function PublicTrackPage() {
       <PageHero
         eyebrow="تتبع سريع"
         title="تتبع طلب القبول"
-        description="أدخل رقم الطلب مع رمز التحقق الخاص به، أو امسح رمز QR الموجود على نموذج الطلب لعرض الحالة فورًا — بدون تسجيل دخول."
+        description="أدخل الرقم الأكاديمي مع رمز التحقق الخاص به، أو امسح رمز QR الموجود على نموذج الطلب لعرض الحالة فورًا — بدون تسجيل دخول."
       />
 
       <section className="relative z-30 container mx-auto -mt-20 px-4 pb-20 md:px-8">
@@ -162,7 +162,7 @@ function PublicTrackPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor="app-number" className="text-sm font-black text-foreground">
-                  رقم الطلب
+                  الرقم الأكاديمي
                 </label>
                 <p className="mt-1 text-xs text-muted-foreground">
                   مثال: <span dir="ltr">{APPLICATION_CODE_EXAMPLE}</span>
@@ -171,7 +171,7 @@ function PublicTrackPage() {
                   id="app-number"
                   value={number}
                   onChange={(e) => setNumber(e.target.value)}
-                  placeholder="رقم الطلب"
+                  placeholder="الرقم الأكاديمي"
                   dir="ltr"
                   className="mt-3 h-12 rounded-2xl text-center font-bold tracking-wide"
                 />
@@ -229,7 +229,7 @@ function PublicTrackPage() {
             <p className="mt-4 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
               <QrCode className="size-4 text-primary" />
               امسح رمز QR بكاميرا جوالك أو من هنا — ستُعبّأ الحقول تلقائيًا وتظهر الحالة مباشرة. يمكنك
-              أيضًا لصق رابط التتبع كاملًا في خانة رقم الطلب.
+              أيضًا لصق رابط التتبع كاملًا في خانة الرقم الأكاديمي.
             </p>
 
             {formError || lookupError ? (
@@ -271,7 +271,7 @@ function PublicTrackPage() {
                   </span>
                 </div>
 
-                <p className="mt-5 text-xs font-bold text-muted-foreground">رقم الطلب</p>
+                <p className="mt-5 text-xs font-bold text-muted-foreground">الرقم الأكاديمي</p>
                 <p className="text-2xl font-black tracking-wide text-primary" dir="ltr">
                   {app.application_number}
                 </p>

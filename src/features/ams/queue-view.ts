@@ -85,7 +85,7 @@ export function matchesTerm(row: QueueRow, needle: string) {
 /** Simple CSV export of the current result set. */
 export function toCsv(rows: QueueRow[]) {
   const header = [
-    "رقم الطلب",
+    "الرقم الأكاديمي",
     "ولي الأمر",
     "الجوال",
     "الطلاب",

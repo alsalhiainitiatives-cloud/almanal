@@ -80,7 +80,7 @@ export function exportPdf(title: string, columns: Column[], rows: Row[], subtitl
 }
 
 export const STUDENT_COLUMNS: Column[] = [
-  { key: "application_number", label: "رقم الطلب" },
+  { key: "application_number", label: "الرقم الأكاديمي" },
   { key: "status", label: "حالة الطلب" },
   { key: "academic_year", label: "العام الدراسي" },
   { key: "submitted_at", label: "تاريخ التقديم" },
@@ -120,7 +120,7 @@ export const STUDENT_COLUMNS: Column[] = [
 ];
 
 export const QURRA_COLUMNS: Column[] = [
-  { key: "application_number", label: "رقم الطلب" },
+  { key: "application_number", label: "الرقم الأكاديمي" },
   { key: "child_name_ar", label: "اسم الطالب" },
   { key: "child_national_id", label: "هوية الطالب" },
   { key: "birth_date", label: "تاريخ الميلاد" },
@@ -165,7 +165,7 @@ export const PARENT_COLUMNS: Column[] = [
 ];
 
 export const FINANCE_COLUMNS: Column[] = [
-  { key: "application_number", label: "رقم الطلب" },
+  { key: "application_number", label: "الرقم الأكاديمي" },
   { key: "parent_name", label: "ولي الأمر" },
   { key: "parent_phone", label: "الجوال" },
   { key: "academic_year", label: "العام الدراسي" },
