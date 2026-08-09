@@ -719,7 +719,7 @@ export async function decideApplication(
     (approvedDecision ? "تم اعتماد قبول الطلب." : "تم رفض الطلب.");
   const { data: app } = await supabase
     .from("applications")
-    .select("academic_year, student_number, classroom_id")
+    .select("academic_year, student_number, application_number, classroom_id")
     .eq("id", input.id)
     .maybeSingle();
 
@@ -727,7 +727,9 @@ export async function decideApplication(
   // Keep an already-issued number only when it matches the current scheme;
   // legacy values are replaced with a clean sequential academic number.
   const academicNumber = approved
-    ? isValidAcademicNumber(app?.student_number)
+    ? isValidAcademicNumber(app?.application_number)
+      ? (app?.application_number as string)
+      : isValidAcademicNumber(app?.student_number)
       ? (app?.student_number as string)
       : await issueAcademicNumber(supabase, input.id, app?.academic_year ?? "")
     : null;
@@ -738,6 +740,10 @@ export async function decideApplication(
     decision_note: note,
     seat_status: approved ? "reserved" : "released",
     student_number: academicNumber,
+    // The academic number is the single identifier used across the platform.
+    ...(academicNumber
+      ? { application_number: academicNumber, tracking_number: academicNumber }
+      : {}),
   });
 
   if (!approved) {
