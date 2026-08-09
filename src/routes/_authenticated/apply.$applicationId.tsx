@@ -360,7 +360,11 @@ function WizardPage() {
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState<{ applicationNumber: string; trackingNumber: string } | null>(null);
+  const [done, setDone] = useState<{
+    applicationNumber: string;
+    trackingNumber: string;
+    trackToken?: string | null;
+  } | null>(null);
 
   /* Keep the active step valid when staff enable/disable steps live. */
   useEffect(() => {
