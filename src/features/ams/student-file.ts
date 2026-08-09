@@ -109,7 +109,8 @@ export function studentIdentifier(
   application: StudentFileData["application"],
   applicationCode: string,
 ): string {
-  return application.studentNumber?.trim() || applicationCode;
+  const academic = application.studentNumber?.trim() ?? "";
+  return isValidAcademicNumber(academic) ? academic.toUpperCase() : applicationCode;
 }
 
 export const QURRA_LABELS: Record<string, string> = {
