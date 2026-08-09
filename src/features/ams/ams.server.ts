@@ -759,13 +759,20 @@ export async function decideApplication(
     .maybeSingle();
 
   const approved = approvedDecision;
+  // Keep an already-issued number only when it matches the current scheme;
+  // legacy values are replaced with a clean sequential academic number.
+  const academicNumber = approved
+    ? isValidAcademicNumber(app?.student_number)
+      ? (app?.student_number as string)
+      : await issueAcademicNumber(supabase, input.id, app?.academic_year ?? "")
+    : null;
   await touch(supabase, input.id, {
     status: input.decision as Status,
     decided_by: userId,
     decided_at: new Date().toISOString(),
     decision_note: note,
     seat_status: approved ? "reserved" : "released",
-    student_number: approved ? (app?.student_number ?? studentNumber(app?.academic_year ?? "1448")) : null,
+    student_number: academicNumber,
   });
 
   if (!approved) {
