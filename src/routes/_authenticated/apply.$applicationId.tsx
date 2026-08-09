@@ -293,6 +293,8 @@ function WizardPage() {
   };
   /** Step-0 data is admin-approved → read-only inside the journey. */
   const lockedFromReservation = Boolean(draft.reservationId);
+  /* Only the children that came from the reservation are locked; extras stay editable. */
+  const reservationChildCount = draft.children?.length ?? 0;
 
   /* Live registration-form configuration (steps + custom fields). */
   const { data: formConfig } = useFormConfig();
@@ -856,6 +858,7 @@ function WizardPage() {
                 classrooms={catalog.classrooms}
                 parentNationality={parent.nationality}
                 locked={lockedFromReservation}
+                lockedCount={reservationChildCount}
                 onChange={setChildren}
               />
             ) : null}
