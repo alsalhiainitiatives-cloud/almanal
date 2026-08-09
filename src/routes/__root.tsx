@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { installStaleChunkReload, recoverFromStaleChunk } from "../lib/stale-chunk-reload";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Toaster } from "@/components/ui/sonner";
@@ -52,13 +53,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   // A new deploy invalidates the previous build's hashed chunks, so an open tab
   // fails to lazy-load a route module. Reload once to pick up the fresh assets.
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!/Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed/i.test(error?.message ?? ""))
-      return;
-    const key = "stale-chunk-reloaded";
-    if (sessionStorage.getItem(key)) return;
-    sessionStorage.setItem(key, "1");
-    window.location.reload();
+    recoverFromStaleChunk(error);
   }, [error]);
 
   return (
@@ -182,7 +177,7 @@ function RootComponent() {
   const content = Route.useLoaderData();
 
   useEffect(() => {
-    sessionStorage.removeItem("stale-chunk-reloaded");
+    installStaleChunkReload();
   }, []);
 
   return (
