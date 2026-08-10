@@ -65,6 +65,47 @@ export async function seasonClosureMessage(supabase: Db): Promise<string | null>
   return data?.closure_message?.trim() || null;
 }
 
+export type SeasonSnapshot = {
+  open: boolean;
+  season: ActiveSeason | null;
+  /** Nearest future season, so we can announce "يفتح التسجيل قريبًا". */
+  next: { academicYear: string; nameAr: string; kind: string; startsAt: string; endsAt: string } | null;
+  closureMessage: string | null;
+};
+
+/**
+ * Public snapshot of the registration window — safe for anonymous visitors.
+ * Powers the site-wide registration banner and its countdown.
+ */
+export async function publicSeasonSnapshot(supabase: Db): Promise<SeasonSnapshot> {
+  const season = await resolveActiveSeason(supabase);
+  if (season) return { open: true, season, next: null, closureMessage: null };
+
+  const { data } = await supabase
+    .from("admission_seasons")
+    .select("academic_year, name_ar, kind, starts_at, ends_at")
+    .eq("status", "open")
+    .gt("starts_at", new Date().toISOString())
+    .order("starts_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  return {
+    open: false,
+    season: null,
+    next: data
+      ? {
+          academicYear: data.academic_year,
+          nameAr: data.name_ar,
+          kind: data.kind,
+          startsAt: data.starts_at,
+          endsAt: data.ends_at,
+        }
+      : null,
+    closureMessage: await seasonClosureMessage(supabase),
+  };
+}
+
 /** Academic year that new records must belong to (open season, else fallback). */
 export async function resolveAcademicYear(supabase: Db, fallback: string): Promise<string> {
   const season = await resolveActiveSeason(supabase);
