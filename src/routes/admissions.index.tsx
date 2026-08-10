@@ -12,6 +12,7 @@ import {
   RegistrationClosedNotice,
   useRegistrationGate,
 } from "@/features/admissions/components/RegistrationGate";
+import { SeasonBanner } from "@/features/admissions/components/SeasonBanner";
 import { listStages } from "@/features/admissions/catalog.functions";
 
 const title = "المراحل التعليمية والتسجيل | مدارس وروضة المنال";
