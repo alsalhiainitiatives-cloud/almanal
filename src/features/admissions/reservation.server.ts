@@ -152,15 +152,9 @@ export async function createReservation(supabase: Db, userId: string, input: Res
   );
   if (duplicates.length) throw new Error(DUPLICATE_CHILD_MESSAGE);
 
-  const { data: existing } = await supabase
-    .from("seat_reservations")
-    .select("id")
-    .eq("parent_id", userId)
-    .eq("academic_year", academicYear)
-    .eq("status", "pending_review")
-    .maybeSingle();
-  if (existing) throw new Error("لديك طلب حجز مقعد قيد المراجعة بالفعل — سنوافيك بالنتيجة قريبًا.");
-
+  /* A parent may hold several independent Step-0 requests at once (siblings,
+     relatives, later additions). Duplicate *children* are still blocked above,
+     so the only real constraint is one request per child per academic year. */
   const { data: reservation, error } = await supabase
     .from("seat_reservations")
     .insert({
