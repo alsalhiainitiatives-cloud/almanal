@@ -8,7 +8,7 @@ import type { Database } from "@/integrations/supabase/types";
 import type { ChildInput, ParentInfoInput, QurraInput } from "./schemas";
 import { isValidAcademicNumber } from "@/features/ams/academic-number";
 import { issueAcademicNumber } from "@/features/ams/academic-number.server";
-import { requireActiveSeason } from "@/features/ams/seasons.server";
+import { requireActiveSeason, resolveActiveSeason } from "@/features/ams/seasons.server";
 
 type Db = SupabaseClient<Database>;
 
