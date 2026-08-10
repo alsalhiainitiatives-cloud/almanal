@@ -46,6 +46,7 @@ import {
   useRegistrationGate,
 } from "@/features/admissions/components/RegistrationGate";
 import { SeasonBanner } from "@/features/admissions/components/SeasonBanner";
+import { publicRegistrationWindow } from "@/features/ams/season-public.functions";
 
 export const Route = createFileRoute("/_authenticated/reserve")({
   ssr: false,
@@ -84,6 +85,11 @@ function ReservePage() {
   const { data: gate, refetch: refetchGate } = useQuery({
     queryKey: ["reservations", "gate"],
     queryFn: () => seatReservationGate(),
+  });
+  const { data: registrationWindow } = useQuery({
+    queryKey: ["public-registration-window"],
+    queryFn: () => publicRegistrationWindow(),
+    staleTime: 60_000,
   });
 
   const [parentName, setParentName] = useState(profile?.fullName ?? "");
@@ -194,15 +200,20 @@ function ReservePage() {
   const reservation = freshRequest ? null : (gate?.reservation ?? null);
   const finalStarted = Boolean(gate?.linkedApplication && gate.linkedApplication.status !== "draft");
 
-  /* Registration closed by the admin → block Step 0 entirely. */
-  if (!registration.open && !reservation) {
+  if (!registrationWindow) {
+    return (
+      <section className="section-y grid min-h-[40vh] place-items-center">
+        <Loader2 className="size-7 animate-spin text-primary" aria-label="جارٍ التحقق من حالة التسجيل" />
+      </section>
+    );
+  }
+
+  /* Either closure control is authoritative: never expose Step 0 without an active season. */
+  if (!registration.open || !registrationWindow.open) {
     return (
       <section className="section-y">
         <div className="mx-auto max-w-3xl px-4">
-          <div className="space-y-6">
-            <SeasonBanner />
-            <RegistrationClosedNotice />
-          </div>
+          <RegistrationClosedNotice />
         </div>
       </section>
     );
