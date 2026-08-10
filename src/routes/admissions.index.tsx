@@ -12,6 +12,7 @@ import {
   RegistrationClosedNotice,
   useRegistrationGate,
 } from "@/features/admissions/components/RegistrationGate";
+import { SeasonBanner } from "@/features/admissions/components/SeasonBanner";
 import { listStages } from "@/features/admissions/catalog.functions";
 
 const title = "المراحل التعليمية والتسجيل | مدارس وروضة المنال";
@@ -80,6 +81,9 @@ function AdmissionsPage() {
 
       <section id="stages" className="section-y scroll-mt-24">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
+          <div className="mb-12">
+            <SeasonBanner />
+          </div>
           {!registration.open ? (
             <div className="mb-12">
               <RegistrationClosedNotice />

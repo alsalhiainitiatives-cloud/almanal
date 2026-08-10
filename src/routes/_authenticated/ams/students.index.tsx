@@ -124,6 +124,7 @@ function StudentsPage() {
                     <th className="px-4 py-3 text-start">العمر</th>
                     <th className="px-4 py-3 text-start">المرحلة / الفصل</th>
                     <th className="px-4 py-3 text-start">ولي الأمر</th>
+                    <th className="px-4 py-3 text-start">موسم التسجيل</th>
                     <th className="px-4 py-3 text-start">الرقم الأكاديمي</th>
                     <th className="px-4 py-3 text-start">الملف</th>
                   </tr>
@@ -152,6 +153,15 @@ function StudentsPage() {
                         <p className="font-bold text-foreground">{s.parentName}</p>
                         <p className="text-muted-foreground" dir="ltr">
                           {s.parentPhone ?? "—"}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        <p className="font-bold text-foreground">{s.academicYear}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {s.seasonKind === "supplementary" ? "تسجيل إلحاقي" : "تسجيل نظامي"}
+                          {s.registeredAt
+                            ? ` · ${new Date(s.registeredAt).toLocaleDateString("ar-SA-u-ca-gregory")}`
+                            : ""}
                         </p>
                       </td>
                       <td className="px-4 py-3 text-xs font-extrabold" dir="ltr">

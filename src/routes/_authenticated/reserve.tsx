@@ -45,6 +45,7 @@ import {
   RegistrationClosedNotice,
   useRegistrationGate,
 } from "@/features/admissions/components/RegistrationGate";
+import { SeasonBanner } from "@/features/admissions/components/SeasonBanner";
 
 export const Route = createFileRoute("/_authenticated/reserve")({
   ssr: false,
@@ -197,7 +198,10 @@ function ReservePage() {
     return (
       <section className="section-y">
         <div className="mx-auto max-w-3xl px-4">
-          <RegistrationClosedNotice />
+          <div className="space-y-6">
+            <SeasonBanner />
+            <RegistrationClosedNotice />
+          </div>
         </div>
       </section>
     );
@@ -256,6 +260,7 @@ function ReservePage() {
   return (
     <section className="section-y">
       <div className="mx-auto max-w-3xl space-y-6 px-4">
+        <SeasonBanner compact />
         <motion.header
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
