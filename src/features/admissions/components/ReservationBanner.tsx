@@ -55,6 +55,7 @@ export function ReservationBanner() {
   }
 
   const startedId = reservation.application_id as string | null;
+  const finalStarted = Boolean(data?.linkedApplication && data.linkedApplication.status !== "draft");
 
   /* Approved reservation stays visible in the portal — before AND after the
      parent starts the full application, so the provisional seat never "disappears". */
@@ -63,7 +64,7 @@ export function ReservationBanner() {
       <PartyPopper className="size-5 text-primary" />
       <div className="min-w-0 flex-1">
         <span className="inline-flex rounded-full bg-mint px-3 py-1 text-[10px] font-black text-foreground">
-          تم القبول المبدئي - بانتظار استكمال البيانات
+          {finalStarted ? "انتقل إلى طلب التسجيل النهائي" : "تم القبول المبدئي - بانتظار استكمال البيانات"}
         </span>
         <p className="mt-2 text-sm font-black text-foreground">حجز مقعد مبدئي — الخطوة صفر</p>
         <ul className="mt-1 space-y-0.5 text-xs font-bold text-muted-foreground">
@@ -76,13 +77,15 @@ export function ReservationBanner() {
           <li dir="ltr">REF: {reservation.id.slice(0, 8).toUpperCase()}</li>
         </ul>
         <p className="mt-1 text-xs text-muted-foreground">
-          بياناتك المُدخلة في خطوة الحجز تظهر معبأة تلقائيًا في النموذج.
+          {finalStarted
+            ? `تم تعطيل إجراءات الحجز المبدئي بعد انتقاله إلى الطلب النهائي${data?.linkedApplication?.application_number ? ` رقم ${data.linkedApplication.application_number}` : ""}.`
+            : "بياناتك المُدخلة في خطوة الحجز تظهر معبأة تلقائيًا في النموذج."}
         </p>
       </div>
       <Button
         variant="hero"
         className="rounded-2xl text-xs font-bold"
-        disabled={busy}
+        disabled={busy || finalStarted}
         onClick={async () => {
           setBusy(true);
           try {
@@ -100,7 +103,7 @@ export function ReservationBanner() {
         }}
       >
         {busy ? <Loader2 className="size-3.5 animate-spin" /> : null}
-        استكمال بيانات التسجيل
+        {finalStarted ? "متابعة الطلب من قائمة طلباتي" : "استكمال بيانات التسجيل"}
       </Button>
     </div>
   );

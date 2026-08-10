@@ -631,9 +631,19 @@ export async function startFromReservation(supabase: Db, userId: string, reserva
 /** Used by the entry point to decide whether Step 0 is still required. */
 export async function reservationGate(supabase: Db, userId: string) {
   const rows = await listMyReservations(supabase, userId);
-  const current = rows.find((r) => r.academic_year === ACADEMIC_YEAR) ?? rows[0] ?? null;
+  const activeSeason = await resolveActiveSeason(supabase);
+  const current =
+    (activeSeason ? rows.find((r) => r.season_id === activeSeason.id) : null) ?? rows[0] ?? null;
+  const { data: linkedApplication } = current?.application_id
+    ? await supabase
+        .from("applications")
+        .select("id, status, application_number")
+        .eq("id", current.application_id)
+        .maybeSingle()
+    : { data: null };
   return {
     reservation: current,
+    linkedApplication,
     needsReservation: !current || current.status === "rejected" || current.status === "withdrawn",
     pending: current?.status === "pending_review",
     approved: current?.status === "approved",
