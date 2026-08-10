@@ -30,7 +30,7 @@ const STUDENT_SELECT = `
   applications!inner (
     id, application_number, tracking_number, status, academic_year, student_number,
     parent_id, parent_national_id, parent_nationality, parent_relationship,
-    submitted_at, decided_at, draft_data
+    submitted_at, decided_at, draft_data, season_id
   )
 `;
 
@@ -51,6 +51,7 @@ type AppJoin = {
   submitted_at: string | null;
   decided_at: string | null;
   draft_data: Record<string, unknown> | null;
+  season_id?: string | null;
 };
 
 function parentFromDraft(draft: Record<string, unknown> | null) {
@@ -86,6 +87,11 @@ export async function listStudents(
   if (error) throw new Error("تعذّر تحميل سجل الطلاب.");
 
   const rows = data ?? [];
+  // Registration cohort context: which season/window each student joined through.
+  const { data: seasons } = await supabase
+    .from("admission_seasons")
+    .select("id, name_ar, kind, academic_year, starts_at, ends_at");
+  const seasonById = new Map((seasons ?? []).map((s) => [s.id, s]));
   const parentIds = [
     ...new Set(rows.map((r) => (r.applications as unknown as AppJoin).parent_id).filter(Boolean)),
   ];
@@ -115,6 +121,9 @@ export async function listStudents(
       academicYear: app.academic_year,
       status: app.status,
       decidedAt: app.decided_at,
+      registeredAt: app.submitted_at,
+      seasonName: app.season_id ? (seasonById.get(app.season_id)?.name_ar ?? null) : null,
+      seasonKind: app.season_id ? (seasonById.get(app.season_id)?.kind ?? null) : null,
       parentName: draftParent?.fullName || profile?.full_name || "—",
       parentPhone: draftParent?.mobile || profile?.phone || null,
     };
