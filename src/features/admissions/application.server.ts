@@ -8,7 +8,7 @@ import type { Database } from "@/integrations/supabase/types";
 import type { ChildInput, ParentInfoInput, QurraInput } from "./schemas";
 import { isValidAcademicNumber } from "@/features/ams/academic-number";
 import { issueAcademicNumber } from "@/features/ams/academic-number.server";
-import { resolveActiveSeason } from "@/features/ams/seasons.server";
+import { requireActiveSeason } from "@/features/ams/seasons.server";
 
 type Db = SupabaseClient<Database>;
 
@@ -54,6 +54,7 @@ export async function startApplication(
   userId: string,
   input: { stageId: string | null; classroomId: string | null },
 ) {
+  const season = await requireActiveSeason(supabase);
   const query = supabase
     .from("applications")
     .select("id")
@@ -75,15 +76,14 @@ export async function startApplication(
     return { id: existing.id };
   }
 
-  const season = await resolveActiveSeason(supabase);
   const { data, error } = await supabase
     .from("applications")
     .insert({
       parent_id: userId,
       stage_id: input.stageId,
       classroom_id: input.classroomId,
-      academic_year: season?.academicYear ?? ACADEMIC_YEAR,
-      season_id: season?.id ?? null,
+      academic_year: season.academicYear,
+      season_id: season.id,
       status: "draft",
       current_step: 3,
     })
@@ -382,6 +382,12 @@ export async function submitApplication(supabase: Db, userId: string, id: string
   const app = await loadApplicationRow(supabase, id, userId);
   if (app.status !== "draft" && app.status !== "needs_action") {
     throw new Error("تم إرسال هذا الطلب مسبقًا.");
+  }
+  if (app.status === "draft") {
+    const activeSeason = await requireActiveSeason(supabase);
+    if (app.season_id && app.season_id !== activeSeason.id) {
+      throw new Error("انتهى موسم هذه المسودة. لا يمكن إرسالها ضمن موسم تسجيل آخر.");
+    }
   }
 
   const [{ data: children }, { data: chosen }, { data: stage }, { data: qurra }] = await Promise.all([

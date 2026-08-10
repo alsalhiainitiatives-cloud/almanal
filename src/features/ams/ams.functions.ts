@@ -65,6 +65,7 @@ export const amsQueue = createServerFn({ method: "POST" })
         qurra: z.string().nullable().optional(),
         payment: z.string().nullable().optional(),
         academicYear: z.string().nullable().optional(),
+        seasonId: z.string().uuid().nullable().optional(),
         includeArchived: z.boolean().optional(),
       })
       .parse(data ?? {}),
