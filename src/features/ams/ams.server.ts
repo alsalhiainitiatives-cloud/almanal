@@ -1004,7 +1004,99 @@ export async function listWaitingList(supabase: Db, userId: string) {
       .select("id, name_ar, capacity, taken_seats, min_age_months, max_age_months, max_waiting, is_active")
       .order("sort_order"),
   ]);
-  return { entries: entries.data ?? [], classrooms: classrooms.data ?? [] };
+
+  /* Children with no seat yet whose *every* chosen preference is unavailable:
+     they belong on the waiting list even when no queue row was created. */
+  const { data: pendingChildren } = await supabase
+    .from("application_children")
+    .select(
+      "id, name_ar, birth_date, classroom_id, preference_1_classroom_id, preference_2_classroom_id, preference_3_classroom_id, application_id, applications!inner(id, application_number, status, archived_at, parent_id, academic_year, created_at)",
+    )
+    .is("classroom_id", null)
+    .in("applications.status", SEAT_ACTIVE)
+    .limit(1000);
+
+  const parents = await profileMap(
+    supabase,
+    (pendingChildren ?? []).map((row) => (row as never as { applications: { parent_id: string } }).applications.parent_id),
+  );
+
+  const queuedChildIds = new Set((entries.data ?? []).map((e) => e.child_id).filter(Boolean) as string[]);
+
+  const blocked = ((pendingChildren ?? []) as unknown as {
+    id: string;
+    name_ar: string;
+    birth_date: string | null;
+    application_id: string;
+    preference_1_classroom_id: string | null;
+    preference_2_classroom_id: string | null;
+    preference_3_classroom_id: string | null;
+    applications: {
+      application_number: string | null;
+      status: Status;
+      archived_at: string | null;
+      parent_id: string;
+      academic_year: string | null;
+      created_at: string;
+    };
+  }[])
+    .filter((row) => !row.applications?.archived_at && !queuedChildIds.has(row.id))
+    .map((row) => ({
+      childId: row.id,
+      childName: row.name_ar,
+      birthDate: row.birth_date,
+      applicationId: row.application_id,
+      applicationNumber: row.applications?.application_number ?? null,
+      status: row.applications?.status ?? null,
+      academicYear: row.applications?.academic_year ?? null,
+      createdAt: row.applications?.created_at ?? null,
+      preferences: [
+        row.preference_1_classroom_id,
+        row.preference_2_classroom_id,
+        row.preference_3_classroom_id,
+      ],
+      parentName: parents[row.applications?.parent_id ?? ""]?.fullName ?? null,
+      parentPhone: parents[row.applications?.parent_id ?? ""]?.phone ?? null,
+    }));
+
+  return { entries: entries.data ?? [], classrooms: classrooms.data ?? [], blocked };
+}
+
+/** Tells the parent a seat opened up in one of their preferred classrooms. */
+export async function notifySeatAvailable(
+  supabase: Db,
+  userId: string,
+  input: { applicationId: string; classroomId: string; childName?: string | null },
+) {
+  await guard(supabase, userId, "seats");
+  const [{ data: classroom }, meta] = await Promise.all([
+    supabase.from("classrooms").select("name_ar").eq("id", input.classroomId).maybeSingle(),
+    appMeta(supabase, input.applicationId),
+  ]);
+  const classroomName = classroom?.name_ar ?? "الفصل";
+  const title = `توفّر مقعد في فصل ${classroomName}`;
+  const body = `${input.childName ? `${input.childName}: ` : ""}تم توفّر مقعد شاغر في فصل ${classroomName}. يرجى التواصل مع إدارة الروضة لتأكيد التسكين.`;
+
+  if (meta?.parent_id) {
+    await notify(supabase, {
+      userIds: [meta.parent_id],
+      kind: "waitlist.seat_available",
+      title,
+      body,
+      applicationId: input.applicationId,
+      link: "/my-applications",
+      severity: "success",
+    });
+  }
+  await logEvent(supabase, input.applicationId, userId, "waitlist.notified", title, body);
+
+  const parents = await profileMap(supabase, [meta?.parent_id ?? null]);
+  return {
+    ok: true as const,
+    message: body,
+    parentPhone: parents[meta?.parent_id ?? ""]?.phone ?? null,
+    classroomName,
+  };
 }
 
 /* ------------------------------------------------------------------ */
