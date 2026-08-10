@@ -78,12 +78,15 @@ function MyApplicationsPage() {
       title="طلباتي وتتبع الطلب"
       description="تابع حالة كل طلب خطوة بخطوة، أكمل المسودات، واطّلع على الملخص المالي والرقم الأكاديمي / رقم الطلب."
     >
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
         <Button asChild variant="hero">
-          <Link to="/admissions">
+          <Link to="/reserve" search={{ new: true }}>
             <FilePlus2 className="size-4" />
-            طلب قبول جديد
+            طلب تسجيل جديد لطفل آخر
           </Link>
+        </Button>
+        <Button asChild variant="soft">
+          <Link to="/admissions">تصفّح المراحل</Link>
         </Button>
       </div>
 
