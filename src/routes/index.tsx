@@ -13,6 +13,7 @@ import { StatsBand } from "@/components/site/StatsBand";
 import { Testimonials } from "@/components/site/Testimonials";
 import { ValueCards } from "@/components/site/ValueCards";
 import { useSiteContent } from "@/features/site-content/SiteContentProvider";
+import { SeasonBanner } from "@/features/admissions/components/SeasonBanner";
 
 const title = "مدارس وروضة المنال | روضة ومدرسة ابتدائية في عنيزة";
 const description =
@@ -42,6 +43,10 @@ function Index() {
   return (
     <>
       <Hero />
+
+      <section className="mx-auto max-w-7xl px-4 pt-10 md:px-8">
+        <SeasonBanner />
+      </section>
 
       {/* 01 · عن المنال — mirrors /about */}
       <SectionShell id="about" index={1} tone="soft">
