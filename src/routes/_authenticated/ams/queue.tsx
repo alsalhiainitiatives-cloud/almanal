@@ -30,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QURRA_STATUS_LABELS } from "@/features/admissions/eligibility";
 import { listStages } from "@/features/admissions/catalog.functions";
+import { amsSeasons } from "@/features/ams/seasons.functions";
 import {
   amsAssignOfficer,
   amsQueue,
@@ -59,6 +60,7 @@ type QueueSearch = {
   payment?: string;
   qurra?: string;
   stageId?: string;
+  seasonId?: string;
 };
 
 export const Route = createFileRoute("/_authenticated/ams/queue")({
@@ -68,6 +70,7 @@ export const Route = createFileRoute("/_authenticated/ams/queue")({
     payment: typeof search.payment === "string" ? search.payment : undefined,
     qurra: typeof search.qurra === "string" ? search.qurra : undefined,
     stageId: typeof search.stageId === "string" ? search.stageId : undefined,
+    seasonId: typeof search.seasonId === "string" ? search.seasonId : undefined,
   }),
   head: () => ({
     meta: [
@@ -118,6 +121,7 @@ function QueuePage() {
     officerId: search.officerId ?? null,
     payment: search.payment ?? null,
     qurra: search.qurra ?? null,
+    seasonId: search.seasonId ?? null,
   };
 
   const { data, isLoading, error } = useQuery({
@@ -126,6 +130,7 @@ function QueuePage() {
   });
   const { data: staff } = useQuery({ queryKey: ["ams", "staff"], queryFn: () => amsStaff() });
   const { data: stages } = useQuery({ queryKey: ["stages", "list"], queryFn: () => listStages() });
+  const { data: seasonsData } = useQuery({ queryKey: ["ams", "seasons"], queryFn: () => amsSeasons() });
 
   const togglePin = useServerFn(amsTogglePin);
   const assign = useServerFn(amsAssignOfficer);
@@ -243,7 +248,7 @@ function QueuePage() {
   const setFilter = (key: keyof QueueSearch, value: string) =>
     navigate({ search: { ...search, [key]: value === ALL ? undefined : value } });
 
-  const activeFilters = [search.officerId, search.payment, search.qurra].filter(Boolean).length;
+  const activeFilters = [search.officerId, search.payment, search.qurra, search.seasonId].filter(Boolean).length;
 
   const exportCsv = () => {
     const blob = new Blob(["\uFEFF" + toCsv(rows)], { type: "text/csv;charset=utf-8" });
@@ -408,7 +413,20 @@ function QueuePage() {
           </Select>
 
           {showFilters ? (
-            <div className="grid gap-2.5 sm:grid-cols-3 lg:col-span-2">
+            <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4 lg:col-span-2">
+              <Select value={search.seasonId ?? ALL} onValueChange={(value) => setFilter("seasonId", value)}>
+                <SelectTrigger className="rounded-2xl text-xs">
+                  <SelectValue placeholder="موسم التسجيل" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>كل مواسم التسجيل</SelectItem>
+                  {(seasonsData?.seasons ?? []).map((season) => (
+                    <SelectItem key={season.id} value={season.id}>
+                      {season.name_ar} · {season.academic_year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={search.officerId ?? ALL} onValueChange={(value) => setFilter("officerId", value)}>
                 <SelectTrigger className="rounded-2xl text-xs">
                   <SelectValue placeholder="المسؤول" />
