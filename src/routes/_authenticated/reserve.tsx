@@ -269,6 +269,20 @@ function ReservePage() {
                 <Link to="/my-applications">طلباتي</Link>
               </Button>
             </div>
+            <div className="mt-4 rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-4">
+              <p className="text-xs font-black text-foreground">هل ترغب بتسجيل طفل آخر؟</p>
+              <p className="mt-1 text-[11px] font-bold leading-5 text-muted-foreground">
+                يمكنك إرسال طلب حجز مستقل لطفل آخر أو لأحد أقاربك من نفس الحساب طالما باب التسجيل
+                مفتوح.
+              </p>
+              <Button
+                variant="soft"
+                className="mt-3 rounded-2xl text-xs font-bold"
+                onClick={() => navigate({ to: "/reserve", search: { new: true } })}
+              >
+                طلب حجز جديد لطفل آخر
+              </Button>
+            </div>
           </div>
         </div>
       </section>

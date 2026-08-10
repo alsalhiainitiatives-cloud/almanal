@@ -16,6 +16,7 @@ import {
   listQueue,
   listStaff,
   listWaitingList,
+  notifySeatAvailable,
   manageSeat,
   moveToWaitingList,
   nudgePrincipal,
@@ -133,6 +134,19 @@ export const amsWorkspace = createServerFn({ method: "POST" })
 export const amsWaitingList = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => listWaitingList(context.supabase, context.userId));
+
+export const amsNotifySeatAvailable = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        applicationId: uuid,
+        classroomId: uuid,
+        childName: z.string().trim().max(120).nullish(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => notifySeatAvailable(context.supabase, context.userId, data));
 
 export const amsAssignOfficer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

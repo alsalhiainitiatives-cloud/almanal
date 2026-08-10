@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { CalendarHeart, Loader2, PartyPopper } from "lucide-react";
@@ -104,6 +104,11 @@ export function ReservationBanner() {
       >
         {busy ? <Loader2 className="size-3.5 animate-spin" /> : null}
         {finalStarted ? "متابعة الطلب من قائمة طلباتي" : "استكمال بيانات التسجيل"}
+      </Button>
+      <Button asChild variant="soft" className="rounded-2xl text-xs font-bold">
+        <Link to="/reserve" search={{ new: true }}>
+          طلب حجز جديد لطفل آخر
+        </Link>
       </Button>
     </div>
   );

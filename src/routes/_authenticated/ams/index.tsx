@@ -41,14 +41,20 @@ const OUTCOMES = [
   { key: "waitingList", label: "بانتظار مقعد", status: null },
 ] as const;
 
+/** Occupancy ring: fill tone follows how full the classroom is, on a clearly
+ *  darker track so the coloured arc is always readable. */
 function Donut({ percent, color }: { percent: number; color: string }) {
+  const fill = percent >= 100 ? "#B3261E" : percent >= 75 ? "#C98A00" : percent >= 40 ? "#1F8A5B" : "#2563A8";
   return (
     <div
-      className="grid size-16 shrink-0 place-items-center rounded-full"
-      style={{ background: `conic-gradient(${color} ${percent * 3.6}deg, hsl(var(--muted)) 0deg)` }}
+      className="grid size-16 shrink-0 place-items-center rounded-full ring-2 ring-inset ring-foreground/15"
+      style={{ background: `conic-gradient(${fill} ${percent * 3.6}deg, #D7CEC5 0deg)` }}
     >
-      <span className="grid size-11 place-items-center rounded-full bg-card text-[11px] font-extrabold text-foreground">
-        {percent}%
+      <span className="grid size-11 place-items-center rounded-full bg-card text-[11px] font-extrabold text-foreground shadow-sm">
+        <span className="flex items-center gap-0.5">
+          <span aria-hidden className="size-1.5 rounded-full" style={{ background: color }} />
+          {percent}%
+        </span>
       </span>
     </div>
   );

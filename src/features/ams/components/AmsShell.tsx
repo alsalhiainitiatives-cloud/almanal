@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils";
 import { amsQueue } from "../ams.functions";
 import { useAmsRealtime } from "../useAmsRealtime";
 import { StatusPill } from "./atoms";
+import { RegistrationSwitch } from "./RegistrationSwitch";
 
 type NavItem = {
   to: string;
@@ -170,6 +171,7 @@ export function AmsShell({
       <div className={cn("mx-auto flex w-full gap-6 px-4 py-6", wide ? "max-w-[1800px]" : "max-w-[1600px]")}>
         <aside className="hidden w-[248px] shrink-0 lg:block">
           <div className="sticky top-6 space-y-4">
+            <RegistrationSwitch />
             <div className="rounded-3xl border border-border/60 bg-card/80 p-4 shadow-sm backdrop-blur">
               <div className="flex items-center gap-2.5">
                 <span className="grid size-10 place-items-center rounded-2xl bg-primary text-sm font-extrabold text-primary-foreground">
