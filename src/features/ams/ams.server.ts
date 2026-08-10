@@ -1079,7 +1079,7 @@ export async function notifySeatAvailable(
 
   if (meta?.parentId) {
     await notify(supabase, {
-      userIds: [meta.parent_id],
+      userIds: [meta.parentId],
       kind: "waitlist.seat_available",
       title,
       body,
