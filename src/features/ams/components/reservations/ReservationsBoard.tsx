@@ -78,6 +78,7 @@ export function ReservationsBoard() {
   const [filter, setFilter] = useState<Filter>("pending_review");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<ReservationSort>("oldest");
+  const [seasonId, setSeasonId] = useState("all");
   const [selected, setSelected] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -90,6 +91,7 @@ export function ReservationsBoard() {
   const classrooms = useMemo(() => (data?.classrooms ?? []) as ClassroomRow[], [data]);
   const applications = useMemo(() => (data?.applications ?? []) as ApplicationLite[], [data]);
   const all = useMemo(() => (data?.rows ?? []) as unknown as ReservationRow[], [data]);
+  const seasons = data?.seasons ?? [];
 
   const counts = useMemo(() => {
     const base: Record<Filter, number> = {
@@ -105,10 +107,15 @@ export function ReservationsBoard() {
   const rows = useMemo(
     () =>
       sortReservations(
-        all.filter((row) => row.status === filter && matchesReservation(row, search, applications)),
+        all.filter(
+          (row) =>
+            row.status === filter &&
+            (seasonId === "all" || row.season_id === seasonId) &&
+            matchesReservation(row, search, applications),
+        ),
         sort,
       ),
-    [all, filter, search, sort, applications],
+    [all, filter, seasonId, search, sort, applications],
   );
 
   const visibleIds = rows.map((r) => r.id);
@@ -190,6 +197,19 @@ export function ReservationsBoard() {
             className="rounded-2xl ps-9 text-xs font-bold"
           />
         </div>
+        <Select value={seasonId} onValueChange={setSeasonId}>
+          <SelectTrigger className="h-10 w-60 rounded-2xl text-xs font-bold">
+            <SelectValue placeholder="موسم التسجيل" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">كل مواسم التسجيل</SelectItem>
+            {seasons.map((season) => (
+              <SelectItem key={season.id} value={season.id}>
+                {season.name_ar} · {season.academic_year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={sort} onValueChange={(v) => setSort(v as ReservationSort)}>
           <SelectTrigger className="h-10 w-52 rounded-2xl text-xs font-bold">
             <SelectValue />
@@ -289,6 +309,7 @@ export function ReservationsBoard() {
                 <th className="p-3 text-start">الفصل / الرغبة الأولى</th>
                 <th className="p-3 text-start">مدة الانتظار</th>
                 <th className="p-3 text-start">الحالة</th>
+                <th className="p-3 text-start">موسم التسجيل</th>
                 <th className="p-3 text-start">استكمال التسجيل</th>
                 <th className="p-3 text-start">إجراء</th>
               </tr>
@@ -340,6 +361,11 @@ export function ReservationsBoard() {
                         )}
                       >
                         {room ? `${room.name_ar} · متاح ${free}` : "بدون فصل"}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <span className="text-[10px] font-black text-foreground">
+                        {seasons.find((season) => season.id === row.season_id)?.name_ar ?? row.academic_year}
                       </span>
                     </td>
                     <td className="p-3">

@@ -9,7 +9,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 import { ageInMonths } from "./eligibility";
-import { ACADEMIC_YEAR } from "./application.server";
 import type { ReservationInput, ReservationPreferencesInput } from "./reservation-schema";
 import {
   CHILD_MATCHES_PARENT_MESSAGE,
@@ -18,7 +17,7 @@ import {
 } from "./reservation-schema";
 import { notify, STAFF_ROLES } from "@/features/notifications/notifications.server";
 import { DEFAULT_SITE_CONTENT } from "@/features/site-content/defaults";
-import { resolveActiveSeason, seasonClosureMessage } from "@/features/ams/seasons.server";
+import { requireActiveSeason, resolveActiveSeason, seasonClosureMessage } from "@/features/ams/seasons.server";
 
 type Db = SupabaseClient<Database>;
 
@@ -109,9 +108,11 @@ export async function findDuplicateChildIds(
 ): Promise<string[]> {
   const ids = Array.from(new Set(nationalIds.filter((v) => /^[12]\d{9}$/.test(v))));
   if (!ids.length) return [];
+  const activeSeason = await resolveActiveSeason(supabase);
+  if (!activeSeason) return [];
   const { data } = await supabase.rpc("duplicate_child_national_ids", {
     _ids: ids,
-    _academic_year: ACADEMIC_YEAR,
+    _academic_year: activeSeason.academicYear,
     ...(ignore?.reservationId ? { _ignore_reservation: ignore.reservationId } : {}),
     ...(ignore?.applicationId ? { _ignore_application: ignore.applicationId } : {}),
   });
@@ -120,11 +121,11 @@ export async function findDuplicateChildIds(
 
 export async function createReservation(supabase: Db, userId: string, input: ReservationInput) {
   await assertRegistrationOpen(supabase);
-  const season = await resolveActiveSeason(supabase);
-  if (season && !season.reservationEnabled) {
+  const season = await requireActiveSeason(supabase);
+  if (!season.reservationEnabled) {
     throw new Error("خطوة الحجز المبدئي معطّلة في موسم التسجيل الحالي.");
   }
-  const academicYear = season?.academicYear ?? ACADEMIC_YEAR;
+  const academicYear = season.academicYear;
   const settings = await getReservationSettings(supabase);
   if (!settings.enabled) {
     throw new Error(
@@ -165,7 +166,7 @@ export async function createReservation(supabase: Db, userId: string, input: Res
     .insert({
       parent_id: userId,
       academic_year: academicYear,
-      season_id: season?.id ?? null,
+      season_id: season.id,
       parent_name: input.parentName,
       parent_national_id: input.parentNationalId,
       status: "pending_review",
@@ -223,18 +224,22 @@ export async function listMyReservations(supabase: Db, userId: string) {
 
 /** Staff queue (RLS grants staff read access to every reservation). */
 export async function listReservations(supabase: Db) {
-  const [{ data }, { data: classrooms }] = await Promise.all([
+  const [{ data }, { data: classrooms }, { data: seasons }] = await Promise.all([
     supabase
       .from("seat_reservations")
       .select(
         `*, children:seat_reservation_children(${CHILD_COLUMNS}), events:reservation_events(${EVENT_COLUMNS})`,
       )
       .order("created_at", { ascending: false })
-      .limit(300),
+      .limit(1000),
     supabase
       .from("classrooms")
       .select("id, stage_id, name_ar, capacity, taken_seats, max_waiting, min_age_months, max_age_months, is_active")
       .order("sort_order"),
+    supabase
+      .from("admission_seasons")
+      .select("id, academic_year, name_ar, kind, starts_at, ends_at")
+      .order("starts_at", { ascending: false }),
   ]);
 
   /* Registration progress: did the parent actually submit the full form? */
@@ -246,7 +251,7 @@ export async function listReservations(supabase: Db) {
         .in("id", appIds)
     : { data: [] as { id: string; application_number: string | null; status: string; current_step: number; submitted_at: string | null }[] };
 
-  return { rows: data ?? [], classrooms: classrooms ?? [], applications: applications ?? [] };
+  return { rows: data ?? [], classrooms: classrooms ?? [], applications: applications ?? [], seasons: seasons ?? [] };
 }
 
 type ClassroomRow = {
@@ -541,6 +546,10 @@ export async function startFromReservation(supabase: Db, userId: string, reserva
   if (!reservation || reservation.parent_id !== userId) throw new Error("لم يتم العثور على طلب الحجز.");
   if (reservation.status !== "approved") throw new Error("لم تتم الموافقة على حجز المقعد بعد.");
   if (reservation.application_id) return { id: reservation.application_id };
+  const activeSeason = await requireActiveSeason(supabase);
+  if (reservation.season_id && reservation.season_id !== activeSeason.id) {
+    throw new Error("انتهى موسم هذا الحجز المبدئي. يرجى التواصل مع إدارة القبول لتحديثه إلى الموسم الحالي.");
+  }
 
   const children = [...(reservation.children ?? [])].sort((a, b) => a.sort_order - b.sort_order);
   const first = children[0];
@@ -586,6 +595,7 @@ export async function startFromReservation(supabase: Db, userId: string, reserva
       stage_id: first?.stage_id ?? null,
       classroom_id: first?.assigned_classroom_id ?? null,
       academic_year: reservation.academic_year,
+      season_id: reservation.season_id ?? activeSeason.id,
       status: "draft",
       current_step: 3,
       parent_national_id: reservation.parent_national_id,
@@ -622,9 +632,19 @@ export async function startFromReservation(supabase: Db, userId: string, reserva
 /** Used by the entry point to decide whether Step 0 is still required. */
 export async function reservationGate(supabase: Db, userId: string) {
   const rows = await listMyReservations(supabase, userId);
-  const current = rows.find((r) => r.academic_year === ACADEMIC_YEAR) ?? rows[0] ?? null;
+  const activeSeason = await resolveActiveSeason(supabase);
+  const current =
+    (activeSeason ? rows.find((r) => r.season_id === activeSeason.id) : null) ?? rows[0] ?? null;
+  const { data: linkedApplication } = current?.application_id
+    ? await supabase
+        .from("applications")
+        .select("id, status, application_number")
+        .eq("id", current.application_id)
+        .maybeSingle()
+    : { data: null };
   return {
     reservation: current,
+    linkedApplication,
     needsReservation: !current || current.status === "rejected" || current.status === "withdrawn",
     pending: current?.status === "pending_review",
     approved: current?.status === "approved",

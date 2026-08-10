@@ -54,6 +54,16 @@ export async function resolveActiveSeason(supabase: Db): Promise<ActiveSeason | 
   };
 }
 
+/** Authoritative write gate for every new reservation/application action. */
+export async function requireActiveSeason(supabase: Db): Promise<ActiveSeason> {
+  const season = await resolveActiveSeason(supabase);
+  if (season) return season;
+  throw new Error(
+    (await seasonClosureMessage(supabase)) ||
+      "باب التسجيل مغلق حالياً. لا يمكن بدء طلب جديد أو إرسال مسودة حتى فتح موسم تسجيل.",
+  );
+}
+
 /** Latest closure message to explain why registration is unavailable. */
 export async function seasonClosureMessage(supabase: Db): Promise<string | null> {
   const { data } = await supabase

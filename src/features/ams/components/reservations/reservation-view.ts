@@ -24,6 +24,8 @@ export type ReservationRow = {
   decided_at?: string | null;
   decision_note?: string | null;
   application_id: string | null;
+  season_id: string | null;
+  academic_year: string;
   children?: ReservationChildRow[] | null;
 };
 

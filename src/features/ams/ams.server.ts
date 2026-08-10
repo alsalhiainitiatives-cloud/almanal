@@ -117,16 +117,17 @@ export type QueueFilters = {
   qurra?: string | null;
   payment?: string | null;
   academicYear?: string | null;
+  seasonId?: string | null;
   includeArchived?: boolean;
 };
 
 const QUEUE_SELECT = `
   id, application_number, tracking_number, status, priority, seat_status, payment_status,
-  assigned_officer_id, academic_year, stage_id, classroom_id, parent_id, grand_total,
+  assigned_officer_id, academic_year, season_id, stage_id, classroom_id, parent_id, grand_total,
   submitted_at, created_at, updated_at, student_number, archived_at,
   parent_national_id, parent_nationality, draft_data,
   application_children ( id, name_ar, national_id, birth_date, gender, nationality, stage_id, classroom_id, preference_1_classroom_id, photo_url, medical_conditions, allergies, special_needs ),
-  qurra_requests ( status, requested, mother_employer, mother_employment_status ),
+  qurra_requests ( status, requested, mother_national_id, mother_employer, mother_employment_status ),
   application_documents ( id, status, document_type_slug, child_index )
 `;
 
@@ -148,6 +149,7 @@ export async function listQueue(supabase: Db, userId: string, filters: QueueFilt
   else if (filters.officerId) query = query.eq("assigned_officer_id", filters.officerId);
   if (filters.payment) query = query.eq("payment_status", filters.payment);
   if (filters.academicYear) query = query.eq("academic_year", filters.academicYear);
+  if (filters.seasonId) query = query.eq("season_id", filters.seasonId);
 
   const { data, error } = await query;
   if (error) throw new Error("تعذّر تحميل قائمة الطلبات.");

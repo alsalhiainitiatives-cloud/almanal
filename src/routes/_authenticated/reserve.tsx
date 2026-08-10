@@ -192,6 +192,7 @@ function ReservePage() {
   }
 
   const reservation = freshRequest ? null : (gate?.reservation ?? null);
+  const finalStarted = Boolean(gate?.linkedApplication && gate.linkedApplication.status !== "draft");
 
   /* Registration closed by the admin → block Step 0 entirely. */
   if (!registration.open && !reservation) {
@@ -235,15 +236,21 @@ function ReservePage() {
                   يسعدنا انضمام طفلك إلى مجتمع «روضة المنال». تابع لاستكمال بيانات التسجيل — تم تعبئة
                   البيانات التي أدخلتها مسبقًا تلقائيًا.
                 </p>
-                <Button
-                  variant="hero"
-                  className="mt-6"
-                  disabled={busy}
-                  onClick={() => onContinue(reservation.id)}
-                >
-                  {busy ? <Loader2 className="size-4 animate-spin" /> : null}
-                  استكمال بيانات التسجيل
-                </Button>
+                {finalStarted ? (
+                  <Button asChild variant="soft" className="mt-6">
+                    <Link to="/my-applications">متابعة الطلب النهائي</Link>
+                  </Button>
+                ) : (
+                  <Button
+                    variant="hero"
+                    className="mt-6"
+                    disabled={busy}
+                    onClick={() => onContinue(reservation.id)}
+                  >
+                    {busy ? <Loader2 className="size-4 animate-spin" /> : null}
+                    استكمال بيانات التسجيل
+                  </Button>
+                )}
               </>
             )}
             <div className="mt-6">

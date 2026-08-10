@@ -221,6 +221,10 @@ export function ApplicantPanel({ data }: { data: WorkspaceData }) {
         <AccordionContent>
           <Row label="مطلوب" value={data.qurra?.requested ? "نعم" : "لا"} />
           <Row label="الحالة" value={QURRA_STATUS_LABELS[data.qurra?.status ?? "not_requested"]} />
+          <Row
+            label="رقم هوية الأم"
+            value={data.qurra?.mother_national_id ? <span dir="ltr">{data.qurra.mother_national_id}</span> : "—"}
+          />
           <Row label="عمل الأم" value={data.qurra?.mother_employment_status} />
           <Row label="جهة العمل" value={data.qurra?.mother_employer} />
           <Row label="ملاحظات" value={data.qurra?.notes} />
