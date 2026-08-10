@@ -90,9 +90,10 @@ function WaitingListPage() {
                   const months = ageInMonths(row.birthDate);
                   const verdicts = evaluatePreferences(row.preferences, classrooms, months);
                   const chosen = verdicts.filter((v) => v.classroom);
-                  if (!chosen.length || chosen.some((v) => v.admissible === true && false)) return null;
                   const openSeat = chosen.find((v) => v.admissible);
-                  if (!openSeat && chosen.some((v) => v.code === "WL-01")) return null;
+                  /* Fully blocked children, plus already-waitlisted ones whose seat just freed. */
+                  if (!chosen.length) return null;
+                  if (openSeat && row.status !== "waitlisted") return null;
                   return (
                     <article key={row.childId} className="rounded-2xl border border-border/60 bg-card p-3">
                       <header className="flex flex-wrap items-center justify-between gap-2">
