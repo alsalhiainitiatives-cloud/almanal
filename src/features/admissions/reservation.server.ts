@@ -9,7 +9,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 import { ageInMonths } from "./eligibility";
-import { ACADEMIC_YEAR } from "./application.server";
 import type { ReservationInput, ReservationPreferencesInput } from "./reservation-schema";
 import {
   CHILD_MATCHES_PARENT_MESSAGE,
@@ -109,9 +108,11 @@ export async function findDuplicateChildIds(
 ): Promise<string[]> {
   const ids = Array.from(new Set(nationalIds.filter((v) => /^[12]\d{9}$/.test(v))));
   if (!ids.length) return [];
+  const activeSeason = await resolveActiveSeason(supabase);
+  if (!activeSeason) return [];
   const { data } = await supabase.rpc("duplicate_child_national_ids", {
     _ids: ids,
-    _academic_year: ACADEMIC_YEAR,
+    _academic_year: activeSeason.academicYear,
     ...(ignore?.reservationId ? { _ignore_reservation: ignore.reservationId } : {}),
     ...(ignore?.applicationId ? { _ignore_application: ignore.applicationId } : {}),
   });

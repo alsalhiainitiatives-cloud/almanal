@@ -200,6 +200,10 @@ export async function checkDuplicateChild(
   userId: string,
   input: { nationalId: string; excludeApplicationId?: string | null },
 ): Promise<DuplicateCheck> {
+  const activeSeason = await resolveActiveSeason(supabase);
+  if (!activeSeason) {
+    return { duplicate: false, applicationNumber: null, status: null, isMine: false };
+  }
   const { data } = await supabase
     .from("application_children")
     .select(
@@ -214,7 +218,7 @@ export async function checkDuplicateChild(
       academic_year: string;
       parent_id: string;
     };
-    return app.academic_year === ACADEMIC_YEAR && !["withdrawn", "rejected"].includes(app.status);
+    return app.academic_year === activeSeason.academicYear && !["withdrawn", "rejected"].includes(app.status);
   });
 
   if (!hit) return { duplicate: false, applicationNumber: null, status: null, isMine: false };
