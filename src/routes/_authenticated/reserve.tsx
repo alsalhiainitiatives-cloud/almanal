@@ -194,15 +194,12 @@ function ReservePage() {
   const reservation = freshRequest ? null : (gate?.reservation ?? null);
   const finalStarted = Boolean(gate?.linkedApplication && gate.linkedApplication.status !== "draft");
 
-  /* Registration closed by the admin → block Step 0 entirely. */
-  if (!registration.open && !reservation) {
+  /* Registration closed by the admin → block Step 0 and its data entirely. */
+  if (!registration.open) {
     return (
       <section className="section-y">
         <div className="mx-auto max-w-3xl px-4">
-          <div className="space-y-6">
-            <SeasonBanner />
-            <RegistrationClosedNotice />
-          </div>
+          <RegistrationClosedNotice />
         </div>
       </section>
     );
