@@ -1077,7 +1077,7 @@ export async function notifySeatAvailable(
   const title = `توفّر مقعد في فصل ${classroomName}`;
   const body = `${input.childName ? `${input.childName}: ` : ""}تم توفّر مقعد شاغر في فصل ${classroomName}. يرجى التواصل مع إدارة الروضة لتأكيد التسكين.`;
 
-  if (meta?.parent_id) {
+  if (meta?.parentId) {
     await notify(supabase, {
       userIds: [meta.parent_id],
       kind: "waitlist.seat_available",
@@ -1090,11 +1090,11 @@ export async function notifySeatAvailable(
   }
   await logEvent(supabase, input.applicationId, userId, "waitlist.notified", title, body);
 
-  const parents = await profileMap(supabase, [meta?.parent_id ?? null]);
+  const parents = await profileMap(supabase, [meta?.parentId ?? null]);
   return {
     ok: true as const,
     message: body,
-    parentPhone: parents[meta?.parent_id ?? ""]?.phone ?? null,
+    parentPhone: parents[meta?.parentId ?? ""]?.phone ?? null,
     classroomName,
   };
 }
