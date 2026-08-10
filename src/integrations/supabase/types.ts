@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      academic_number_counters: {
+        Row: {
+          last_value: number
+          prefix: string
+          updated_at: string
+        }
+        Insert: {
+          last_value?: number
+          prefix: string
+          updated_at?: string
+        }
+        Update: {
+          last_value?: number
+          prefix?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       admission_seasons: {
         Row: {
           academic_year: string
