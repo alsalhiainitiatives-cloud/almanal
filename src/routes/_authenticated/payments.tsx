@@ -218,7 +218,7 @@ function PaymentsPage() {
                                     {
                                       bank: bank ?? null,
                                       applicationNumber: app?.application_number ?? null,
-                                      parentName: profile?.full_name ?? null,
+                                      parentName: profile?.fullName ?? null,
                                       seq: row.seq,
                                       amount: Number(row.paid_amount || row.amount),
                                       dueDate: row.due_date,
@@ -248,7 +248,7 @@ function PaymentsPage() {
                                     {
                                       bank: bank ?? null,
                                       applicationNumber: app?.application_number ?? null,
-                                      parentName: profile?.full_name ?? null,
+                                      parentName: profile?.fullName ?? null,
                                       seq: row.seq,
                                       amount: Number(row.amount),
                                       dueDate: row.due_date,
