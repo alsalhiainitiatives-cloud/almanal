@@ -67,6 +67,9 @@ export async function listPromotions(supabase: Db, userId: string) {
   ]);
 
   const activeRules = (rules.data ?? []).filter((r) => r.is_active);
+  /* Promotions only ever move a child *upward*: a rule pointing at a lower or
+     equal stage is skipped, since demoting by age makes no sense. */
+  const order = new Map((stages.data ?? []).map((s) => [s.id, Number(s.sort_order ?? 0)]));
   const done = new Set(
     (history.data ?? []).map((h) => `${h.child_id}:${h.to_stage_id}:${h.status}`),
   );
@@ -86,6 +89,14 @@ export async function listPromotions(supabase: Db, userId: string) {
       if (rule.from_stage_id && rule.from_stage_id !== row.stage_id) continue;
       if (!rule.from_stage_id && row.stage_id === rule.to_stage_id) continue;
       if (row.stage_id === rule.to_stage_id) continue;
+      if (
+        row.stage_id &&
+        order.has(row.stage_id) &&
+        order.has(rule.to_stage_id) &&
+        order.get(rule.to_stage_id)! <= order.get(row.stage_id)!
+      ) {
+        continue;
+      }
       if (done.has(`${row.id}:${rule.to_stage_id}:done`)) continue;
       if (done.has(`${row.id}:${rule.to_stage_id}:dismissed`)) continue;
 
