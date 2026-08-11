@@ -144,6 +144,7 @@ export const amsNotifySeatAvailable = createServerFn({ method: "POST" })
         applicationId: uuid,
         classroomId: uuid,
         childName: z.string().trim().max(120).nullish(),
+        force: z.boolean().optional(),
       })
       .parse(data),
   )
