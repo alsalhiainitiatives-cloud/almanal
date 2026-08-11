@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatAge } from "@/features/admissions/eligibility";
 import {
   amsPromotionApply,
+  amsPromotionApplyBulk,
   amsPromotionDismiss,
   amsPromotionRuleDelete,
   amsPromotionRuleSave,
@@ -46,6 +47,7 @@ function PromotionsPage() {
 
   const load = useServerFn(amsPromotions);
   const apply = useServerFn(amsPromotionApply);
+  const applyBulk = useServerFn(amsPromotionApplyBulk);
   const dismiss = useServerFn(amsPromotionDismiss);
   const saveRule = useServerFn(amsPromotionRuleSave);
   const deleteRule = useServerFn(amsPromotionRuleDelete);
@@ -57,6 +59,7 @@ function PromotionsPage() {
 
   const [target, setTarget] = useState<{ childId: string; toStageId: string; name: string } | null>(null);
   const [classroomId, setClassroomId] = useState<string>("");
+  const [selected, setSelected] = useState<Record<string, string[]>>({});
 
   const stageName = (id: string | null) =>
     (data?.stages ?? []).find((s) => s.id === id)?.name_ar ?? "غير محدد";
@@ -84,6 +87,34 @@ function PromotionsPage() {
 
   const ready = useMemo(() => (data?.candidates ?? []).filter((c) => c.ready), [data?.candidates]);
   const upcoming = useMemo(() => (data?.candidates ?? []).filter((c) => !c.ready), [data?.candidates]);
+
+  /* Group transfer: only children due for the same target stage can move together. */
+  const readyGroups = useMemo(() => {
+    const map = new Map<string, typeof ready>();
+    for (const row of ready) {
+      map.set(row.toStageId, [...(map.get(row.toStageId) ?? []), row]);
+    }
+    return [...map.entries()];
+  }, [ready]);
+
+  const bulkMutation = useMutation({
+    mutationFn: (input: { childIds: string[]; toStageId: string }) => applyBulk({ data: input }),
+    onSuccess: (res, vars) => {
+      setSelected((s) => ({ ...s, [vars.toStageId]: [] }));
+      if (res.failed.length) toast.warning(`تم نقل ${res.moved} طالبًا وتعذّر نقل ${res.failed.length}`);
+      else toast.success(`تم نقل ${res.moved} طالبًا إلى المرحلة الجديدة`);
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const toggle = (stageId: string, childId: string) =>
+    setSelected((s) => {
+      const current = s[stageId] ?? [];
+      return {
+        ...s,
+        [stageId]: current.includes(childId) ? current.filter((c) => c !== childId) : [...current, childId],
+      };
+    });
 
   const classroomsFor = (stageId: string) =>
     (data?.classrooms ?? []).filter((c) => c.stage_id === stageId && c.is_active !== false);
@@ -135,18 +166,62 @@ function PromotionsPage() {
                 description="سيظهر الطلاب هنا تلقائيًا عند بلوغهم العمر المحدد في أعمار النقل."
               />
             ) : (
-              ready.map((row) => (
+              readyGroups.map(([stageId, rows]) => {
+                const picked = selected[stageId] ?? [];
+                const allPicked = picked.length === rows.length && rows.length > 0;
+                return (
+                  <section key={stageId} className="space-y-2 rounded-3xl border border-border/60 bg-muted/20 p-3">
+                    <header className="flex flex-wrap items-center justify-between gap-2">
+                      <label className="flex items-center gap-2 text-xs font-extrabold text-foreground">
+                        <input
+                          type="checkbox"
+                          checked={allPicked}
+                          onChange={() =>
+                            setSelected((s) => ({ ...s, [stageId]: allPicked ? [] : rows.map((r) => r.childId) }))
+                          }
+                          className="size-3.5 accent-[var(--color-primary)]"
+                          disabled={!canManage}
+                        />
+                        النقل إلى {stageName(stageId)} ({rows.length})
+                      </label>
+                      {canManage ? (
+                        <Button
+                          size="sm"
+                          className="rounded-2xl text-[11px] font-extrabold"
+                          disabled={!picked.length || bulkMutation.isPending}
+                          onClick={() => bulkMutation.mutate({ childIds: picked, toStageId: stageId })}
+                        >
+                          {bulkMutation.isPending ? (
+                            <Loader2 className="size-3.5 animate-spin" />
+                          ) : (
+                            <ArrowUpRight className="size-3.5" />
+                          )}
+                          نقل المحددين ({picked.length})
+                        </Button>
+                      ) : null}
+                    </header>
+                    {rows.map((row) => (
                 <article
                   key={`${row.childId}-${row.toStageId}`}
                   className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-border/60 bg-card p-4 shadow-sm"
                 >
-                  <div className="min-w-0">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <input
+                      type="checkbox"
+                      aria-label="تحديد الطالب للنقل الجماعي"
+                      checked={picked.includes(row.childId)}
+                      onChange={() => toggle(stageId, row.childId)}
+                      disabled={!canManage}
+                      className="size-3.5 accent-[var(--color-primary)]"
+                    />
+                    <div className="min-w-0">
                     <p className="text-sm font-black text-foreground">{row.name_ar}</p>
                     <p className="mt-1 text-xs font-bold text-muted-foreground">
                       العمر الحالي {formatAge(row.ageMonths)} · {stageName(row.fromStageId)}{" "}
                       <ArrowUpRight className="inline size-3.5" /> {stageName(row.toStageId)}
                       {row.studentNumber ? ` · الرقم الأكاديمي ${row.studentNumber}` : ""}
                     </p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-black text-amber-900">
@@ -178,7 +253,10 @@ function PromotionsPage() {
                     ) : null}
                   </div>
                 </article>
-              ))
+                    ))}
+                  </section>
+                );
+              })
             )}
           </TabsContent>
 

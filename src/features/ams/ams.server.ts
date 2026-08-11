@@ -766,14 +766,47 @@ export async function decideApplication(
     { signature },
   );
   const meta = await appMeta(supabase, input.id);
+  /* An approved application whose children have no seat yet is an approval
+     *onto the waiting list* — the parent must never read it as a placement. */
+  let waitlistPosition: number | null = null;
+  if (approved) {
+    const [{ data: kids }, { data: queued }] = await Promise.all([
+      supabase.from("application_children").select("id, classroom_id").eq("application_id", input.id),
+      supabase
+        .from("waiting_list_entries")
+        .select("position")
+        .eq("application_id", input.id)
+        .eq("status", "waiting")
+        .order("position")
+        .limit(1),
+    ]);
+    const unseated = (kids ?? []).length > 0 && (kids ?? []).every((k) => !k.classroom_id);
+    if (unseated || (queued ?? []).length > 0) {
+      waitlistPosition = queued?.[0]?.position ?? null;
+      await touch(supabase, input.id, { seat_status: "waitlisted" });
+    }
+  }
+  const onWaitlist = approved && waitlistPosition !== null;
   await notify(supabase, {
     userIds: [meta.parentId],
-    kind: approved ? "application.approved" : "application.rejected",
-    title: approved ? `تم قبول الطلب ${meta.number}` : `تم رفض الطلب ${meta.number}`,
-    body: note,
+    kind: approved
+      ? onWaitlist
+        ? "application.approved_waitlisted"
+        : "application.approved"
+      : "application.rejected",
+    title: approved
+      ? onWaitlist
+        ? `تمت الموافقة على الطلب ${meta.number} — على قائمة الانتظار`
+        : `تم قبول الطلب ${meta.number}`
+      : `تم رفض الطلب ${meta.number}`,
+    body: onWaitlist
+      ? `تمت الموافقة على الطلب، ولا يتوفّر مقعد شاغر حاليًا؛ لذلك يبقى الطلب على قائمة الانتظار${
+          waitlistPosition ? ` بالترتيب ${waitlistPosition}` : ""
+        } وسيتم إشعاركم فور توفّر مقعد حسب أسبقية التسجيل.${note ? ` — ${note}` : ""}`
+      : note,
     applicationId: input.id,
     link: "/my-applications",
-    severity: approved ? "success" : "warning",
+    severity: approved && !onWaitlist ? "success" : "warning",
   });
   await notify(supabase, {
     userIds: [meta.officerId],
@@ -784,7 +817,7 @@ export async function decideApplication(
     link: meta.link,
     severity: approved ? "success" : "info",
   });
-  if (approved) {
+  if (approved && !onWaitlist) {
     // Approved applications flow automatically into Student Affairs (student
     // file) and the finance module (invoice created on plan selection).
     await logEvent(
@@ -897,13 +930,31 @@ export async function moveToWaitingList(
   await touch(supabase, input.id, { status: "waitlisted" as Status, seat_status: "waitlisted" });
   await logEvent(supabase, input.id, userId, "waitlist.added", "تم نقل الطلب إلى قائمة الانتظار", input.note);
   const meta = await appMeta(supabase, input.id);
+  const position = (existing?.length ?? 0) + 1;
+  const { data: queueRoom } = input.classroomId
+    ? await supabase.from("classrooms").select("name_ar").eq("id", input.classroomId).maybeSingle()
+    : { data: null };
   await notify(supabase, {
     userIds: [meta.parentId],
     kind: "waitlist.added",
-    title: `الطلب ${meta.number} على قائمة الانتظار`,
-    body: input.note ?? "سيتم إشعارك فور توفّر مقعد مطابق.",
+    title: `طلبكم ${meta.number} مُدرج على قائمة الانتظار`,
+    body:
+      `تمت الموافقة على الطلب مبدئيًا، ولا يتوفّر مقعد شاغر حاليًا${
+        queueRoom?.name_ar ? ` في فصل ${queueRoom.name_ar}` : ""
+      }. ترتيبكم على قائمة الانتظار ${position}، وسيتم إشعاركم فور توفّر مقعد حسب أسبقية التسجيل.` +
+      (input.note ? ` — ملاحظة الإدارة: ${input.note}` : ""),
     applicationId: input.id,
     link: "/my-applications",
+    severity: "warning",
+  });
+  /* Instant staff alert so the waiting list is never a silent queue. */
+  await notify(supabase, {
+    roles: ["registration_officer", "supervisor", "principal", "admin"],
+    kind: "waitlist.added_staff",
+    title: `إضافة جديدة لقائمة الانتظار: ${meta.number}`,
+    body: `${queueRoom?.name_ar ? `فصل ${queueRoom.name_ar} — ` : ""}الترتيب ${position}.`,
+    applicationId: input.id,
+    link: "/ams/waiting-list",
     severity: "warning",
   });
   return { ok: true as const };
@@ -1066,14 +1117,39 @@ export async function listWaitingList(supabase: Db, userId: string) {
 export async function notifySeatAvailable(
   supabase: Db,
   userId: string,
-  input: { applicationId: string; classroomId: string; childName?: string | null },
+  input: { applicationId: string; classroomId: string; childName?: string | null; force?: boolean },
 ) {
   await guard(supabase, userId, "seats");
   const [{ data: classroom }, meta] = await Promise.all([
-    supabase.from("classrooms").select("name_ar").eq("id", input.classroomId).maybeSingle(),
+    supabase.from("classrooms").select("name_ar, capacity, taken_seats").eq("id", input.classroomId).maybeSingle(),
     appMeta(supabase, input.applicationId),
   ]);
   const classroomName = classroom?.name_ar ?? "الفصل";
+
+  /* Fairness rule: a single free seat must only be offered to the applicant at
+     the head of that classroom's queue, never broadcast to every parent. */
+  const { data: queue } = await supabase
+    .from("waiting_list_entries")
+    .select("application_id, position, created_at")
+    .eq("classroom_id", input.classroomId)
+    .eq("status", "waiting")
+    .order("position")
+    .order("created_at");
+  const free = Math.max(0, (classroom?.capacity ?? 0) - (classroom?.taken_seats ?? 0));
+  const eligible = (queue ?? []).slice(0, Math.max(1, free)).map((q) => q.application_id);
+  if (!input.force && (queue ?? []).length > 0 && !eligible.includes(input.applicationId)) {
+    const rank = (queue ?? []).findIndex((q) => q.application_id === input.applicationId) + 1;
+    return {
+      ok: false as const,
+      blocked: true as const,
+      message: `لا يمكن إشعار ولي الأمر: المقاعد الشاغرة (${free}) مخصصة لأصحاب الأسبقية في قائمة انتظار فصل ${classroomName}${
+        rank ? ` — ترتيب هذا الطلب ${rank}` : ""
+      }.`,
+      classroomName,
+      parentPhone: null,
+    };
+  }
+
   const title = `توفّر مقعد في فصل ${classroomName}`;
   const body = `${input.childName ? `${input.childName}: ` : ""}تم توفّر مقعد شاغر في فصل ${classroomName}. يرجى التواصل مع إدارة الروضة لتأكيد التسكين.`;
 
@@ -1093,6 +1169,7 @@ export async function notifySeatAvailable(
   const parents = await profileMap(supabase, [meta?.parentId ?? null]);
   return {
     ok: true as const,
+    blocked: false as const,
     message: body,
     parentPhone: parents[meta?.parentId ?? ""]?.phone ?? null,
     classroomName,
@@ -1236,6 +1313,12 @@ export async function getSeatBoard(supabase: Db, userId: string) {
           birthDate: kid?.birth_date ?? null,
         };
       })
+      /* A child who already holds a seat can never also be queued: stale
+         entries would double-count the classroom occupancy. */
+      .filter((entry) => {
+        const seated = children.find((child) => child.id === entry.childId);
+        return !seated?.classroom_id;
+      })
       .sort((a, b) => a.position - b.position || a.createdAt.localeCompare(b.createdAt));
     return {
       id: c.id,
@@ -1378,6 +1461,15 @@ export async function seatAssignChild(
   }
 
   await recountSeats(supabase, [previous, classroom.id]);
+  /* Placing a child closes their waiting-list rows (including legacy rows that
+     were stored without a child reference) so the queue never shows a seated
+     child and the classroom counters stay truthful. */
+  await supabase
+    .from("waiting_list_entries")
+    .update({ status: "placed" })
+    .eq("application_id", child.application_id)
+    .eq("status", "waiting")
+    .or(`child_id.eq.${child.id},child_id.is.null`);
   await logEvent(
     supabase,
     child.application_id,
@@ -1410,6 +1502,25 @@ export async function seatRemoveChild(supabase: Db, userId: string, input: { chi
 
   await touch(supabase, child.application_id, { seat_status: "released" });
   await recountSeats(supabase, [previous]);
+  /* A freed seat in a classroom that has a queue is actionable news for staff. */
+  const [{ data: freedRoom }, { count: queued }] = await Promise.all([
+    supabase.from("classrooms").select("name_ar").eq("id", previous).maybeSingle(),
+    supabase
+      .from("waiting_list_entries")
+      .select("id", { count: "exact", head: true })
+      .eq("classroom_id", previous)
+      .eq("status", "waiting"),
+  ]);
+  if ((queued ?? 0) > 0) {
+    await notify(supabase, {
+      roles: ["registration_officer", "supervisor", "principal", "admin"],
+      kind: "waitlist.seat_free",
+      title: `مقعد شاغر في فصل ${freedRoom?.name_ar ?? "—"} وعليه قائمة انتظار`,
+      body: `عدد المنتظرين ${queued} — يمكن تسكين صاحب الأسبقية مباشرة من قائمة الانتظار.`,
+      link: "/ams/waiting-list",
+      severity: "success",
+    });
+  }
   await logEvent(
     supabase,
     child.application_id,

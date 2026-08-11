@@ -67,6 +67,9 @@ export async function listPromotions(supabase: Db, userId: string) {
   ]);
 
   const activeRules = (rules.data ?? []).filter((r) => r.is_active);
+  /* Promotions only ever move a child *upward*: a rule pointing at a lower or
+     equal stage is skipped, since demoting by age makes no sense. */
+  const order = new Map((stages.data ?? []).map((s) => [s.id, Number(s.sort_order ?? 0)]));
   const done = new Set(
     (history.data ?? []).map((h) => `${h.child_id}:${h.to_stage_id}:${h.status}`),
   );
@@ -86,6 +89,14 @@ export async function listPromotions(supabase: Db, userId: string) {
       if (rule.from_stage_id && rule.from_stage_id !== row.stage_id) continue;
       if (!rule.from_stage_id && row.stage_id === rule.to_stage_id) continue;
       if (row.stage_id === rule.to_stage_id) continue;
+      if (
+        row.stage_id &&
+        order.has(row.stage_id) &&
+        order.has(rule.to_stage_id) &&
+        order.get(rule.to_stage_id)! <= order.get(row.stage_id)!
+      ) {
+        continue;
+      }
       if (done.has(`${row.id}:${rule.to_stage_id}:done`)) continue;
       if (done.has(`${row.id}:${rule.to_stage_id}:dismissed`)) continue;
 
@@ -175,6 +186,19 @@ export async function applyPromotion(
     .maybeSingle();
   if (!child) throw new Error("لم يتم العثور على الطالب.");
 
+  /* Guard the direction of travel on the server too. */
+  if (child.stage_id && child.stage_id !== input.toStageId) {
+    const { data: pair } = await supabase
+      .from("stages")
+      .select("id, sort_order")
+      .in("id", [child.stage_id, input.toStageId]);
+    const from = pair?.find((s) => s.id === child.stage_id)?.sort_order ?? 0;
+    const to = pair?.find((s) => s.id === input.toStageId)?.sort_order ?? 0;
+    if (Number(to) <= Number(from)) {
+      throw new Error("لا يمكن نقل الطالب إلى مرحلة أدنى أو مساوية لمرحلته الحالية.");
+    }
+  }
+
   const { error } = await supabase
     .from("application_children")
     .update({
@@ -223,6 +247,38 @@ export async function applyPromotion(
 }
 
 /** Keeps the child where they are and stops flagging this transfer. */
+
+/**
+ * Group transfer: every selected child must be due for the *same* target stage.
+ * Failures are collected per child so one blocked case never aborts the batch.
+ */
+export async function applyPromotionsBulk(
+  supabase: Db,
+  userId: string,
+  input: { childIds: string[]; toStageId: string; classroomId?: string | null; note?: string | null },
+) {
+  await guard(supabase, userId, "seats");
+  const results: { childId: string; ok: boolean; error?: string }[] = [];
+  for (const childId of input.childIds) {
+    try {
+      await applyPromotion(supabase, userId, {
+        childId,
+        toStageId: input.toStageId,
+        classroomId: input.classroomId ?? null,
+        note: input.note ?? null,
+      });
+      results.push({ childId, ok: true });
+    } catch (error) {
+      results.push({ childId, ok: false, error: (error as Error).message });
+    }
+  }
+  return {
+    ok: true as const,
+    moved: results.filter((r) => r.ok).length,
+    failed: results.filter((r) => !r.ok),
+  };
+}
+
 export async function dismissPromotion(
   supabase: Db,
   userId: string,
