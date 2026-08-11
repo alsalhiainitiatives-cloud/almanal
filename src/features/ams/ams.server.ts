@@ -766,14 +766,47 @@ export async function decideApplication(
     { signature },
   );
   const meta = await appMeta(supabase, input.id);
+  /* An approved application whose children have no seat yet is an approval
+     *onto the waiting list* — the parent must never read it as a placement. */
+  let waitlistPosition: number | null = null;
+  if (approved) {
+    const [{ data: kids }, { data: queued }] = await Promise.all([
+      supabase.from("application_children").select("id, classroom_id").eq("application_id", input.id),
+      supabase
+        .from("waiting_list_entries")
+        .select("position")
+        .eq("application_id", input.id)
+        .eq("status", "waiting")
+        .order("position")
+        .limit(1),
+    ]);
+    const unseated = (kids ?? []).length > 0 && (kids ?? []).every((k) => !k.classroom_id);
+    if (unseated || (queued ?? []).length > 0) {
+      waitlistPosition = queued?.[0]?.position ?? null;
+      await touch(supabase, input.id, { seat_status: "waitlisted" });
+    }
+  }
+  const onWaitlist = approved && waitlistPosition !== null;
   await notify(supabase, {
     userIds: [meta.parentId],
-    kind: approved ? "application.approved" : "application.rejected",
-    title: approved ? `تم قبول الطلب ${meta.number}` : `تم رفض الطلب ${meta.number}`,
-    body: note,
+    kind: approved
+      ? onWaitlist
+        ? "application.approved_waitlisted"
+        : "application.approved"
+      : "application.rejected",
+    title: approved
+      ? onWaitlist
+        ? `تمت الموافقة على الطلب ${meta.number} — على قائمة الانتظار`
+        : `تم قبول الطلب ${meta.number}`
+      : `تم رفض الطلب ${meta.number}`,
+    body: onWaitlist
+      ? `تمت الموافقة على الطلب، ولا يتوفّر مقعد شاغر حاليًا؛ لذلك يبقى الطلب على قائمة الانتظار${
+          waitlistPosition ? ` بالترتيب ${waitlistPosition}` : ""
+        } وسيتم إشعاركم فور توفّر مقعد حسب أسبقية التسجيل.${note ? ` — ${note}` : ""}`
+      : note,
     applicationId: input.id,
     link: "/my-applications",
-    severity: approved ? "success" : "warning",
+    severity: approved && !onWaitlist ? "success" : "warning",
   });
   await notify(supabase, {
     userIds: [meta.officerId],
