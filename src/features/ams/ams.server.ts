@@ -817,7 +817,7 @@ export async function decideApplication(
     link: meta.link,
     severity: approved ? "success" : "info",
   });
-  if (approved) {
+  if (approved && !onWaitlist) {
     // Approved applications flow automatically into Student Affairs (student
     // file) and the finance module (invoice created on plan selection).
     await logEvent(
@@ -1117,14 +1117,39 @@ export async function listWaitingList(supabase: Db, userId: string) {
 export async function notifySeatAvailable(
   supabase: Db,
   userId: string,
-  input: { applicationId: string; classroomId: string; childName?: string | null },
+  input: { applicationId: string; classroomId: string; childName?: string | null; force?: boolean },
 ) {
   await guard(supabase, userId, "seats");
   const [{ data: classroom }, meta] = await Promise.all([
-    supabase.from("classrooms").select("name_ar").eq("id", input.classroomId).maybeSingle(),
+    supabase.from("classrooms").select("name_ar, capacity, taken_seats").eq("id", input.classroomId).maybeSingle(),
     appMeta(supabase, input.applicationId),
   ]);
   const classroomName = classroom?.name_ar ?? "الفصل";
+
+  /* Fairness rule: a single free seat must only be offered to the applicant at
+     the head of that classroom's queue, never broadcast to every parent. */
+  const { data: queue } = await supabase
+    .from("waiting_list_entries")
+    .select("application_id, position, created_at")
+    .eq("classroom_id", input.classroomId)
+    .eq("status", "waiting")
+    .order("position")
+    .order("created_at");
+  const free = Math.max(0, (classroom?.capacity ?? 0) - (classroom?.taken_seats ?? 0));
+  const eligible = (queue ?? []).slice(0, Math.max(1, free)).map((q) => q.application_id);
+  if (!input.force && (queue ?? []).length > 0 && !eligible.includes(input.applicationId)) {
+    const rank = (queue ?? []).findIndex((q) => q.application_id === input.applicationId) + 1;
+    return {
+      ok: false as const,
+      blocked: true as const,
+      message: `لا يمكن إشعار ولي الأمر: المقاعد الشاغرة (${free}) مخصصة لأصحاب الأسبقية في قائمة انتظار فصل ${classroomName}${
+        rank ? ` — ترتيب هذا الطلب ${rank}` : ""
+      }.`,
+      classroomName,
+      parentPhone: null,
+    };
+  }
+
   const title = `توفّر مقعد في فصل ${classroomName}`;
   const body = `${input.childName ? `${input.childName}: ` : ""}تم توفّر مقعد شاغر في فصل ${classroomName}. يرجى التواصل مع إدارة الروضة لتأكيد التسكين.`;
 
@@ -1144,6 +1169,7 @@ export async function notifySeatAvailable(
   const parents = await profileMap(supabase, [meta?.parentId ?? null]);
   return {
     ok: true as const,
+    blocked: false as const,
     message: body,
     parentPhone: parents[meta?.parentId ?? ""]?.phone ?? null,
     classroomName,
