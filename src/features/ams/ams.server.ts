@@ -1313,6 +1313,12 @@ export async function getSeatBoard(supabase: Db, userId: string) {
           birthDate: kid?.birth_date ?? null,
         };
       })
+      /* A child who already holds a seat can never also be queued: stale
+         entries would double-count the classroom occupancy. */
+      .filter((entry) => {
+        const seated = children.find((child) => child.id === entry.childId);
+        return !seated?.classroom_id;
+      })
       .sort((a, b) => a.position - b.position || a.createdAt.localeCompare(b.createdAt));
     return {
       id: c.id,
@@ -1455,6 +1461,15 @@ export async function seatAssignChild(
   }
 
   await recountSeats(supabase, [previous, classroom.id]);
+  /* Placing a child closes their waiting-list rows (including legacy rows that
+     were stored without a child reference) so the queue never shows a seated
+     child and the classroom counters stay truthful. */
+  await supabase
+    .from("waiting_list_entries")
+    .update({ status: "placed" })
+    .eq("application_id", child.application_id)
+    .eq("status", "waiting")
+    .or(`child_id.eq.${child.id},child_id.is.null`);
   await logEvent(
     supabase,
     child.application_id,
