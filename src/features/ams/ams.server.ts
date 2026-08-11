@@ -1502,6 +1502,25 @@ export async function seatRemoveChild(supabase: Db, userId: string, input: { chi
 
   await touch(supabase, child.application_id, { seat_status: "released" });
   await recountSeats(supabase, [previous]);
+  /* A freed seat in a classroom that has a queue is actionable news for staff. */
+  const [{ data: freedRoom }, { count: queued }] = await Promise.all([
+    supabase.from("classrooms").select("name_ar").eq("id", previous).maybeSingle(),
+    supabase
+      .from("waiting_list_entries")
+      .select("id", { count: "exact", head: true })
+      .eq("classroom_id", previous)
+      .eq("status", "waiting"),
+  ]);
+  if ((queued ?? 0) > 0) {
+    await notify(supabase, {
+      roles: ["registration_officer", "supervisor", "principal", "admin"],
+      kind: "waitlist.seat_free",
+      title: `مقعد شاغر في فصل ${freedRoom?.name_ar ?? "—"} وعليه قائمة انتظار`,
+      body: `عدد المنتظرين ${queued} — يمكن تسكين صاحب الأسبقية مباشرة من قائمة الانتظار.`,
+      link: "/ams/waiting-list",
+      severity: "success",
+    });
+  }
   await logEvent(
     supabase,
     child.application_id,
