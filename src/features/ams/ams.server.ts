@@ -897,13 +897,31 @@ export async function moveToWaitingList(
   await touch(supabase, input.id, { status: "waitlisted" as Status, seat_status: "waitlisted" });
   await logEvent(supabase, input.id, userId, "waitlist.added", "تم نقل الطلب إلى قائمة الانتظار", input.note);
   const meta = await appMeta(supabase, input.id);
+  const position = (existing?.length ?? 0) + 1;
+  const { data: queueRoom } = input.classroomId
+    ? await supabase.from("classrooms").select("name_ar").eq("id", input.classroomId).maybeSingle()
+    : { data: null };
   await notify(supabase, {
     userIds: [meta.parentId],
     kind: "waitlist.added",
-    title: `الطلب ${meta.number} على قائمة الانتظار`,
-    body: input.note ?? "سيتم إشعارك فور توفّر مقعد مطابق.",
+    title: `طلبكم ${meta.number} مُدرج على قائمة الانتظار`,
+    body:
+      `تمت الموافقة على الطلب مبدئيًا، ولا يتوفّر مقعد شاغر حاليًا${
+        queueRoom?.name_ar ? ` في فصل ${queueRoom.name_ar}` : ""
+      }. ترتيبكم على قائمة الانتظار ${position}، وسيتم إشعاركم فور توفّر مقعد حسب أسبقية التسجيل.` +
+      (input.note ? ` — ملاحظة الإدارة: ${input.note}` : ""),
     applicationId: input.id,
     link: "/my-applications",
+    severity: "warning",
+  });
+  /* Instant staff alert so the waiting list is never a silent queue. */
+  await notify(supabase, {
+    roles: ["registration_officer", "supervisor", "principal", "admin"],
+    kind: "waitlist.added_staff",
+    title: `إضافة جديدة لقائمة الانتظار: ${meta.number}`,
+    body: `${queueRoom?.name_ar ? `فصل ${queueRoom.name_ar} — ` : ""}الترتيب ${position}.`,
+    applicationId: input.id,
+    link: "/ams/waiting-list",
     severity: "warning",
   });
   return { ok: true as const };
