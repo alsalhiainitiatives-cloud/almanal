@@ -38,6 +38,7 @@ import {
 import { getReports } from "./reports.server";
 import {
   applyPromotion,
+  applyPromotionsBulk,
   deletePromotionRule,
   dismissPromotion,
   listPromotions,
@@ -453,6 +454,20 @@ export const amsPromotionApply = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => applyPromotion(context.supabase, context.userId, data));
+
+export const amsPromotionApplyBulk = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        childIds: z.array(uuid).min(1).max(200),
+        toStageId: uuid,
+        classroomId: uuid.nullish(),
+        note: z.string().trim().max(500).nullish(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => applyPromotionsBulk(context.supabase, context.userId, data));
 
 export const amsPromotionDismiss = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
