@@ -157,23 +157,29 @@ export const childSchema = z.object({
   if (v.nationalId.startsWith("2") && !v.country?.trim()) {
     ctx.addIssue({ code: "custom", path: ["country"], message: "اختر بلد جنسية الطفل" });
   }
-  if (v.preference2 && v.preference3 && v.preference2 === v.preference3) {
-    ctx.addIssue({ code: "custom", path: ["preference3"], message: "لا يمكن تكرار نفس الفصل" });
-  }
-  if (v.classroomId && v.preference2 && v.classroomId === v.preference2) {
-    ctx.addIssue({ code: "custom", path: ["preference2"], message: "لا يمكن تكرار الرغبة الأولى" });
-  }
-  if (v.classroomId && v.preference3 && v.classroomId === v.preference3) {
-    ctx.addIssue({ code: "custom", path: ["preference3"], message: "لا يمكن تكرار الرغبة الأولى" });
-  }
-}).transform((v) => ({
-  ...v,
-  nationality: v.nationality?.trim()
-    ? v.nationality.trim()
-    : v.nationalId.startsWith("1")
-      ? "سعودي"
-      : "مقيم",
-}));
+}).transform((v) => {
+  /**
+   * Duplicate preferences are silently de-duplicated instead of blocking the
+   * step: after an automatic placement in the pre-reservation stage the first
+   * choice can legitimately match a locked second/third choice, and the parent
+   * has no way to edit locked fields.
+   */
+  const preference2 = v.preference2 && v.preference2 !== v.classroomId ? v.preference2 : "";
+  const preference3 =
+    v.preference3 && v.preference3 !== v.classroomId && v.preference3 !== preference2
+      ? v.preference3
+      : "";
+  return {
+    ...v,
+    preference2,
+    preference3,
+    nationality: v.nationality?.trim()
+      ? v.nationality.trim()
+      : v.nationalId.startsWith("1")
+        ? "سعودي"
+        : "مقيم",
+  };
+});
 
 export const childrenSchema = z.array(childSchema).min(1, "أضف طفلًا واحدًا على الأقل").max(6);
 
