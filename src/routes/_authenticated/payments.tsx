@@ -2,18 +2,24 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { ArrowLeft, FileText, Loader2, Printer, Search, Sparkles, Upload, Wallet } from "lucide-react";
+import { ArrowLeft, Eye, FileText, Loader2, Printer, ReceiptText, Search, Sparkles, Upload, Wallet } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PortalLayout } from "@/features/auth/components/PortalLayout";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { myFinanceGet, receiptSignedUrl } from "@/features/finance/finance.functions";
 import { BankCard } from "@/features/finance/components/BankCard";
 import { InvoiceChat } from "@/features/finance/components/InvoiceChat";
 import { PlanChooser } from "@/features/finance/components/PlanChooser";
 import { ReceiptDialog } from "@/features/finance/components/ReceiptDialog";
+import {
+  ReceiptPreviewDialog,
+  type ReceiptPreview,
+} from "@/features/finance/components/ReceiptPreviewDialog";
+import { DocumentPreviewDialog } from "@/features/finance/components/DocumentPreviewDialog";
 import { ScheduleList, type InstallmentRow } from "@/features/finance/components/ScheduleList";
-import { printVoucher } from "@/features/finance/components/PaymentVoucher";
+import { voucherHtml, type VoucherInput } from "@/features/finance/components/PaymentVoucher";
 import { RECEIPT_STATUS_LABELS, dateAr, money, type BankAccountRow } from "@/features/finance/pricing";
 
 export const Route = createFileRoute("/_authenticated/payments")({
@@ -34,11 +40,14 @@ function PaymentsPage() {
   const load = useServerFn(myFinanceGet);
   const sign = useServerFn(receiptSignedUrl);
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
   const [dialog, setDialog] = useState<{
     invoiceId: string;
     installmentId: string | null;
     amount: number;
   } | null>(null);
+  const [doc, setDoc] = useState<{ title: string; html: string; fileName: string } | null>(null);
+  const [preview, setPreview] = useState<ReceiptPreview | null>(null);
   const [search, setSearch] = useState("");
 
   const { data, isLoading } = useQuery({ queryKey: ["my-finance"], queryFn: () => load() });
@@ -57,9 +66,37 @@ function PaymentsPage() {
     [invoices, normalizedSearch],
   );
 
-  async function openReceipt(path: string) {
-    const { url } = await sign({ data: { path } });
-    window.open(url, "_blank", "noopener");
+  async function openPreview(receipt: {
+    id: string;
+    file_path: string;
+    file_name: string | null;
+    amount: number | string;
+    status: string;
+    transfer_date?: string | null;
+    created_at: string;
+    reference_no?: string | null;
+  }) {
+    setPreview({
+      id: receipt.id,
+      url: null,
+      fileName: receipt.file_name,
+      amount: Number(receipt.amount),
+      status: receipt.status,
+      date: receipt.transfer_date ?? receipt.created_at,
+      reference: receipt.reference_no ?? null,
+    });
+    const { url } = await sign({ data: { path: receipt.file_path } });
+    setPreview((prev) => (prev && prev.id === receipt.id ? { ...prev, url } : prev));
+  }
+
+  function openDocument(input: VoucherInput, label: string) {
+    setDoc({
+      title: label,
+      html: voucherHtml(input),
+      fileName: `${input.paid ? "receipt" : "voucher"}-${input.applicationNumber ?? "manal"}-${
+        input.seq ?? 1
+      }`,
+    });
   }
 
   if (isLoading) {
@@ -172,25 +209,60 @@ function PaymentsPage() {
                         lateAfterDays={lateAfter}
                         actions={(row) =>
                           <div className="flex items-center gap-1.5">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="rounded-xl"
-                              onClick={() =>
-                                printVoucher({
-                                  bank: bank ?? null,
-                                  applicationNumber: app?.application_number ?? null,
-                                  seq: row.seq,
-                                  amount: Number(row.amount),
-                                  dueDate: row.due_date,
-                                  academicYear: invoice.academic_year,
-                                  paid: row.status === "paid",
-                                })
-                              }
-                            >
-                              <Printer className="size-3.5" />
-                              طباعة النموذج
-                            </Button>
+                            {row.status === "paid" ? (
+                              <Button
+                                size="sm"
+                                className="rounded-xl"
+                                onClick={() =>
+                                  openDocument(
+                                    {
+                                      bank: bank ?? null,
+                                      applicationNumber: app?.application_number ?? null,
+                                      parentName: profile?.fullName ?? null,
+                                      seq: row.seq,
+                                      amount: Number(row.paid_amount || row.amount),
+                                      dueDate: row.due_date,
+                                      academicYear: invoice.academic_year,
+                                      paid: true,
+                                      paidAt: row.due_date,
+                                      receiptNo: `${app?.application_number ?? "MN"}-R${String(
+                                        row.seq,
+                                      ).padStart(2, "0")}`,
+                                      invoiceTotal: Number(invoice.grand_total),
+                                      invoicePaidTotal: Number(invoice.paid_total),
+                                    },
+                                    "سند استلام مبلغ",
+                                  )
+                                }
+                              >
+                                <ReceiptText className="size-3.5" />
+                                سند السداد
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="rounded-xl"
+                                onClick={() =>
+                                  openDocument(
+                                    {
+                                      bank: bank ?? null,
+                                      applicationNumber: app?.application_number ?? null,
+                                      parentName: profile?.fullName ?? null,
+                                      seq: row.seq,
+                                      amount: Number(row.amount),
+                                      dueDate: row.due_date,
+                                      academicYear: invoice.academic_year,
+                                      paid: false,
+                                    },
+                                    "نموذج سداد رسوم",
+                                  )
+                                }
+                              >
+                                <Printer className="size-3.5" />
+                                طباعة النموذج
+                              </Button>
+                            )}
                             {row.status === "due" ? (
                               <Button
                                 size="sm"
@@ -217,20 +289,29 @@ function PaymentsPage() {
                     <div className="mt-5 space-y-2">
                       <p className="text-xs font-black text-muted-foreground">الإيصالات المرفوعة</p>
                       {receipts.map((receipt) => (
-                        <button
+                        <div
                           key={receipt.id}
-                          type="button"
-                          onClick={() => openReceipt(receipt.file_path)}
-                          className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border/60 p-3 text-start transition-colors hover:border-primary/40"
+                          className="flex w-full flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/60 p-3 text-start"
                         >
                           <span className="flex items-center gap-2 text-xs font-bold text-foreground">
                             <FileText className="size-4 text-muted-foreground" />
                             {receipt.file_name ?? "إيصال"} — {money(Number(receipt.amount))}
                           </span>
-                          <span className="text-[11px] font-black text-muted-foreground">
-                            {RECEIPT_STATUS_LABELS[receipt.status]} · {dateAr(receipt.created_at)}
+                          <span className="flex items-center gap-2">
+                            <span className="text-[11px] font-black text-muted-foreground">
+                              {RECEIPT_STATUS_LABELS[receipt.status]} · {dateAr(receipt.created_at)}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-xl"
+                              onClick={() => openPreview(receipt)}
+                            >
+                              <Eye className="size-3.5" />
+                              معاينة
+                            </Button>
                           </span>
-                        </button>
+                        </div>
                       ))}
                     </div>
                   ) : null}
@@ -274,6 +355,18 @@ function PaymentsPage() {
           onDone={() => queryClient.invalidateQueries({ queryKey: ["my-finance"] })}
         />
       ) : null}
+
+      {doc ? (
+        <DocumentPreviewDialog
+          open
+          onOpenChange={(v) => !v && setDoc(null)}
+          title={doc.title}
+          html={doc.html}
+          fileName={doc.fileName}
+        />
+      ) : null}
+
+      <ReceiptPreviewDialog receipt={preview} onOpenChange={(v) => !v && setPreview(null)} />
     </PortalLayout>
   );
 }
