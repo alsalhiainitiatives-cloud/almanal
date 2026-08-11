@@ -5,6 +5,7 @@ import {
   BadgeCheck,
   BellRing,
   Check,
+  Eye,
   FileText,
   Loader2,
   MessageCircle,
@@ -19,6 +20,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScheduleList, type InstallmentRow } from "@/features/finance/components/ScheduleList";
 import { InvoiceChat } from "@/features/finance/components/InvoiceChat";
+import {
+  ReceiptPreviewDialog,
+  type ReceiptPreview,
+} from "@/features/finance/components/ReceiptPreviewDialog";
 import {
   financeOverviewGet,
   installmentRemind,
@@ -57,6 +62,7 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [waDraft, setWaDraft] = useState<WhatsappDraft | null>(null);
+  const [preview, setPreview] = useState<ReceiptPreview | null>(null);
 
   const { data, isLoading } = useQuery({ queryKey: KEY, queryFn: () => load() });
 
@@ -137,11 +143,30 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
     }
   }
 
-  async function openReceipt(path: string) {
+  async function openReceipt(receipt: {
+    id: string;
+    file_path: string;
+    file_name: string | null;
+    amount: number | string;
+    status: string;
+    transfer_date?: string | null;
+    created_at: string;
+    reference_no?: string | null;
+  }) {
+    setPreview({
+      id: receipt.id,
+      url: null,
+      fileName: receipt.file_name,
+      amount: Number(receipt.amount),
+      status: receipt.status,
+      date: receipt.transfer_date ?? receipt.created_at,
+      reference: receipt.reference_no ?? null,
+    });
     try {
-      const { url } = await sign({ data: { path } });
-      window.open(url, "_blank", "noopener");
+      const { url } = await sign({ data: { path: receipt.file_path } });
+      setPreview((prev) => (prev && prev.id === receipt.id ? { ...prev, url } : prev));
     } catch (e) {
+      setPreview(null);
       toast.error(e instanceof Error ? e.message : "تعذّر فتح الإيصال");
     }
   }
@@ -444,7 +469,7 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
                       >
                         <button
                           type="button"
-                          onClick={() => openReceipt(receipt.file_path)}
+                          onClick={() => openReceipt(receipt)}
                           className="flex items-center gap-2 text-xs font-bold text-foreground hover:text-primary"
                         >
                           <FileText className="size-4" />
@@ -455,6 +480,15 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
                           <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-black text-muted-foreground">
                             {RECEIPT_STATUS_LABELS[receipt.status]}
                           </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-xl"
+                            onClick={() => openReceipt(receipt)}
+                          >
+                            <Eye className="size-3.5" />
+                            معاينة
+                          </Button>
                           {canManage && receipt.status === "pending" ? (
                             <>
                               <Button
@@ -517,6 +551,7 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
       </div>
 
       <WhatsappConfirmDialog draft={waDraft} onClose={() => setWaDraft(null)} />
+      <ReceiptPreviewDialog receipt={preview} onOpenChange={(v) => !v && setPreview(null)} />
     </div>
   );
 }
