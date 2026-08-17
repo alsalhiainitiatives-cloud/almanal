@@ -70,6 +70,7 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
   parent: [],
   registration_officer: OFFICER,
   accountant: ["view", "payments", "reports"],
+  teacher: [],
   principal: PRINCIPAL,
   // `supervisor` is merged with `admin` — identical name and permissions.
   supervisor: ADMIN,
