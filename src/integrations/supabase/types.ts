@@ -2798,6 +2798,7 @@ export type Database = {
         Returns: boolean
       }
       is_school_staff: { Args: { _user_id: string }; Returns: boolean }
+      is_teacher: { Args: { _user_id: string }; Returns: boolean }
       is_teacher_of_child: {
         Args: { _child_id: string; _user_id: string }
         Returns: boolean
