@@ -100,6 +100,8 @@ export function TeacherHub() {
   const deleteSkillFn = useServerFn(journeyDeleteSkill);
   const addEvidenceFn = useServerFn(journeyAddEvidence);
   const deleteEvidenceFn = useServerFn(journeyDeleteEvidence);
+  const loadAssignments = useServerFn(journeyAssignments);
+  const saveAssignmentsFn = useServerFn(journeySetAssignments);
 
   const hub = useQuery({
     queryKey: ["journey-hub", classroomId],
@@ -538,10 +540,7 @@ export function TeacherHub() {
 
         {data?.isStaff && (
           <TabsContent value="assign" className="mt-4">
-            <AssignmentsPanel
-              loadAssignments={useServerFn(journeyAssignments)}
-              saveAssignments={useServerFn(journeySetAssignments)}
-            />
+            <AssignmentsPanel loadAssignments={loadAssignments} saveAssignments={saveAssignmentsFn} />
           </TabsContent>
         )}
       </Tabs>
