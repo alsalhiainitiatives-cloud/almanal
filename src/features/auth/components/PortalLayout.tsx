@@ -4,10 +4,12 @@ import {
   FileClock,
   Globe,
   GraduationCap,
+  HeartHandshake,
   Inbox,
   MessagesSquare,
   KeyRound,
   LogOut,
+  Sparkles,
   ShieldCheck,
   UserCog,
   Users,
@@ -29,6 +31,13 @@ const NAV_GROUPS = [
       { to: "/profile", label: "ملفي الشخصي ولوحتي", icon: UserCog, permission: P.profileEdit, featured: false },
       { to: "/my-applications", label: "طلباتي وتتبع الطلب", icon: FileClock, permission: P.applicationsTrack, featured: false },
       { to: "/child-file", label: "ملف الطفل", icon: BabyIcon, permission: P.applicationsTrack, featured: false },
+      {
+        to: "/child-journey",
+        label: "يوميات طفلي",
+        icon: HeartHandshake,
+        permission: P.applicationsTrack,
+        featured: true,
+      },
       { to: "/payments", label: "المدفوعات والرسوم", icon: Wallet, permission: P.applicationsTrack, featured: false },
     ],
   },
@@ -48,6 +57,14 @@ const NAV_GROUPS = [
         label: "الإدارة المالية",
         icon: Wallet,
         permission: P.paymentsManage,
+        featured: true,
+      },
+      {
+        to: "/ams/academic-hub",
+        label: "المسار الأكاديمي والأنشطة",
+        icon: Sparkles,
+        permission: P.applicationsReview,
+        role: "teacher" as const,
         featured: true,
       },
     ],
@@ -79,7 +96,11 @@ export function PortalLayout({
 
   const groups = NAV_GROUPS.map((group) => ({
     label: group.label,
-    items: group.items.filter((item) => hasPermission(item.permission)),
+    items: group.items.filter(
+      (item) =>
+        hasPermission(item.permission) ||
+        ("role" in item && (roles as string[]).includes(item.role as string)),
+    ),
   })).filter((group) => group.items.length > 0);
 
   async function handleSignOut() {
