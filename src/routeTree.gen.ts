@@ -35,6 +35,7 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
 import { Route as AuthenticatedMyApplicationsRouteImport } from './routes/_authenticated/my-applications'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedChildJourneyRouteImport } from './routes/_authenticated/child-journey'
 import { Route as AuthenticatedChildFileRouteImport } from './routes/_authenticated/child-file'
 import { Route as AuthenticatedAmsIndexRouteImport } from './routes/_authenticated/ams/index'
 import { Route as ApiAmsBackupRouteImport } from './routes/api/ams/backup'
@@ -194,6 +195,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedChildJourneyRoute =
+  AuthenticatedChildJourneyRouteImport.update({
+    id: '/child-journey',
+    path: '/child-journey',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedChildFileRoute = AuthenticatedChildFileRouteImport.update({
   id: '/child-file',
   path: '/child-file',
@@ -370,6 +377,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/child-file': typeof AuthenticatedChildFileRoute
+  '/child-journey': typeof AuthenticatedChildJourneyRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
@@ -425,6 +433,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/child-file': typeof AuthenticatedChildFileRoute
+  '/child-journey': typeof AuthenticatedChildJourneyRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
@@ -482,6 +491,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/_authenticated/child-file': typeof AuthenticatedChildFileRoute
+  '/_authenticated/child-journey': typeof AuthenticatedChildJourneyRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
@@ -539,6 +549,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/testimonials'
     | '/child-file'
+    | '/child-journey'
     | '/dashboard'
     | '/my-applications'
     | '/payments'
@@ -594,6 +605,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/testimonials'
     | '/child-file'
+    | '/child-journey'
     | '/dashboard'
     | '/my-applications'
     | '/payments'
@@ -650,6 +662,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/testimonials'
     | '/_authenticated/child-file'
+    | '/_authenticated/child-journey'
     | '/_authenticated/dashboard'
     | '/_authenticated/my-applications'
     | '/_authenticated/payments'
@@ -899,6 +912,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/child-journey': {
+      id: '/_authenticated/child-journey'
+      path: '/child-journey'
+      fullPath: '/child-journey'
+      preLoaderRoute: typeof AuthenticatedChildJourneyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/child-file': {
       id: '/_authenticated/child-file'
       path: '/child-file'
@@ -1100,6 +1120,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedChildFileRoute: typeof AuthenticatedChildFileRoute
+  AuthenticatedChildJourneyRoute: typeof AuthenticatedChildJourneyRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedMyApplicationsRoute: typeof AuthenticatedMyApplicationsRoute
   AuthenticatedPaymentsRoute: typeof AuthenticatedPaymentsRoute
@@ -1132,6 +1153,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChildFileRoute: AuthenticatedChildFileRoute,
+  AuthenticatedChildJourneyRoute: AuthenticatedChildJourneyRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedMyApplicationsRoute: AuthenticatedMyApplicationsRoute,
   AuthenticatedPaymentsRoute: AuthenticatedPaymentsRoute,
