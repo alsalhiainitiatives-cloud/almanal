@@ -13,6 +13,7 @@ export const ALL_ROLES: AppRole[] = [
   "parent",
   "registration_officer",
   "accountant",
+  "teacher",
   "principal",
   "admin",
 ];
@@ -28,6 +29,7 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   parent: "ولي أمر",
   registration_officer: "مسؤول التسجيل",
   accountant: "المحاسب",
+  teacher: "معلمة",
   principal: "مدير المدرسة",
   supervisor: "مدير النظام",
   admin: "مدير النظام",
@@ -38,6 +40,7 @@ export const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
   registration_officer:
     "مراجعة الطلبات والتحقق من المستندات وإرجاع الناقص وتحويل المكتمل — بدون اعتماد نهائي.",
   accountant: "الفواتير والمدفوعات وطباعة السندات والتقارير المالية — بدون صلاحية قبول.",
+  teacher: "الخطط الأسبوعية ورصد المهارات والأدلة الرقمية لأطفال فصولها فقط.",
   principal: "الصلاحية التنفيذية الكاملة: الاعتماد، الرفض، طلب التعديل، توزيع الفصول، حالة التسجيل.",
   supervisor: "إدارة المستخدمين والأدوار والصلاحيات وإعدادات النظام — بدون اعتماد قبول الطلاب.",
   admin: "إدارة المستخدمين والأدوار والصلاحيات وإعدادات النظام — بدون اعتماد قبول الطلاب.",
@@ -47,6 +50,7 @@ export const ROLE_COLORS: Record<AppRole, string> = {
   parent: "bg-sky/60 text-foreground",
   registration_officer: "bg-mint/70 text-foreground",
   accountant: "bg-lavender/70 text-foreground",
+  teacher: "bg-mint/70 text-foreground",
   principal: "bg-primary text-primary-foreground",
   supervisor: "bg-gold text-gold-foreground",
   admin: "bg-gold text-gold-foreground",

@@ -2168,6 +2168,47 @@ export type Database = {
         }
         Relationships: []
       }
+      skill_evidences: {
+        Row: {
+          created_at: string
+          created_by: string
+          file_name: string | null
+          file_path: string
+          file_size: number | null
+          file_type: string
+          id: string
+          tracking_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          file_name?: string | null
+          file_path: string
+          file_size?: number | null
+          file_type: string
+          id?: string
+          tracking_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          file_name?: string | null
+          file_path?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+          tracking_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_evidences_tracking_id_fkey"
+            columns: ["tracking_id"]
+            isOneToOne: false
+            referencedRelation: "student_skills_tracking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stages: {
         Row: {
           activities: Json
@@ -2328,6 +2369,98 @@ export type Database = {
             columns: ["to_stage_id"]
             isOneToOne: false
             referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_skills_tracking: {
+        Row: {
+          child_id: string
+          classroom_id: string | null
+          completion_percentage: number
+          created_at: string
+          created_by: string
+          domain_ar: string | null
+          id: string
+          improvement_percentage: number
+          note_ar: string | null
+          observed_at: string
+          skill_name: string
+          updated_at: string
+        }
+        Insert: {
+          child_id: string
+          classroom_id?: string | null
+          completion_percentage?: number
+          created_at?: string
+          created_by: string
+          domain_ar?: string | null
+          id?: string
+          improvement_percentage?: number
+          note_ar?: string | null
+          observed_at?: string
+          skill_name: string
+          updated_at?: string
+        }
+        Update: {
+          child_id?: string
+          classroom_id?: string | null
+          completion_percentage?: number
+          created_at?: string
+          created_by?: string
+          domain_ar?: string | null
+          id?: string
+          improvement_percentage?: number
+          note_ar?: string | null
+          observed_at?: string
+          skill_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_skills_tracking_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "application_children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_skills_tracking_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teacher_classrooms: {
+        Row: {
+          classroom_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          teacher_id: string
+        }
+        Insert: {
+          classroom_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          teacher_id: string
+        }
+        Update: {
+          classroom_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_classrooms_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
             referencedColumns: ["id"]
           },
         ]
@@ -2497,6 +2630,59 @@ export type Database = {
           },
         ]
       }
+      weekly_plans: {
+        Row: {
+          activities_ar: string | null
+          classroom_id: string
+          created_at: string
+          created_by: string
+          id: string
+          lessons_ar: string | null
+          notes_ar: string | null
+          status: string
+          subject_ar: string | null
+          title_ar: string
+          updated_at: string
+          week_start_date: string
+        }
+        Insert: {
+          activities_ar?: string | null
+          classroom_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          lessons_ar?: string | null
+          notes_ar?: string | null
+          status?: string
+          subject_ar?: string | null
+          title_ar: string
+          updated_at?: string
+          week_start_date: string
+        }
+        Update: {
+          activities_ar?: string | null
+          classroom_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          lessons_ar?: string | null
+          notes_ar?: string | null
+          status?: string
+          subject_ar?: string | null
+          title_ar?: string
+          updated_at?: string
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_plans_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2559,6 +2745,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      can_read_tracking: {
+        Args: { _tracking_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_write_tracking: {
+        Args: { _tracking_id: string; _user_id: string }
+        Returns: boolean
+      }
+      child_classroom_id: { Args: { _child_id: string }; Returns: string }
       dispatch_notification: {
         Args: {
           _application_id?: string
@@ -2594,7 +2789,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_child_parent: {
+        Args: { _child_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_classroom_teacher: {
+        Args: { _classroom_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_school_staff: { Args: { _user_id: string }; Returns: boolean }
+      is_teacher_of_child: {
+        Args: { _child_id: string; _user_id: string }
+        Returns: boolean
+      }
       mark_notifications_read: { Args: { _ids: string[] }; Returns: number }
       my_permissions: {
         Args: never
@@ -2603,6 +2810,10 @@ export type Database = {
         }[]
       }
       next_academic_number: { Args: { _prefix: string }; Returns: string }
+      parent_has_child_in_classroom: {
+        Args: { _classroom_id: string; _user_id: string }
+        Returns: boolean
+      }
       recount_classroom_seats: { Args: never; Returns: undefined }
       recount_stage_seats: { Args: never; Returns: undefined }
       release_classroom_lock: {
@@ -2663,6 +2874,7 @@ export type Database = {
         | "principal"
         | "supervisor"
         | "admin"
+        | "teacher"
       application_status:
         | "draft"
         | "submitted"
@@ -2822,6 +3034,7 @@ export const Constants = {
         "principal",
         "supervisor",
         "admin",
+        "teacher",
       ],
       application_status: [
         "draft",
