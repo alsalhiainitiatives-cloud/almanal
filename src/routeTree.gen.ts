@@ -50,6 +50,7 @@ import { Route as AuthenticatedAmsQueueRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAmsFormBuilderRouteImport } from './routes/_authenticated/ams/form-builder'
 import { Route as AuthenticatedAmsFinanceRouteImport } from './routes/_authenticated/ams/finance'
 import { Route as AuthenticatedAmsActivityRouteImport } from './routes/_authenticated/ams/activity'
+import { Route as AuthenticatedAmsAcademicHubRouteImport } from './routes/_authenticated/ams/academic-hub'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminSiteContentRouteImport } from './routes/_authenticated/admin/site-content'
 import { Route as AuthenticatedAdminPermissionsRouteImport } from './routes/_authenticated/admin/permissions'
@@ -274,6 +275,12 @@ const AuthenticatedAmsActivityRoute =
     path: '/ams/activity',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAmsAcademicHubRoute =
+  AuthenticatedAmsAcademicHubRouteImport.update({
+    id: '/ams/academic-hub',
+    path: '/ams/academic-hub',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -376,6 +383,7 @@ export interface FileRoutesByFullPath {
   '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/admin/site-content': typeof AuthenticatedAdminSiteContentRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/ams/academic-hub': typeof AuthenticatedAmsAcademicHubRoute
   '/ams/activity': typeof AuthenticatedAmsActivityRoute
   '/ams/finance': typeof AuthenticatedAmsFinanceRoute
   '/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
@@ -430,6 +438,7 @@ export interface FileRoutesByTo {
   '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/admin/site-content': typeof AuthenticatedAdminSiteContentRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/ams/academic-hub': typeof AuthenticatedAmsAcademicHubRoute
   '/ams/activity': typeof AuthenticatedAmsActivityRoute
   '/ams/finance': typeof AuthenticatedAmsFinanceRoute
   '/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
@@ -486,6 +495,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/_authenticated/admin/site-content': typeof AuthenticatedAdminSiteContentRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/ams/academic-hub': typeof AuthenticatedAmsAcademicHubRoute
   '/_authenticated/ams/activity': typeof AuthenticatedAmsActivityRoute
   '/_authenticated/ams/finance': typeof AuthenticatedAmsFinanceRoute
   '/_authenticated/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
@@ -542,6 +552,7 @@ export interface FileRouteTypes {
     | '/admin/permissions'
     | '/admin/site-content'
     | '/admin/users'
+    | '/ams/academic-hub'
     | '/ams/activity'
     | '/ams/finance'
     | '/ams/form-builder'
@@ -596,6 +607,7 @@ export interface FileRouteTypes {
     | '/admin/permissions'
     | '/admin/site-content'
     | '/admin/users'
+    | '/ams/academic-hub'
     | '/ams/activity'
     | '/ams/finance'
     | '/ams/form-builder'
@@ -651,6 +663,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/permissions'
     | '/_authenticated/admin/site-content'
     | '/_authenticated/admin/users'
+    | '/_authenticated/ams/academic-hub'
     | '/_authenticated/ams/activity'
     | '/_authenticated/ams/finance'
     | '/_authenticated/ams/form-builder'
@@ -991,6 +1004,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAmsActivityRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ams/academic-hub': {
+      id: '/_authenticated/ams/academic-hub'
+      path: '/ams/academic-hub'
+      fullPath: '/ams/academic-hub'
+      preLoaderRoute: typeof AuthenticatedAmsAcademicHubRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
       path: '/admin/users'
@@ -1090,6 +1110,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminPermissionsRoute: typeof AuthenticatedAdminPermissionsRoute
   AuthenticatedAdminSiteContentRoute: typeof AuthenticatedAdminSiteContentRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedAmsAcademicHubRoute: typeof AuthenticatedAmsAcademicHubRoute
   AuthenticatedAmsActivityRoute: typeof AuthenticatedAmsActivityRoute
   AuthenticatedAmsFinanceRoute: typeof AuthenticatedAmsFinanceRoute
   AuthenticatedAmsFormBuilderRoute: typeof AuthenticatedAmsFormBuilderRoute
@@ -1121,6 +1142,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminPermissionsRoute: AuthenticatedAdminPermissionsRoute,
   AuthenticatedAdminSiteContentRoute: AuthenticatedAdminSiteContentRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedAmsAcademicHubRoute: AuthenticatedAmsAcademicHubRoute,
   AuthenticatedAmsActivityRoute: AuthenticatedAmsActivityRoute,
   AuthenticatedAmsFinanceRoute: AuthenticatedAmsFinanceRoute,
   AuthenticatedAmsFormBuilderRoute: AuthenticatedAmsFormBuilderRoute,
