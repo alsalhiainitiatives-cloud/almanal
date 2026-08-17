@@ -96,7 +96,11 @@ export function PortalLayout({
 
   const groups = NAV_GROUPS.map((group) => ({
     label: group.label,
-    items: group.items.filter((item) => hasPermission(item.permission)),
+    items: group.items.filter(
+      (item) =>
+        hasPermission(item.permission) ||
+        ("role" in item && (roles as string[]).includes(item.role as string)),
+    ),
   })).filter((group) => group.items.length > 0);
 
   async function handleSignOut() {
