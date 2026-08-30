@@ -13,6 +13,7 @@ import {
   Plus,
   Settings2,
   ShieldAlert,
+  Sparkles,
   Trash2,
   UploadCloud,
 } from "lucide-react";
