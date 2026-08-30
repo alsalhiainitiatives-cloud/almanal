@@ -45,6 +45,7 @@ import {
 } from "../../form-config.functions";
 import { FieldDialog } from "./FieldDialog";
 import { ReservationSettingsPanel } from "./ReservationSettingsPanel";
+import { ServicesPanel } from "./ServicesPanel";
 import { StepDialog } from "./StepDialog";
 import { DocTypeDialog } from "./DocTypeDialog";
 import { UploadSettingsPanel } from "./UploadSettingsPanel";
