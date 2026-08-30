@@ -546,6 +546,10 @@ export function FormBuilder() {
         <ReservationSettingsPanel />
       </TabsContent>
 
+      <TabsContent value="services" className="m-0">
+        <ServicesPanel />
+      </TabsContent>
+
       <TabsContent value="danger" className="m-0">
         <DangerZone />
       </TabsContent>
