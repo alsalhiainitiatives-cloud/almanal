@@ -209,6 +209,9 @@ export function FormBuilder() {
         <TabsTrigger value="reservation" className="rounded-xl text-xs font-bold">
           <ClipboardList className="ms-1 size-4" /> التسجيل المبدئي
         </TabsTrigger>
+        <TabsTrigger value="services" className="rounded-xl text-xs font-bold">
+          <Sparkles className="ms-1 size-4" /> الخدمات الإضافية
+        </TabsTrigger>
         <TabsTrigger value="docs" className="rounded-xl text-xs font-bold">
           <FileText className="ms-1 size-4" /> أنواع المستندات
         </TabsTrigger>
