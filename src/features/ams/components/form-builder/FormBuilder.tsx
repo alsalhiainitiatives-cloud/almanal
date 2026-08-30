@@ -13,6 +13,7 @@ import {
   Plus,
   Settings2,
   ShieldAlert,
+  Sparkles,
   Trash2,
   UploadCloud,
 } from "lucide-react";
@@ -44,6 +45,7 @@ import {
 } from "../../form-config.functions";
 import { FieldDialog } from "./FieldDialog";
 import { ReservationSettingsPanel } from "./ReservationSettingsPanel";
+import { ServicesPanel } from "./ServicesPanel";
 import { StepDialog } from "./StepDialog";
 import { DocTypeDialog } from "./DocTypeDialog";
 import { UploadSettingsPanel } from "./UploadSettingsPanel";
@@ -208,6 +210,9 @@ export function FormBuilder() {
         </TabsTrigger>
         <TabsTrigger value="reservation" className="rounded-xl text-xs font-bold">
           <ClipboardList className="ms-1 size-4" /> التسجيل المبدئي
+        </TabsTrigger>
+        <TabsTrigger value="services" className="rounded-xl text-xs font-bold">
+          <Sparkles className="ms-1 size-4" /> الخدمات الإضافية
         </TabsTrigger>
         <TabsTrigger value="docs" className="rounded-xl text-xs font-bold">
           <FileText className="ms-1 size-4" /> أنواع المستندات
@@ -540,6 +545,10 @@ export function FormBuilder() {
 
       <TabsContent value="reservation" className="m-0">
         <ReservationSettingsPanel />
+      </TabsContent>
+
+      <TabsContent value="services" className="m-0">
+        <ServicesPanel />
       </TabsContent>
 
       <TabsContent value="danger" className="m-0">

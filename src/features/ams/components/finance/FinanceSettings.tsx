@@ -484,7 +484,7 @@ const emptyService = {
   is_active: true,
 };
 
-function ServicesEditor({ data, run, busy }: Props) {
+export function ServicesEditor({ data, run, busy }: Props) {
   const save = useServerFn(serviceSave);
   const remove = useServerFn(serviceDelete);
   const [draft, setDraft] = useState(emptyService);
