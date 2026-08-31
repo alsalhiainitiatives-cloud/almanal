@@ -256,7 +256,7 @@ function FeePlans({ data, run, busy }: Props) {
             className="rounded-xl"
             value={draft.label_ar}
             onChange={(e) => setDraft({ ...draft, label_ar: e.target.value })}
-            placeholder="مثال: رسوم كبار المنال"
+            placeholder="مثال: رسوم روضة المنال"
           />
         </Field>
         <Field label="قيمة الرسوم (ر.س)">

@@ -3,7 +3,7 @@
  *
  * Format: `MN-{stage}-{YY}-{NNN}`
  *   MN  = Al Manal Kindergarten & Schools
- *   1   = صغار المنال · 2 = كبار المنال · 3 = الابتدائي
+ *   1   = صغار المنال · 2 = روضة المنال · 3 = ابتدائية المنال
  *   27  = the later Gregorian year of the academic year (2026-2027 → 27)
  *   001 = sequential student number inside that stage + year
  *

@@ -213,7 +213,7 @@ function QueuePage() {
     return sortRows(filtered, sort);
   }, [all, term, search.status, search.stageId, sort]);
 
-  // Stage buckets: صغار المنال / كبار المنال (مونتيسوري) / ابتدائي / غير محددة.
+  // Stage buckets: صغار المنال / روضة المنال (مونتيسوري) / ابتدائية المنال / غير محددة.
   const stageTabs = useMemo(() => {
     const list = (stages ?? []).map((stage) => ({ id: stage.id as string, label: stage.name_ar as string }));
     const statusScoped = all.filter((row) => !search.status || row.status === search.status);
