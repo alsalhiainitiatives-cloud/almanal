@@ -12,7 +12,18 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+
 import {
   Dialog,
   DialogContent,
@@ -71,9 +82,15 @@ export function CurriculumManager() {
   const { roles } = useAuth();
   const canEdit = canEditCurriculum(roles);
   const queryClient = useQueryClient();
+  const [stageId, setStageId] = useState<string>("");
   const [classroomId, setClassroomId] = useState<string>("");
   const [draft, setDraft] = useState<Draft | null>(null);
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [pendingDelete, setPendingDelete] = useState<{
+    kind: DraftKind;
+    id: string;
+    name: string;
+  } | null>(null);
 
   const classroomsQuery = useQuery({
     queryKey: ["academics", "classrooms"],
@@ -81,9 +98,28 @@ export function CurriculumManager() {
   });
   const classrooms = classroomsQuery.data?.classrooms ?? [];
 
+  const stages = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const room of classrooms) map.set(room.stageId, room.stageNameAr);
+    return [...map.entries()].map(([id, nameAr]) => ({ id, nameAr }));
+  }, [classrooms]);
+
+  const stageClassrooms = useMemo(
+    () => (stageId ? classrooms.filter((room) => room.stageId === stageId) : classrooms),
+    [classrooms, stageId],
+  );
+
   useEffect(() => {
-    if (!classroomId && classrooms.length) setClassroomId(classrooms[0]!.id);
-  }, [classroomId, classrooms]);
+    if (!stageId && stages.length) setStageId(stages[0]!.id);
+  }, [stageId, stages]);
+
+  useEffect(() => {
+    if (!stageClassrooms.length) return;
+    if (!stageClassrooms.some((room) => room.id === classroomId)) {
+      setClassroomId(stageClassrooms[0]!.id);
+    }
+  }, [classroomId, stageClassrooms]);
+
 
   const treeQuery = useQuery({
     queryKey: ["academics", "curriculum", classroomId],
@@ -168,8 +204,7 @@ export function CurriculumManager() {
   }
 
   function confirmDelete(kind: DraftKind, id: string, name: string) {
-    if (!window.confirm(`سيتم حذف «${name}» وكل ما يتبعه. هل تريد المتابعة؟`)) return;
-    deleteMutation.mutate({ kind, id });
+    setPendingDelete({ kind, id, name });
   }
 
   if (classroomsQuery.isLoading) {
@@ -195,28 +230,46 @@ export function CurriculumManager() {
     <div className="space-y-5">
       {/* Toolbar */}
       <div className="flex flex-wrap items-end justify-between gap-3 rounded-[2rem] border border-border/60 bg-card/80 p-5 shadow-sm">
-        <div className="min-w-[240px] space-y-1.5">
-          <Label className="text-[11px] font-black text-muted-foreground">الفصل الدراسي</Label>
-          <Select value={classroomId} onValueChange={setClassroomId}>
-            <SelectTrigger className="rounded-2xl font-bold">
-              <SelectValue placeholder="اختر الفصل" />
-            </SelectTrigger>
-            <SelectContent>
-              {classrooms.map((room) => (
-                <SelectItem key={room.id} value={room.id}>
-                  <span className="flex items-center gap-2">
-                    <span
-                      className="size-3 rounded-full"
-                      style={{ backgroundColor: room.colorHex }}
-                    />
-                    {room.nameAr}
-                    <span className="text-[10px] text-muted-foreground">{room.stageNameAr}</span>
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[200px] space-y-1.5">
+            <Label className="text-[11px] font-black text-muted-foreground">المرحلة التعليمية</Label>
+            <Select value={stageId} onValueChange={setStageId}>
+              <SelectTrigger className="rounded-2xl font-bold">
+                <SelectValue placeholder="اختر المرحلة" />
+              </SelectTrigger>
+              <SelectContent>
+                {stages.map((stage) => (
+                  <SelectItem key={stage.id} value={stage.id}>
+                    {stage.nameAr}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="min-w-[220px] space-y-1.5">
+            <Label className="text-[11px] font-black text-muted-foreground">الفصل الدراسي</Label>
+            <Select value={classroomId} onValueChange={setClassroomId}>
+              <SelectTrigger className="rounded-2xl font-bold">
+                <SelectValue placeholder="اختر الفصل" />
+              </SelectTrigger>
+              <SelectContent>
+                {stageClassrooms.map((room) => (
+                  <SelectItem key={room.id} value={room.id}>
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="size-3 rounded-full"
+                        style={{ backgroundColor: room.colorHex }}
+                      />
+                      {room.nameAr}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+
 
         <div className="flex flex-wrap items-center gap-2">
           <Stat icon={BookOpen} label="مواد" value={counts.subjects} />
@@ -403,6 +456,39 @@ export function CurriculumManager() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog
+        open={Boolean(pendingDelete)}
+        onOpenChange={(value) => !value && setPendingDelete(null)}
+      >
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-black">
+              تأكيد حذف {pendingDelete ? KIND_LABELS[pendingDelete.kind].one : ""}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              سيتم حذف «{pendingDelete?.name}» وكل ما يتبعه من محاور ودروس نهائيًا. لا يمكن التراجع
+              عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-2xl">إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-2xl bg-destructive font-bold text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (pendingDelete) {
+                  deleteMutation.mutate({ kind: pendingDelete.kind, id: pendingDelete.id });
+                }
+                setPendingDelete(null);
+              }}
+            >
+              حذف نهائي
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
@@ -520,15 +606,31 @@ function SubjectCard({
             subject.topics.map((topic) => (
               <article key={topic.id} className="rounded-2xl border border-border/60 bg-background/60 p-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Layers className="size-4 shrink-0" style={{ color: subject.colorHex }} />
-                  <p className="min-w-0 flex-1 truncate text-xs font-black text-foreground">
-                    {topic.nameAr}
-                    {!topic.isActive && (
-                      <span className="ms-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
-                        غير مفعّل
+                  <button
+                    type="button"
+                    onClick={() => toggle(topic.id)}
+                    className="flex min-w-0 flex-1 items-center gap-2 text-start"
+                  >
+                    <Layers className="size-4 shrink-0" style={{ color: subject.colorHex }} />
+                    <span className="min-w-0 flex-1 truncate text-xs font-black text-foreground">
+                      {topic.nameAr}
+                      {!topic.isActive && (
+                        <span className="ms-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                          غير مفعّل
+                        </span>
+                      )}
+                      <span className="ms-2 text-[10px] font-bold text-muted-foreground">
+                        {topic.lessons.length} درس
                       </span>
-                    )}
-                  </p>
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        "size-3.5 shrink-0 text-muted-foreground transition",
+                        (open[topic.id] ?? true) && "rotate-180",
+                      )}
+                    />
+                  </button>
+
                   {canEdit && (
                     <div className="flex items-center gap-1">
                       <Button
@@ -560,8 +662,9 @@ function SubjectCard({
                   )}
                 </div>
 
-                {topic.lessons.length > 0 && (
+                {topic.lessons.length > 0 && (open[topic.id] ?? true) && (
                   <ul className="mt-2 space-y-1.5 ps-6">
+
                     {topic.lessons.map((lesson) => (
                       <li
                         key={lesson.id}

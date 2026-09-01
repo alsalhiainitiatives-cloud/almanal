@@ -79,3 +79,34 @@ export const academicsDeleteNode = createServerFn({ method: "POST" })
     const { deleteCurriculumNode } = await import("./academics.server");
     return deleteCurriculumNode(context.supabase, data.kind, data.id);
   });
+
+export const academicsAssignmentBoard = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { getAssignmentBoard } = await import("./academics.server");
+    return getAssignmentBoard(context.supabase, context.userId);
+  });
+
+export const academicsSetClassroomTeachers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({ classroomId: z.string().uuid(), teacherIds: z.array(z.string().uuid()).max(20) })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { setClassroomTeachers } = await import("./academics.server");
+    return setClassroomTeachers(context.supabase, context.userId, data.classroomId, data.teacherIds);
+  });
+
+export const academicsSetTeacherClassrooms = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({ teacherId: z.string().uuid(), classroomIds: z.array(z.string().uuid()).max(30) })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { setTeacherClassrooms } = await import("./academics.server");
+    return setTeacherClassrooms(context.supabase, context.userId, data.teacherId, data.classroomIds);
+  });
