@@ -59,10 +59,17 @@ import { Route as AuthenticatedAdminInboxRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
 import { Route as AdmissionsStageSlugIndexRouteImport } from './routes/admissions.stage.$slug.index'
 import { Route as AuthenticatedAmsStudentsIndexRouteImport } from './routes/_authenticated/ams/students.index'
+import { Route as AuthenticatedAmsAcademicsIndexRouteImport } from './routes/_authenticated/ams/academics.index'
 import { Route as AdmissionsStageSlugClassroomsRouteImport } from './routes/admissions.stage.$slug.classrooms'
 import { Route as AuthenticatedAmsStudentsPromotionsRouteImport } from './routes/_authenticated/ams/students.promotions'
 import { Route as AuthenticatedAmsStudentsChildIdRouteImport } from './routes/_authenticated/ams/students.$childId'
 import { Route as AuthenticatedAmsApplicationsApplicationIdRouteImport } from './routes/_authenticated/ams/applications.$applicationId'
+import { Route as AuthenticatedAmsAcademicsSettingsRouteImport } from './routes/_authenticated/ams/academics.settings'
+import { Route as AuthenticatedAmsAcademicsReportsRouteImport } from './routes/_authenticated/ams/academics.reports'
+import { Route as AuthenticatedAmsAcademicsCurriculumRouteImport } from './routes/_authenticated/ams/academics.curriculum'
+import { Route as AuthenticatedAmsAcademicsChatRouteImport } from './routes/_authenticated/ams/academics.chat'
+import { Route as AuthenticatedAmsAcademicsAssignmentsRouteImport } from './routes/_authenticated/ams/academics.assignments'
+import { Route as AuthenticatedAmsAcademicsAssessmentsRouteImport } from './routes/_authenticated/ams/academics.assessments'
 import { Route as AdmissionsStageSlugClassroomClassroomSlugRouteImport } from './routes/admissions.stage.$slug.classroom.$classroomSlug'
 
 const TestimonialsRoute = TestimonialsRouteImport.update({
@@ -327,6 +334,12 @@ const AuthenticatedAmsStudentsIndexRoute =
     path: '/ams/students/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAmsAcademicsIndexRoute =
+  AuthenticatedAmsAcademicsIndexRouteImport.update({
+    id: '/ams/academics/',
+    path: '/ams/academics/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AdmissionsStageSlugClassroomsRoute =
   AdmissionsStageSlugClassroomsRouteImport.update({
     id: '/admissions/stage/$slug/classrooms',
@@ -349,6 +362,42 @@ const AuthenticatedAmsApplicationsApplicationIdRoute =
   AuthenticatedAmsApplicationsApplicationIdRouteImport.update({
     id: '/ams/applications/$applicationId',
     path: '/ams/applications/$applicationId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAmsAcademicsSettingsRoute =
+  AuthenticatedAmsAcademicsSettingsRouteImport.update({
+    id: '/ams/academics/settings',
+    path: '/ams/academics/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAmsAcademicsReportsRoute =
+  AuthenticatedAmsAcademicsReportsRouteImport.update({
+    id: '/ams/academics/reports',
+    path: '/ams/academics/reports',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAmsAcademicsCurriculumRoute =
+  AuthenticatedAmsAcademicsCurriculumRouteImport.update({
+    id: '/ams/academics/curriculum',
+    path: '/ams/academics/curriculum',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAmsAcademicsChatRoute =
+  AuthenticatedAmsAcademicsChatRouteImport.update({
+    id: '/ams/academics/chat',
+    path: '/ams/academics/chat',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAmsAcademicsAssignmentsRoute =
+  AuthenticatedAmsAcademicsAssignmentsRouteImport.update({
+    id: '/ams/academics/assignments',
+    path: '/ams/academics/assignments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAmsAcademicsAssessmentsRoute =
+  AuthenticatedAmsAcademicsAssessmentsRouteImport.update({
+    id: '/ams/academics/assessments',
+    path: '/ams/academics/assessments',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AdmissionsStageSlugClassroomClassroomSlugRoute =
@@ -406,10 +455,17 @@ export interface FileRoutesByFullPath {
   '/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
   '/api/ams/backup': typeof ApiAmsBackupRoute
   '/ams/': typeof AuthenticatedAmsIndexRoute
+  '/ams/academics/assessments': typeof AuthenticatedAmsAcademicsAssessmentsRoute
+  '/ams/academics/assignments': typeof AuthenticatedAmsAcademicsAssignmentsRoute
+  '/ams/academics/chat': typeof AuthenticatedAmsAcademicsChatRoute
+  '/ams/academics/curriculum': typeof AuthenticatedAmsAcademicsCurriculumRoute
+  '/ams/academics/reports': typeof AuthenticatedAmsAcademicsReportsRoute
+  '/ams/academics/settings': typeof AuthenticatedAmsAcademicsSettingsRoute
   '/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
   '/ams/students/$childId': typeof AuthenticatedAmsStudentsChildIdRoute
   '/ams/students/promotions': typeof AuthenticatedAmsStudentsPromotionsRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
+  '/ams/academics/': typeof AuthenticatedAmsAcademicsIndexRoute
   '/ams/students/': typeof AuthenticatedAmsStudentsIndexRoute
   '/admissions/stage/$slug/': typeof AdmissionsStageSlugIndexRoute
   '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
@@ -462,10 +518,17 @@ export interface FileRoutesByTo {
   '/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
   '/api/ams/backup': typeof ApiAmsBackupRoute
   '/ams': typeof AuthenticatedAmsIndexRoute
+  '/ams/academics/assessments': typeof AuthenticatedAmsAcademicsAssessmentsRoute
+  '/ams/academics/assignments': typeof AuthenticatedAmsAcademicsAssignmentsRoute
+  '/ams/academics/chat': typeof AuthenticatedAmsAcademicsChatRoute
+  '/ams/academics/curriculum': typeof AuthenticatedAmsAcademicsCurriculumRoute
+  '/ams/academics/reports': typeof AuthenticatedAmsAcademicsReportsRoute
+  '/ams/academics/settings': typeof AuthenticatedAmsAcademicsSettingsRoute
   '/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
   '/ams/students/$childId': typeof AuthenticatedAmsStudentsChildIdRoute
   '/ams/students/promotions': typeof AuthenticatedAmsStudentsPromotionsRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
+  '/ams/academics': typeof AuthenticatedAmsAcademicsIndexRoute
   '/ams/students': typeof AuthenticatedAmsStudentsIndexRoute
   '/admissions/stage/$slug': typeof AdmissionsStageSlugIndexRoute
   '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
@@ -520,10 +583,17 @@ export interface FileRoutesById {
   '/_authenticated/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
   '/api/ams/backup': typeof ApiAmsBackupRoute
   '/_authenticated/ams/': typeof AuthenticatedAmsIndexRoute
+  '/_authenticated/ams/academics/assessments': typeof AuthenticatedAmsAcademicsAssessmentsRoute
+  '/_authenticated/ams/academics/assignments': typeof AuthenticatedAmsAcademicsAssignmentsRoute
+  '/_authenticated/ams/academics/chat': typeof AuthenticatedAmsAcademicsChatRoute
+  '/_authenticated/ams/academics/curriculum': typeof AuthenticatedAmsAcademicsCurriculumRoute
+  '/_authenticated/ams/academics/reports': typeof AuthenticatedAmsAcademicsReportsRoute
+  '/_authenticated/ams/academics/settings': typeof AuthenticatedAmsAcademicsSettingsRoute
   '/_authenticated/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
   '/_authenticated/ams/students/$childId': typeof AuthenticatedAmsStudentsChildIdRoute
   '/_authenticated/ams/students/promotions': typeof AuthenticatedAmsStudentsPromotionsRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
+  '/_authenticated/ams/academics/': typeof AuthenticatedAmsAcademicsIndexRoute
   '/_authenticated/ams/students/': typeof AuthenticatedAmsStudentsIndexRoute
   '/admissions/stage/$slug/': typeof AdmissionsStageSlugIndexRoute
   '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
@@ -578,10 +648,17 @@ export interface FileRouteTypes {
     | '/track/$applicationId'
     | '/api/ams/backup'
     | '/ams/'
+    | '/ams/academics/assessments'
+    | '/ams/academics/assignments'
+    | '/ams/academics/chat'
+    | '/ams/academics/curriculum'
+    | '/ams/academics/reports'
+    | '/ams/academics/settings'
     | '/ams/applications/$applicationId'
     | '/ams/students/$childId'
     | '/ams/students/promotions'
     | '/admissions/stage/$slug/classrooms'
+    | '/ams/academics/'
     | '/ams/students/'
     | '/admissions/stage/$slug/'
     | '/admissions/stage/$slug/classroom/$classroomSlug'
@@ -634,10 +711,17 @@ export interface FileRouteTypes {
     | '/track/$applicationId'
     | '/api/ams/backup'
     | '/ams'
+    | '/ams/academics/assessments'
+    | '/ams/academics/assignments'
+    | '/ams/academics/chat'
+    | '/ams/academics/curriculum'
+    | '/ams/academics/reports'
+    | '/ams/academics/settings'
     | '/ams/applications/$applicationId'
     | '/ams/students/$childId'
     | '/ams/students/promotions'
     | '/admissions/stage/$slug/classrooms'
+    | '/ams/academics'
     | '/ams/students'
     | '/admissions/stage/$slug'
     | '/admissions/stage/$slug/classroom/$classroomSlug'
@@ -691,10 +775,17 @@ export interface FileRouteTypes {
     | '/_authenticated/track/$applicationId'
     | '/api/ams/backup'
     | '/_authenticated/ams/'
+    | '/_authenticated/ams/academics/assessments'
+    | '/_authenticated/ams/academics/assignments'
+    | '/_authenticated/ams/academics/chat'
+    | '/_authenticated/ams/academics/curriculum'
+    | '/_authenticated/ams/academics/reports'
+    | '/_authenticated/ams/academics/settings'
     | '/_authenticated/ams/applications/$applicationId'
     | '/_authenticated/ams/students/$childId'
     | '/_authenticated/ams/students/promotions'
     | '/admissions/stage/$slug/classrooms'
+    | '/_authenticated/ams/academics/'
     | '/_authenticated/ams/students/'
     | '/admissions/stage/$slug/'
     | '/admissions/stage/$slug/classroom/$classroomSlug'
@@ -1080,6 +1171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAmsStudentsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ams/academics/': {
+      id: '/_authenticated/ams/academics/'
+      path: '/ams/academics'
+      fullPath: '/ams/academics/'
+      preLoaderRoute: typeof AuthenticatedAmsAcademicsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/admissions/stage/$slug/classrooms': {
       id: '/admissions/stage/$slug/classrooms'
       path: '/admissions/stage/$slug/classrooms'
@@ -1106,6 +1204,48 @@ declare module '@tanstack/react-router' {
       path: '/ams/applications/$applicationId'
       fullPath: '/ams/applications/$applicationId'
       preLoaderRoute: typeof AuthenticatedAmsApplicationsApplicationIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ams/academics/settings': {
+      id: '/_authenticated/ams/academics/settings'
+      path: '/ams/academics/settings'
+      fullPath: '/ams/academics/settings'
+      preLoaderRoute: typeof AuthenticatedAmsAcademicsSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ams/academics/reports': {
+      id: '/_authenticated/ams/academics/reports'
+      path: '/ams/academics/reports'
+      fullPath: '/ams/academics/reports'
+      preLoaderRoute: typeof AuthenticatedAmsAcademicsReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ams/academics/curriculum': {
+      id: '/_authenticated/ams/academics/curriculum'
+      path: '/ams/academics/curriculum'
+      fullPath: '/ams/academics/curriculum'
+      preLoaderRoute: typeof AuthenticatedAmsAcademicsCurriculumRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ams/academics/chat': {
+      id: '/_authenticated/ams/academics/chat'
+      path: '/ams/academics/chat'
+      fullPath: '/ams/academics/chat'
+      preLoaderRoute: typeof AuthenticatedAmsAcademicsChatRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ams/academics/assignments': {
+      id: '/_authenticated/ams/academics/assignments'
+      path: '/ams/academics/assignments'
+      fullPath: '/ams/academics/assignments'
+      preLoaderRoute: typeof AuthenticatedAmsAcademicsAssignmentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ams/academics/assessments': {
+      id: '/_authenticated/ams/academics/assessments'
+      path: '/ams/academics/assessments'
+      fullPath: '/ams/academics/assessments'
+      preLoaderRoute: typeof AuthenticatedAmsAcademicsAssessmentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/admissions/stage/$slug/classroom/$classroomSlug': {
@@ -1145,9 +1285,16 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedApplyNewRoute: typeof AuthenticatedApplyNewRoute
   AuthenticatedTrackApplicationIdRoute: typeof AuthenticatedTrackApplicationIdRoute
   AuthenticatedAmsIndexRoute: typeof AuthenticatedAmsIndexRoute
+  AuthenticatedAmsAcademicsAssessmentsRoute: typeof AuthenticatedAmsAcademicsAssessmentsRoute
+  AuthenticatedAmsAcademicsAssignmentsRoute: typeof AuthenticatedAmsAcademicsAssignmentsRoute
+  AuthenticatedAmsAcademicsChatRoute: typeof AuthenticatedAmsAcademicsChatRoute
+  AuthenticatedAmsAcademicsCurriculumRoute: typeof AuthenticatedAmsAcademicsCurriculumRoute
+  AuthenticatedAmsAcademicsReportsRoute: typeof AuthenticatedAmsAcademicsReportsRoute
+  AuthenticatedAmsAcademicsSettingsRoute: typeof AuthenticatedAmsAcademicsSettingsRoute
   AuthenticatedAmsApplicationsApplicationIdRoute: typeof AuthenticatedAmsApplicationsApplicationIdRoute
   AuthenticatedAmsStudentsChildIdRoute: typeof AuthenticatedAmsStudentsChildIdRoute
   AuthenticatedAmsStudentsPromotionsRoute: typeof AuthenticatedAmsStudentsPromotionsRoute
+  AuthenticatedAmsAcademicsIndexRoute: typeof AuthenticatedAmsAcademicsIndexRoute
   AuthenticatedAmsStudentsIndexRoute: typeof AuthenticatedAmsStudentsIndexRoute
 }
 
@@ -1178,11 +1325,22 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedApplyNewRoute: AuthenticatedApplyNewRoute,
   AuthenticatedTrackApplicationIdRoute: AuthenticatedTrackApplicationIdRoute,
   AuthenticatedAmsIndexRoute: AuthenticatedAmsIndexRoute,
+  AuthenticatedAmsAcademicsAssessmentsRoute:
+    AuthenticatedAmsAcademicsAssessmentsRoute,
+  AuthenticatedAmsAcademicsAssignmentsRoute:
+    AuthenticatedAmsAcademicsAssignmentsRoute,
+  AuthenticatedAmsAcademicsChatRoute: AuthenticatedAmsAcademicsChatRoute,
+  AuthenticatedAmsAcademicsCurriculumRoute:
+    AuthenticatedAmsAcademicsCurriculumRoute,
+  AuthenticatedAmsAcademicsReportsRoute: AuthenticatedAmsAcademicsReportsRoute,
+  AuthenticatedAmsAcademicsSettingsRoute:
+    AuthenticatedAmsAcademicsSettingsRoute,
   AuthenticatedAmsApplicationsApplicationIdRoute:
     AuthenticatedAmsApplicationsApplicationIdRoute,
   AuthenticatedAmsStudentsChildIdRoute: AuthenticatedAmsStudentsChildIdRoute,
   AuthenticatedAmsStudentsPromotionsRoute:
     AuthenticatedAmsStudentsPromotionsRoute,
+  AuthenticatedAmsAcademicsIndexRoute: AuthenticatedAmsAcademicsIndexRoute,
   AuthenticatedAmsStudentsIndexRoute: AuthenticatedAmsStudentsIndexRoute,
 }
 
