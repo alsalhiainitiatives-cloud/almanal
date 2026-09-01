@@ -455,3 +455,133 @@ export async function setTeacherClassrooms(
   }
   return { ok: true, count: unique.length };
 }
+
+/* ---------------------------------------------------------------------- */
+/* Copy curriculum between classrooms                                      */
+/* ---------------------------------------------------------------------- */
+
+export type CopyCurriculumInput = {
+  sourceClassroomId: string;
+  targetClassroomIds: string[];
+  subjectIds: string[];
+  /** "merge" reuses same-named subjects/topics, "duplicate" always creates new. */
+  mode: "merge" | "duplicate";
+};
+
+export type CopyCurriculumResult = {
+  classrooms: number;
+  subjects: number;
+  topics: number;
+  lessons: number;
+  skipped: number;
+};
+
+/**
+ * Copies selected subjects (with their topics and lessons) from one classroom
+ * to one or more classrooms. In "merge" mode existing names are reused instead
+ * of duplicated, so the action is safe to run repeatedly.
+ */
+export async function copyCurriculum(
+  supabase: Db,
+  userId: string,
+  input: CopyCurriculumInput,
+): Promise<CopyCurriculumResult> {
+  const tree = await getCurriculumTree(supabase, input.sourceClassroomId);
+  const selected = input.subjectIds.length
+    ? tree.filter((s) => input.subjectIds.includes(s.id))
+    : tree;
+  const targets = input.targetClassroomIds.filter((id) => id !== input.sourceClassroomId);
+  if (!selected.length || !targets.length) {
+    return { classrooms: 0, subjects: 0, topics: 0, lessons: 0, skipped: 0 };
+  }
+
+  const result: CopyCurriculumResult = {
+    classrooms: targets.length,
+    subjects: 0,
+    topics: 0,
+    lessons: 0,
+    skipped: 0,
+  };
+
+  const norm = (value: string) => value.trim().replace(/\s+/g, " ");
+
+  for (const classroomId of targets) {
+    const existing = input.mode === "merge" ? await getCurriculumTree(supabase, classroomId) : [];
+    let subjectOrder = existing.length;
+
+    for (const subject of selected) {
+      let targetSubject = existing.find((s) => norm(s.nameAr) === norm(subject.nameAr));
+
+      let targetSubjectId: string;
+      if (targetSubject) {
+        targetSubjectId = targetSubject.id;
+        result.skipped += 1;
+      } else {
+        const { data, error } = await supabase
+          .from("subjects")
+          .insert({
+            classroom_id: classroomId,
+            name_ar: subject.nameAr,
+            color_hex: subject.colorHex,
+            is_active: subject.isActive,
+            sort_order: subjectOrder++,
+            created_by: userId,
+          })
+          .select("id")
+          .single();
+        if (error) throw new Error(error.message);
+        targetSubjectId = data.id;
+        result.subjects += 1;
+      }
+
+      let topicOrder = targetSubject?.topics.length ?? 0;
+      for (const topic of subject.topics) {
+        const existingTopic = targetSubject?.topics.find(
+          (t) => norm(t.nameAr) === norm(topic.nameAr),
+        );
+
+        let targetTopicId: string;
+        if (existingTopic) {
+          targetTopicId = existingTopic.id;
+        } else {
+          const { data, error } = await supabase
+            .from("topics")
+            .insert({
+              subject_id: targetSubjectId,
+              name_ar: topic.nameAr,
+              is_active: topic.isActive,
+              sort_order: topicOrder++,
+              created_by: userId,
+            })
+            .select("id")
+            .single();
+          if (error) throw new Error(error.message);
+          targetTopicId = data.id;
+          result.topics += 1;
+        }
+
+        const existingLessonNames = new Set(
+          (existingTopic?.lessons ?? []).map((l) => norm(l.nameAr)),
+        );
+        let lessonOrder = existingTopic?.lessons.length ?? 0;
+        const rows = topic.lessons
+          .filter((lesson) => !existingLessonNames.has(norm(lesson.nameAr)))
+          .map((lesson) => ({
+            topic_id: targetTopicId,
+            name_ar: lesson.nameAr,
+            description_ar: lesson.descriptionAr ?? null,
+            is_active: lesson.isActive,
+            sort_order: lessonOrder++,
+            created_by: userId,
+          }));
+        if (rows.length) {
+          const { error } = await supabase.from("lessons").insert(rows);
+          if (error) throw new Error(error.message);
+          result.lessons += rows.length;
+        }
+      }
+    }
+  }
+
+  return result;
+}

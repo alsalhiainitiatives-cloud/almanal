@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  ArrowLeftRight,
   BookOpen,
   ChevronDown,
   Layers,
@@ -59,6 +60,7 @@ import {
   academicsSaveSubject,
   academicsSaveTopic,
 } from "../academics.functions";
+import { CopyCurriculumDialog } from "./CopyCurriculumDialog";
 
 type DraftKind = "subject" | "topic" | "lesson";
 
@@ -85,6 +87,7 @@ export function CurriculumManager() {
   const [stageId, setStageId] = useState<string>("");
   const [classroomId, setClassroomId] = useState<string>("");
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [copyOpen, setCopyOpen] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [pendingDelete, setPendingDelete] = useState<{
     kind: DraftKind;
@@ -276,13 +279,24 @@ export function CurriculumManager() {
           <Stat icon={Layers} label="محاور" value={counts.topics} />
           <Stat icon={Sparkles} label="دروس" value={counts.lessons} />
           {canEdit && (
-            <Button
-              className="rounded-2xl font-bold"
-              onClick={() => setDraft(newDraft("subject", classroomId))}
-            >
-              <Plus className="size-4" />
-              إضافة مادة
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                className="rounded-2xl font-bold"
+                onClick={() => setCopyOpen(true)}
+                disabled={!classroomId || classrooms.length < 2}
+              >
+                <ArrowLeftRight className="size-4" />
+                نسخ المنهج لفصول أخرى
+              </Button>
+              <Button
+                className="rounded-2xl font-bold"
+                onClick={() => setDraft(newDraft("subject", classroomId))}
+              >
+                <Plus className="size-4" />
+                إضافة مادة
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -489,6 +503,16 @@ export function CurriculumManager() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <CopyCurriculumDialog
+        open={copyOpen}
+        onOpenChange={setCopyOpen}
+        source={classrooms.find((room) => room.id === classroomId) ?? null}
+        classrooms={classrooms}
+        subjects={subjects}
+        onDone={() => {
+          void queryClient.invalidateQueries({ queryKey: ["academics", "curriculum"] });
+        }}
+      />
     </div>
   );
 }
