@@ -5,6 +5,7 @@ import {
   Armchair,
   BarChart3,
   BookOpen,
+  CalendarDays,
   CalendarRange,
   ClipboardCheck,
   CalendarClock,
