@@ -11,10 +11,11 @@ export const roleAssignmentSchema = z.object({
         "principal",
         "supervisor",
         "admin",
+        "teacher",
       ]),
     )
     .min(1, "يجب اختيار دور واحد على الأقل")
-    .max(6),
+    .max(7),
 });
 
 export type RoleAssignmentInput = z.infer<typeof roleAssignmentSchema>;
