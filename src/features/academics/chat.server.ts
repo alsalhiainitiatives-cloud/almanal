@@ -241,18 +241,30 @@ export async function sendChatMessage(supabase: Db, userId: string, input: SendM
   return { id: data?.id ?? null };
 }
 
-/** Soft-deletes a message: authors always, staff for moderation. */
+/** Removes a message: authors soft-delete their own, staff hard-delete for moderation. */
 export async function deleteChatMessage(supabase: Db, userId: string, id: string) {
   const roles = await rolesOf(supabase, userId);
   const staff = roles.some((r) => STAFF_ROLES.includes(r));
 
-  let query = supabase
+  const { data: row } = await supabase
     .from("classroom_messages")
-    .update({ deleted_at: new Date().toISOString(), body: "", attachments: [] as never })
-    .eq("id", id);
-  if (!staff) query = query.eq("sender_id", userId);
+    .select("sender_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!row) throw new Error("الرسالة غير موجودة.");
 
-  const { error } = await query;
+  if (row.sender_id === userId) {
+    const { error } = await supabase
+      .from("classroom_messages")
+      .update({ deleted_at: new Date().toISOString(), body: "", attachments: [] as never })
+      .eq("id", id)
+      .eq("sender_id", userId);
+    if (error) throw new Error("تعذّر حذف الرسالة.");
+    return { ok: true };
+  }
+
+  if (!staff) throw new Error("لا يمكنك حذف رسالة غيرك.");
+  const { error } = await supabase.from("classroom_messages").delete().eq("id", id);
   if (error) throw new Error("تعذّر حذف الرسالة.");
   return { ok: true };
 }
