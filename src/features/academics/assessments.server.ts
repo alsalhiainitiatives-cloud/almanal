@@ -103,21 +103,17 @@ export async function getAssessmentBoard(
   };
   if (!selected) return empty;
 
-  const [{ data: subjects }, { data: children }] = await Promise.all([
+  const [{ data: subjects }, childrenResult] = await Promise.all([
     supabase
       .from("subjects")
       .select("id, name_ar, color_hex, sort_order, is_active")
       .eq("classroom_id", selected)
       .eq("is_active", true)
       .order("sort_order"),
-    supabase
-      .from("application_children")
-      .select("id, name_ar, gender, applications!inner (status, student_number)")
-      .eq("classroom_id", selected)
-      .eq("applications.status", "approved")
-      .order("name_ar")
-      .limit(300),
+    supabase.rpc("classroom_enrolled_children", { _classroom_id: selected }),
   ]);
+  if (childrenResult.error) throw new Error(childrenResult.error.message);
+  const children = childrenResult.data;
 
   const subjectRows = subjects ?? [];
   const { data: topics } = subjectRows.length
@@ -171,7 +167,7 @@ export async function getAssessmentBoard(
     id: string;
     name_ar: string;
     gender: string | null;
-    applications: { student_number: string | null } | null;
+    student_number: string | null;
   }[];
 
   const { data: assessmentRows } = childRows.length
@@ -230,7 +226,7 @@ export async function getAssessmentBoard(
       id: c.id,
       nameAr: c.name_ar,
       gender: c.gender,
-      studentNumber: c.applications?.student_number ?? null,
+      studentNumber: c.student_number,
     })),
     cells,
   };

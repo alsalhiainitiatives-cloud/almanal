@@ -3210,6 +3210,16 @@ export type Database = {
         Returns: boolean
       }
       child_classroom_id: { Args: { _child_id: string }; Returns: string }
+      classroom_enrolled_children: {
+        Args: { _classroom_id: string }
+        Returns: {
+          gender: string
+          id: string
+          name_ar: string
+          parent_id: string
+          student_number: string
+        }[]
+      }
       dispatch_notification: {
         Args: {
           _application_id?: string
