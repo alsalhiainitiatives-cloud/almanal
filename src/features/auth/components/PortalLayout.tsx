@@ -21,9 +21,11 @@ import type { ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { useNotificationCounters } from "@/features/notifications/useNotificationCounters";
 import { useAuth } from "../AuthProvider";
 import { P, ROLE_COLORS, ROLE_LABELS } from "../rbac";
 import { PortalTrail } from "./PortalTrail";
+
 
 /** Grouped, ordered navigation: personal services → operations → administration. */
 const NAV_GROUPS = [
