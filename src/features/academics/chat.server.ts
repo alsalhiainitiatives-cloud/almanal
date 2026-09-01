@@ -108,7 +108,31 @@ export async function getChatBoard(
       : "parent";
 
   const seeds = await roomSeeds(supabase, userId, role);
-  const ids = [...new Set(seeds.map((s) => s.classroomId))];
+  let ids = [...new Set(seeds.map((s) => s.classroomId))];
+
+  // Settings toggles: the chat can be switched off globally or per classroom.
+  // School administration keeps its master view for moderation.
+  if (role !== "staff" && ids.length) {
+    const { data: setting } = await supabase
+      .from("academics_settings")
+      .select("value")
+      .eq("key", "chat")
+      .maybeSingle();
+    const globalEnabled = ((setting?.value ?? {}) as Record<string, unknown>)["enabled"] !== false;
+    if (!globalEnabled) {
+      ids = [];
+    } else {
+      const { data: flags } = await supabase
+        .from("classrooms")
+        .select("id, chat_enabled")
+        .in("id", ids);
+      const disabled = new Set(
+        (flags ?? []).filter((c) => c.chat_enabled === false).map((c) => c.id),
+      );
+      ids = ids.filter((id) => !disabled.has(id));
+    }
+  }
+
 
   let rooms: ChatRoom[] = [];
   if (ids.length) {
