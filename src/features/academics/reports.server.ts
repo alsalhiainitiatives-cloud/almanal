@@ -154,22 +154,20 @@ export async function getReportBoard(
 
   if (!selectedClassroomId) return base;
 
-  const { data: childRows } = await supabase
-    .from("application_children")
-    .select("id, name_ar, applications!inner (status, student_number)")
-    .eq("classroom_id", selectedClassroomId)
-    .eq("applications.status", "approved")
-    .order("name_ar")
-    .limit(300);
+  const { data: childRows, error: childrenError } = await supabase.rpc(
+    "classroom_enrolled_children",
+    { _classroom_id: selectedClassroomId },
+  );
+  if (childrenError) throw new Error(childrenError.message);
 
   const children = ((childRows ?? []) as unknown as {
     id: string;
     name_ar: string;
-    applications: { student_number: string | null } | null;
+    student_number: string | null;
   }[]).map((c) => ({
     id: c.id,
     nameAr: c.name_ar,
-    studentNumber: c.applications?.student_number ?? null,
+    studentNumber: c.student_number,
   }));
 
   const selectedChildId =
