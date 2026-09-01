@@ -3,15 +3,6 @@
  * onto a Sunday→Thursday grid, then save, export, or share the plan straight
  * into the classroom chat room.
  */
-import {
-  DndContext,
-  PointerSensor,
-  useDraggable,
-  useDroppable,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -129,30 +120,35 @@ function draftToPlan(draft: Draft, classroomId: string, classroomName: string | 
   };
 }
 
+type DragPayload = {
+  lessonId: string;
+  lessonNameAr: string;
+  subjectNameAr: string;
+  colorHex: string;
+};
+
 function LessonCard({
   id,
   label,
   subject,
   colorHex,
+  onDragStart,
 }: {
   id: string;
   label: string;
   subject: string;
   colorHex: string;
+  onDragStart: (payload: DragPayload) => void;
 }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id,
-    data: { lessonId: id, lessonNameAr: label, subjectNameAr: subject, colorHex },
-  });
   return (
     <div
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      className={cn(
-        "flex cursor-grab items-center gap-2 rounded-xl border border-border/60 bg-background p-2 text-xs font-bold shadow-sm transition hover:border-primary/50",
-        isDragging && "opacity-50",
-      )}
+      draggable
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = "copy";
+        event.dataTransfer.setData("text/plain", label);
+        onDragStart({ lessonId: id, lessonNameAr: label, subjectNameAr: subject, colorHex });
+      }}
+      className="flex cursor-grab items-center gap-2 rounded-xl border border-border/60 bg-background p-2 text-xs font-bold shadow-sm transition hover:border-primary/50 active:opacity-60"
     >
       <GripVertical className="size-3.5 shrink-0 text-muted-foreground" />
       <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: colorHex }} />
@@ -164,16 +160,28 @@ function LessonCard({
 function DayColumn({
   day,
   label,
+  onDropLesson,
   children,
 }: {
   day: number;
   label: string;
+  onDropLesson: (day: number) => void;
   children: React.ReactNode;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: `day-${day}`, data: { day } });
+  const [isOver, setIsOver] = useState(false);
   return (
     <section
-      ref={setNodeRef}
+      onDragOver={(event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "copy";
+        if (!isOver) setIsOver(true);
+      }}
+      onDragLeave={() => setIsOver(false)}
+      onDrop={(event) => {
+        event.preventDefault();
+        setIsOver(false);
+        onDropLesson(day);
+      }}
       className={cn(
         "flex min-h-56 flex-col rounded-2xl border-2 border-dashed border-border/70 bg-background/60 p-2 transition",
         isOver && "border-primary bg-primary/5",
@@ -201,7 +209,7 @@ export function StudyPlanBuilder() {
   const [busy, setBusy] = useState<string | null>(null);
   const exportRef = useRef<HTMLDivElement>(null);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const dragged = useRef<DragPayload | null>(null);
 
   const classroomsQuery = useQuery({
     queryKey: ["academics-classrooms"],
@@ -281,20 +289,20 @@ export function StudyPlanBuilder() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  function onDragEnd(event: DragEndEvent) {
-    const day = event.over?.data.current?.["day"];
-    const payload = event.active.data.current;
-    if (typeof day !== "number" || !payload) return;
+  function addLesson(day: number) {
+    const payload = dragged.current;
+    if (!payload) return;
+    dragged.current = null;
     setDraft((prev) => ({
       ...prev,
       items: [
         ...prev.items,
         {
           key: crypto.randomUUID(),
-          lessonId: (payload["lessonId"] as string) ?? null,
-          lessonNameAr: (payload["lessonNameAr"] as string) ?? "درس",
-          subjectNameAr: (payload["subjectNameAr"] as string) ?? null,
-          colorHex: (payload["colorHex"] as string) ?? "#7A1F3D",
+          lessonId: payload.lessonId,
+          lessonNameAr: payload.lessonNameAr,
+          subjectNameAr: payload.subjectNameAr,
+          colorHex: payload.colorHex,
           scheduledDay: day,
           scheduledTime: null,
           durationMinutes: 30,
@@ -493,7 +501,6 @@ export function StudyPlanBuilder() {
         </div>
       </Card>
 
-      <DndContext sensors={sensors} onDragEnd={onDragEnd}>
         <div className="grid gap-4 xl:grid-cols-[300px_1fr]">
           <Card className="h-fit p-3 xl:sticky xl:top-24">
             <p className="px-1 pb-2 text-xs font-black text-muted-foreground">
@@ -545,6 +552,9 @@ export function StudyPlanBuilder() {
                                       label={lesson.nameAr}
                                       subject={subject.nameAr}
                                       colorHex={subject.colorHex}
+                                      onDragStart={(payload) => {
+                                        dragged.current = payload;
+                                      }}
                                     />
                                   ))
                                 )}
@@ -574,7 +584,7 @@ export function StudyPlanBuilder() {
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 {SCHOOL_DAYS.map((d) => (
-                  <DayColumn key={d.day} day={d.day} label={d.label}>
+                  <DayColumn key={d.day} day={d.day} label={d.label} onDropLesson={addLesson}>
                     {draft.items
                       .filter((item) => item.scheduledDay === d.day)
                       .map((item) => (
@@ -709,7 +719,6 @@ export function StudyPlanBuilder() {
             </Card>
           </div>
         </div>
-      </DndContext>
 
       {/* Off-screen render used for PDF / image / chat export. */}
       <div className="pointer-events-none fixed -left-[3000px] top-0 w-[1100px] opacity-0" aria-hidden>
