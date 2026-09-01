@@ -38,11 +38,14 @@ import {
 import { useAuth } from "@/features/auth/AuthProvider";
 import { PortalTrail } from "@/features/auth/components/PortalTrail";
 import { ROLE_COLORS, ROLE_LABELS } from "@/features/auth/rbac";
+import { NotificationBell } from "@/features/notifications/NotificationBell";
+import { useNotificationCounters } from "@/features/notifications/useNotificationCounters";
 import { cn } from "@/lib/utils";
 import { amsQueue } from "../ams.functions";
 import { useAmsRealtime } from "../useAmsRealtime";
 import { StatusPill } from "./atoms";
 import { RegistrationSwitch } from "./RegistrationSwitch";
+
 
 type NavItem = {
   to: string;
