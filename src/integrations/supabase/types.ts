@@ -2669,6 +2669,129 @@ export type Database = {
           },
         ]
       }
+      study_plan_items: {
+        Row: {
+          color_hex: string
+          created_at: string
+          duration_minutes: number | null
+          id: string
+          lesson_id: string | null
+          lesson_name_ar: string | null
+          notes: string | null
+          plan_id: string
+          scheduled_date: string | null
+          scheduled_day: number
+          scheduled_time: string | null
+          sort_order: number
+          subject_name_ar: string | null
+          updated_at: string
+        }
+        Insert: {
+          color_hex?: string
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          lesson_id?: string | null
+          lesson_name_ar?: string | null
+          notes?: string | null
+          plan_id: string
+          scheduled_date?: string | null
+          scheduled_day?: number
+          scheduled_time?: string | null
+          sort_order?: number
+          subject_name_ar?: string | null
+          updated_at?: string
+        }
+        Update: {
+          color_hex?: string
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          lesson_id?: string | null
+          lesson_name_ar?: string | null
+          notes?: string | null
+          plan_id?: string
+          scheduled_date?: string | null
+          scheduled_day?: number
+          scheduled_time?: string | null
+          sort_order?: number
+          subject_name_ar?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_plan_items_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_plan_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "study_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_plans: {
+        Row: {
+          classroom_id: string
+          created_at: string
+          created_by: string | null
+          end_date: string
+          id: string
+          notes: string | null
+          plan_type: string
+          published: boolean
+          start_date: string
+          title_ar: string | null
+          updated_at: string
+        }
+        Insert: {
+          classroom_id: string
+          created_at?: string
+          created_by?: string | null
+          end_date: string
+          id?: string
+          notes?: string | null
+          plan_type?: string
+          published?: boolean
+          start_date: string
+          title_ar?: string | null
+          updated_at?: string
+        }
+        Update: {
+          classroom_id?: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string
+          id?: string
+          notes?: string | null
+          plan_type?: string
+          published?: boolean
+          start_date?: string
+          title_ar?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_plans_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subjects: {
         Row: {
           classroom_id: string
@@ -3159,6 +3282,8 @@ export type Database = {
         Args: { _ip: string; _user_agent: string }
         Returns: number
       }
+      study_plan_classroom_id: { Args: { _plan_id: string }; Returns: string }
+      study_plan_published: { Args: { _plan_id: string }; Returns: boolean }
       subject_classroom_id: { Args: { _subject_id: string }; Returns: string }
       submit_site_testimonial: {
         Args: { _name: string; _quote: string; _rating: number; _role: string }
