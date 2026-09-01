@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BarChart3 } from "lucide-react";
 
-import { ModulePlaceholder } from "@/features/academics/components/ModulePlaceholder";
+import { AcademicReports } from "@/features/academics/components/AcademicReports";
+import { canEditCurriculum } from "@/features/academics/academics";
 import { AmsShell } from "@/features/ams/components/AmsShell";
+import { useAuth } from "@/features/auth/AuthProvider";
 
 export const Route = createFileRoute("/_authenticated/ams/academics/reports")({
   head: () => ({
@@ -12,19 +13,31 @@ export const Route = createFileRoute("/_authenticated/ams/academics/reports")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: () => (
-    <AmsShell title="التقارير الأكاديمية" description="تقارير التقدم للفصل والطفل وولي الأمر" wide>
-      <ModulePlaceholder
-        icon={BarChart3}
-        title="التقارير الأكاديمية"
-        description="تقارير جاهزة للطباعة تلخّص تقدم كل طفل في المواد والمحاور، مع مقارنة بمستوى الفصل."
-        bullets={[
-          "تقرير طفل قابل للطباعة",
-          "ملخص أداء الفصل",
-          "تصدير Excel و PDF",
-          "مشاركة مع ولي الأمر",
-        ]}
-      />
-    </AmsShell>
-  ),
+  component: AcademicReportsPage,
 });
+
+function AcademicReportsPage() {
+  const { roles } = useAuth();
+
+  if (!canEditCurriculum(roles)) {
+    return (
+      <AmsShell title="التقارير الأكاديمية">
+        <div className="rounded-3xl border-2 border-dashed border-border/70 bg-card p-10 text-center">
+          <p className="text-sm font-black text-foreground">
+            هذا القسم متاح للمعلمات وإدارة المدرسة فقط.
+          </p>
+        </div>
+      </AmsShell>
+    );
+  }
+
+  return (
+    <AmsShell
+      title="التقارير الأكاديمية"
+      description="تقرير جاهز للطباعة يعرض حالة المثلثات وألوانها والأدلة الرقمية لكل درس"
+      wide
+    >
+      <AcademicReports />
+    </AmsShell>
+  );
+}
