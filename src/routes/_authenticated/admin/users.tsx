@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { KeyRound, Loader2, ShieldAlert, UserCog } from "lucide-react";
+import { GraduationCap, KeyRound, Loader2, ShieldAlert, UserCog } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -204,16 +204,34 @@ function AdminUsersPage() {
                           : "—"}
                       </td>
                       <td className="px-5 py-4 text-end">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={!canManageRoles}
-                          onClick={() => setEditing(user)}
-                          className="rounded-xl font-bold"
-                        >
-                          <UserCog className="size-4" />
-                          الأدوار
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          {user.roles.includes("teacher") && (
+                            <Button
+                              asChild
+                              size="sm"
+                              variant="outline"
+                              className="rounded-xl font-bold"
+                            >
+                              <Link
+                                to="/admin/teachers/$teacherId"
+                                params={{ teacherId: user.id }}
+                              >
+                                <GraduationCap className="size-4" />
+                                تفاصيل المعلمة
+                              </Link>
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!canManageRoles}
+                            onClick={() => setEditing(user)}
+                            className="rounded-xl font-bold"
+                          >
+                            <UserCog className="size-4" />
+                            الأدوار
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );

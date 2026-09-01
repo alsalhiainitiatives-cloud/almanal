@@ -69,8 +69,10 @@ import { Route as AuthenticatedAmsAcademicsReportsRouteImport } from './routes/_
 import { Route as AuthenticatedAmsAcademicsPlansRouteImport } from './routes/_authenticated/ams/academics.plans'
 import { Route as AuthenticatedAmsAcademicsCurriculumRouteImport } from './routes/_authenticated/ams/academics.curriculum'
 import { Route as AuthenticatedAmsAcademicsChatRouteImport } from './routes/_authenticated/ams/academics.chat'
+import { Route as AuthenticatedAmsAcademicsCalendarRouteImport } from './routes/_authenticated/ams/academics.calendar'
 import { Route as AuthenticatedAmsAcademicsAssignmentsRouteImport } from './routes/_authenticated/ams/academics.assignments'
 import { Route as AuthenticatedAmsAcademicsAssessmentsRouteImport } from './routes/_authenticated/ams/academics.assessments'
+import { Route as AuthenticatedAdminTeachersTeacherIdRouteImport } from './routes/_authenticated/admin/teachers.$teacherId'
 import { Route as AdmissionsStageSlugClassroomClassroomSlugRouteImport } from './routes/admissions.stage.$slug.classroom.$classroomSlug'
 
 const TestimonialsRoute = TestimonialsRouteImport.update({
@@ -393,6 +395,12 @@ const AuthenticatedAmsAcademicsChatRoute =
     path: '/ams/academics/chat',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAmsAcademicsCalendarRoute =
+  AuthenticatedAmsAcademicsCalendarRouteImport.update({
+    id: '/ams/academics/calendar',
+    path: '/ams/academics/calendar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAmsAcademicsAssignmentsRoute =
   AuthenticatedAmsAcademicsAssignmentsRouteImport.update({
     id: '/ams/academics/assignments',
@@ -403,6 +411,12 @@ const AuthenticatedAmsAcademicsAssessmentsRoute =
   AuthenticatedAmsAcademicsAssessmentsRouteImport.update({
     id: '/ams/academics/assessments',
     path: '/ams/academics/assessments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminTeachersTeacherIdRoute =
+  AuthenticatedAdminTeachersTeacherIdRouteImport.update({
+    id: '/admin/teachers/$teacherId',
+    path: '/admin/teachers/$teacherId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AdmissionsStageSlugClassroomClassroomSlugRoute =
@@ -460,8 +474,10 @@ export interface FileRoutesByFullPath {
   '/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
   '/api/ams/backup': typeof ApiAmsBackupRoute
   '/ams/': typeof AuthenticatedAmsIndexRoute
+  '/admin/teachers/$teacherId': typeof AuthenticatedAdminTeachersTeacherIdRoute
   '/ams/academics/assessments': typeof AuthenticatedAmsAcademicsAssessmentsRoute
   '/ams/academics/assignments': typeof AuthenticatedAmsAcademicsAssignmentsRoute
+  '/ams/academics/calendar': typeof AuthenticatedAmsAcademicsCalendarRoute
   '/ams/academics/chat': typeof AuthenticatedAmsAcademicsChatRoute
   '/ams/academics/curriculum': typeof AuthenticatedAmsAcademicsCurriculumRoute
   '/ams/academics/plans': typeof AuthenticatedAmsAcademicsPlansRoute
@@ -524,8 +540,10 @@ export interface FileRoutesByTo {
   '/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
   '/api/ams/backup': typeof ApiAmsBackupRoute
   '/ams': typeof AuthenticatedAmsIndexRoute
+  '/admin/teachers/$teacherId': typeof AuthenticatedAdminTeachersTeacherIdRoute
   '/ams/academics/assessments': typeof AuthenticatedAmsAcademicsAssessmentsRoute
   '/ams/academics/assignments': typeof AuthenticatedAmsAcademicsAssignmentsRoute
+  '/ams/academics/calendar': typeof AuthenticatedAmsAcademicsCalendarRoute
   '/ams/academics/chat': typeof AuthenticatedAmsAcademicsChatRoute
   '/ams/academics/curriculum': typeof AuthenticatedAmsAcademicsCurriculumRoute
   '/ams/academics/plans': typeof AuthenticatedAmsAcademicsPlansRoute
@@ -590,8 +608,10 @@ export interface FileRoutesById {
   '/_authenticated/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
   '/api/ams/backup': typeof ApiAmsBackupRoute
   '/_authenticated/ams/': typeof AuthenticatedAmsIndexRoute
+  '/_authenticated/admin/teachers/$teacherId': typeof AuthenticatedAdminTeachersTeacherIdRoute
   '/_authenticated/ams/academics/assessments': typeof AuthenticatedAmsAcademicsAssessmentsRoute
   '/_authenticated/ams/academics/assignments': typeof AuthenticatedAmsAcademicsAssignmentsRoute
+  '/_authenticated/ams/academics/calendar': typeof AuthenticatedAmsAcademicsCalendarRoute
   '/_authenticated/ams/academics/chat': typeof AuthenticatedAmsAcademicsChatRoute
   '/_authenticated/ams/academics/curriculum': typeof AuthenticatedAmsAcademicsCurriculumRoute
   '/_authenticated/ams/academics/plans': typeof AuthenticatedAmsAcademicsPlansRoute
@@ -656,8 +676,10 @@ export interface FileRouteTypes {
     | '/track/$applicationId'
     | '/api/ams/backup'
     | '/ams/'
+    | '/admin/teachers/$teacherId'
     | '/ams/academics/assessments'
     | '/ams/academics/assignments'
+    | '/ams/academics/calendar'
     | '/ams/academics/chat'
     | '/ams/academics/curriculum'
     | '/ams/academics/plans'
@@ -720,8 +742,10 @@ export interface FileRouteTypes {
     | '/track/$applicationId'
     | '/api/ams/backup'
     | '/ams'
+    | '/admin/teachers/$teacherId'
     | '/ams/academics/assessments'
     | '/ams/academics/assignments'
+    | '/ams/academics/calendar'
     | '/ams/academics/chat'
     | '/ams/academics/curriculum'
     | '/ams/academics/plans'
@@ -785,8 +809,10 @@ export interface FileRouteTypes {
     | '/_authenticated/track/$applicationId'
     | '/api/ams/backup'
     | '/_authenticated/ams/'
+    | '/_authenticated/admin/teachers/$teacherId'
     | '/_authenticated/ams/academics/assessments'
     | '/_authenticated/ams/academics/assignments'
+    | '/_authenticated/ams/academics/calendar'
     | '/_authenticated/ams/academics/chat'
     | '/_authenticated/ams/academics/curriculum'
     | '/_authenticated/ams/academics/plans'
@@ -1252,6 +1278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAmsAcademicsChatRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ams/academics/calendar': {
+      id: '/_authenticated/ams/academics/calendar'
+      path: '/ams/academics/calendar'
+      fullPath: '/ams/academics/calendar'
+      preLoaderRoute: typeof AuthenticatedAmsAcademicsCalendarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ams/academics/assignments': {
       id: '/_authenticated/ams/academics/assignments'
       path: '/ams/academics/assignments'
@@ -1264,6 +1297,13 @@ declare module '@tanstack/react-router' {
       path: '/ams/academics/assessments'
       fullPath: '/ams/academics/assessments'
       preLoaderRoute: typeof AuthenticatedAmsAcademicsAssessmentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/teachers/$teacherId': {
+      id: '/_authenticated/admin/teachers/$teacherId'
+      path: '/admin/teachers/$teacherId'
+      fullPath: '/admin/teachers/$teacherId'
+      preLoaderRoute: typeof AuthenticatedAdminTeachersTeacherIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/admissions/stage/$slug/classroom/$classroomSlug': {
@@ -1303,8 +1343,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedApplyNewRoute: typeof AuthenticatedApplyNewRoute
   AuthenticatedTrackApplicationIdRoute: typeof AuthenticatedTrackApplicationIdRoute
   AuthenticatedAmsIndexRoute: typeof AuthenticatedAmsIndexRoute
+  AuthenticatedAdminTeachersTeacherIdRoute: typeof AuthenticatedAdminTeachersTeacherIdRoute
   AuthenticatedAmsAcademicsAssessmentsRoute: typeof AuthenticatedAmsAcademicsAssessmentsRoute
   AuthenticatedAmsAcademicsAssignmentsRoute: typeof AuthenticatedAmsAcademicsAssignmentsRoute
+  AuthenticatedAmsAcademicsCalendarRoute: typeof AuthenticatedAmsAcademicsCalendarRoute
   AuthenticatedAmsAcademicsChatRoute: typeof AuthenticatedAmsAcademicsChatRoute
   AuthenticatedAmsAcademicsCurriculumRoute: typeof AuthenticatedAmsAcademicsCurriculumRoute
   AuthenticatedAmsAcademicsPlansRoute: typeof AuthenticatedAmsAcademicsPlansRoute
@@ -1344,10 +1386,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedApplyNewRoute: AuthenticatedApplyNewRoute,
   AuthenticatedTrackApplicationIdRoute: AuthenticatedTrackApplicationIdRoute,
   AuthenticatedAmsIndexRoute: AuthenticatedAmsIndexRoute,
+  AuthenticatedAdminTeachersTeacherIdRoute:
+    AuthenticatedAdminTeachersTeacherIdRoute,
   AuthenticatedAmsAcademicsAssessmentsRoute:
     AuthenticatedAmsAcademicsAssessmentsRoute,
   AuthenticatedAmsAcademicsAssignmentsRoute:
     AuthenticatedAmsAcademicsAssignmentsRoute,
+  AuthenticatedAmsAcademicsCalendarRoute:
+    AuthenticatedAmsAcademicsCalendarRoute,
   AuthenticatedAmsAcademicsChatRoute: AuthenticatedAmsAcademicsChatRoute,
   AuthenticatedAmsAcademicsCurriculumRoute:
     AuthenticatedAmsAcademicsCurriculumRoute,

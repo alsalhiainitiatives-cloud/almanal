@@ -5,6 +5,7 @@ import {
   Armchair,
   BarChart3,
   BookOpen,
+  CalendarDays,
   CalendarRange,
   ClipboardCheck,
   CalendarClock,
@@ -115,6 +116,7 @@ const ACADEMICS_NAV: NavItem[] = [
   { to: "/ams/academics/chat", label: "محادثة الفصل", icon: MessagesSquare, exact: false, group: "التتبع الأكاديمي", notifyKind: "chat_message" },
   { to: "/ams/academics/curriculum", label: "إدارة المنهج", icon: BookOpen, exact: false, group: "التتبع الأكاديمي" },
   { to: "/ams/academics/plans", label: "الخطط الدراسية", icon: CalendarRange, exact: false, group: "التتبع الأكاديمي", notifyKind: "study_plan" },
+  { to: "/ams/academics/calendar", label: "تقويم الفصل", icon: CalendarDays, exact: false, group: "التتبع الأكاديمي" },
 
   {
     to: "/ams/academics/assignments",

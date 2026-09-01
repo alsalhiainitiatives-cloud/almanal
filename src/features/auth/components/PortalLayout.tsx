@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   BabyIcon,
+  CalendarDays,
   BookOpen,
   FileClock,
   Globe,
@@ -78,6 +79,14 @@ const NAV_GROUPS = [
         permission: P.applicationsReview,
         role: "teacher" as const,
         featured: true,
+      },
+      {
+        to: "/ams/academics/calendar",
+        label: "تقويم الفصل",
+        icon: CalendarDays,
+        permission: P.applicationsReview,
+        role: "teacher" as const,
+        featured: false,
       },
     ],
   },
