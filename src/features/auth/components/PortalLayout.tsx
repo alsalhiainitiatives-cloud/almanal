@@ -39,6 +39,13 @@ const NAV_GROUPS = [
         permission: P.applicationsTrack,
         featured: true,
       },
+      {
+        to: "/class-chat",
+        label: "محادثة فصل طفلي",
+        icon: MessagesSquare,
+        permission: P.applicationsTrack,
+        featured: false,
+      },
       { to: "/payments", label: "المدفوعات والرسوم", icon: Wallet, permission: P.applicationsTrack, featured: false },
     ],
   },
