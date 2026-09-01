@@ -262,8 +262,47 @@ export async function sendChatMessage(supabase: Db, userId: string, input: SendM
     .maybeSingle();
 
   if (error) throw new Error("تعذّر إرسال الرسالة — تأكد من صلاحيتك على هذا الفصل.");
+
+  // Fan out an internal notification so the header bell + tab badges light up.
+  try {
+    const { classroomAudience, notify } = await import(
+      "@/features/notifications/notifications.server"
+    );
+    const { data: classroom } = await supabase
+      .from("classrooms")
+      .select("name_ar")
+      .eq("id", input.classroomId)
+      .maybeSingle();
+    const { parentIds, teacherIds } = await classroomAudience(input.classroomId);
+    const senderName = profile?.full_name ?? "أحد أعضاء الفصل";
+    const preview = body ? body.slice(0, 120) : "مرفق جديد في المحادثة";
+    const title = `رسالة جديدة في ${classroom?.name_ar ?? "محادثة الفصل"}`;
+
+    await Promise.all([
+      notify(supabase, {
+        userIds: parentIds,
+        kind: "chat_message",
+        title,
+        body: `${senderName}: ${preview}`,
+        link: "/class-chat",
+        severity: "info",
+      }),
+      notify(supabase, {
+        userIds: teacherIds,
+        kind: "chat_message",
+        title,
+        body: `${senderName}: ${preview}`,
+        link: "/ams/academics/chat",
+        severity: "info",
+      }),
+    ]);
+  } catch (notifyError) {
+    console.error("chat notify failed", notifyError);
+  }
+
   return { id: data?.id ?? null };
 }
+
 
 /** Removes a message: authors soft-delete their own, staff hard-delete for moderation. */
 export async function deleteChatMessage(supabase: Db, userId: string, id: string) {

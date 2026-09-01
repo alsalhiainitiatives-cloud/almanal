@@ -21,9 +21,11 @@ import type { ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { useNotificationCounters } from "@/features/notifications/useNotificationCounters";
 import { useAuth } from "../AuthProvider";
 import { P, ROLE_COLORS, ROLE_LABELS } from "../rbac";
 import { PortalTrail } from "./PortalTrail";
+
 
 /** Grouped, ordered navigation: personal services → operations → administration. */
 const NAV_GROUPS = [
@@ -46,6 +48,7 @@ const NAV_GROUPS = [
         icon: MessagesSquare,
         permission: P.applicationsTrack,
         featured: false,
+        notifyKind: "chat_message",
       },
       {
         to: "/study-plans",
@@ -53,7 +56,9 @@ const NAV_GROUPS = [
         icon: CalendarRange,
         permission: P.applicationsTrack,
         featured: false,
+        notifyKind: "study_plan",
       },
+
       { to: "/payments", label: "المدفوعات والرسوم", icon: Wallet, permission: P.applicationsTrack, featured: false },
     ],
   },
@@ -116,7 +121,9 @@ export function PortalLayout({
 }) {
   const { profile, roles, hasPermission, signOut, isReadOnly } = useAuth();
   const navigate = useNavigate();
+  const counters = useNotificationCounters();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
 
   const groups = NAV_GROUPS.map((group) => ({
     label: group.label,
@@ -188,6 +195,8 @@ export function PortalLayout({
                             !pathname.startsWith("/ams/academics"))
                         : pathname === item.to || pathname.startsWith(`${item.to}/`);
                     const featured = item.featured;
+                    const count =
+                      "notifyKind" in item ? (counters[item.notifyKind as string] ?? 0) : 0;
                     return (
                       <Link
                         key={item.to}
@@ -204,8 +213,18 @@ export function PortalLayout({
                       >
                         <item.icon className="size-4" />
                         <span className="flex-1">{item.label}</span>
+                        {count > 0 ? (
+                          <span
+                            className={`grid min-w-5 place-items-center rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${
+                              active ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground"
+                            }`}
+                          >
+                            {count > 99 ? "99+" : count}
+                          </span>
+                        ) : null}
                       </Link>
                     );
+
                   })}
                 </div>
               ))}

@@ -38,11 +38,14 @@ import {
 import { useAuth } from "@/features/auth/AuthProvider";
 import { PortalTrail } from "@/features/auth/components/PortalTrail";
 import { ROLE_COLORS, ROLE_LABELS } from "@/features/auth/rbac";
+import { NotificationBell } from "@/features/notifications/NotificationBell";
+import { useNotificationCounters } from "@/features/notifications/useNotificationCounters";
 import { cn } from "@/lib/utils";
 import { amsQueue } from "../ams.functions";
 import { useAmsRealtime } from "../useAmsRealtime";
 import { StatusPill } from "./atoms";
 import { RegistrationSwitch } from "./RegistrationSwitch";
+
 
 type NavItem = {
   to: string;
@@ -51,7 +54,9 @@ type NavItem = {
   exact: boolean;
   roles?: string[];
   group: string;
+  notifyKind?: string;
 };
+
 
 /** Ordered by daily workflow: overview → processing → seats → money → insights → setup. */
 const NAV: NavItem[] = [
@@ -115,9 +120,10 @@ const STUDENTS_NAV: NavItem[] = [
 /** Academic Tracking is a separate operational module — curriculum, assessments, reports. */
 const ACADEMICS_NAV: NavItem[] = [
   { to: "/ams/academics", label: "لوحة التتبع الأكاديمي", icon: LayoutDashboard, exact: true, group: "التتبع الأكاديمي" },
-  { to: "/ams/academics/chat", label: "محادثة الفصل", icon: MessagesSquare, exact: false, group: "التتبع الأكاديمي" },
+  { to: "/ams/academics/chat", label: "محادثة الفصل", icon: MessagesSquare, exact: false, group: "التتبع الأكاديمي", notifyKind: "chat_message" },
   { to: "/ams/academics/curriculum", label: "إدارة المنهج", icon: BookOpen, exact: false, group: "التتبع الأكاديمي" },
-  { to: "/ams/academics/plans", label: "الخطط الدراسية", icon: CalendarRange, exact: false, group: "التتبع الأكاديمي" },
+  { to: "/ams/academics/plans", label: "الخطط الدراسية", icon: CalendarRange, exact: false, group: "التتبع الأكاديمي", notifyKind: "study_plan" },
+
   {
     to: "/ams/academics/assignments",
     label: "إسناد المعلمات",
@@ -194,7 +200,9 @@ export function AmsShell({
     items: navItems.filter((item) => item.group === group),
   })).filter((entry) => entry.items.length > 0);
   const navigate = useNavigate();
+  const counters = useNotificationCounters();
   const [paletteOpen, setPaletteOpen] = useState(false);
+
 
   useAmsRealtime();
 
@@ -240,6 +248,7 @@ export function AmsShell({
                     </p>
                     {entry.items.map((item) => {
                       const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
+                      const count = item.notifyKind ? (counters[item.notifyKind] ?? 0) : 0;
                       return (
                         <Link
                           key={item.to}
@@ -252,10 +261,21 @@ export function AmsShell({
                           )}
                         >
                           <item.icon className="size-4" />
-                          {item.label}
+                          <span className="flex-1">{item.label}</span>
+                          {count > 0 ? (
+                            <span
+                              className={cn(
+                                "grid min-w-5 place-items-center rounded-full px-1.5 py-0.5 text-[10px] font-extrabold",
+                                active ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground",
+                              )}
+                            >
+                              {count > 99 ? "99+" : count}
+                            </span>
+                          ) : null}
                         </Link>
                       );
                     })}
+
                   </div>
                 ))}
                 <Link
@@ -315,6 +335,7 @@ export function AmsShell({
               {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
             </div>
             <div className="flex items-center gap-2">
+              <NotificationBell />
               {activeModule.search && (
                 <Button
                   variant="outline"
@@ -334,15 +355,24 @@ export function AmsShell({
 
           <div className="lg:hidden">
             <nav className="flex gap-2 overflow-x-auto pb-1">
-              {navItems.map((item) => (
+              {navItems.map((item) => {
+                const count = item.notifyKind ? (counters[item.notifyKind] ?? 0) : 0;
+                return (
                 <Link
                   key={item.to}
                   to={item.to}
-                  className="whitespace-nowrap rounded-2xl border border-border/60 bg-card px-3 py-2 text-xs font-bold text-muted-foreground"
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-2xl border border-border/60 bg-card px-3 py-2 text-xs font-bold text-muted-foreground"
                 >
                   {item.label}
+                  {count > 0 ? (
+                    <span className="grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-extrabold text-primary-foreground">
+                      {count > 99 ? "99+" : count}
+                    </span>
+                  ) : null}
                 </Link>
-              ))}
+                );
+              })}
+
             </nav>
           </div>
 

@@ -9,7 +9,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useClearNotificationKind } from "@/features/notifications/useNotificationCounters";
 import { cn } from "@/lib/utils";
+
 
 import {
   TIMEFRAME_LABELS,
@@ -23,7 +25,9 @@ const TIMEFRAMES: PlanTimeframe[] = ["current", "future", "past"];
 
 export function StudyPlanViewer() {
   const loadBoard = useServerFn(plansParentBoard);
+  useClearNotificationKind(["study_plan"]);
   const [childId, setChildId] = useState<string | null>(null);
+
   const [timeframe, setTimeframe] = useState<PlanTimeframe>("current");
 
   const board = useQuery({ queryKey: ["parent-study-plans"], queryFn: () => loadBoard({}) });
