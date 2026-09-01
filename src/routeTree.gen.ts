@@ -69,6 +69,7 @@ import { Route as AuthenticatedAmsAcademicsReportsRouteImport } from './routes/_
 import { Route as AuthenticatedAmsAcademicsPlansRouteImport } from './routes/_authenticated/ams/academics.plans'
 import { Route as AuthenticatedAmsAcademicsCurriculumRouteImport } from './routes/_authenticated/ams/academics.curriculum'
 import { Route as AuthenticatedAmsAcademicsChatRouteImport } from './routes/_authenticated/ams/academics.chat'
+import { Route as AuthenticatedAmsAcademicsCalendarRouteImport } from './routes/_authenticated/ams/academics.calendar'
 import { Route as AuthenticatedAmsAcademicsAssignmentsRouteImport } from './routes/_authenticated/ams/academics.assignments'
 import { Route as AuthenticatedAmsAcademicsAssessmentsRouteImport } from './routes/_authenticated/ams/academics.assessments'
 import { Route as AdmissionsStageSlugClassroomClassroomSlugRouteImport } from './routes/admissions.stage.$slug.classroom.$classroomSlug'
@@ -393,6 +394,12 @@ const AuthenticatedAmsAcademicsChatRoute =
     path: '/ams/academics/chat',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAmsAcademicsCalendarRoute =
+  AuthenticatedAmsAcademicsCalendarRouteImport.update({
+    id: '/ams/academics/calendar',
+    path: '/ams/academics/calendar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAmsAcademicsAssignmentsRoute =
   AuthenticatedAmsAcademicsAssignmentsRouteImport.update({
     id: '/ams/academics/assignments',
@@ -462,6 +469,7 @@ export interface FileRoutesByFullPath {
   '/ams/': typeof AuthenticatedAmsIndexRoute
   '/ams/academics/assessments': typeof AuthenticatedAmsAcademicsAssessmentsRoute
   '/ams/academics/assignments': typeof AuthenticatedAmsAcademicsAssignmentsRoute
+  '/ams/academics/calendar': typeof AuthenticatedAmsAcademicsCalendarRoute
   '/ams/academics/chat': typeof AuthenticatedAmsAcademicsChatRoute
   '/ams/academics/curriculum': typeof AuthenticatedAmsAcademicsCurriculumRoute
   '/ams/academics/plans': typeof AuthenticatedAmsAcademicsPlansRoute
@@ -526,6 +534,7 @@ export interface FileRoutesByTo {
   '/ams': typeof AuthenticatedAmsIndexRoute
   '/ams/academics/assessments': typeof AuthenticatedAmsAcademicsAssessmentsRoute
   '/ams/academics/assignments': typeof AuthenticatedAmsAcademicsAssignmentsRoute
+  '/ams/academics/calendar': typeof AuthenticatedAmsAcademicsCalendarRoute
   '/ams/academics/chat': typeof AuthenticatedAmsAcademicsChatRoute
   '/ams/academics/curriculum': typeof AuthenticatedAmsAcademicsCurriculumRoute
   '/ams/academics/plans': typeof AuthenticatedAmsAcademicsPlansRoute
@@ -592,6 +601,7 @@ export interface FileRoutesById {
   '/_authenticated/ams/': typeof AuthenticatedAmsIndexRoute
   '/_authenticated/ams/academics/assessments': typeof AuthenticatedAmsAcademicsAssessmentsRoute
   '/_authenticated/ams/academics/assignments': typeof AuthenticatedAmsAcademicsAssignmentsRoute
+  '/_authenticated/ams/academics/calendar': typeof AuthenticatedAmsAcademicsCalendarRoute
   '/_authenticated/ams/academics/chat': typeof AuthenticatedAmsAcademicsChatRoute
   '/_authenticated/ams/academics/curriculum': typeof AuthenticatedAmsAcademicsCurriculumRoute
   '/_authenticated/ams/academics/plans': typeof AuthenticatedAmsAcademicsPlansRoute
@@ -658,6 +668,7 @@ export interface FileRouteTypes {
     | '/ams/'
     | '/ams/academics/assessments'
     | '/ams/academics/assignments'
+    | '/ams/academics/calendar'
     | '/ams/academics/chat'
     | '/ams/academics/curriculum'
     | '/ams/academics/plans'
@@ -722,6 +733,7 @@ export interface FileRouteTypes {
     | '/ams'
     | '/ams/academics/assessments'
     | '/ams/academics/assignments'
+    | '/ams/academics/calendar'
     | '/ams/academics/chat'
     | '/ams/academics/curriculum'
     | '/ams/academics/plans'
@@ -787,6 +799,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ams/'
     | '/_authenticated/ams/academics/assessments'
     | '/_authenticated/ams/academics/assignments'
+    | '/_authenticated/ams/academics/calendar'
     | '/_authenticated/ams/academics/chat'
     | '/_authenticated/ams/academics/curriculum'
     | '/_authenticated/ams/academics/plans'
@@ -1252,6 +1265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAmsAcademicsChatRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ams/academics/calendar': {
+      id: '/_authenticated/ams/academics/calendar'
+      path: '/ams/academics/calendar'
+      fullPath: '/ams/academics/calendar'
+      preLoaderRoute: typeof AuthenticatedAmsAcademicsCalendarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ams/academics/assignments': {
       id: '/_authenticated/ams/academics/assignments'
       path: '/ams/academics/assignments'
@@ -1305,6 +1325,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAmsIndexRoute: typeof AuthenticatedAmsIndexRoute
   AuthenticatedAmsAcademicsAssessmentsRoute: typeof AuthenticatedAmsAcademicsAssessmentsRoute
   AuthenticatedAmsAcademicsAssignmentsRoute: typeof AuthenticatedAmsAcademicsAssignmentsRoute
+  AuthenticatedAmsAcademicsCalendarRoute: typeof AuthenticatedAmsAcademicsCalendarRoute
   AuthenticatedAmsAcademicsChatRoute: typeof AuthenticatedAmsAcademicsChatRoute
   AuthenticatedAmsAcademicsCurriculumRoute: typeof AuthenticatedAmsAcademicsCurriculumRoute
   AuthenticatedAmsAcademicsPlansRoute: typeof AuthenticatedAmsAcademicsPlansRoute
@@ -1348,6 +1369,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAmsAcademicsAssessmentsRoute,
   AuthenticatedAmsAcademicsAssignmentsRoute:
     AuthenticatedAmsAcademicsAssignmentsRoute,
+  AuthenticatedAmsAcademicsCalendarRoute:
+    AuthenticatedAmsAcademicsCalendarRoute,
   AuthenticatedAmsAcademicsChatRoute: AuthenticatedAmsAcademicsChatRoute,
   AuthenticatedAmsAcademicsCurriculumRoute:
     AuthenticatedAmsAcademicsCurriculumRoute,
