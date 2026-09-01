@@ -193,8 +193,7 @@ export function CurriculumManager() {
   }
 
   function confirmDelete(kind: DraftKind, id: string, name: string) {
-    if (!window.confirm(`سيتم حذف «${name}» وكل ما يتبعه. هل تريد المتابعة؟`)) return;
-    deleteMutation.mutate({ kind, id });
+    setPendingDelete({ kind, id, name });
   }
 
   if (classroomsQuery.isLoading) {
@@ -220,28 +219,46 @@ export function CurriculumManager() {
     <div className="space-y-5">
       {/* Toolbar */}
       <div className="flex flex-wrap items-end justify-between gap-3 rounded-[2rem] border border-border/60 bg-card/80 p-5 shadow-sm">
-        <div className="min-w-[240px] space-y-1.5">
-          <Label className="text-[11px] font-black text-muted-foreground">الفصل الدراسي</Label>
-          <Select value={classroomId} onValueChange={setClassroomId}>
-            <SelectTrigger className="rounded-2xl font-bold">
-              <SelectValue placeholder="اختر الفصل" />
-            </SelectTrigger>
-            <SelectContent>
-              {classrooms.map((room) => (
-                <SelectItem key={room.id} value={room.id}>
-                  <span className="flex items-center gap-2">
-                    <span
-                      className="size-3 rounded-full"
-                      style={{ backgroundColor: room.colorHex }}
-                    />
-                    {room.nameAr}
-                    <span className="text-[10px] text-muted-foreground">{room.stageNameAr}</span>
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[200px] space-y-1.5">
+            <Label className="text-[11px] font-black text-muted-foreground">المرحلة التعليمية</Label>
+            <Select value={stageId} onValueChange={setStageId}>
+              <SelectTrigger className="rounded-2xl font-bold">
+                <SelectValue placeholder="اختر المرحلة" />
+              </SelectTrigger>
+              <SelectContent>
+                {stages.map((stage) => (
+                  <SelectItem key={stage.id} value={stage.id}>
+                    {stage.nameAr}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="min-w-[220px] space-y-1.5">
+            <Label className="text-[11px] font-black text-muted-foreground">الفصل الدراسي</Label>
+            <Select value={classroomId} onValueChange={setClassroomId}>
+              <SelectTrigger className="rounded-2xl font-bold">
+                <SelectValue placeholder="اختر الفصل" />
+              </SelectTrigger>
+              <SelectContent>
+                {stageClassrooms.map((room) => (
+                  <SelectItem key={room.id} value={room.id}>
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="size-3 rounded-full"
+                        style={{ backgroundColor: room.colorHex }}
+                      />
+                      {room.nameAr}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+
 
         <div className="flex flex-wrap items-center gap-2">
           <Stat icon={BookOpen} label="مواد" value={counts.subjects} />
