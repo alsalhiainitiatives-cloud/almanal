@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ClipboardCheck } from "lucide-react";
 
-import { ModulePlaceholder } from "@/features/academics/components/ModulePlaceholder";
+import { AssessmentsBoard } from "@/features/academics/components/AssessmentsBoard";
+import { canEditCurriculum } from "@/features/academics/academics";
 import { AmsShell } from "@/features/ams/components/AmsShell";
+import { useAuth } from "@/features/auth/AuthProvider";
 
 export const Route = createFileRoute("/_authenticated/ams/academics/assessments")({
   head: () => ({
@@ -12,19 +13,31 @@ export const Route = createFileRoute("/_authenticated/ams/academics/assessments"
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: () => (
-    <AmsShell title="التقييمات" description="رصد إتقان الطفل لكل درس داخل المنهج" wide>
-      <ModulePlaceholder
-        icon={ClipboardCheck}
-        title="التقييمات"
-        description="شاشة رصد سريعة تعرض أطفال الفصل مقابل دروس المنهج، مع مستويات إتقان واضحة وملاحظات المعلمة."
-        bullets={[
-          "رصد جماعي لكل درس",
-          "مستويات إتقان مبسطة",
-          "ملاحظات وأدلة رقمية",
-          "حساب نسب التقدم آليًا",
-        ]}
-      />
-    </AmsShell>
-  ),
+  component: AssessmentsPage,
 });
+
+function AssessmentsPage() {
+  const { roles } = useAuth();
+
+  if (!canEditCurriculum(roles)) {
+    return (
+      <AmsShell title="التقييمات">
+        <div className="rounded-3xl border-2 border-dashed border-border/70 bg-card p-10 text-center">
+          <p className="text-sm font-black text-foreground">
+            هذا القسم متاح للمعلمات وإدارة المدرسة فقط.
+          </p>
+        </div>
+      </AmsShell>
+    );
+  }
+
+  return (
+    <AmsShell
+      title="التقييمات"
+      description="الأطفال في الصفوف والدروس في الأعمدة — اضغطي على المثلث لتغيير مستوى الأداء أو النمو"
+      wide
+    >
+      <AssessmentsBoard />
+    </AmsShell>
+  );
+}
