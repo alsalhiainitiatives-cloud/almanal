@@ -275,3 +275,183 @@ export async function deleteCurriculumNode(
   if (error) throw new Error(error.message);
   return { ok: true };
 }
+
+/* ---------------------------------------------------------------------- */
+/* Teacher assignments                                                     */
+/* ---------------------------------------------------------------------- */
+
+const SUPER_ADMIN_ROLES: AppRole[] = ["admin", "supervisor", "principal"];
+
+async function assertSuperAdmin(supabase: Db, userId: string): Promise<AppRole[]> {
+  const roles = await rolesOf(supabase, userId);
+  if (!roles.some((r) => SUPER_ADMIN_ROLES.includes(r))) throw new Error("forbidden");
+  return roles;
+}
+
+export type TeacherRow = {
+  id: string;
+  fullName: string;
+  email: string | null;
+  phone: string | null;
+  classroomIds: string[];
+};
+
+export type AssignmentClassroom = {
+  id: string;
+  nameAr: string;
+  colorHex: string;
+  stageId: string;
+  stageNameAr: string;
+  capacity: number;
+  enrolledCount: number;
+  teacherIds: string[];
+};
+
+export type AssignmentBoard = {
+  stages: { id: string; nameAr: string }[];
+  teachers: TeacherRow[];
+  classrooms: AssignmentClassroom[];
+};
+
+export async function getAssignmentBoard(supabase: Db, userId: string): Promise<AssignmentBoard> {
+  await assertSuperAdmin(supabase, userId);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const [{ data: roleRows }, { data: classrooms }, { data: links }, { data: children }] =
+    await Promise.all([
+      supabaseAdmin.from("user_roles").select("user_id").eq("role", "teacher"),
+      supabase
+        .from("classrooms")
+        .select("id, name_ar, color_hex, capacity, stage_id, stages(name_ar, sort_order)")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true }),
+      supabase.from("teacher_classrooms").select("teacher_id, classroom_id"),
+      supabase
+        .from("application_children")
+        .select("id, classroom_id, applications!inner(status, archived_at)")
+        .not("classroom_id", "is", null),
+    ]);
+
+  const teacherIds = [...new Set((roleRows ?? []).map((r) => r.user_id))];
+  const { data: profiles } = teacherIds.length
+    ? await supabaseAdmin
+        .from("profiles")
+        .select("id, full_name, email, phone")
+        .in("id", teacherIds)
+    : { data: [] as { id: string; full_name: string; email: string | null; phone: string | null }[] };
+
+  const linkRows = (links ?? []) as { teacher_id: string; classroom_id: string }[];
+  const byTeacher = new Map<string, string[]>();
+  const byClassroom = new Map<string, string[]>();
+  for (const row of linkRows) {
+    byTeacher.set(row.teacher_id, [...(byTeacher.get(row.teacher_id) ?? []), row.classroom_id]);
+    byClassroom.set(row.classroom_id, [
+      ...(byClassroom.get(row.classroom_id) ?? []),
+      row.teacher_id,
+    ]);
+  }
+
+  const ACTIVE = new Set(["approved", "submitted", "under_review", "principal_review"]);
+  const enrolled = new Map<string, number>();
+  for (const row of (children ?? []) as unknown as {
+    classroom_id: string;
+    applications: { status: string; archived_at: string | null } | null;
+  }[]) {
+    const app = row.applications;
+    if (!app || app.archived_at || !ACTIVE.has(app.status)) continue;
+    enrolled.set(row.classroom_id, (enrolled.get(row.classroom_id) ?? 0) + 1);
+  }
+
+  const rooms = (
+    (classrooms ?? []) as unknown as {
+      id: string;
+      name_ar: string;
+      color_hex: string;
+      capacity: number;
+      stage_id: string;
+      stages: { name_ar: string; sort_order: number } | null;
+    }[]
+  ).map((row) => ({
+    id: row.id,
+    nameAr: row.name_ar,
+    colorHex: row.color_hex,
+    stageId: row.stage_id,
+    stageNameAr: row.stages?.name_ar ?? "—",
+    capacity: row.capacity,
+    enrolledCount: enrolled.get(row.id) ?? 0,
+    teacherIds: byClassroom.get(row.id) ?? [],
+  }));
+
+  const stages = [...new Map(rooms.map((r) => [r.stageId, r.stageNameAr])).entries()].map(
+    ([id, nameAr]) => ({ id, nameAr }),
+  );
+
+  const teachers: TeacherRow[] = (profiles ?? []).map((row) => ({
+    id: row.id,
+    fullName: (row.full_name || "").trim() || row.email || "معلمة",
+    email: row.email,
+    phone: row.phone,
+    classroomIds: byTeacher.get(row.id) ?? [],
+  }));
+  teachers.sort((a, b) => a.fullName.localeCompare(b.fullName, "ar"));
+
+  return { stages, teachers, classrooms: rooms };
+}
+
+/** Replace the full teacher list of one classroom. */
+export async function setClassroomTeachers(
+  supabase: Db,
+  userId: string,
+  classroomId: string,
+  teacherIds: string[],
+) {
+  await assertSuperAdmin(supabase, userId);
+  const unique = [...new Set(teacherIds)];
+
+  const { error: delError } = await supabase
+    .from("teacher_classrooms")
+    .delete()
+    .eq("classroom_id", classroomId);
+  if (delError) throw new Error(delError.message);
+
+  if (unique.length) {
+    const { error } = await supabase.from("teacher_classrooms").insert(
+      unique.map((teacherId) => ({
+        teacher_id: teacherId,
+        classroom_id: classroomId,
+        created_by: userId,
+      })),
+    );
+    if (error) throw new Error(error.message);
+  }
+  return { ok: true, count: unique.length };
+}
+
+/** Replace the full classroom list of one teacher. */
+export async function setTeacherClassrooms(
+  supabase: Db,
+  userId: string,
+  teacherId: string,
+  classroomIds: string[],
+) {
+  await assertSuperAdmin(supabase, userId);
+  const unique = [...new Set(classroomIds)];
+
+  const { error: delError } = await supabase
+    .from("teacher_classrooms")
+    .delete()
+    .eq("teacher_id", teacherId);
+  if (delError) throw new Error(delError.message);
+
+  if (unique.length) {
+    const { error } = await supabase.from("teacher_classrooms").insert(
+      unique.map((classroomId) => ({
+        teacher_id: teacherId,
+        classroom_id: classroomId,
+        created_by: userId,
+      })),
+    );
+    if (error) throw new Error(error.message);
+  }
+  return { ok: true, count: unique.length };
+}
