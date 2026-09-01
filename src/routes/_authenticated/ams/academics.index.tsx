@@ -50,7 +50,8 @@ const CARDS = [
     to: "/ams/academics/assessments",
     label: "التقييمات",
     icon: ClipboardCheck,
-    text: "رصد إتقان الطفل لكل درس ومهارة.",
+    text: "جدول رصد بالمثلثات الملوّنة مع الأدلة الرقمية لكل درس.",
+    ready: true,
   },
   {
     to: "/ams/academics/reports",
