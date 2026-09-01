@@ -71,9 +71,15 @@ export function CurriculumManager() {
   const { roles } = useAuth();
   const canEdit = canEditCurriculum(roles);
   const queryClient = useQueryClient();
+  const [stageId, setStageId] = useState<string>("");
   const [classroomId, setClassroomId] = useState<string>("");
   const [draft, setDraft] = useState<Draft | null>(null);
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [pendingDelete, setPendingDelete] = useState<{
+    kind: DraftKind;
+    id: string;
+    name: string;
+  } | null>(null);
 
   const classroomsQuery = useQuery({
     queryKey: ["academics", "classrooms"],
@@ -81,9 +87,28 @@ export function CurriculumManager() {
   });
   const classrooms = classroomsQuery.data?.classrooms ?? [];
 
+  const stages = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const room of classrooms) map.set(room.stageId, room.stageNameAr);
+    return [...map.entries()].map(([id, nameAr]) => ({ id, nameAr }));
+  }, [classrooms]);
+
+  const stageClassrooms = useMemo(
+    () => (stageId ? classrooms.filter((room) => room.stageId === stageId) : classrooms),
+    [classrooms, stageId],
+  );
+
   useEffect(() => {
-    if (!classroomId && classrooms.length) setClassroomId(classrooms[0]!.id);
-  }, [classroomId, classrooms]);
+    if (!stageId && stages.length) setStageId(stages[0]!.id);
+  }, [stageId, stages]);
+
+  useEffect(() => {
+    if (!stageClassrooms.length) return;
+    if (!stageClassrooms.some((room) => room.id === classroomId)) {
+      setClassroomId(stageClassrooms[0]!.id);
+    }
+  }, [classroomId, stageClassrooms]);
+
 
   const treeQuery = useQuery({
     queryKey: ["academics", "curriculum", classroomId],
