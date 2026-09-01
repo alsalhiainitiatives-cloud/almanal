@@ -121,6 +121,8 @@ export function ClassChat() {
   const loadBoard = useServerFn(chatBoard);
   const sendFn = useServerFn(chatSendMessage);
   const deleteFn = useServerFn(chatDeleteMessage);
+  useClearNotificationKind(["chat_message"]);
+
 
   const [roomId, setRoomId] = useState<string | null>(null);
   const [body, setBody] = useState("");
