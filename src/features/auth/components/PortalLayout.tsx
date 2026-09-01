@@ -7,6 +7,7 @@ import {
   GraduationCap,
   HeartHandshake,
   Inbox,
+  CalendarRange,
   MessagesSquare,
   KeyRound,
   LogOut,
