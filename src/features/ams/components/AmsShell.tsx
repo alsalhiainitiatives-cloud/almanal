@@ -102,13 +102,6 @@ const STUDENTS_NAV: NavItem[] = [
   { to: "/ams/students", label: "سجل الطلاب", icon: GraduationCap, exact: true, group: "شؤون الطلاب" },
   { to: "/ams/seats", label: "الفصول والمقاعد", icon: Armchair, exact: false, group: "شؤون الطلاب" },
   {
-    to: "/ams/academic-hub",
-    label: "المسار الأكاديمي والأنشطة",
-    icon: Sparkles,
-    exact: false,
-    group: "شؤون الطلاب",
-  },
-  {
     to: "/ams/students/promotions",
     label: "نقل الطلاب بين المراحل",
     icon: UserRoundPlus,

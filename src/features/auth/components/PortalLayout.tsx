@@ -36,13 +36,6 @@ const NAV_GROUPS = [
       { to: "/my-applications", label: "طلباتي وتتبع الطلب", icon: FileClock, permission: P.applicationsTrack, featured: false },
       { to: "/child-file", label: "ملف الطفل", icon: BabyIcon, permission: P.applicationsTrack, featured: false },
       {
-        to: "/child-journey",
-        label: "يوميات طفلي",
-        icon: HeartHandshake,
-        permission: P.applicationsTrack,
-        featured: true,
-      },
-      {
         to: "/class-chat",
         label: "محادثة فصل طفلي",
         icon: MessagesSquare,
