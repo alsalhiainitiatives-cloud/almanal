@@ -561,6 +561,47 @@ export type Database = {
           },
         ]
       }
+      assessment_evidences: {
+        Row: {
+          assessment_id: string
+          created_at: string
+          created_by: string
+          file_name: string | null
+          file_path: string
+          file_size: number | null
+          file_type: string
+          id: string
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string
+          created_by: string
+          file_name?: string | null
+          file_path: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string
+          created_by?: string
+          file_name?: string | null
+          file_path?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_evidences_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -1423,6 +1464,76 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: false
             referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_assessments: {
+        Row: {
+          child_id: string
+          classroom_id: string
+          created_at: string
+          created_by: string | null
+          growth_colors: Json
+          growth_level: number
+          id: string
+          lesson_id: string
+          note_ar: string | null
+          performance_colors: Json
+          performance_level: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          child_id: string
+          classroom_id: string
+          created_at?: string
+          created_by?: string | null
+          growth_colors?: Json
+          growth_level?: number
+          id?: string
+          lesson_id: string
+          note_ar?: string | null
+          performance_colors?: Json
+          performance_level?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          child_id?: string
+          classroom_id?: string
+          created_at?: string
+          created_by?: string | null
+          growth_colors?: Json
+          growth_level?: number
+          id?: string
+          lesson_id?: string
+          note_ar?: string | null
+          performance_colors?: Json
+          performance_level?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_assessments_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "application_children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_assessments_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_assessments_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
             referencedColumns: ["id"]
           },
         ]
@@ -2873,6 +2984,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      assessment_classroom_id: {
+        Args: { _assessment_id: string }
+        Returns: string
       }
       can_read_classroom_curriculum: {
         Args: { _classroom_id: string; _user_id: string }
