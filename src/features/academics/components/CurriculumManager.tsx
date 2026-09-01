@@ -276,13 +276,24 @@ export function CurriculumManager() {
           <Stat icon={Layers} label="محاور" value={counts.topics} />
           <Stat icon={Sparkles} label="دروس" value={counts.lessons} />
           {canEdit && (
-            <Button
-              className="rounded-2xl font-bold"
-              onClick={() => setDraft(newDraft("subject", classroomId))}
-            >
-              <Plus className="size-4" />
-              إضافة مادة
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                className="rounded-2xl font-bold"
+                onClick={() => setCopyOpen(true)}
+                disabled={!classroomId || classrooms.length < 2}
+              >
+                <ArrowLeftRight className="size-4" />
+                نسخ المنهج لفصول أخرى
+              </Button>
+              <Button
+                className="rounded-2xl font-bold"
+                onClick={() => setDraft(newDraft("subject", classroomId))}
+              >
+                <Plus className="size-4" />
+                إضافة مادة
+              </Button>
+            </>
           )}
         </div>
       </div>
