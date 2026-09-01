@@ -51,7 +51,9 @@ type NavItem = {
   exact: boolean;
   roles?: string[];
   group: string;
+  notifyKind?: string;
 };
+
 
 /** Ordered by daily workflow: overview → processing → seats → money → insights → setup. */
 const NAV: NavItem[] = [
@@ -115,9 +117,10 @@ const STUDENTS_NAV: NavItem[] = [
 /** Academic Tracking is a separate operational module — curriculum, assessments, reports. */
 const ACADEMICS_NAV: NavItem[] = [
   { to: "/ams/academics", label: "لوحة التتبع الأكاديمي", icon: LayoutDashboard, exact: true, group: "التتبع الأكاديمي" },
-  { to: "/ams/academics/chat", label: "محادثة الفصل", icon: MessagesSquare, exact: false, group: "التتبع الأكاديمي" },
+  { to: "/ams/academics/chat", label: "محادثة الفصل", icon: MessagesSquare, exact: false, group: "التتبع الأكاديمي", notifyKind: "chat_message" },
   { to: "/ams/academics/curriculum", label: "إدارة المنهج", icon: BookOpen, exact: false, group: "التتبع الأكاديمي" },
-  { to: "/ams/academics/plans", label: "الخطط الدراسية", icon: CalendarRange, exact: false, group: "التتبع الأكاديمي" },
+  { to: "/ams/academics/plans", label: "الخطط الدراسية", icon: CalendarRange, exact: false, group: "التتبع الأكاديمي", notifyKind: "study_plan" },
+
   {
     to: "/ams/academics/assignments",
     label: "إسناد المعلمات",
