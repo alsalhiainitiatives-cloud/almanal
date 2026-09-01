@@ -148,7 +148,37 @@ export async function saveStudyPlan(supabase: Db, userId: string, input: SavePla
     if (error) throw new Error("تعذّر حفظ عناصر الخطة.");
   }
 
+  if (payload.published) await notifyPlanPublished(supabase, planId!);
+
   return { id: planId! };
+}
+
+/** Tells parents of the classroom that a plan is now available in their portal. */
+async function notifyPlanPublished(supabase: Db, planId: string) {
+  try {
+    const { classroomAudience, notify } = await import(
+      "@/features/notifications/notifications.server"
+    );
+    const { data: plan } = await supabase
+      .from("study_plans")
+      .select("title_ar, plan_type, start_date, classroom_id, classrooms (name_ar)")
+      .eq("id", planId)
+      .maybeSingle();
+    if (!plan?.classroom_id) return;
+    const classroomName =
+      (plan as unknown as { classrooms: { name_ar: string } | null }).classrooms?.name_ar ?? "فصل طفلك";
+    const { parentIds } = await classroomAudience(plan.classroom_id);
+    await notify(supabase, {
+      userIds: parentIds,
+      kind: "study_plan",
+      title: `تم نشر ${plan.plan_type === "monthly" ? "الخطة الشهرية" : "الخطة الأسبوعية"} — ${classroomName}`,
+      body: `${plan.title_ar ?? "الخطة الدراسية"} — تبدأ من ${plan.start_date}. يمكنك استعراضها الآن من «خطة طفلي الدراسية».`,
+      link: "/study-plans",
+      severity: "success",
+    });
+  } catch (error) {
+    console.error("plan notify failed", error);
+  }
 }
 
 export async function deleteStudyPlan(supabase: Db, id: string) {
@@ -160,8 +190,10 @@ export async function deleteStudyPlan(supabase: Db, id: string) {
 export async function setStudyPlanPublished(supabase: Db, id: string, published: boolean) {
   const { error } = await supabase.from("study_plans").update({ published }).eq("id", id);
   if (error) throw new Error("تعذّر تحديث حالة النشر.");
+  if (published) await notifyPlanPublished(supabase, id);
   return { ok: true };
 }
+
 
 export type ParentPlanChild = {
   childId: string;
