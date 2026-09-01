@@ -445,6 +445,39 @@ export function CurriculumManager() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog
+        open={Boolean(pendingDelete)}
+        onOpenChange={(value) => !value && setPendingDelete(null)}
+      >
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-black">
+              تأكيد حذف {pendingDelete ? KIND_LABELS[pendingDelete.kind].one : ""}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              سيتم حذف «{pendingDelete?.name}» وكل ما يتبعه من محاور ودروس نهائيًا. لا يمكن التراجع
+              عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-2xl">إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-2xl bg-destructive font-bold text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (pendingDelete) {
+                  deleteMutation.mutate({ kind: pendingDelete.kind, id: pendingDelete.id });
+                }
+                setPendingDelete(null);
+              }}
+            >
+              حذف نهائي
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
