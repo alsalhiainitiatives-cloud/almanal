@@ -30,6 +30,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TrackIndexRouteImport } from './routes/track.index'
 import { Route as AdmissionsIndexRouteImport } from './routes/admissions.index'
 import { Route as LegalSlugRouteImport } from './routes/legal.$slug'
+import { Route as AuthenticatedStudyPlansRouteImport } from './routes/_authenticated/study-plans'
 import { Route as AuthenticatedReserveRouteImport } from './routes/_authenticated/reserve'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
@@ -177,6 +178,11 @@ const LegalSlugRoute = LegalSlugRouteImport.update({
   id: '/legal/$slug',
   path: '/legal/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedStudyPlansRoute = AuthenticatedStudyPlansRouteImport.update({
+  id: '/study-plans',
+  path: '/study-plans',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedReserveRoute = AuthenticatedReserveRouteImport.update({
   id: '/reserve',
@@ -446,6 +452,7 @@ export interface FileRoutesByFullPath {
   '/payments': typeof AuthenticatedPaymentsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/reserve': typeof AuthenticatedReserveRoute
+  '/study-plans': typeof AuthenticatedStudyPlansRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/admissions/': typeof AdmissionsIndexRoute
   '/track/': typeof TrackIndexRoute
@@ -511,6 +518,7 @@ export interface FileRoutesByTo {
   '/payments': typeof AuthenticatedPaymentsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/reserve': typeof AuthenticatedReserveRoute
+  '/study-plans': typeof AuthenticatedStudyPlansRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/admissions': typeof AdmissionsIndexRoute
   '/track': typeof TrackIndexRoute
@@ -578,6 +586,7 @@ export interface FileRoutesById {
   '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/reserve': typeof AuthenticatedReserveRoute
+  '/_authenticated/study-plans': typeof AuthenticatedStudyPlansRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/admissions/': typeof AdmissionsIndexRoute
   '/track/': typeof TrackIndexRoute
@@ -645,6 +654,7 @@ export interface FileRouteTypes {
     | '/payments'
     | '/profile'
     | '/reserve'
+    | '/study-plans'
     | '/legal/$slug'
     | '/admissions/'
     | '/track/'
@@ -710,6 +720,7 @@ export interface FileRouteTypes {
     | '/payments'
     | '/profile'
     | '/reserve'
+    | '/study-plans'
     | '/legal/$slug'
     | '/admissions'
     | '/track'
@@ -776,6 +787,7 @@ export interface FileRouteTypes {
     | '/_authenticated/payments'
     | '/_authenticated/profile'
     | '/_authenticated/reserve'
+    | '/_authenticated/study-plans'
     | '/legal/$slug'
     | '/admissions/'
     | '/track/'
@@ -992,6 +1004,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/legal/$slug'
       preLoaderRoute: typeof LegalSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/study-plans': {
+      id: '/_authenticated/study-plans'
+      path: '/study-plans'
+      fullPath: '/study-plans'
+      preLoaderRoute: typeof AuthenticatedStudyPlansRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reserve': {
       id: '/_authenticated/reserve'
@@ -1306,6 +1325,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPaymentsRoute: typeof AuthenticatedPaymentsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedReserveRoute: typeof AuthenticatedReserveRoute
+  AuthenticatedStudyPlansRoute: typeof AuthenticatedStudyPlansRoute
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminInboxRoute: typeof AuthenticatedAdminInboxRoute
   AuthenticatedAdminPermissionsRoute: typeof AuthenticatedAdminPermissionsRoute
@@ -1348,6 +1368,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPaymentsRoute: AuthenticatedPaymentsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedReserveRoute: AuthenticatedReserveRoute,
+  AuthenticatedStudyPlansRoute: AuthenticatedStudyPlansRoute,
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminInboxRoute: AuthenticatedAdminInboxRoute,
   AuthenticatedAdminPermissionsRoute: AuthenticatedAdminPermissionsRoute,
