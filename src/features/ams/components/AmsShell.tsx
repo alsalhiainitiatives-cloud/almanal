@@ -335,6 +335,7 @@ export function AmsShell({
               {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
             </div>
             <div className="flex items-center gap-2">
+              <NotificationBell />
               {activeModule.search && (
                 <Button
                   variant="outline"
@@ -354,15 +355,24 @@ export function AmsShell({
 
           <div className="lg:hidden">
             <nav className="flex gap-2 overflow-x-auto pb-1">
-              {navItems.map((item) => (
+              {navItems.map((item) => {
+                const count = item.notifyKind ? (counters[item.notifyKind] ?? 0) : 0;
+                return (
                 <Link
                   key={item.to}
                   to={item.to}
-                  className="whitespace-nowrap rounded-2xl border border-border/60 bg-card px-3 py-2 text-xs font-bold text-muted-foreground"
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-2xl border border-border/60 bg-card px-3 py-2 text-xs font-bold text-muted-foreground"
                 >
                   {item.label}
+                  {count > 0 ? (
+                    <span className="grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-extrabold text-primary-foreground">
+                      {count > 99 ? "99+" : count}
+                    </span>
+                  ) : null}
                 </Link>
-              ))}
+                );
+              })}
+
             </nav>
           </div>
 
