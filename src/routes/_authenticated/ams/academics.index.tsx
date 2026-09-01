@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   BarChart3,
   BookOpen,
+  CalendarRange,
   ClipboardCheck,
   MessagesSquare,
   Settings,
