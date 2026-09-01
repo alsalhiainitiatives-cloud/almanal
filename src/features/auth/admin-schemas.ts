@@ -28,6 +28,7 @@ export const rolePermissionSchema = z.object({
     "principal",
     "supervisor",
     "admin",
+    "teacher",
   ]),
   permissionKey: z.string().min(1).max(120),
   granted: z.boolean(),
