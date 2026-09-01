@@ -5,12 +5,14 @@
  * classroom and child. The report renders the exact triangle states and line
  * colours saved in the database, plus links/thumbnails for uploaded evidence.
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FileText, Film, ImageIcon, Loader2, Printer } from "lucide-react";
+import { Eye, EyeOff, FileText, Film, ImageIcon, Loader2, Printer } from "lucide-react";
+import { toast } from "sonner";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -21,7 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { SCALE_LABELS, TRIANGLE_LABELS } from "../assessments";
 import { REPORT_TYPE_LABELS, masteryLabel, type ReportBoard, type ReportType } from "../reports";
-import { academicsReportBoard } from "../reports.functions";
+import { academicsReportBoard, academicsSetReportsVisible } from "../reports.functions";
 import { EvaluationTriangle } from "./EvaluationTriangle";
 
 const PRINT_CSS = `
@@ -41,10 +43,27 @@ export function AcademicReports() {
   const [childId, setChildId] = useState<string | null>(null);
   const [reportType, setReportType] = useState<ReportType>("monthly");
 
+  const queryClient = useQueryClient();
   const fetchBoard = useServerFn(academicsReportBoard);
+  const setVisible = useServerFn(academicsSetReportsVisible);
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["academic-report", classroomId, childId, reportType],
     queryFn: () => fetchBoard({ data: { classroomId, childId, reportType } }) as Promise<ReportBoard>,
+  });
+
+  const visibility = useMutation({
+    mutationFn: (vars: { classroomId: string; visible: boolean }) =>
+      setVisible({ data: vars }),
+    onSuccess: (_res, vars) => {
+      toast.success(
+        vars.visible
+          ? "تم إظهار تقارير هذا الفصل لأولياء الأمور."
+          : "تم إخفاء تقارير هذا الفصل عن أولياء الأمور.",
+      );
+      void queryClient.invalidateQueries({ queryKey: ["academic-report"] });
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "تعذّر تحديث إظهار التقارير."),
   });
 
   const stages = useMemo(() => {

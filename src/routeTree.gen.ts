@@ -37,6 +37,7 @@ import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedMyApplicationsRouteImport } from './routes/_authenticated/my-applications'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedClassChatRouteImport } from './routes/_authenticated/class-chat'
+import { Route as AuthenticatedChildReportsRouteImport } from './routes/_authenticated/child-reports'
 import { Route as AuthenticatedChildFileRouteImport } from './routes/_authenticated/child-file'
 import { Route as AuthenticatedAmsIndexRouteImport } from './routes/_authenticated/ams/index'
 import { Route as ApiAmsBackupRouteImport } from './routes/api/ams/backup'
@@ -215,6 +216,12 @@ const AuthenticatedClassChatRoute = AuthenticatedClassChatRouteImport.update({
   path: '/class-chat',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedChildReportsRoute =
+  AuthenticatedChildReportsRouteImport.update({
+    id: '/child-reports',
+    path: '/child-reports',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedChildFileRoute = AuthenticatedChildFileRouteImport.update({
   id: '/child-file',
   path: '/child-file',
@@ -445,6 +452,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/child-file': typeof AuthenticatedChildFileRoute
+  '/child-reports': typeof AuthenticatedChildReportsRoute
   '/class-chat': typeof AuthenticatedClassChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
@@ -511,6 +519,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/child-file': typeof AuthenticatedChildFileRoute
+  '/child-reports': typeof AuthenticatedChildReportsRoute
   '/class-chat': typeof AuthenticatedClassChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
@@ -579,6 +588,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/_authenticated/child-file': typeof AuthenticatedChildFileRoute
+  '/_authenticated/child-reports': typeof AuthenticatedChildReportsRoute
   '/_authenticated/class-chat': typeof AuthenticatedClassChatRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/my-applications': typeof AuthenticatedMyApplicationsRoute
@@ -647,6 +657,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/testimonials'
     | '/child-file'
+    | '/child-reports'
     | '/class-chat'
     | '/dashboard'
     | '/my-applications'
@@ -713,6 +724,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/testimonials'
     | '/child-file'
+    | '/child-reports'
     | '/class-chat'
     | '/dashboard'
     | '/my-applications'
@@ -780,6 +792,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/testimonials'
     | '/_authenticated/child-file'
+    | '/_authenticated/child-reports'
     | '/_authenticated/class-chat'
     | '/_authenticated/dashboard'
     | '/_authenticated/my-applications'
@@ -1054,6 +1067,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClassChatRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/child-reports': {
+      id: '/_authenticated/child-reports'
+      path: '/child-reports'
+      fullPath: '/child-reports'
+      preLoaderRoute: typeof AuthenticatedChildReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/child-file': {
       id: '/_authenticated/child-file'
       path: '/child-file'
@@ -1318,6 +1338,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedChildFileRoute: typeof AuthenticatedChildFileRoute
+  AuthenticatedChildReportsRoute: typeof AuthenticatedChildReportsRoute
   AuthenticatedClassChatRoute: typeof AuthenticatedClassChatRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedMyApplicationsRoute: typeof AuthenticatedMyApplicationsRoute
@@ -1361,6 +1382,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChildFileRoute: AuthenticatedChildFileRoute,
+  AuthenticatedChildReportsRoute: AuthenticatedChildReportsRoute,
   AuthenticatedClassChatRoute: AuthenticatedClassChatRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedMyApplicationsRoute: AuthenticatedMyApplicationsRoute,

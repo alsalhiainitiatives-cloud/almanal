@@ -8,6 +8,7 @@ import {
   GraduationCap,
   Inbox,
   CalendarRange,
+  ClipboardList,
   MessagesSquare,
   KeyRound,
   LogOut,
@@ -49,6 +50,14 @@ const NAV_GROUPS = [
         permission: P.applicationsTrack,
         featured: false,
         notifyKind: "study_plan",
+      },
+
+      {
+        to: "/child-reports",
+        label: "تقارير طفلي الأكاديمية",
+        icon: ClipboardList,
+        permission: P.applicationsTrack,
+        featured: false,
       },
 
       { to: "/payments", label: "المدفوعات والرسوم", icon: Wallet, permission: P.applicationsTrack, featured: false },
