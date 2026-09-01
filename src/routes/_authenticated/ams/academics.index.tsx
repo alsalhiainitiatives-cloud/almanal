@@ -41,6 +41,13 @@ const CARDS = [
     ready: true,
   },
   {
+    to: "/ams/academics/plans",
+    label: "الخطط الدراسية",
+    icon: CalendarRange,
+    text: "خطط أسبوعية وشهرية بالسحب والإفلات، مع تصدير ومشاركة في محادثة الفصل.",
+    ready: true,
+  },
+  {
     to: "/ams/academics/assignments",
     label: "إسناد المعلمات",
     icon: UsersRound,
