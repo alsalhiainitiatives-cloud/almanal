@@ -4,6 +4,8 @@ import {
   Activity,
   Armchair,
   BarChart3,
+  BookOpen,
+  ClipboardCheck,
   CalendarClock,
   GraduationCap,
   Home,
@@ -12,8 +14,11 @@ import {
   ListOrdered,
   LogOut,
   Search,
+  MessagesSquare,
+  Settings,
   SlidersHorizontal,
   Sparkles,
+  UsersRound,
   TicketCheck,
   UserRoundPlus,
   Wallet,
@@ -106,12 +111,36 @@ const STUDENTS_NAV: NavItem[] = [
   },
 ];
 
+/** Academic Tracking is a separate operational module — curriculum, assessments, reports. */
+const ACADEMICS_NAV: NavItem[] = [
+  { to: "/ams/academics", label: "لوحة التتبع الأكاديمي", icon: LayoutDashboard, exact: true, group: "التتبع الأكاديمي" },
+  { to: "/ams/academics/chat", label: "محادثة الفصل", icon: MessagesSquare, exact: false, group: "التتبع الأكاديمي" },
+  { to: "/ams/academics/curriculum", label: "إدارة المنهج", icon: BookOpen, exact: false, group: "التتبع الأكاديمي" },
+  {
+    to: "/ams/academics/assignments",
+    label: "إسناد المعلمات",
+    icon: UsersRound,
+    exact: false,
+    group: "التتبع الأكاديمي",
+  },
+  { to: "/ams/academics/assessments", label: "التقييمات", icon: ClipboardCheck, exact: false, group: "التقييم والتقارير" },
+  { to: "/ams/academics/reports", label: "التقارير الأكاديمية", icon: BarChart3, exact: false, group: "التقييم والتقارير" },
+  {
+    to: "/ams/academics/settings",
+    label: "الإعدادات",
+    icon: Settings,
+    exact: false,
+    group: "التقييم والتقارير",
+    roles: ["admin", "supervisor", "principal"],
+  },
+];
+
 /** Finance is a separate operational module — no admissions links. */
 const FINANCE_NAV: NavItem[] = [
   { to: "/ams/finance", label: "لوحة الإدارة المالية", icon: Wallet, exact: false, group: "الإدارة المالية" },
 ];
 
-type ModuleKey = "admissions" | "students" | "finance";
+type ModuleKey = "admissions" | "students" | "finance" | "academics";
 
 const MODULES: Record<
   ModuleKey,
@@ -119,6 +148,14 @@ const MODULES: Record<
 > = {
   admissions: { badge: "AMS", title: "نظام إدارة القبول", nav: NAV, groups: NAV_GROUP_ORDER, home: "/ams", search: true },
   students: { badge: "SIS", title: "شؤون الطلاب", nav: STUDENTS_NAV, groups: ["شؤون الطلاب"], home: "/ams/students", search: false },
+  academics: {
+    badge: "ATS",
+    title: "التتبع الأكاديمي",
+    nav: ACADEMICS_NAV,
+    groups: ["التتبع الأكاديمي", "التقييم والتقارير"],
+    home: "/ams/academics",
+    search: false,
+  },
   finance: { badge: "FIN", title: "الإدارة المالية", nav: FINANCE_NAV, groups: ["الإدارة المالية"], home: "/ams/finance", search: false },
 };
 
@@ -126,6 +163,7 @@ function moduleFor(pathname: string): ModuleKey {
   if (pathname.startsWith("/ams/students")) return "students";
   if (pathname.startsWith("/ams/seats")) return "students";
   if (pathname.startsWith("/ams/academic-hub")) return "students";
+  if (pathname.startsWith("/ams/academics")) return "academics";
   if (pathname.startsWith("/ams/finance")) return "finance";
   return "admissions";
 }

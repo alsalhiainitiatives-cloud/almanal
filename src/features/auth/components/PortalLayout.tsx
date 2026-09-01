@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   BabyIcon,
+  BookOpen,
   FileClock,
   Globe,
   GraduationCap,
@@ -57,6 +58,14 @@ const NAV_GROUPS = [
         label: "الإدارة المالية",
         icon: Wallet,
         permission: P.paymentsManage,
+        featured: true,
+      },
+      {
+        to: "/ams/academics",
+        label: "التتبع الأكاديمي",
+        icon: BookOpen,
+        permission: P.applicationsReview,
+        role: "teacher" as const,
         featured: true,
       },
       {
@@ -160,7 +169,8 @@ export function PortalLayout({
                         ? pathname === "/ams" ||
                           (pathname.startsWith("/ams/") &&
                             !pathname.startsWith("/ams/students") &&
-                            !pathname.startsWith("/ams/finance"))
+                            !pathname.startsWith("/ams/finance") &&
+                            !pathname.startsWith("/ams/academics"))
                         : pathname === item.to || pathname.startsWith(`${item.to}/`);
                     const featured = item.featured;
                     return (
