@@ -195,6 +195,8 @@ export function PortalLayout({
                             !pathname.startsWith("/ams/academics"))
                         : pathname === item.to || pathname.startsWith(`${item.to}/`);
                     const featured = item.featured;
+                    const count =
+                      "notifyKind" in item ? (counters[item.notifyKind as string] ?? 0) : 0;
                     return (
                       <Link
                         key={item.to}
@@ -211,8 +213,18 @@ export function PortalLayout({
                       >
                         <item.icon className="size-4" />
                         <span className="flex-1">{item.label}</span>
+                        {count > 0 ? (
+                          <span
+                            className={`grid min-w-5 place-items-center rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${
+                              active ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground"
+                            }`}
+                          >
+                            {count > 99 ? "99+" : count}
+                          </span>
+                        ) : null}
                       </Link>
                     );
+
                   })}
                 </div>
               ))}
