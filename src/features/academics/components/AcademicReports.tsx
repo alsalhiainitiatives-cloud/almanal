@@ -5,12 +5,14 @@
  * classroom and child. The report renders the exact triangle states and line
  * colours saved in the database, plus links/thumbnails for uploaded evidence.
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FileText, Film, ImageIcon, Loader2, Printer } from "lucide-react";
+import { Eye, EyeOff, FileText, Film, ImageIcon, Loader2, Printer } from "lucide-react";
+import { toast } from "sonner";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -21,7 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { SCALE_LABELS, TRIANGLE_LABELS } from "../assessments";
 import { REPORT_TYPE_LABELS, masteryLabel, type ReportBoard, type ReportType } from "../reports";
-import { academicsReportBoard } from "../reports.functions";
+import { academicsReportBoard, academicsSetReportsVisible } from "../reports.functions";
 import { EvaluationTriangle } from "./EvaluationTriangle";
 
 const PRINT_CSS = `
@@ -41,10 +43,27 @@ export function AcademicReports() {
   const [childId, setChildId] = useState<string | null>(null);
   const [reportType, setReportType] = useState<ReportType>("monthly");
 
+  const queryClient = useQueryClient();
   const fetchBoard = useServerFn(academicsReportBoard);
+  const setVisible = useServerFn(academicsSetReportsVisible);
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["academic-report", classroomId, childId, reportType],
     queryFn: () => fetchBoard({ data: { classroomId, childId, reportType } }) as Promise<ReportBoard>,
+  });
+
+  const visibility = useMutation({
+    mutationFn: (vars: { classroomId: string; visible: boolean }) =>
+      setVisible({ data: vars }),
+    onSuccess: (_res, vars) => {
+      toast.success(
+        vars.visible
+          ? "تم إظهار تقارير هذا الفصل لأولياء الأمور."
+          : "تم إخفاء تقارير هذا الفصل عن أولياء الأمور.",
+      );
+      void queryClient.invalidateQueries({ queryKey: ["academic-report"] });
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "تعذّر تحديث إظهار التقارير."),
   });
 
   const stages = useMemo(() => {
@@ -171,6 +190,37 @@ export function AcademicReports() {
           </Button>
         </div>
       </div>
+
+      {/* Parent visibility switch for the selected classroom */}
+      {activeClassroom ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-border/60 bg-card p-4 print:hidden">
+          <div className="flex items-center gap-3">
+            {data.reportsVisibleToParents ? (
+              <Eye className="h-5 w-5 text-primary" />
+            ) : (
+              <EyeOff className="h-5 w-5 text-muted-foreground" />
+            )}
+            <div>
+              <p className="text-sm font-black text-foreground">
+                إظهار تقارير هذا الفصل لأولياء الأمور
+              </p>
+              <p className="text-[11px] font-bold text-muted-foreground">
+                {data.reportsVisibleToParents
+                  ? "التقارير ظاهرة الآن في صفحة ولي الأمر «تقارير طفلي الأكاديمية»."
+                  : "التقارير مخفيّة حاليًا عن أولياء الأمور."}
+              </p>
+            </div>
+          </div>
+          <Switch
+            checked={data.reportsVisibleToParents}
+            disabled={visibility.isPending}
+            onCheckedChange={(checked) =>
+              visibility.mutate({ classroomId: activeClassroom, visible: checked })
+            }
+          />
+        </div>
+      ) : null}
+
 
       {!data.child ? (
         <div className="rounded-3xl border-2 border-dashed border-border/70 bg-card p-10 text-center">

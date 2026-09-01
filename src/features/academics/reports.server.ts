@@ -17,6 +17,7 @@ import type {
   ReportSummary,
   ReportType,
 } from "./reports";
+import type { MonthColor } from "./settings";
 import { getMonthColors } from "./settings.server";
 
 type Db = SupabaseClient<Database>;
@@ -87,13 +88,14 @@ export async function getReportBoard(
     name_ar: string;
     stage_id: string | null;
     teacher_name: string | null;
+    reports_visible_to_parents: boolean | null;
     stages: { name_ar: string } | null;
   }[] = [];
 
   if (staff) {
     const { data } = await supabase
       .from("classrooms")
-      .select("id, name_ar, stage_id, teacher_name, stages (name_ar)")
+      .select("id, name_ar, stage_id, teacher_name, reports_visible_to_parents, stages (name_ar)")
       .eq("is_active", true)
       .order("sort_order")
       .limit(200);
@@ -107,7 +109,7 @@ export async function getReportBoard(
     if (ids.length) {
       const { data } = await supabase
         .from("classrooms")
-        .select("id, name_ar, stage_id, teacher_name, stages (name_ar)")
+        .select("id, name_ar, stage_id, teacher_name, reports_visible_to_parents, stages (name_ar)")
         .in("id", ids)
         .eq("is_active", true)
         .order("sort_order")
@@ -150,6 +152,8 @@ export async function getReportBoard(
     teacherNames: [],
     subjects: [],
     summary: emptySummary,
+    reportsVisibleToParents:
+      rows.find((r) => r.id === selectedClassroomId)?.reports_visible_to_parents === true,
   };
 
   if (!selectedClassroomId) return base;
@@ -196,10 +200,36 @@ export async function getReportBoard(
   };
   if (!selectedChildId) return withChildren;
 
+  const { subjects, summary } = await buildChildReport(
+    supabase,
+    selectedClassroomId,
+    selectedChildId,
+    period.from,
+  );
+
+  return { ...withChildren, subjects, summary };
+}
+
+const EMPTY_SUMMARY: ReportSummary = {
+  lessons: 0,
+  evaluated: 0,
+  mastered: 0,
+  practicing: 0,
+  started: 0,
+  evidences: 0,
+};
+
+/** Builds the curriculum tree + assessed cells for one child in one classroom. */
+async function buildChildReport(
+  supabase: Db,
+  classroomId: string,
+  childId: string,
+  from: string | null,
+): Promise<{ subjects: ReportSubject[]; summary: ReportSummary }> {
   const { data: subjectRows } = await supabase
     .from("subjects")
     .select("id, name_ar, color_hex, sort_order")
-    .eq("classroom_id", selectedClassroomId)
+    .eq("classroom_id", classroomId)
     .eq("is_active", true)
     .order("sort_order");
 
@@ -230,10 +260,10 @@ export async function getReportBoard(
     .select(
       "id, lesson_id, performance_level, growth_level, performance_colors, growth_colors, note_ar, updated_at, assessment_evidences (id, file_path, file_type, file_name)",
     )
-    .eq("child_id", selectedChildId)
-    .eq("classroom_id", selectedClassroomId)
+    .eq("child_id", childId)
+    .eq("classroom_id", classroomId)
     .limit(2000);
-  if (period.from) cellQuery = cellQuery.gte("updated_at", period.from);
+  if (from) cellQuery = cellQuery.gte("updated_at", from);
 
   const { data: cellRows } = await cellQuery;
 
@@ -274,7 +304,7 @@ export async function getReportBoard(
     });
   }
 
-  const summary: ReportSummary = { ...emptySummary };
+  const summary: ReportSummary = { ...EMPTY_SUMMARY };
   const tree: ReportSubject[] = subjects.map((s) => ({
     id: s.id,
     nameAr: s.name_ar,
@@ -302,5 +332,127 @@ export async function getReportBoard(
       })),
   }));
 
-  return { ...withChildren, subjects: tree, summary };
+  return { subjects: tree, summary };
 }
+
+/** Teacher/staff toggle: show or hide the reports of a classroom in the parent portal. */
+export async function setReportsVisibleToParents(
+  supabase: Db,
+  userId: string,
+  input: { classroomId: string; visible: boolean },
+) {
+  const { data: allowed } = await supabase.rpc("can_write_classroom_curriculum", {
+    _user_id: userId,
+    _classroom_id: input.classroomId,
+  });
+  if (!allowed) throw new Error("لا تملك صلاحية تعديل إظهار تقارير هذا الفصل.");
+
+  const { error } = await supabase
+    .from("classrooms")
+    .update({ reports_visible_to_parents: input.visible })
+    .eq("id", input.classroomId);
+  if (error) throw new Error("تعذّر تحديث إظهار التقارير لأولياء الأمور.");
+  return { visible: input.visible };
+}
+
+export type ParentReportChild = {
+  childId: string;
+  childName: string;
+  classroomId: string;
+  classroomName: string | null;
+  stageName: string | null;
+  studentNumber: string | null;
+  visible: boolean;
+};
+
+export type ParentReportBoard = {
+  children: ParentReportChild[];
+  selectedChildId: string | null;
+  reportType: ReportType;
+  periodLabel: string;
+  monthColors: MonthColor[];
+  teacherNames: string[];
+  subjects: ReportSubject[];
+  summary: ReportSummary;
+};
+
+/** Read-only report board for the parent portal (one entry per enrolled child). */
+export async function getParentReportBoard(
+  supabase: Db,
+  userId: string,
+  input: ReportInput,
+): Promise<ParentReportBoard> {
+  const reportType: ReportType = input.reportType ?? "monthly";
+  const period = periodOf(reportType);
+  const monthColors = await getMonthColors(supabase);
+
+  const { data: kids } = await supabase
+    .from("application_children")
+    .select(
+      "id, name_ar, classroom_id, classrooms:application_children_classroom_id_fkey (name_ar, reports_visible_to_parents, stages (name_ar)), applications!inner (parent_id, status, student_number)",
+    )
+    .eq("applications.parent_id", userId)
+    .eq("applications.status", "approved")
+    .order("name_ar")
+    .limit(50);
+
+  const children: ParentReportChild[] = ((kids ?? []) as unknown as {
+    id: string;
+    name_ar: string;
+    classroom_id: string | null;
+    classrooms:
+      | { name_ar: string; reports_visible_to_parents: boolean | null; stages: { name_ar: string } | null }
+      | null;
+    applications: { student_number: string | null } | null;
+  }[])
+    .filter((k) => Boolean(k.classroom_id))
+    .map((k) => ({
+      childId: k.id,
+      childName: k.name_ar,
+      classroomId: k.classroom_id as string,
+      classroomName: k.classrooms?.name_ar ?? null,
+      stageName: k.classrooms?.stages?.name_ar ?? null,
+      studentNumber: k.applications?.student_number ?? null,
+      visible: k.classrooms?.reports_visible_to_parents === true,
+    }));
+
+  const base: ParentReportBoard = {
+    children,
+    selectedChildId: null,
+    reportType,
+    periodLabel: period.label,
+    monthColors,
+    teacherNames: [],
+    subjects: [],
+    summary: { ...EMPTY_SUMMARY },
+  };
+
+  const selected =
+    children.find((c) => c.childId === input.childId) ?? children.find((c) => c.visible) ?? null;
+  if (!selected || !selected.visible) return { ...base, selectedChildId: selected?.childId ?? null };
+
+  const { data: links } = await supabase
+    .from("teacher_classrooms")
+    .select("teacher_id")
+    .eq("classroom_id", selected.classroomId);
+  const teacherIds = [...new Set((links ?? []).map((l) => l.teacher_id).filter(Boolean))];
+  const { data: profiles } = teacherIds.length
+    ? await supabase.from("profiles").select("full_name").in("id", teacherIds)
+    : { data: [] as { full_name: string }[] };
+
+  const { subjects, summary } = await buildChildReport(
+    supabase,
+    selected.classroomId,
+    selected.childId,
+    period.from,
+  );
+
+  return {
+    ...base,
+    selectedChildId: selected.childId,
+    teacherNames: (profiles ?? []).map((p) => p.full_name).filter(Boolean),
+    subjects,
+    summary,
+  };
+}
+

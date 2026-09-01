@@ -832,6 +832,7 @@ export type Database = {
           max_waiting: number
           min_age_months: number
           name_ar: string
+          reports_visible_to_parents: boolean
           schedule_ar: string | null
           slug: string
           sort_order: number
@@ -861,6 +862,7 @@ export type Database = {
           max_waiting?: number
           min_age_months?: number
           name_ar: string
+          reports_visible_to_parents?: boolean
           schedule_ar?: string | null
           slug: string
           sort_order?: number
@@ -890,6 +892,7 @@ export type Database = {
           max_waiting?: number
           min_age_months?: number
           name_ar?: string
+          reports_visible_to_parents?: boolean
           schedule_ar?: string | null
           slug?: string
           sort_order?: number
