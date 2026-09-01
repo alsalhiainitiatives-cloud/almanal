@@ -18,7 +18,6 @@ import {
   MessagesSquare,
   Settings,
   SlidersHorizontal,
-  Sparkles,
   UsersRound,
   TicketCheck,
   UserRoundPlus,
