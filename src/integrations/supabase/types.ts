@@ -1427,6 +1427,50 @@ export type Database = {
           },
         ]
       }
+      lessons: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description_ar: string | null
+          id: string
+          is_active: boolean
+          name_ar: string
+          sort_order: number
+          topic_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description_ar?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar: string
+          sort_order?: number
+          topic_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description_ar?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string
+          sort_order?: number
+          topic_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       login_attempts: {
         Row: {
           created_at: string
@@ -2433,6 +2477,50 @@ export type Database = {
           },
         ]
       }
+      subjects: {
+        Row: {
+          classroom_id: string
+          color_hex: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name_ar: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          classroom_id: string
+          color_hex?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          classroom_id?: string
+          color_hex?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subjects_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teacher_classrooms: {
         Row: {
           classroom_id: string
@@ -2461,6 +2549,47 @@ export type Database = {
             columns: ["classroom_id"]
             isOneToOne: false
             referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      topics: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name_ar: string
+          sort_order: number
+          subject_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar: string
+          sort_order?: number
+          subject_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string
+          sort_order?: number
+          subject_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topics_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
             referencedColumns: ["id"]
           },
         ]
@@ -2745,8 +2874,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      can_read_classroom_curriculum: {
+        Args: { _classroom_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_read_tracking: {
         Args: { _tracking_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_write_classroom_curriculum: {
+        Args: { _classroom_id: string; _user_id: string }
         Returns: boolean
       }
       can_write_tracking: {
@@ -2826,10 +2963,12 @@ export type Database = {
         Args: { _ip: string; _user_agent: string }
         Returns: number
       }
+      subject_classroom_id: { Args: { _subject_id: string }; Returns: string }
       submit_site_testimonial: {
         Args: { _name: string; _quote: string; _rating: number; _role: string }
         Returns: string
       }
+      topic_classroom_id: { Args: { _topic_id: string }; Returns: string }
       track_application_documents_public: {
         Args: { _application_number: string; _token: string }
         Returns: {
