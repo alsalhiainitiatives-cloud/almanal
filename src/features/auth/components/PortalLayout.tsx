@@ -121,7 +121,9 @@ export function PortalLayout({
 }) {
   const { profile, roles, hasPermission, signOut, isReadOnly } = useAuth();
   const navigate = useNavigate();
+  const counters = useNotificationCounters();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
 
   const groups = NAV_GROUPS.map((group) => ({
     label: group.label,
