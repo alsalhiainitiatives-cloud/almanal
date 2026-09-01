@@ -203,15 +203,19 @@ export function StudyPlanBuilder() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
-  const classrooms = useQuery({ queryKey: ["academics-classrooms"], queryFn: () => loadClassrooms({}) });
+  const classroomsQuery = useQuery({
+    queryKey: ["academics-classrooms"],
+    queryFn: () => loadClassrooms({}),
+  });
+  const classrooms = classroomsQuery.data?.classrooms ?? [];
 
   useEffect(() => {
-    if (!classroomId && classrooms.data?.length) setClassroomId(classrooms.data[0]!.id);
-  }, [classroomId, classrooms.data]);
+    if (!classroomId && classrooms.length) setClassroomId(classrooms[0]!.id);
+  }, [classroomId, classrooms]);
 
   const activeClassroom = useMemo(
-    () => (classrooms.data ?? []).find((c) => c.id === classroomId) ?? null,
-    [classrooms.data, classroomId],
+    () => classrooms.find((c) => c.id === classroomId) ?? null,
+    [classrooms, classroomId],
   );
 
   const curriculum = useQuery({
@@ -370,7 +374,7 @@ export function StudyPlanBuilder() {
     }
   }
 
-  if (classrooms.isLoading) {
+  if (classroomsQuery.isLoading) {
     return (
       <div className="flex h-64 items-center justify-center text-muted-foreground">
         <Loader2 className="size-5 animate-spin" />
@@ -378,7 +382,7 @@ export function StudyPlanBuilder() {
     );
   }
 
-  if (!classrooms.data?.length) {
+  if (!classrooms.length) {
     return (
       <Card className="p-8 text-center text-muted-foreground">
         لا توجد فصول متاحة لصلاحيتك، لذلك لا يمكن بناء خطط دراسية.
@@ -402,7 +406,7 @@ export function StudyPlanBuilder() {
               <SelectValue placeholder="اختر الفصل" />
             </SelectTrigger>
             <SelectContent>
-              {classrooms.data.map((c) => (
+              {classrooms.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.nameAr} — {c.stageNameAr}
                 </SelectItem>
