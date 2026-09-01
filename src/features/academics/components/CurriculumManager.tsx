@@ -602,8 +602,9 @@ function SubjectCard({
                   )}
                 </div>
 
-                {topic.lessons.length > 0 && (
+                {topic.lessons.length > 0 && (open[topic.id] ?? true) && (
                   <ul className="mt-2 space-y-1.5 ps-6">
+
                     {topic.lessons.map((lesson) => (
                       <li
                         key={lesson.id}
