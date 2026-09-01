@@ -110,3 +110,20 @@ export const academicsSetTeacherClassrooms = createServerFn({ method: "POST" })
     const { setTeacherClassrooms } = await import("./academics.server");
     return setTeacherClassrooms(context.supabase, context.userId, data.teacherId, data.classroomIds);
   });
+
+export const academicsCopyCurriculum = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        sourceClassroomId: z.string().uuid(),
+        targetClassroomIds: z.array(z.string().uuid()).min(1).max(40),
+        subjectIds: z.array(z.string().uuid()).max(100).default([]),
+        mode: z.enum(["merge", "duplicate"]).default("merge"),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { copyCurriculum } = await import("./academics.server");
+    return copyCurriculum(context.supabase, context.userId, data);
+  });
