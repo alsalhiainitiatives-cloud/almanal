@@ -562,15 +562,31 @@ function SubjectCard({
             subject.topics.map((topic) => (
               <article key={topic.id} className="rounded-2xl border border-border/60 bg-background/60 p-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Layers className="size-4 shrink-0" style={{ color: subject.colorHex }} />
-                  <p className="min-w-0 flex-1 truncate text-xs font-black text-foreground">
-                    {topic.nameAr}
-                    {!topic.isActive && (
-                      <span className="ms-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
-                        غير مفعّل
+                  <button
+                    type="button"
+                    onClick={() => toggle(topic.id)}
+                    className="flex min-w-0 flex-1 items-center gap-2 text-start"
+                  >
+                    <Layers className="size-4 shrink-0" style={{ color: subject.colorHex }} />
+                    <span className="min-w-0 flex-1 truncate text-xs font-black text-foreground">
+                      {topic.nameAr}
+                      {!topic.isActive && (
+                        <span className="ms-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                          غير مفعّل
+                        </span>
+                      )}
+                      <span className="ms-2 text-[10px] font-bold text-muted-foreground">
+                        {topic.lessons.length} درس
                       </span>
-                    )}
-                  </p>
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        "size-3.5 shrink-0 text-muted-foreground transition",
+                        (open[topic.id] ?? true) && "rotate-180",
+                      )}
+                    />
+                  </button>
+
                   {canEdit && (
                     <div className="flex items-center gap-1">
                       <Button
