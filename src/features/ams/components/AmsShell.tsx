@@ -248,6 +248,7 @@ export function AmsShell({
                     </p>
                     {entry.items.map((item) => {
                       const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
+                      const count = item.notifyKind ? (counters[item.notifyKind] ?? 0) : 0;
                       return (
                         <Link
                           key={item.to}
@@ -260,10 +261,21 @@ export function AmsShell({
                           )}
                         >
                           <item.icon className="size-4" />
-                          {item.label}
+                          <span className="flex-1">{item.label}</span>
+                          {count > 0 ? (
+                            <span
+                              className={cn(
+                                "grid min-w-5 place-items-center rounded-full px-1.5 py-0.5 text-[10px] font-extrabold",
+                                active ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground",
+                              )}
+                            >
+                              {count > 99 ? "99+" : count}
+                            </span>
+                          ) : null}
                         </Link>
                       );
                     })}
+
                   </div>
                 ))}
                 <Link
