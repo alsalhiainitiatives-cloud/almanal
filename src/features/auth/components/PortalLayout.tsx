@@ -81,14 +81,6 @@ const NAV_GROUPS = [
         role: "teacher" as const,
         featured: true,
       },
-      {
-        to: "/ams/academic-hub",
-        label: "المسار الأكاديمي والأنشطة",
-        icon: Sparkles,
-        permission: P.applicationsReview,
-        role: "teacher" as const,
-        featured: true,
-      },
     ],
   },
   {

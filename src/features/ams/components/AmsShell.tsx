@@ -163,7 +163,7 @@ const MODULES: Record<
 function moduleFor(pathname: string): ModuleKey {
   if (pathname.startsWith("/ams/students")) return "students";
   if (pathname.startsWith("/ams/seats")) return "students";
-  if (pathname.startsWith("/ams/academic-hub")) return "students";
+  
   if (pathname.startsWith("/ams/academics")) return "academics";
   if (pathname.startsWith("/ams/finance")) return "finance";
   return "admissions";
