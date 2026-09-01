@@ -72,6 +72,7 @@ import { Route as AuthenticatedAmsAcademicsChatRouteImport } from './routes/_aut
 import { Route as AuthenticatedAmsAcademicsCalendarRouteImport } from './routes/_authenticated/ams/academics.calendar'
 import { Route as AuthenticatedAmsAcademicsAssignmentsRouteImport } from './routes/_authenticated/ams/academics.assignments'
 import { Route as AuthenticatedAmsAcademicsAssessmentsRouteImport } from './routes/_authenticated/ams/academics.assessments'
+import { Route as AuthenticatedAdminTeachersTeacherIdRouteImport } from './routes/_authenticated/admin/teachers.$teacherId'
 import { Route as AdmissionsStageSlugClassroomClassroomSlugRouteImport } from './routes/admissions.stage.$slug.classroom.$classroomSlug'
 
 const TestimonialsRoute = TestimonialsRouteImport.update({
@@ -412,6 +413,12 @@ const AuthenticatedAmsAcademicsAssessmentsRoute =
     path: '/ams/academics/assessments',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminTeachersTeacherIdRoute =
+  AuthenticatedAdminTeachersTeacherIdRouteImport.update({
+    id: '/admin/teachers/$teacherId',
+    path: '/admin/teachers/$teacherId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AdmissionsStageSlugClassroomClassroomSlugRoute =
   AdmissionsStageSlugClassroomClassroomSlugRouteImport.update({
     id: '/admissions/stage/$slug/classroom/$classroomSlug',
@@ -467,6 +474,7 @@ export interface FileRoutesByFullPath {
   '/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
   '/api/ams/backup': typeof ApiAmsBackupRoute
   '/ams/': typeof AuthenticatedAmsIndexRoute
+  '/admin/teachers/$teacherId': typeof AuthenticatedAdminTeachersTeacherIdRoute
   '/ams/academics/assessments': typeof AuthenticatedAmsAcademicsAssessmentsRoute
   '/ams/academics/assignments': typeof AuthenticatedAmsAcademicsAssignmentsRoute
   '/ams/academics/calendar': typeof AuthenticatedAmsAcademicsCalendarRoute
@@ -532,6 +540,7 @@ export interface FileRoutesByTo {
   '/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
   '/api/ams/backup': typeof ApiAmsBackupRoute
   '/ams': typeof AuthenticatedAmsIndexRoute
+  '/admin/teachers/$teacherId': typeof AuthenticatedAdminTeachersTeacherIdRoute
   '/ams/academics/assessments': typeof AuthenticatedAmsAcademicsAssessmentsRoute
   '/ams/academics/assignments': typeof AuthenticatedAmsAcademicsAssignmentsRoute
   '/ams/academics/calendar': typeof AuthenticatedAmsAcademicsCalendarRoute
@@ -599,6 +608,7 @@ export interface FileRoutesById {
   '/_authenticated/track/$applicationId': typeof AuthenticatedTrackApplicationIdRoute
   '/api/ams/backup': typeof ApiAmsBackupRoute
   '/_authenticated/ams/': typeof AuthenticatedAmsIndexRoute
+  '/_authenticated/admin/teachers/$teacherId': typeof AuthenticatedAdminTeachersTeacherIdRoute
   '/_authenticated/ams/academics/assessments': typeof AuthenticatedAmsAcademicsAssessmentsRoute
   '/_authenticated/ams/academics/assignments': typeof AuthenticatedAmsAcademicsAssignmentsRoute
   '/_authenticated/ams/academics/calendar': typeof AuthenticatedAmsAcademicsCalendarRoute
@@ -666,6 +676,7 @@ export interface FileRouteTypes {
     | '/track/$applicationId'
     | '/api/ams/backup'
     | '/ams/'
+    | '/admin/teachers/$teacherId'
     | '/ams/academics/assessments'
     | '/ams/academics/assignments'
     | '/ams/academics/calendar'
@@ -731,6 +742,7 @@ export interface FileRouteTypes {
     | '/track/$applicationId'
     | '/api/ams/backup'
     | '/ams'
+    | '/admin/teachers/$teacherId'
     | '/ams/academics/assessments'
     | '/ams/academics/assignments'
     | '/ams/academics/calendar'
@@ -797,6 +809,7 @@ export interface FileRouteTypes {
     | '/_authenticated/track/$applicationId'
     | '/api/ams/backup'
     | '/_authenticated/ams/'
+    | '/_authenticated/admin/teachers/$teacherId'
     | '/_authenticated/ams/academics/assessments'
     | '/_authenticated/ams/academics/assignments'
     | '/_authenticated/ams/academics/calendar'
@@ -1286,6 +1299,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAmsAcademicsAssessmentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/teachers/$teacherId': {
+      id: '/_authenticated/admin/teachers/$teacherId'
+      path: '/admin/teachers/$teacherId'
+      fullPath: '/admin/teachers/$teacherId'
+      preLoaderRoute: typeof AuthenticatedAdminTeachersTeacherIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/admissions/stage/$slug/classroom/$classroomSlug': {
       id: '/admissions/stage/$slug/classroom/$classroomSlug'
       path: '/admissions/stage/$slug/classroom/$classroomSlug'
@@ -1323,6 +1343,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedApplyNewRoute: typeof AuthenticatedApplyNewRoute
   AuthenticatedTrackApplicationIdRoute: typeof AuthenticatedTrackApplicationIdRoute
   AuthenticatedAmsIndexRoute: typeof AuthenticatedAmsIndexRoute
+  AuthenticatedAdminTeachersTeacherIdRoute: typeof AuthenticatedAdminTeachersTeacherIdRoute
   AuthenticatedAmsAcademicsAssessmentsRoute: typeof AuthenticatedAmsAcademicsAssessmentsRoute
   AuthenticatedAmsAcademicsAssignmentsRoute: typeof AuthenticatedAmsAcademicsAssignmentsRoute
   AuthenticatedAmsAcademicsCalendarRoute: typeof AuthenticatedAmsAcademicsCalendarRoute
@@ -1365,6 +1386,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedApplyNewRoute: AuthenticatedApplyNewRoute,
   AuthenticatedTrackApplicationIdRoute: AuthenticatedTrackApplicationIdRoute,
   AuthenticatedAmsIndexRoute: AuthenticatedAmsIndexRoute,
+  AuthenticatedAdminTeachersTeacherIdRoute:
+    AuthenticatedAdminTeachersTeacherIdRoute,
   AuthenticatedAmsAcademicsAssessmentsRoute:
     AuthenticatedAmsAcademicsAssessmentsRoute,
   AuthenticatedAmsAcademicsAssignmentsRoute:
