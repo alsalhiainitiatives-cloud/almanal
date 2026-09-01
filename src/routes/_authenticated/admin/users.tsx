@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { KeyRound, Loader2, ShieldAlert, UserCog } from "lucide-react";
+import { GraduationCap, KeyRound, Loader2, ShieldAlert, UserCog } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
