@@ -71,6 +71,7 @@ export type ReportBoard = {
   teacherNames: string[];
   subjects: ReportSubject[];
   summary: ReportSummary;
+  reportsVisibleToParents: boolean;
 };
 
 export function masteryLabel(level: TriangleLevel): string {
