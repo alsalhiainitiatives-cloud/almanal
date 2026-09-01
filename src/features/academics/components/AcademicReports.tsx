@@ -191,6 +191,37 @@ export function AcademicReports() {
         </div>
       </div>
 
+      {/* Parent visibility switch for the selected classroom */}
+      {activeClassroom ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-border/60 bg-card p-4 print:hidden">
+          <div className="flex items-center gap-3">
+            {data.reportsVisibleToParents ? (
+              <Eye className="h-5 w-5 text-primary" />
+            ) : (
+              <EyeOff className="h-5 w-5 text-muted-foreground" />
+            )}
+            <div>
+              <p className="text-sm font-black text-foreground">
+                إظهار تقارير هذا الفصل لأولياء الأمور
+              </p>
+              <p className="text-[11px] font-bold text-muted-foreground">
+                {data.reportsVisibleToParents
+                  ? "التقارير ظاهرة الآن في صفحة ولي الأمر «تقارير طفلي الأكاديمية»."
+                  : "التقارير مخفيّة حاليًا عن أولياء الأمور."}
+              </p>
+            </div>
+          </div>
+          <Switch
+            checked={data.reportsVisibleToParents}
+            disabled={visibility.isPending}
+            onCheckedChange={(checked) =>
+              visibility.mutate({ classroomId: activeClassroom, visible: checked })
+            }
+          />
+        </div>
+      ) : null}
+
+
       {!data.child ? (
         <div className="rounded-3xl border-2 border-dashed border-border/70 bg-card p-10 text-center">
           <p className="text-sm font-black text-foreground">
