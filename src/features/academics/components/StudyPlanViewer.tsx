@@ -9,7 +9,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useClearNotificationKind } from "@/features/notifications/useNotificationCounters";
 import { cn } from "@/lib/utils";
+
 
 import {
   TIMEFRAME_LABELS,

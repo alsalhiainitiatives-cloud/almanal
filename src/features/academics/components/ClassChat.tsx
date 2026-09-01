@@ -27,7 +27,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { useClearNotificationKind } from "@/features/notifications/useNotificationCounters";
 import { supabase } from "@/integrations/supabase/client";
+
 import { cn } from "@/lib/utils";
 
 import {
