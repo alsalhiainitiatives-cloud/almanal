@@ -46,6 +46,13 @@ const NAV_GROUPS = [
         permission: P.applicationsTrack,
         featured: false,
       },
+      {
+        to: "/study-plans",
+        label: "خطة طفلي الدراسية",
+        icon: CalendarRange,
+        permission: P.applicationsTrack,
+        featured: false,
+      },
       { to: "/payments", label: "المدفوعات والرسوم", icon: Wallet, permission: P.applicationsTrack, featured: false },
     ],
   },
