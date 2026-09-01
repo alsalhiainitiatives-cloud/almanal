@@ -200,7 +200,9 @@ export function AmsShell({
     items: navItems.filter((item) => item.group === group),
   })).filter((entry) => entry.items.length > 0);
   const navigate = useNavigate();
+  const counters = useNotificationCounters();
   const [paletteOpen, setPaletteOpen] = useState(false);
+
 
   useAmsRealtime();
 
