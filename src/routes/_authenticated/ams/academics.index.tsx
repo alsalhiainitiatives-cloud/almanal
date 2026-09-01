@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   BarChart3,
   BookOpen,
+  CalendarRange,
   ClipboardCheck,
   MessagesSquare,
   Settings,
@@ -38,6 +39,13 @@ const CARDS = [
     label: "إدارة المنهج",
     icon: BookOpen,
     text: "المواد والمحاور والدروس لكل فصل — جاهزة للاستخدام.",
+    ready: true,
+  },
+  {
+    to: "/ams/academics/plans",
+    label: "الخطط الدراسية",
+    icon: CalendarRange,
+    text: "خطط أسبوعية وشهرية بالسحب والإفلات، مع تصدير ومشاركة في محادثة الفصل.",
     ready: true,
   },
   {

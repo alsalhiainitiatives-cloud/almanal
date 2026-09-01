@@ -30,6 +30,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TrackIndexRouteImport } from './routes/track.index'
 import { Route as AdmissionsIndexRouteImport } from './routes/admissions.index'
 import { Route as LegalSlugRouteImport } from './routes/legal.$slug'
+import { Route as AuthenticatedStudyPlansRouteImport } from './routes/_authenticated/study-plans'
 import { Route as AuthenticatedReserveRouteImport } from './routes/_authenticated/reserve'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
@@ -67,6 +68,7 @@ import { Route as AuthenticatedAmsStudentsChildIdRouteImport } from './routes/_a
 import { Route as AuthenticatedAmsApplicationsApplicationIdRouteImport } from './routes/_authenticated/ams/applications.$applicationId'
 import { Route as AuthenticatedAmsAcademicsSettingsRouteImport } from './routes/_authenticated/ams/academics.settings'
 import { Route as AuthenticatedAmsAcademicsReportsRouteImport } from './routes/_authenticated/ams/academics.reports'
+import { Route as AuthenticatedAmsAcademicsPlansRouteImport } from './routes/_authenticated/ams/academics.plans'
 import { Route as AuthenticatedAmsAcademicsCurriculumRouteImport } from './routes/_authenticated/ams/academics.curriculum'
 import { Route as AuthenticatedAmsAcademicsChatRouteImport } from './routes/_authenticated/ams/academics.chat'
 import { Route as AuthenticatedAmsAcademicsAssignmentsRouteImport } from './routes/_authenticated/ams/academics.assignments'
@@ -176,6 +178,11 @@ const LegalSlugRoute = LegalSlugRouteImport.update({
   id: '/legal/$slug',
   path: '/legal/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedStudyPlansRoute = AuthenticatedStudyPlansRouteImport.update({
+  id: '/study-plans',
+  path: '/study-plans',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedReserveRoute = AuthenticatedReserveRouteImport.update({
   id: '/reserve',
@@ -382,6 +389,12 @@ const AuthenticatedAmsAcademicsReportsRoute =
     path: '/ams/academics/reports',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAmsAcademicsPlansRoute =
+  AuthenticatedAmsAcademicsPlansRouteImport.update({
+    id: '/ams/academics/plans',
+    path: '/ams/academics/plans',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAmsAcademicsCurriculumRoute =
   AuthenticatedAmsAcademicsCurriculumRouteImport.update({
     id: '/ams/academics/curriculum',
@@ -439,6 +452,7 @@ export interface FileRoutesByFullPath {
   '/payments': typeof AuthenticatedPaymentsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/reserve': typeof AuthenticatedReserveRoute
+  '/study-plans': typeof AuthenticatedStudyPlansRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/admissions/': typeof AdmissionsIndexRoute
   '/track/': typeof TrackIndexRoute
@@ -466,6 +480,7 @@ export interface FileRoutesByFullPath {
   '/ams/academics/assignments': typeof AuthenticatedAmsAcademicsAssignmentsRoute
   '/ams/academics/chat': typeof AuthenticatedAmsAcademicsChatRoute
   '/ams/academics/curriculum': typeof AuthenticatedAmsAcademicsCurriculumRoute
+  '/ams/academics/plans': typeof AuthenticatedAmsAcademicsPlansRoute
   '/ams/academics/reports': typeof AuthenticatedAmsAcademicsReportsRoute
   '/ams/academics/settings': typeof AuthenticatedAmsAcademicsSettingsRoute
   '/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
@@ -503,6 +518,7 @@ export interface FileRoutesByTo {
   '/payments': typeof AuthenticatedPaymentsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/reserve': typeof AuthenticatedReserveRoute
+  '/study-plans': typeof AuthenticatedStudyPlansRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/admissions': typeof AdmissionsIndexRoute
   '/track': typeof TrackIndexRoute
@@ -530,6 +546,7 @@ export interface FileRoutesByTo {
   '/ams/academics/assignments': typeof AuthenticatedAmsAcademicsAssignmentsRoute
   '/ams/academics/chat': typeof AuthenticatedAmsAcademicsChatRoute
   '/ams/academics/curriculum': typeof AuthenticatedAmsAcademicsCurriculumRoute
+  '/ams/academics/plans': typeof AuthenticatedAmsAcademicsPlansRoute
   '/ams/academics/reports': typeof AuthenticatedAmsAcademicsReportsRoute
   '/ams/academics/settings': typeof AuthenticatedAmsAcademicsSettingsRoute
   '/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
@@ -569,6 +586,7 @@ export interface FileRoutesById {
   '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/reserve': typeof AuthenticatedReserveRoute
+  '/_authenticated/study-plans': typeof AuthenticatedStudyPlansRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/admissions/': typeof AdmissionsIndexRoute
   '/track/': typeof TrackIndexRoute
@@ -596,6 +614,7 @@ export interface FileRoutesById {
   '/_authenticated/ams/academics/assignments': typeof AuthenticatedAmsAcademicsAssignmentsRoute
   '/_authenticated/ams/academics/chat': typeof AuthenticatedAmsAcademicsChatRoute
   '/_authenticated/ams/academics/curriculum': typeof AuthenticatedAmsAcademicsCurriculumRoute
+  '/_authenticated/ams/academics/plans': typeof AuthenticatedAmsAcademicsPlansRoute
   '/_authenticated/ams/academics/reports': typeof AuthenticatedAmsAcademicsReportsRoute
   '/_authenticated/ams/academics/settings': typeof AuthenticatedAmsAcademicsSettingsRoute
   '/_authenticated/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
@@ -635,6 +654,7 @@ export interface FileRouteTypes {
     | '/payments'
     | '/profile'
     | '/reserve'
+    | '/study-plans'
     | '/legal/$slug'
     | '/admissions/'
     | '/track/'
@@ -662,6 +682,7 @@ export interface FileRouteTypes {
     | '/ams/academics/assignments'
     | '/ams/academics/chat'
     | '/ams/academics/curriculum'
+    | '/ams/academics/plans'
     | '/ams/academics/reports'
     | '/ams/academics/settings'
     | '/ams/applications/$applicationId'
@@ -699,6 +720,7 @@ export interface FileRouteTypes {
     | '/payments'
     | '/profile'
     | '/reserve'
+    | '/study-plans'
     | '/legal/$slug'
     | '/admissions'
     | '/track'
@@ -726,6 +748,7 @@ export interface FileRouteTypes {
     | '/ams/academics/assignments'
     | '/ams/academics/chat'
     | '/ams/academics/curriculum'
+    | '/ams/academics/plans'
     | '/ams/academics/reports'
     | '/ams/academics/settings'
     | '/ams/applications/$applicationId'
@@ -764,6 +787,7 @@ export interface FileRouteTypes {
     | '/_authenticated/payments'
     | '/_authenticated/profile'
     | '/_authenticated/reserve'
+    | '/_authenticated/study-plans'
     | '/legal/$slug'
     | '/admissions/'
     | '/track/'
@@ -791,6 +815,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ams/academics/assignments'
     | '/_authenticated/ams/academics/chat'
     | '/_authenticated/ams/academics/curriculum'
+    | '/_authenticated/ams/academics/plans'
     | '/_authenticated/ams/academics/reports'
     | '/_authenticated/ams/academics/settings'
     | '/_authenticated/ams/applications/$applicationId'
@@ -979,6 +1004,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/legal/$slug'
       preLoaderRoute: typeof LegalSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/study-plans': {
+      id: '/_authenticated/study-plans'
+      path: '/study-plans'
+      fullPath: '/study-plans'
+      preLoaderRoute: typeof AuthenticatedStudyPlansRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reserve': {
       id: '/_authenticated/reserve'
@@ -1239,6 +1271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAmsAcademicsReportsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ams/academics/plans': {
+      id: '/_authenticated/ams/academics/plans'
+      path: '/ams/academics/plans'
+      fullPath: '/ams/academics/plans'
+      preLoaderRoute: typeof AuthenticatedAmsAcademicsPlansRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ams/academics/curriculum': {
       id: '/_authenticated/ams/academics/curriculum'
       path: '/ams/academics/curriculum'
@@ -1286,6 +1325,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPaymentsRoute: typeof AuthenticatedPaymentsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedReserveRoute: typeof AuthenticatedReserveRoute
+  AuthenticatedStudyPlansRoute: typeof AuthenticatedStudyPlansRoute
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminInboxRoute: typeof AuthenticatedAdminInboxRoute
   AuthenticatedAdminPermissionsRoute: typeof AuthenticatedAdminPermissionsRoute
@@ -1309,6 +1349,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAmsAcademicsAssignmentsRoute: typeof AuthenticatedAmsAcademicsAssignmentsRoute
   AuthenticatedAmsAcademicsChatRoute: typeof AuthenticatedAmsAcademicsChatRoute
   AuthenticatedAmsAcademicsCurriculumRoute: typeof AuthenticatedAmsAcademicsCurriculumRoute
+  AuthenticatedAmsAcademicsPlansRoute: typeof AuthenticatedAmsAcademicsPlansRoute
   AuthenticatedAmsAcademicsReportsRoute: typeof AuthenticatedAmsAcademicsReportsRoute
   AuthenticatedAmsAcademicsSettingsRoute: typeof AuthenticatedAmsAcademicsSettingsRoute
   AuthenticatedAmsApplicationsApplicationIdRoute: typeof AuthenticatedAmsApplicationsApplicationIdRoute
@@ -1327,6 +1368,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPaymentsRoute: AuthenticatedPaymentsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedReserveRoute: AuthenticatedReserveRoute,
+  AuthenticatedStudyPlansRoute: AuthenticatedStudyPlansRoute,
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminInboxRoute: AuthenticatedAdminInboxRoute,
   AuthenticatedAdminPermissionsRoute: AuthenticatedAdminPermissionsRoute,
@@ -1353,6 +1395,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAmsAcademicsChatRoute: AuthenticatedAmsAcademicsChatRoute,
   AuthenticatedAmsAcademicsCurriculumRoute:
     AuthenticatedAmsAcademicsCurriculumRoute,
+  AuthenticatedAmsAcademicsPlansRoute: AuthenticatedAmsAcademicsPlansRoute,
   AuthenticatedAmsAcademicsReportsRoute: AuthenticatedAmsAcademicsReportsRoute,
   AuthenticatedAmsAcademicsSettingsRoute:
     AuthenticatedAmsAcademicsSettingsRoute,
