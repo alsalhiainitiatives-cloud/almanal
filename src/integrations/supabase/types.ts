@@ -736,6 +736,63 @@ export type Database = {
           },
         ]
       }
+      classroom_messages: {
+        Row: {
+          attachments: Json
+          body: string
+          classroom_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          parent_message_id: string | null
+          sender_id: string
+          sender_name: string | null
+          sender_role: string
+          updated_at: string
+        }
+        Insert: {
+          attachments?: Json
+          body?: string
+          classroom_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          parent_message_id?: string | null
+          sender_id: string
+          sender_name?: string | null
+          sender_role?: string
+          updated_at?: string
+        }
+        Update: {
+          attachments?: Json
+          body?: string
+          classroom_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          parent_message_id?: string | null
+          sender_id?: string
+          sender_name?: string | null
+          sender_role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classroom_messages_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classroom_messages_parent_message_id_fkey"
+            columns: ["parent_message_id"]
+            isOneToOne: false
+            referencedRelation: "classroom_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classrooms: {
         Row: {
           capacity: number
