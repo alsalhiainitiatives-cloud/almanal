@@ -61,3 +61,56 @@ export async function markRead(supabase: Db, ids: string[] | null) {
   if (error) throw new Error("تعذّر تحديث حالة الإشعارات.");
   return { updated: data ?? 0 };
 }
+
+/** Unread counters grouped by notification kind — powers the sub-tab badges. */
+export async function unreadCountsByKind(supabase: Db, userId: string) {
+  const { data } = await supabase
+    .from("notifications")
+    .select("kind")
+    .eq("user_id", userId)
+    .is("read_at", null)
+    .limit(500);
+  const counts: Record<string, number> = {};
+  for (const row of data ?? []) counts[row.kind] = (counts[row.kind] ?? 0) + 1;
+  return { counts, total: (data ?? []).length };
+}
+
+/** Clears the badge of one section once the user actually opens it. */
+export async function markKindRead(supabase: Db, userId: string, kinds: string[]) {
+  if (!kinds.length) return { updated: 0 };
+  const { data, error } = await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", userId)
+    .is("read_at", null)
+    .in("kind", kinds)
+    .select("id");
+  if (error) throw new Error("تعذّر تحديث حالة الإشعارات.");
+  return { updated: (data ?? []).length };
+}
+
+/** Recipients of a classroom stream: assigned teachers + parents of enrolled kids. */
+export async function classroomAudience(classroomId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const [{ data: teachers }, { data: kids }] = await Promise.all([
+    supabaseAdmin.from("teacher_classrooms").select("teacher_id").eq("classroom_id", classroomId),
+    supabaseAdmin
+      .from("application_children")
+      .select("name_ar, applications!inner (parent_id, status)")
+      .eq("classroom_id", classroomId)
+      .eq("applications.status", "approved")
+      .limit(300),
+  ]);
+
+  const parentIds = [
+    ...new Set(
+      ((kids ?? []) as unknown as { applications: { parent_id: string | null } | null }[])
+        .map((k) => k.applications?.parent_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const teacherIds = [
+    ...new Set((teachers ?? []).map((t) => t.teacher_id).filter((id): id is string => Boolean(id))),
+  ];
+  return { parentIds, teacherIds };
+}
