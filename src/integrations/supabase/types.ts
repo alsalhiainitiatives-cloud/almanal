@@ -32,6 +32,27 @@ export type Database = {
         }
         Relationships: []
       }
+      academics_settings: {
+        Row: {
+          created_at: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       admission_seasons: {
         Row: {
           academic_year: string
@@ -796,6 +817,7 @@ export type Database = {
       classrooms: {
         Row: {
           capacity: number
+          chat_enabled: boolean
           color_hex: string
           color_label: string | null
           cover_image: string | null
@@ -824,6 +846,7 @@ export type Database = {
         }
         Insert: {
           capacity?: number
+          chat_enabled?: boolean
           color_hex?: string
           color_label?: string | null
           cover_image?: string | null
@@ -852,6 +875,7 @@ export type Database = {
         }
         Update: {
           capacity?: number
+          chat_enabled?: boolean
           color_hex?: string
           color_label?: string | null
           cover_image?: string | null
