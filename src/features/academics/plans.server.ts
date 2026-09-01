@@ -212,7 +212,9 @@ export type ParentPlanBoard = {
 export async function getParentPlanBoard(supabase: Db, userId: string): Promise<ParentPlanBoard> {
   const { data: kids } = await supabase
     .from("application_children")
-    .select("id, name_ar, classroom_id, classrooms (name_ar, stages (name_ar)), applications!inner (parent_id, status)")
+    .select(
+      "id, name_ar, classroom_id, classrooms:application_children_classroom_id_fkey (name_ar, stages (name_ar)), applications!inner (parent_id, status)",
+    )
     .eq("applications.parent_id", userId)
     .eq("applications.status", "approved")
     .order("name_ar")
