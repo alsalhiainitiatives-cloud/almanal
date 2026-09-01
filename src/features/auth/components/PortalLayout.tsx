@@ -48,6 +48,7 @@ const NAV_GROUPS = [
         icon: MessagesSquare,
         permission: P.applicationsTrack,
         featured: false,
+        notifyKind: "chat_message",
       },
       {
         to: "/study-plans",
@@ -55,7 +56,9 @@ const NAV_GROUPS = [
         icon: CalendarRange,
         permission: P.applicationsTrack,
         featured: false,
+        notifyKind: "study_plan",
       },
+
       { to: "/payments", label: "المدفوعات والرسوم", icon: Wallet, permission: P.applicationsTrack, featured: false },
     ],
   },
