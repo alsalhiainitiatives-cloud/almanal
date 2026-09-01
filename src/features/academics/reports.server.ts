@@ -17,6 +17,7 @@ import type {
   ReportSummary,
   ReportType,
 } from "./reports";
+import type { MonthColor } from "./settings";
 import { getMonthColors } from "./settings.server";
 
 type Db = SupabaseClient<Database>;
@@ -87,13 +88,14 @@ export async function getReportBoard(
     name_ar: string;
     stage_id: string | null;
     teacher_name: string | null;
+    reports_visible_to_parents: boolean | null;
     stages: { name_ar: string } | null;
   }[] = [];
 
   if (staff) {
     const { data } = await supabase
       .from("classrooms")
-      .select("id, name_ar, stage_id, teacher_name, stages (name_ar)")
+      .select("id, name_ar, stage_id, teacher_name, reports_visible_to_parents, stages (name_ar)")
       .eq("is_active", true)
       .order("sort_order")
       .limit(200);
@@ -107,7 +109,7 @@ export async function getReportBoard(
     if (ids.length) {
       const { data } = await supabase
         .from("classrooms")
-        .select("id, name_ar, stage_id, teacher_name, stages (name_ar)")
+        .select("id, name_ar, stage_id, teacher_name, reports_visible_to_parents, stages (name_ar)")
         .in("id", ids)
         .eq("is_active", true)
         .order("sort_order")
@@ -150,6 +152,8 @@ export async function getReportBoard(
     teacherNames: [],
     subjects: [],
     summary: emptySummary,
+    reportsVisibleToParents:
+      rows.find((r) => r.id === selectedClassroomId)?.reports_visible_to_parents === true,
   };
 
   if (!selectedClassroomId) return base;
