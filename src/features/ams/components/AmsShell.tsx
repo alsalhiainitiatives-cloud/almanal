@@ -18,7 +18,6 @@ import {
   MessagesSquare,
   Settings,
   SlidersHorizontal,
-  Sparkles,
   UsersRound,
   TicketCheck,
   UserRoundPlus,
@@ -102,13 +101,6 @@ const STUDENTS_NAV: NavItem[] = [
   { to: "/ams/students", label: "سجل الطلاب", icon: GraduationCap, exact: true, group: "شؤون الطلاب" },
   { to: "/ams/seats", label: "الفصول والمقاعد", icon: Armchair, exact: false, group: "شؤون الطلاب" },
   {
-    to: "/ams/academic-hub",
-    label: "المسار الأكاديمي والأنشطة",
-    icon: Sparkles,
-    exact: false,
-    group: "شؤون الطلاب",
-  },
-  {
     to: "/ams/students/promotions",
     label: "نقل الطلاب بين المراحل",
     icon: UserRoundPlus,
@@ -170,7 +162,7 @@ const MODULES: Record<
 function moduleFor(pathname: string): ModuleKey {
   if (pathname.startsWith("/ams/students")) return "students";
   if (pathname.startsWith("/ams/seats")) return "students";
-  if (pathname.startsWith("/ams/academic-hub")) return "students";
+  
   if (pathname.startsWith("/ams/academics")) return "academics";
   if (pathname.startsWith("/ams/finance")) return "finance";
   return "admissions";

@@ -37,7 +37,6 @@ import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedMyApplicationsRouteImport } from './routes/_authenticated/my-applications'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedClassChatRouteImport } from './routes/_authenticated/class-chat'
-import { Route as AuthenticatedChildJourneyRouteImport } from './routes/_authenticated/child-journey'
 import { Route as AuthenticatedChildFileRouteImport } from './routes/_authenticated/child-file'
 import { Route as AuthenticatedAmsIndexRouteImport } from './routes/_authenticated/ams/index'
 import { Route as ApiAmsBackupRouteImport } from './routes/api/ams/backup'
@@ -53,7 +52,6 @@ import { Route as AuthenticatedAmsQueueRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAmsFormBuilderRouteImport } from './routes/_authenticated/ams/form-builder'
 import { Route as AuthenticatedAmsFinanceRouteImport } from './routes/_authenticated/ams/finance'
 import { Route as AuthenticatedAmsActivityRouteImport } from './routes/_authenticated/ams/activity'
-import { Route as AuthenticatedAmsAcademicHubRouteImport } from './routes/_authenticated/ams/academic-hub'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminSiteContentRouteImport } from './routes/_authenticated/admin/site-content'
 import { Route as AuthenticatedAdminPermissionsRouteImport } from './routes/_authenticated/admin/permissions'
@@ -215,12 +213,6 @@ const AuthenticatedClassChatRoute = AuthenticatedClassChatRouteImport.update({
   path: '/class-chat',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedChildJourneyRoute =
-  AuthenticatedChildJourneyRouteImport.update({
-    id: '/child-journey',
-    path: '/child-journey',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedChildFileRoute = AuthenticatedChildFileRouteImport.update({
   id: '/child-file',
   path: '/child-file',
@@ -300,12 +292,6 @@ const AuthenticatedAmsActivityRoute =
   AuthenticatedAmsActivityRouteImport.update({
     id: '/ams/activity',
     path: '/ams/activity',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAmsAcademicHubRoute =
-  AuthenticatedAmsAcademicHubRouteImport.update({
-    id: '/ams/academic-hub',
-    path: '/ams/academic-hub',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
@@ -445,7 +431,6 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/child-file': typeof AuthenticatedChildFileRoute
-  '/child-journey': typeof AuthenticatedChildJourneyRoute
   '/class-chat': typeof AuthenticatedClassChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
@@ -461,7 +446,6 @@ export interface FileRoutesByFullPath {
   '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/admin/site-content': typeof AuthenticatedAdminSiteContentRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
-  '/ams/academic-hub': typeof AuthenticatedAmsAcademicHubRoute
   '/ams/activity': typeof AuthenticatedAmsActivityRoute
   '/ams/finance': typeof AuthenticatedAmsFinanceRoute
   '/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
@@ -511,7 +495,6 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/child-file': typeof AuthenticatedChildFileRoute
-  '/child-journey': typeof AuthenticatedChildJourneyRoute
   '/class-chat': typeof AuthenticatedClassChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
@@ -527,7 +510,6 @@ export interface FileRoutesByTo {
   '/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/admin/site-content': typeof AuthenticatedAdminSiteContentRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
-  '/ams/academic-hub': typeof AuthenticatedAmsAcademicHubRoute
   '/ams/activity': typeof AuthenticatedAmsActivityRoute
   '/ams/finance': typeof AuthenticatedAmsFinanceRoute
   '/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
@@ -579,7 +561,6 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/_authenticated/child-file': typeof AuthenticatedChildFileRoute
-  '/_authenticated/child-journey': typeof AuthenticatedChildJourneyRoute
   '/_authenticated/class-chat': typeof AuthenticatedClassChatRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/my-applications': typeof AuthenticatedMyApplicationsRoute
@@ -595,7 +576,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/permissions': typeof AuthenticatedAdminPermissionsRoute
   '/_authenticated/admin/site-content': typeof AuthenticatedAdminSiteContentRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
-  '/_authenticated/ams/academic-hub': typeof AuthenticatedAmsAcademicHubRoute
   '/_authenticated/ams/activity': typeof AuthenticatedAmsActivityRoute
   '/_authenticated/ams/finance': typeof AuthenticatedAmsFinanceRoute
   '/_authenticated/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
@@ -647,7 +627,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/testimonials'
     | '/child-file'
-    | '/child-journey'
     | '/class-chat'
     | '/dashboard'
     | '/my-applications'
@@ -663,7 +642,6 @@ export interface FileRouteTypes {
     | '/admin/permissions'
     | '/admin/site-content'
     | '/admin/users'
-    | '/ams/academic-hub'
     | '/ams/activity'
     | '/ams/finance'
     | '/ams/form-builder'
@@ -713,7 +691,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/testimonials'
     | '/child-file'
-    | '/child-journey'
     | '/class-chat'
     | '/dashboard'
     | '/my-applications'
@@ -729,7 +706,6 @@ export interface FileRouteTypes {
     | '/admin/permissions'
     | '/admin/site-content'
     | '/admin/users'
-    | '/ams/academic-hub'
     | '/ams/activity'
     | '/ams/finance'
     | '/ams/form-builder'
@@ -780,7 +756,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/testimonials'
     | '/_authenticated/child-file'
-    | '/_authenticated/child-journey'
     | '/_authenticated/class-chat'
     | '/_authenticated/dashboard'
     | '/_authenticated/my-applications'
@@ -796,7 +771,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/permissions'
     | '/_authenticated/admin/site-content'
     | '/_authenticated/admin/users'
-    | '/_authenticated/ams/academic-hub'
     | '/_authenticated/ams/activity'
     | '/_authenticated/ams/finance'
     | '/_authenticated/ams/form-builder'
@@ -1054,13 +1028,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClassChatRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/child-journey': {
-      id: '/_authenticated/child-journey'
-      path: '/child-journey'
-      fullPath: '/child-journey'
-      preLoaderRoute: typeof AuthenticatedChildJourneyRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/child-file': {
       id: '/_authenticated/child-file'
       path: '/child-file'
@@ -1164,13 +1131,6 @@ declare module '@tanstack/react-router' {
       path: '/ams/activity'
       fullPath: '/ams/activity'
       preLoaderRoute: typeof AuthenticatedAmsActivityRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/ams/academic-hub': {
-      id: '/_authenticated/ams/academic-hub'
-      path: '/ams/academic-hub'
-      fullPath: '/ams/academic-hub'
-      preLoaderRoute: typeof AuthenticatedAmsAcademicHubRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/users': {
@@ -1318,7 +1278,6 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedChildFileRoute: typeof AuthenticatedChildFileRoute
-  AuthenticatedChildJourneyRoute: typeof AuthenticatedChildJourneyRoute
   AuthenticatedClassChatRoute: typeof AuthenticatedClassChatRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedMyApplicationsRoute: typeof AuthenticatedMyApplicationsRoute
@@ -1331,7 +1290,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminPermissionsRoute: typeof AuthenticatedAdminPermissionsRoute
   AuthenticatedAdminSiteContentRoute: typeof AuthenticatedAdminSiteContentRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
-  AuthenticatedAmsAcademicHubRoute: typeof AuthenticatedAmsAcademicHubRoute
   AuthenticatedAmsActivityRoute: typeof AuthenticatedAmsActivityRoute
   AuthenticatedAmsFinanceRoute: typeof AuthenticatedAmsFinanceRoute
   AuthenticatedAmsFormBuilderRoute: typeof AuthenticatedAmsFormBuilderRoute
@@ -1361,7 +1319,6 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChildFileRoute: AuthenticatedChildFileRoute,
-  AuthenticatedChildJourneyRoute: AuthenticatedChildJourneyRoute,
   AuthenticatedClassChatRoute: AuthenticatedClassChatRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedMyApplicationsRoute: AuthenticatedMyApplicationsRoute,
@@ -1374,7 +1331,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminPermissionsRoute: AuthenticatedAdminPermissionsRoute,
   AuthenticatedAdminSiteContentRoute: AuthenticatedAdminSiteContentRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
-  AuthenticatedAmsAcademicHubRoute: AuthenticatedAmsAcademicHubRoute,
   AuthenticatedAmsActivityRoute: AuthenticatedAmsActivityRoute,
   AuthenticatedAmsFinanceRoute: AuthenticatedAmsFinanceRoute,
   AuthenticatedAmsFormBuilderRoute: AuthenticatedAmsFormBuilderRoute,
