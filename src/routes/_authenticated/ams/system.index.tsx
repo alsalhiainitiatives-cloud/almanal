@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  BookOpen,
   CalendarClock,
   HardDrive,
   KeyRound,
   ShieldCheck,
   SlidersHorizontal,
   Users,
+  Wallet,
 } from "lucide-react";
 
 import { AmsShell } from "@/features/ams/components/AmsShell";

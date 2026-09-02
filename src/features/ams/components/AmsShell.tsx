@@ -263,6 +263,22 @@ const SYSTEM_NAV: NavItem[] = [
     group: "إعدادات المنصة",
     roles: ["admin", "supervisor"],
   },
+  {
+    to: "/ams/finance/settings",
+    label: "الإعدادات المالية",
+    icon: Wallet,
+    exact: false,
+    group: "إعدادات المنصة",
+    roles: ["admin", "supervisor", "principal", "accountant"],
+  },
+  {
+    to: "/ams/academics/settings",
+    label: "إعدادات التتبع الأكاديمي",
+    icon: BookOpen,
+    exact: false,
+    group: "إعدادات المنصة",
+    roles: ["admin", "supervisor", "principal"],
+  },
 ];
 
 type ModuleKey = "admissions" | "students" | "finance" | "academics" | "website" | "system";
