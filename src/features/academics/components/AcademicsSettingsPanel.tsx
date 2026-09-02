@@ -18,12 +18,16 @@ import {
   type AcademicsSettings,
   type MonthColor,
 } from "../settings";
+import { canManageStorage } from "../maintenance";
 import {
   academicsSaveMonthColors,
   academicsSetChatClassroom,
   academicsSetChatGlobal,
   academicsSettingsBoard,
 } from "../settings.functions";
+import { StorageMaintenancePanel } from "./StorageMaintenancePanel";
+import { useAuth } from "@/features/auth/AuthProvider";
+
 
 export function AcademicsSettingsPanel() {
   const queryClient = useQueryClient();
