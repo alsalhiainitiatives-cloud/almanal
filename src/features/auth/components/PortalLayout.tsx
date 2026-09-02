@@ -29,20 +29,28 @@ import { PortalTrail } from "./PortalTrail";
 /** Grouped, ordered navigation: personal services → operations → administration. */
 const NAV_GROUPS = [
   {
-    label: "حسابي وطلباتي",
+    label: "حسابي",
     items: [
       { to: "/profile", label: "ملفي الشخصي ولوحتي", icon: UserCog, permission: P.profileEdit, featured: false },
       { to: "/link-children", label: "ربط أبنائي", icon: Link2, permission: P.profileEdit, featured: false },
+    ],
+  },
+  {
+    label: "طلبات الالتحاق",
+    items: [
       { to: "/my-applications", label: "طلباتي وتتبع الطلب", icon: FileClock, permission: P.applicationsTrack, featured: false },
-
+    ],
+  },
+  {
+    label: "متابعة طفلي",
+    items: [
       { to: "/child-file", label: "ملف الطفل", icon: BabyIcon, permission: P.applicationsTrack, featured: false },
       {
-        to: "/class-chat",
-        label: "محادثة فصل طفلي",
-        icon: MessagesSquare,
+        to: "/child-reports",
+        label: "تقارير طفلي الأكاديمية",
+        icon: ClipboardList,
         permission: P.applicationsTrack,
         featured: false,
-        notifyKind: "chat_message",
       },
       {
         to: "/study-plans",
@@ -52,18 +60,23 @@ const NAV_GROUPS = [
         featured: false,
         notifyKind: "study_plan",
       },
-
       {
-        to: "/child-reports",
-        label: "تقارير طفلي الأكاديمية",
-        icon: ClipboardList,
+        to: "/class-chat",
+        label: "محادثة فصل طفلي",
+        icon: MessagesSquare,
         permission: P.applicationsTrack,
         featured: false,
+        notifyKind: "chat_message",
       },
-
+    ],
+  },
+  {
+    label: "الرسوم والمدفوعات",
+    items: [
       { to: "/payments", label: "المدفوعات والرسوم", icon: Wallet, permission: P.applicationsTrack, featured: false },
     ],
   },
+
   {
     label: "العمل التشغيلي",
     items: [
