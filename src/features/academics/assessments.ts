@@ -72,12 +72,14 @@ export function normalizeColors(raw: unknown): string[] {
   });
 }
 
-export type EvidenceFileKind = "image" | "video" | "pdf";
+/** Uploaded evidence kinds (an evidence may also be an external "link"). */
+export type UploadedEvidenceKind = "image" | "video" | "pdf";
+export type EvidenceFileKind = UploadedEvidenceKind | "link";
 
 export const ASSESSMENT_EVIDENCE_ACCEPT =
   "image/jpeg,image/png,image/webp,video/mp4,video/quicktime,application/pdf";
 
-export const ASSESSMENT_EVIDENCE_LIMITS_MB: Record<EvidenceFileKind, number> = {
+export const ASSESSMENT_EVIDENCE_LIMITS_MB: Record<UploadedEvidenceKind, number> = {
   image: 5,
   video: 25,
   pdf: 10,
@@ -87,12 +89,13 @@ export const EVIDENCE_KIND_LABELS_AR: Record<EvidenceFileKind, string> = {
   image: "صورة",
   video: "فيديو",
   pdf: "ملف PDF",
+  link: "رابط خارجي",
 };
 
 export function assessmentEvidenceKind(file: {
   type: string;
   name: string;
-}): EvidenceFileKind | null {
+}): UploadedEvidenceKind | null {
   const type = (file.type || "").toLowerCase();
   if (type.startsWith("image/")) return "image";
   if (type.startsWith("video/")) return "video";
@@ -103,13 +106,24 @@ export function assessmentEvidenceKind(file: {
   return null;
 }
 
+/** Guesses the evidence kind of a pasted URL so the viewer picks the right player. */
+export function evidenceKindOfUrl(url: string): EvidenceFileKind {
+  const clean = url.split("?")[0]?.toLowerCase() ?? "";
+  if (/\.(jpe?g|png|webp|gif|avif)$/.test(clean)) return "image";
+  if (/\.(mp4|webm|mov|m4v)$/.test(clean)) return "video";
+  if (/\.pdf$/.test(clean)) return "pdf";
+  return "link";
+}
+
 export type AssessmentEvidence = {
   id: string;
-  filePath: string;
+  filePath: string | null;
+  externalUrl: string | null;
   fileType: EvidenceFileKind;
   fileName: string | null;
   url: string | null;
 };
+
 
 export type AssessmentCell = {
   id: string;
