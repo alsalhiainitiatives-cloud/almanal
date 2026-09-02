@@ -248,20 +248,12 @@ const SYSTEM_NAV: NavItem[] = [
     roles: ["admin", "supervisor", "principal"],
   },
   {
-    to: "/ams/seasons",
-    label: "مواسم التسجيل",
+    to: "/ams/system/registration",
+    label: "إعدادات نظام التسجيل",
     icon: CalendarClock,
     exact: false,
     group: "إعدادات المنصة",
     roles: ["admin", "supervisor", "principal", "registration_officer"],
-  },
-  {
-    to: "/ams/form-builder",
-    label: "تخصيص نظام التسجيل",
-    icon: SlidersHorizontal,
-    exact: false,
-    group: "إعدادات المنصة",
-    roles: ["admin", "supervisor"],
   },
   {
     to: "/ams/finance/settings",
