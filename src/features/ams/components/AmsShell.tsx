@@ -11,9 +11,12 @@ import {
   FileSpreadsheet,
   CalendarCheck,
   CalendarClock,
+  Globe,
   GraduationCap,
+  HardDrive,
   Home,
   Inbox,
+  KeyRound,
   LayoutDashboard,
   Link2,
   ListOrdered,
@@ -23,6 +26,8 @@ import {
   ReceiptText,
   Settings,
   Settings2,
+  ShieldCheck,
+  Star,
   SlidersHorizontal,
   UsersRound,
   TicketCheck,
@@ -213,7 +218,54 @@ const FINANCE_NAV: NavItem[] = [
 ];
 
 
-type ModuleKey = "admissions" | "students" | "finance" | "academics";
+/** Website module — public site content, inbound messages and reviews. */
+const WEBSITE_NAV: NavItem[] = [
+  { to: "/ams/website", label: "لوحة الموقع الإلكتروني", icon: LayoutDashboard, exact: true, group: "الموقع الإلكتروني" },
+  {
+    to: "/ams/website/settings",
+    label: "إعدادات الموقع",
+    icon: Globe,
+    exact: false,
+    group: "الموقع الإلكتروني",
+    roles: ["admin", "supervisor", "principal"],
+  },
+  { to: "/ams/website/inbox", label: "المراسلات الواردة", icon: MessagesSquare, exact: false, group: "المراسلات والتقييمات" },
+  { to: "/ams/website/reviews", label: "التقييمات والآراء", icon: Star, exact: false, group: "المراسلات والتقييمات" },
+];
+
+/** System module — users, roles, permissions, audit and platform setup. */
+const SYSTEM_NAV: NavItem[] = [
+  { to: "/ams/system", label: "لوحة إعدادات النظام", icon: LayoutDashboard, exact: true, group: "إعدادات النظام" },
+  { to: "/ams/system/users", label: "المستخدمون والأدوار", icon: UsersRound, exact: false, group: "المستخدمون والصلاحيات" },
+  { to: "/ams/system/permissions", label: "مصفوفة الصلاحيات", icon: KeyRound, exact: false, group: "المستخدمون والصلاحيات" },
+  { to: "/ams/system/audit", label: "سجل العمليات", icon: ShieldCheck, exact: false, group: "الحوكمة والصيانة" },
+  {
+    to: "/ams/system/storage",
+    label: "التخزين والصيانة",
+    icon: HardDrive,
+    exact: false,
+    group: "الحوكمة والصيانة",
+    roles: ["admin", "supervisor", "principal"],
+  },
+  {
+    to: "/ams/seasons",
+    label: "مواسم التسجيل",
+    icon: CalendarClock,
+    exact: false,
+    group: "إعدادات المنصة",
+    roles: ["admin", "supervisor", "principal", "registration_officer"],
+  },
+  {
+    to: "/ams/form-builder",
+    label: "تخصيص نظام التسجيل",
+    icon: SlidersHorizontal,
+    exact: false,
+    group: "إعدادات المنصة",
+    roles: ["admin", "supervisor"],
+  },
+];
+
+type ModuleKey = "admissions" | "students" | "finance" | "academics" | "website" | "system";
 
 const MODULES: Record<
   ModuleKey,
@@ -227,6 +279,22 @@ const MODULES: Record<
     nav: ACADEMICS_NAV,
     groups: ["التتبع الأكاديمي", "التقييم والتقارير"],
     home: "/ams/academics",
+    search: false,
+  },
+  website: {
+    badge: "WEB",
+    title: "الموقع الإلكتروني",
+    nav: WEBSITE_NAV,
+    groups: ["الموقع الإلكتروني", "المراسلات والتقييمات"],
+    home: "/ams/website",
+    search: false,
+  },
+  system: {
+    badge: "SYS",
+    title: "إعدادات النظام",
+    nav: SYSTEM_NAV,
+    groups: ["إعدادات النظام", "المستخدمون والصلاحيات", "الحوكمة والصيانة", "إعدادات المنصة"],
+    home: "/ams/system",
     search: false,
   },
   finance: {
@@ -245,6 +313,8 @@ function moduleFor(pathname: string): ModuleKey {
   
   if (pathname.startsWith("/ams/academics")) return "academics";
   if (pathname.startsWith("/ams/finance")) return "finance";
+  if (pathname.startsWith("/ams/website")) return "website";
+  if (pathname.startsWith("/ams/system")) return "system";
   return "admissions";
 }
 
