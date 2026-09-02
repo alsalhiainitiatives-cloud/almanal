@@ -54,6 +54,8 @@ import {
   normalizeColors,
   type AssessmentBoard as Board,
   type AssessmentCell,
+  type EvidenceFileKind,
+
   type TriangleLevel,
   type TriangleScale,
 } from "../assessments";
