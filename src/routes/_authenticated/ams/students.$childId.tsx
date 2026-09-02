@@ -138,7 +138,9 @@ function StudentFilePage() {
         </div>
       }
     >
-      <StudentFileDocument data={data} photoSrc={photoSrc} />
+      <StudentProfileTabs childId={childId} file={data}>
+        <StudentFileDocument data={data} photoSrc={photoSrc} />
+      </StudentProfileTabs>
     </AmsShell>
   );
 }
