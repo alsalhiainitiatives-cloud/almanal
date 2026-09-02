@@ -4,9 +4,8 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { AppRole } from "@/features/auth/rbac";
 import type { Database } from "@/integrations/supabase/types";
-import { can } from "./roles";
+import { ensureCapability } from "./capability-guard.server";
 
 type Db = SupabaseClient<Database>;
 
@@ -45,10 +44,7 @@ function ageOf(birth: string | null): number | null {
 }
 
 async function guardReports(supabase: Db, userId: string) {
-  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-  const roles = (data ?? []).map((r) => r.role as AppRole);
-  if (!can(roles, "reports")) throw new Error("ليس لديك صلاحية الاطلاع على التقارير.");
-  return roles;
+  return ensureCapability(supabase, userId, "reports", "ليس لديك صلاحية الاطلاع على التقارير.");
 }
 
 export type ReportsPayload = Awaited<ReturnType<typeof getReports>>;

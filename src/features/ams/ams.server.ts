@@ -12,6 +12,7 @@ import { DECIDERS, notify } from "@/features/notifications/notifications.server"
 import { QURRA_STATUS_LABELS } from "@/features/admissions/eligibility";
 import { isValidAcademicNumber } from "./academic-number";
 import { issueAcademicNumber } from "./academic-number.server";
+import { ensureCapability } from "./capability-guard.server";
 import { can, type Capability, PAYMENT_STATUS_LABELS } from "./roles";
 
 type Db = SupabaseClient<Database>;
@@ -33,9 +34,7 @@ async function rolesOf(supabase: Db, userId: string): Promise<AppRole[]> {
 }
 
 async function guard(supabase: Db, userId: string, capability: Capability) {
-  const roles = await rolesOf(supabase, userId);
-  if (!can(roles, capability)) throw new Error("ليس لديك صلاحية تنفيذ هذا الإجراء.");
-  return roles;
+  return ensureCapability(supabase, userId, capability, "ليس لديك صلاحية تنفيذ هذا الإجراء.");
 }
 
 async function logEvent(
