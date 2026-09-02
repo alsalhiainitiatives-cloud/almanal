@@ -63,7 +63,7 @@ function TeacherDetailPage() {
     >
       <div className="space-y-5">
         <Button asChild variant="outline" className="rounded-2xl font-bold">
-          <Link to="/admin/users">
+          <Link to="/ams/system/users">
             <ArrowRight className="size-4" />
             رجوع إلى المستخدمين
           </Link>

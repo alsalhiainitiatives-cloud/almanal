@@ -13,9 +13,7 @@ import {
   Link2,
 
   LogOut,
-  ShieldCheck,
   UserCog,
-  Users,
   Wallet,
 } from "lucide-react";
 import type { ReactNode } from "react";
