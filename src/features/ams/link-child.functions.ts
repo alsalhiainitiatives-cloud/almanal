@@ -61,6 +61,7 @@ export const myLinkedChildren = createServerFn({ method: "GET" })
     };
 
     return {
+      staff: false as const,
       children: (data ?? []).map((row) => {
         const app = row.applications as unknown as App;
         return {
