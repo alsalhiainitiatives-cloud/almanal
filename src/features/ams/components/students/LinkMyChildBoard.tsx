@@ -4,7 +4,7 @@
  */
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, IdCard, Link2, Loader2, Users } from "lucide-react";
+import { BadgeCheck, IdCard, Link2, Loader2, ShieldAlert, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,19 @@ export function LinkMyChildBoard() {
     }
     link.mutate(value);
   };
+
+  if (data?.staff) {
+    return (
+      <div className="rounded-3xl border border-border/60 bg-card p-8 text-center shadow-sm">
+        <ShieldAlert className="mx-auto size-8 text-primary" />
+        <p className="mt-3 text-sm font-black text-foreground">هذه الصفحة مخصّصة لأولياء الأمور</p>
+        <p className="mt-2 text-xs leading-6 text-muted-foreground">
+          حسابك حساب إداري/تعليمي، ولا يُربط بأبناء. لإدارة ربط الطلاب بأولياء أمورهم استخدم تبويب
+          «أولياء الأمور» في شؤون الطلاب.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
