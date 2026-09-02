@@ -305,8 +305,9 @@ async function buildChildReport(
         id: e.id,
         fileType: e.file_type as EvidenceFileKind,
         fileName: e.file_name,
-        url: urls[e.file_path] ?? null,
+        url: e.file_path ? (urls[e.file_path] ?? null) : e.external_url,
       })),
+
     });
   }
 
