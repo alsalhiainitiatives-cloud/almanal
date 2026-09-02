@@ -225,12 +225,21 @@ export function ChildReports() {
                                 {lesson.cell?.evidences.length ? (
                                   <div className="flex flex-wrap gap-1.5">
                                     {lesson.cell.evidences.map((ev) => (
-                                      <a
+                                      <button
                                         key={ev.id}
-                                        href={ev.url ?? "#"}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="inline-flex items-center gap-1 rounded-lg border border-border/60 p-1 text-[10px] font-bold hover:border-primary/50"
+                                        type="button"
+                                        disabled={!ev.url}
+                                        onClick={() =>
+                                          ev.url &&
+                                          setViewer({
+                                            url: ev.url,
+                                            kind: ev.fileType,
+                                            name:
+                                              ev.fileName ?? EVIDENCE_KIND_LABELS_AR[ev.fileType],
+                                          })
+                                        }
+                                        title="عرض داخل المنصة"
+                                        className="inline-flex items-center gap-1 rounded-lg border border-border/60 p-1 text-[10px] font-bold transition hover:border-primary/60 hover:bg-primary/5 disabled:opacity-50 print:hidden"
                                       >
                                         {ev.fileType === "image" && ev.url ? (
                                           <img
@@ -240,6 +249,8 @@ export function ChildReports() {
                                           />
                                         ) : ev.fileType === "video" ? (
                                           <Film className="h-4 w-4" />
+                                        ) : ev.fileType === "link" ? (
+                                          <LinkIcon className="h-4 w-4" />
                                         ) : ev.fileType === "image" ? (
                                           <ImageIcon className="h-4 w-4" />
                                         ) : (
@@ -248,7 +259,8 @@ export function ChildReports() {
                                         <span className="max-w-[90px] truncate">
                                           {ev.fileName ?? "ملف"}
                                         </span>
-                                      </a>
+                                      </button>
+
                                     ))}
                                   </div>
                                 ) : (
