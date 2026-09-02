@@ -60,6 +60,7 @@ import { Route as AuthenticatedAdminInboxRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
 import { Route as AdmissionsStageSlugIndexRouteImport } from './routes/admissions.stage.$slug.index'
 import { Route as AuthenticatedAmsStudentsIndexRouteImport } from './routes/_authenticated/ams/students.index'
+import { Route as AuthenticatedAmsFinanceIndexRouteImport } from './routes/_authenticated/ams/finance.index'
 import { Route as AuthenticatedAmsAcademicsIndexRouteImport } from './routes/_authenticated/ams/academics.index'
 import { Route as AdmissionsStageSlugClassroomsRouteImport } from './routes/admissions.stage.$slug.classrooms'
 import { Route as AuthenticatedAmsStudentsPromotionsRouteImport } from './routes/_authenticated/ams/students.promotions'
@@ -342,6 +343,12 @@ const AuthenticatedAmsStudentsIndexRoute =
     path: '/ams/students/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAmsFinanceIndexRoute =
+  AuthenticatedAmsFinanceIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAmsFinanceRoute,
+  } as any)
 const AuthenticatedAmsAcademicsIndexRoute =
   AuthenticatedAmsAcademicsIndexRouteImport.update({
     id: '/ams/academics/',
@@ -469,7 +476,7 @@ export interface FileRoutesByFullPath {
   '/admin/site-content': typeof AuthenticatedAdminSiteContentRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/ams/activity': typeof AuthenticatedAmsActivityRoute
-  '/ams/finance': typeof AuthenticatedAmsFinanceRoute
+  '/ams/finance': typeof AuthenticatedAmsFinanceRouteWithChildren
   '/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
   '/ams/queue': typeof AuthenticatedAmsQueueRoute
   '/ams/reports': typeof AuthenticatedAmsReportsRoute
@@ -496,6 +503,7 @@ export interface FileRoutesByFullPath {
   '/ams/students/promotions': typeof AuthenticatedAmsStudentsPromotionsRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
   '/ams/academics/': typeof AuthenticatedAmsAcademicsIndexRoute
+  '/ams/finance/': typeof AuthenticatedAmsFinanceIndexRoute
   '/ams/students/': typeof AuthenticatedAmsStudentsIndexRoute
   '/admissions/stage/$slug/': typeof AdmissionsStageSlugIndexRoute
   '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
@@ -536,7 +544,6 @@ export interface FileRoutesByTo {
   '/admin/site-content': typeof AuthenticatedAdminSiteContentRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/ams/activity': typeof AuthenticatedAmsActivityRoute
-  '/ams/finance': typeof AuthenticatedAmsFinanceRoute
   '/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
   '/ams/queue': typeof AuthenticatedAmsQueueRoute
   '/ams/reports': typeof AuthenticatedAmsReportsRoute
@@ -563,6 +570,7 @@ export interface FileRoutesByTo {
   '/ams/students/promotions': typeof AuthenticatedAmsStudentsPromotionsRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
   '/ams/academics': typeof AuthenticatedAmsAcademicsIndexRoute
+  '/ams/finance': typeof AuthenticatedAmsFinanceIndexRoute
   '/ams/students': typeof AuthenticatedAmsStudentsIndexRoute
   '/admissions/stage/$slug': typeof AdmissionsStageSlugIndexRoute
   '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
@@ -605,7 +613,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/site-content': typeof AuthenticatedAdminSiteContentRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/ams/activity': typeof AuthenticatedAmsActivityRoute
-  '/_authenticated/ams/finance': typeof AuthenticatedAmsFinanceRoute
+  '/_authenticated/ams/finance': typeof AuthenticatedAmsFinanceRouteWithChildren
   '/_authenticated/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
   '/_authenticated/ams/queue': typeof AuthenticatedAmsQueueRoute
   '/_authenticated/ams/reports': typeof AuthenticatedAmsReportsRoute
@@ -632,6 +640,7 @@ export interface FileRoutesById {
   '/_authenticated/ams/students/promotions': typeof AuthenticatedAmsStudentsPromotionsRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
   '/_authenticated/ams/academics/': typeof AuthenticatedAmsAcademicsIndexRoute
+  '/_authenticated/ams/finance/': typeof AuthenticatedAmsFinanceIndexRoute
   '/_authenticated/ams/students/': typeof AuthenticatedAmsStudentsIndexRoute
   '/admissions/stage/$slug/': typeof AdmissionsStageSlugIndexRoute
   '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
@@ -701,6 +710,7 @@ export interface FileRouteTypes {
     | '/ams/students/promotions'
     | '/admissions/stage/$slug/classrooms'
     | '/ams/academics/'
+    | '/ams/finance/'
     | '/ams/students/'
     | '/admissions/stage/$slug/'
     | '/admissions/stage/$slug/classroom/$classroomSlug'
@@ -741,7 +751,6 @@ export interface FileRouteTypes {
     | '/admin/site-content'
     | '/admin/users'
     | '/ams/activity'
-    | '/ams/finance'
     | '/ams/form-builder'
     | '/ams/queue'
     | '/ams/reports'
@@ -768,6 +777,7 @@ export interface FileRouteTypes {
     | '/ams/students/promotions'
     | '/admissions/stage/$slug/classrooms'
     | '/ams/academics'
+    | '/ams/finance'
     | '/ams/students'
     | '/admissions/stage/$slug'
     | '/admissions/stage/$slug/classroom/$classroomSlug'
@@ -836,6 +846,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ams/students/promotions'
     | '/admissions/stage/$slug/classrooms'
     | '/_authenticated/ams/academics/'
+    | '/_authenticated/ams/finance/'
     | '/_authenticated/ams/students/'
     | '/admissions/stage/$slug/'
     | '/admissions/stage/$slug/classroom/$classroomSlug'
@@ -1228,6 +1239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAmsStudentsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ams/finance/': {
+      id: '/_authenticated/ams/finance/'
+      path: '/'
+      fullPath: '/ams/finance/'
+      preLoaderRoute: typeof AuthenticatedAmsFinanceIndexRouteImport
+      parentRoute: typeof AuthenticatedAmsFinanceRoute
+    }
     '/_authenticated/ams/academics/': {
       id: '/_authenticated/ams/academics/'
       path: '/ams/academics'
@@ -1336,6 +1354,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAmsFinanceRouteChildren {
+  AuthenticatedAmsFinanceIndexRoute: typeof AuthenticatedAmsFinanceIndexRoute
+}
+
+const AuthenticatedAmsFinanceRouteChildren: AuthenticatedAmsFinanceRouteChildren =
+  {
+    AuthenticatedAmsFinanceIndexRoute: AuthenticatedAmsFinanceIndexRoute,
+  }
+
+const AuthenticatedAmsFinanceRouteWithChildren =
+  AuthenticatedAmsFinanceRoute._addFileChildren(
+    AuthenticatedAmsFinanceRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedChildFileRoute: typeof AuthenticatedChildFileRoute
   AuthenticatedChildReportsRoute: typeof AuthenticatedChildReportsRoute
@@ -1352,7 +1384,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminSiteContentRoute: typeof AuthenticatedAdminSiteContentRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAmsActivityRoute: typeof AuthenticatedAmsActivityRoute
-  AuthenticatedAmsFinanceRoute: typeof AuthenticatedAmsFinanceRoute
+  AuthenticatedAmsFinanceRoute: typeof AuthenticatedAmsFinanceRouteWithChildren
   AuthenticatedAmsFormBuilderRoute: typeof AuthenticatedAmsFormBuilderRoute
   AuthenticatedAmsQueueRoute: typeof AuthenticatedAmsQueueRoute
   AuthenticatedAmsReportsRoute: typeof AuthenticatedAmsReportsRoute
@@ -1396,7 +1428,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminSiteContentRoute: AuthenticatedAdminSiteContentRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAmsActivityRoute: AuthenticatedAmsActivityRoute,
-  AuthenticatedAmsFinanceRoute: AuthenticatedAmsFinanceRoute,
+  AuthenticatedAmsFinanceRoute: AuthenticatedAmsFinanceRouteWithChildren,
   AuthenticatedAmsFormBuilderRoute: AuthenticatedAmsFormBuilderRoute,
   AuthenticatedAmsQueueRoute: AuthenticatedAmsQueueRoute,
   AuthenticatedAmsReportsRoute: AuthenticatedAmsReportsRoute,
