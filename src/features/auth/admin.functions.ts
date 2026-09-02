@@ -2,12 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
+  bulkRolePermissionSchema,
   bulkUserPermissionSchema,
   rolePermissionSchema,
   roleAssignmentSchema,
 } from "./admin-schemas";
 import {
   assertAdmin,
+  bulkSetRolePermissions,
   bulkSetUserPermissions,
   listAuditEntries,
   listRolePermissionMatrix,
@@ -16,6 +18,21 @@ import {
   replaceUserRoles,
   setRolePermission,
 } from "./service.server";
+
+export const adminBulkSetRolePermissions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => bulkRolePermissionSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    return bulkSetRolePermissions(
+      context.supabase,
+      context.userId,
+      data.role,
+      data.permissionKeys,
+      data.granted,
+    );
+  });
+
 
 export const adminListUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
