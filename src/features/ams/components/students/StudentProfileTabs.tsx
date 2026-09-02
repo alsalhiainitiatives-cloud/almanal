@@ -47,7 +47,7 @@ export function StudentProfileTabs({
   children: React.ReactNode;
 }) {
   const [month, setMonth] = useState(currentMonth);
-  const [viewer, setViewer] = useState<{ items: MediaItem[]; index: number } | null>(null);
+  const [viewer, setViewer] = useState<MediaItem | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["ams", "student-profile", childId, month],
@@ -58,6 +58,7 @@ export function StudentProfileTabs({
     () => (data?.media ?? []).map((m) => ({ url: m.url, kind: m.kind, name: m.name ?? m.context })),
     [data?.media],
   );
+  void mediaItems;
 
   const rate = data ? attendanceRate(data.attendance.counts) : null;
   const yearRate = data ? attendanceRate(data.attendance.yearCounts) : null;
@@ -270,7 +271,7 @@ export function StudentProfileTabs({
                 <button
                   key={m.id}
                   type="button"
-                  onClick={() => setViewer({ items: mediaItems, index })}
+                  onClick={() => setViewer(mediaItems[index] ?? null)}
                   className="group overflow-hidden rounded-3xl border border-border/60 bg-card text-start"
                 >
                   <div className="aspect-4/3 bg-muted/40">
@@ -299,13 +300,7 @@ export function StudentProfileTabs({
         <TabsContent value="file">{officialFile}</TabsContent>
       </Tabs>
 
-      <MediaViewerDialog
-        open={!!viewer}
-        items={viewer?.items ?? []}
-        index={viewer?.index ?? 0}
-        onOpenChange={(open) => !open && setViewer(null)}
-        onIndexChange={(index) => setViewer((v) => (v ? { ...v, index } : v))}
-      />
+      <MediaViewerDialog item={viewer} onClose={() => setViewer(null)} />
     </>
   );
 }
