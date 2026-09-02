@@ -88,7 +88,9 @@ export function AssessmentsBoard() {
   const queryClient = useQueryClient();
 
   const [classroomId, setClassroomId] = useState<string | null>(null);
+  const [focusChildId, setFocusChildId] = useState<string>("all");
   const [openCell, setOpenCell] = useState<{ childId: string; lessonId: string } | null>(null);
+
 
   const queryKey = ["assessments-board", classroomId];
   const { data, isLoading, error } = useQuery({
@@ -223,6 +225,80 @@ export function AssessmentsBoard() {
   const activeChild = board.children.find((c) => c.id === openCell?.childId);
   const activeLesson = board.lessons.find((l) => l.id === openCell?.lessonId);
 
+  const focusChild =
+    focusChildId === "all" ? null : (board.children.find((c) => c.id === focusChildId) ?? null);
+
+  /** Shared cell mutations so both the grid and the focused child view behave the same. */
+  const cycleFor = (
+    childId: string,
+    lessonId: string,
+    cell: { performanceLevel: TriangleLevel; growthLevel: TriangleLevel; performanceColors: string[]; growthColors: string[]; note: string | null },
+    scale: TriangleScale,
+    level: TriangleLevel,
+  ) => {
+    const colors =
+      scale === "performance"
+        ? [...normalizeColors(cell.performanceColors)]
+        : [...normalizeColors(cell.growthColors)];
+    if (level > 0) {
+      const idx = level - 1;
+      if (!colors[idx] || colors[idx] === DEFAULT_LINE_COLOR) colors[idx] = currentMonthColor();
+    }
+    save.mutate({
+      childId,
+      lessonId,
+      performanceLevel: scale === "performance" ? level : cell.performanceLevel,
+      growthLevel: scale === "growth" ? level : cell.growthLevel,
+      performanceColors:
+        scale === "performance" ? colors : normalizeColors(cell.performanceColors),
+      growthColors: scale === "growth" ? colors : normalizeColors(cell.growthColors),
+      note: cell.note,
+    });
+  };
+
+  const setColorFor = (
+    childId: string,
+    lessonId: string,
+    cell: { performanceLevel: TriangleLevel; growthLevel: TriangleLevel; performanceColors: string[]; growthColors: string[]; note: string | null },
+    scale: TriangleScale,
+    lineIndex: number,
+    hex: string,
+  ) => {
+    const colors =
+      scale === "performance"
+        ? [...normalizeColors(cell.performanceColors)]
+        : [...normalizeColors(cell.growthColors)];
+    colors[lineIndex] = hex;
+    const level = scale === "performance" ? cell.performanceLevel : cell.growthLevel;
+    const nextLevel = Math.max(level, lineIndex + 1) as TriangleLevel;
+    save.mutate({
+      childId,
+      lessonId,
+      performanceLevel: scale === "performance" ? nextLevel : cell.performanceLevel,
+      growthLevel: scale === "growth" ? nextLevel : cell.growthLevel,
+      performanceColors:
+        scale === "performance" ? colors : normalizeColors(cell.performanceColors),
+      growthColors: scale === "growth" ? colors : normalizeColors(cell.growthColors),
+      note: cell.note,
+    });
+  };
+
+  const DetailsButton = ({ childId, lessonId, count }: { childId: string; lessonId: string; count: number }) => (
+    <button
+      type="button"
+      onClick={() => setOpenCell({ childId, lessonId })}
+      className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-black text-primary shadow-sm transition hover:bg-primary hover:text-primary-foreground"
+    >
+      <Paperclip className="size-3.5" />
+      التفاصيل والأدلة
+      {count ? (
+        <span className="grid size-4 place-items-center rounded-full bg-primary text-[9px] font-black text-primary-foreground">
+          {count}
+        </span>
+      ) : null}
+    </button>
+  );
+
   return (
     <div className="space-y-5">
       <EvaluationGuide />
@@ -233,7 +309,10 @@ export function AssessmentsBoard() {
           <label className="text-[11px] font-black text-muted-foreground">الفصل</label>
           <Select
             value={board.selectedClassroomId ?? ""}
-            onValueChange={(value) => setClassroomId(value)}
+            onValueChange={(value) => {
+              setClassroomId(value);
+              setFocusChildId("all");
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="اختر الفصل" />
@@ -247,9 +326,27 @@ export function AssessmentsBoard() {
             </SelectContent>
           </Select>
         </div>
+        <div className="min-w-56 space-y-1.5">
+          <label className="text-[11px] font-black text-muted-foreground">الطفل</label>
+          <Select value={focusChildId} onValueChange={setFocusChildId}>
+            <SelectTrigger>
+              <SelectValue placeholder="كل الأطفال" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل الأطفال (شبكة الفصل)</SelectItem>
+              {board.children.map((child) => (
+                <SelectItem key={child.id} value={child.id}>
+                  {child.nameAr}
+                  {child.studentNumber ? ` — ${child.studentNumber}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex-1" />
         <MonthLegend />
       </div>
+
 
       {!board.classrooms.length ? (
         <EmptyState text="لا توجد فصول مسندة إليك حتى الآن — يرجى مراجعة إدارة المدرسة." />
@@ -257,6 +354,99 @@ export function AssessmentsBoard() {
         <EmptyState text="لا توجد دروس في منهج هذا الفصل — أضيفي المواد والمحاور والدروس من «إدارة المنهج» أولًا." />
       ) : !board.children.length ? (
         <EmptyState text="لا يوجد أطفال مسجّلون في هذا الفصل حتى الآن." />
+      ) : focusChild ? (
+        <div className="space-y-5">
+          <div className="rounded-3xl border border-primary/30 bg-gradient-to-l from-primary/10 to-transparent p-6">
+            <p className="text-[11px] font-black text-primary">تقييم فردي — عرض موسّع</p>
+            <h2 className="mt-1 text-2xl font-black text-foreground">{focusChild.nameAr}</h2>
+            <p className="mt-1 text-xs font-bold text-muted-foreground">
+              {focusChild.studentNumber ? `${focusChild.studentNumber} · ` : ""}
+              {board.lessons.length} درسًا في منهج الفصل
+            </p>
+          </div>
+
+          {groupLessons(board.lessons).map((subject) => (
+            <section key={subject.nameAr} className="space-y-3">
+              <h3
+                className="rounded-2xl px-4 py-2 text-sm font-black text-white"
+                style={{ background: subject.colorHex }}
+              >
+                {subject.nameAr}
+              </h3>
+              {subject.topics.map((topic) => (
+                <div key={topic.nameAr} className="space-y-3">
+                  <p className="text-xs font-black text-muted-foreground">{topic.nameAr}</p>
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    {topic.lessons.map((lesson) => {
+                      const cell = cellOf(focusChild.id, lesson.id) ?? {
+                        ...EMPTY_CELL,
+                        evidences: [],
+                      };
+                      return (
+                        <article
+                          key={lesson.id}
+                          className="space-y-4 rounded-3xl border border-border/60 bg-card p-5 shadow-soft"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h4 className="text-base font-black text-foreground">{lesson.nameAr}</h4>
+                            <DetailsButton
+                              childId={focusChild.id}
+                              lessonId={lesson.id}
+                              count={"evidences" in cell ? cell.evidences.length : 0}
+                            />
+                          </div>
+                          <div className="flex flex-wrap items-start justify-center gap-8 rounded-2xl bg-muted/40 p-4">
+                            <ScaleControl
+                              scale="performance"
+                              level={cell.performanceLevel}
+                              colors={normalizeColors(cell.performanceColors)}
+                              size={82}
+                              onCycle={(next) =>
+                                cycleFor(focusChild.id, lesson.id, cell, "performance", next)
+                              }
+                              onPick={(line, hex) =>
+                                setColorFor(focusChild.id, lesson.id, cell, "performance", line, hex)
+                              }
+                            />
+                            <ScaleControl
+                              scale="growth"
+                              level={cell.growthLevel}
+                              colors={normalizeColors(cell.growthColors)}
+                              size={82}
+                              onCycle={(next) =>
+                                cycleFor(focusChild.id, lesson.id, cell, "growth", next)
+                              }
+                              onPick={(line, hex) =>
+                                setColorFor(focusChild.id, lesson.id, cell, "growth", line, hex)
+                              }
+                            />
+                          </div>
+                          <div className="grid gap-2 text-[11px] font-bold text-muted-foreground sm:grid-cols-2">
+                            <p>
+                              {SCALE_LABELS.performance}:{" "}
+                              <span className="text-foreground">
+                                {TRIANGLE_LABELS.performance[cell.performanceLevel]}
+                              </span>
+                            </p>
+                            <p>
+                              {SCALE_LABELS.growth}:{" "}
+                              <span className="text-foreground">
+                                {TRIANGLE_LABELS.growth[cell.growthLevel]}
+                              </span>
+                            </p>
+                          </div>
+                          <p className="rounded-2xl border border-border/50 bg-background/60 p-3 text-xs font-bold text-muted-foreground">
+                            {cell.note?.trim() ? cell.note : "لا توجد ملاحظة بعد."}
+                          </p>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </section>
+          ))}
+        </div>
       ) : (
         <div className="relative max-h-[70vh] overflow-auto rounded-3xl border border-border/60 bg-card">
           <table className="min-w-max border-separate border-spacing-0 text-right">
@@ -288,7 +478,14 @@ export function AssessmentsBoard() {
               {board.children.map((child) => (
                 <tr key={child.id} className="group">
                   <th className="sticky right-0 z-10 w-56 border-b border-l border-border/60 bg-card px-4 py-3 text-right">
-                    <span className="block text-xs font-black text-foreground">{child.nameAr}</span>
+                    <button
+                      type="button"
+                      onClick={() => setFocusChildId(child.id)}
+                      className="block text-xs font-black text-foreground hover:text-primary hover:underline"
+                      title="عرض تقييم الطفل في صفحة كاملة"
+                    >
+                      {child.nameAr}
+                    </button>
                     {child.studentNumber ? (
                       <span className="mt-0.5 block text-[10px] font-bold text-muted-foreground">
                         {child.studentNumber}
@@ -297,49 +494,6 @@ export function AssessmentsBoard() {
                   </th>
                   {board.lessons.map((lesson) => {
                     const cell = cellOf(child.id, lesson.id) ?? { ...EMPTY_CELL, evidences: [] };
-                    const cycle = (scale: TriangleScale, level: TriangleLevel) => {
-                      const colors =
-                        scale === "performance"
-                          ? [...normalizeColors(cell.performanceColors)]
-                          : [...normalizeColors(cell.growthColors)];
-                      if (level > 0) {
-                        const idx = level - 1;
-                        if (!colors[idx] || colors[idx] === DEFAULT_LINE_COLOR) {
-                          colors[idx] = currentMonthColor();
-                        }
-                      }
-                      save.mutate({
-                        childId: child.id,
-                        lessonId: lesson.id,
-                        performanceLevel: scale === "performance" ? level : cell.performanceLevel,
-                        growthLevel: scale === "growth" ? level : cell.growthLevel,
-                        performanceColors:
-                          scale === "performance" ? colors : normalizeColors(cell.performanceColors),
-                        growthColors: scale === "growth" ? colors : normalizeColors(cell.growthColors),
-                        note: cell.note,
-                      });
-                    };
-
-                    const setColor = (scale: TriangleScale, lineIndex: number, hex: string) => {
-                      const colors =
-                        scale === "performance"
-                          ? [...normalizeColors(cell.performanceColors)]
-                          : [...normalizeColors(cell.growthColors)];
-                      colors[lineIndex] = hex;
-                      const level = scale === "performance" ? cell.performanceLevel : cell.growthLevel;
-                      const nextLevel = (Math.max(level, lineIndex + 1) as TriangleLevel);
-                      save.mutate({
-                        childId: child.id,
-                        lessonId: lesson.id,
-                        performanceLevel: scale === "performance" ? nextLevel : cell.performanceLevel,
-                        growthLevel: scale === "growth" ? nextLevel : cell.growthLevel,
-                        performanceColors:
-                          scale === "performance" ? colors : normalizeColors(cell.performanceColors),
-                        growthColors: scale === "growth" ? colors : normalizeColors(cell.growthColors),
-                        note: cell.note,
-                      });
-                    };
-
                     return (
                       <td
                         key={lesson.id}
@@ -350,50 +504,29 @@ export function AssessmentsBoard() {
                             scale="performance"
                             level={cell.performanceLevel}
                             colors={normalizeColors(cell.performanceColors)}
-                            onCycle={(next) => cycle("performance", next)}
-                            onPick={(line, hex) => setColor("performance", line, hex)}
+                            onCycle={(next) =>
+                              cycleFor(child.id, lesson.id, cell, "performance", next)
+                            }
+                            onPick={(line, hex) =>
+                              setColorFor(child.id, lesson.id, cell, "performance", line, hex)
+                            }
                           />
                           <ScaleControl
                             scale="growth"
                             level={cell.growthLevel}
                             colors={normalizeColors(cell.growthColors)}
-                            onCycle={(next) => cycle("growth", next)}
-                            onPick={(line, hex) => setColor("growth", line, hex)}
+                            onCycle={(next) => cycleFor(child.id, lesson.id, cell, "growth", next)}
+                            onPick={(line, hex) =>
+                              setColorFor(child.id, lesson.id, cell, "growth", line, hex)
+                            }
                           />
                         </div>
-                        <div className="mt-1.5 flex items-center justify-center gap-1">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 gap-1 px-2 text-[10px] font-black"
-                            disabled={uploading}
-                            onClick={() => {
-                              setUploadTarget({ childId: child.id, lessonId: lesson.id });
-                              uploadRef.current?.click();
-                            }}
-                          >
-                            <Paperclip className="size-3.5" />
-                            دليل
-                          </Button>
-                          {"evidences" in cell && cell.evidences.length ? (
-                            <button
-                              type="button"
-                              onClick={() => setOpenCell({ childId: child.id, lessonId: lesson.id })}
-                              className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary"
-                            >
-                              {cell.evidences.length}
-                            </button>
-                          ) : null}
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 px-2 text-[10px] font-black"
-                            onClick={() => setOpenCell({ childId: child.id, lessonId: lesson.id })}
-                          >
-                            تفاصيل
-                          </Button>
+                        <div className="mt-2 flex items-center justify-center">
+                          <DetailsButton
+                            childId={child.id}
+                            lessonId={lesson.id}
+                            count={"evidences" in cell ? cell.evidences.length : 0}
+                          />
                         </div>
                       </td>
                     );
@@ -404,6 +537,7 @@ export function AssessmentsBoard() {
           </table>
         </div>
       )}
+
 
       <input
         ref={uploadRef}

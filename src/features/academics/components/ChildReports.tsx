@@ -5,15 +5,18 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { EyeOff, FileText, Film, ImageIcon, Loader2, Printer } from "lucide-react";
+import { EyeOff, FileText, Film, ImageIcon, Link as LinkIcon, Loader2, Printer } from "lucide-react";
 import { useState } from "react";
 
+import { MediaViewerDialog, type MediaItem } from "@/components/media/MediaViewerDialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { SCALE_LABELS, TRIANGLE_LABELS } from "../assessments";
+import { EVIDENCE_KIND_LABELS_AR, SCALE_LABELS, TRIANGLE_LABELS } from "../assessments";
 import { REPORT_TYPE_LABELS, masteryLabel, type ReportType } from "../reports";
 import { academicsParentReportBoard } from "../reports.functions";
+import { EvaluationGuide } from "./EvaluationGuide";
 import { EvaluationTriangle } from "./EvaluationTriangle";
+
 
 const PRINT_CSS = `
 @media print {
@@ -30,6 +33,8 @@ export function ChildReports() {
   const loadBoard = useServerFn(academicsParentReportBoard);
   const [childId, setChildId] = useState<string | null>(null);
   const [reportType, setReportType] = useState<ReportType>("monthly");
+  const [viewer, setViewer] = useState<MediaItem | null>(null);
+
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["parent-academic-report", childId, reportType],
@@ -66,6 +71,11 @@ export function ChildReports() {
   return (
     <div className="space-y-5">
       <style>{PRINT_CSS}</style>
+      <div className="print:hidden">
+        <EvaluationGuide />
+      </div>
+      <MediaViewerDialog item={viewer} onClose={() => setViewer(null)} />
+
 
       <Card className="flex flex-wrap items-center gap-2 p-3 print:hidden">
         {children.map((child) => {
@@ -153,20 +163,8 @@ export function ChildReports() {
             <Stat label="أدلة رقمية" value={data.summary.evidences} />
           </section>
 
-          <section className="rounded-2xl border border-border/50 bg-background/60 p-3">
-            <p className="mb-2 text-[11px] font-black text-foreground">مفتاح ألوان الأشهر</p>
-            <div className="flex flex-wrap gap-2">
-              {data.monthColors.map((m) => (
-                <span
-                  key={m.month}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 px-2 py-1 text-[10px] font-bold"
-                >
-                  <span className="size-3 rounded-full" style={{ background: m.hex }} />
-                  {m.label}
-                </span>
-              ))}
-            </div>
-          </section>
+
+
 
           {!data.subjects.length ? (
             <p className="rounded-2xl border-2 border-dashed border-border/60 p-8 text-center text-sm font-bold text-muted-foreground">
@@ -220,12 +218,21 @@ export function ChildReports() {
                                 {lesson.cell?.evidences.length ? (
                                   <div className="flex flex-wrap gap-1.5">
                                     {lesson.cell.evidences.map((ev) => (
-                                      <a
+                                      <button
                                         key={ev.id}
-                                        href={ev.url ?? "#"}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="inline-flex items-center gap-1 rounded-lg border border-border/60 p-1 text-[10px] font-bold hover:border-primary/50"
+                                        type="button"
+                                        disabled={!ev.url}
+                                        onClick={() =>
+                                          ev.url &&
+                                          setViewer({
+                                            url: ev.url,
+                                            kind: ev.fileType,
+                                            name:
+                                              ev.fileName ?? EVIDENCE_KIND_LABELS_AR[ev.fileType],
+                                          })
+                                        }
+                                        title="عرض داخل المنصة"
+                                        className="inline-flex items-center gap-1 rounded-lg border border-border/60 p-1 text-[10px] font-bold transition hover:border-primary/60 hover:bg-primary/5 disabled:opacity-50 print:hidden"
                                       >
                                         {ev.fileType === "image" && ev.url ? (
                                           <img
@@ -235,6 +242,8 @@ export function ChildReports() {
                                           />
                                         ) : ev.fileType === "video" ? (
                                           <Film className="h-4 w-4" />
+                                        ) : ev.fileType === "link" ? (
+                                          <LinkIcon className="h-4 w-4" />
                                         ) : ev.fileType === "image" ? (
                                           <ImageIcon className="h-4 w-4" />
                                         ) : (
@@ -243,7 +252,8 @@ export function ChildReports() {
                                         <span className="max-w-[90px] truncate">
                                           {ev.fileName ?? "ملف"}
                                         </span>
-                                      </a>
+                                      </button>
+
                                     ))}
                                   </div>
                                 ) : (
