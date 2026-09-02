@@ -166,6 +166,8 @@ export function AssessmentsBoard() {
 
   return (
     <div className="space-y-5">
+      <EvaluationGuide />
+
       {/* Toolbar */}
       <div className="flex flex-wrap items-end gap-3 rounded-3xl border border-border/60 bg-card/80 p-4">
         <div className="min-w-56 space-y-1.5">
