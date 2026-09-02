@@ -71,6 +71,11 @@ export function ChildReports() {
   return (
     <div className="space-y-5">
       <style>{PRINT_CSS}</style>
+      <div className="print:hidden">
+        <EvaluationGuide />
+      </div>
+      <MediaViewerDialog item={viewer} onClose={() => setViewer(null)} />
+
 
       <Card className="flex flex-wrap items-center gap-2 p-3 print:hidden">
         {children.map((child) => {
