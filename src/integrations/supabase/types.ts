@@ -626,6 +626,57 @@ export type Database = {
           },
         ]
       }
+      attendance_records: {
+        Row: {
+          attendance_date: string
+          child_id: string
+          classroom_id: string | null
+          created_at: string
+          id: string
+          note: string | null
+          recorded_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attendance_date?: string
+          child_id: string
+          classroom_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          recorded_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attendance_date?: string
+          child_id?: string
+          classroom_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          recorded_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_records_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "application_children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_records_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -1742,6 +1793,75 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: false
             referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parent_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          application_id: string
+          child_id: string | null
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          parent_email: string | null
+          parent_name: string | null
+          parent_national_id: string | null
+          parent_phone: string
+          status: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          application_id: string
+          child_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          parent_email?: string | null
+          parent_name?: string | null
+          parent_national_id?: string | null
+          parent_phone: string
+          status?: string
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          application_id?: string
+          child_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          parent_email?: string | null
+          parent_name?: string | null
+          parent_national_id?: string | null
+          parent_phone?: string
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_invitations_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parent_invitations_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "application_children"
             referencedColumns: ["id"]
           },
         ]
@@ -3216,6 +3336,13 @@ export type Database = {
         Returns: boolean
       }
       child_classroom_id: { Args: { _child_id: string }; Returns: string }
+      claim_parent_invitation: {
+        Args: { _token: string }
+        Returns: {
+          child_names: string[]
+          linked: number
+        }[]
+      }
       classroom_enrolled_children: {
         Args: { _classroom_id: string }
         Returns: {
@@ -3283,9 +3410,21 @@ export type Database = {
         }[]
       }
       next_academic_number: { Args: { _prefix: string }; Returns: string }
+      normalize_phone: { Args: { _phone: string }; Returns: string }
       parent_has_child_in_classroom: {
         Args: { _classroom_id: string; _user_id: string }
         Returns: boolean
+      }
+      parent_invitation_preview: {
+        Args: { _token: string }
+        Returns: {
+          child_name: string
+          expired: boolean
+          parent_name: string
+          phone_tail: string
+          siblings: number
+          status: string
+        }[]
       }
       recount_classroom_seats: { Args: never; Returns: undefined }
       recount_stage_seats: { Args: never; Returns: undefined }
