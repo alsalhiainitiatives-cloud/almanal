@@ -587,8 +587,9 @@ export type Database = {
           assessment_id: string
           created_at: string
           created_by: string
+          external_url: string | null
           file_name: string | null
-          file_path: string
+          file_path: string | null
           file_size: number | null
           file_type: string
           id: string
@@ -597,8 +598,9 @@ export type Database = {
           assessment_id: string
           created_at?: string
           created_by: string
+          external_url?: string | null
           file_name?: string | null
-          file_path: string
+          file_path?: string | null
           file_size?: number | null
           file_type?: string
           id?: string
@@ -607,8 +609,9 @@ export type Database = {
           assessment_id?: string
           created_at?: string
           created_by?: string
+          external_url?: string | null
           file_name?: string | null
-          file_path?: string
+          file_path?: string | null
           file_size?: number | null
           file_type?: string
           id?: string
