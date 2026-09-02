@@ -8,6 +8,7 @@ import {
   CalendarDays,
   CalendarRange,
   ClipboardCheck,
+  FileSpreadsheet,
   CalendarClock,
   GraduationCap,
   Home,
@@ -202,7 +203,7 @@ const MODULES: Record<
   { badge: string; title: string; nav: NavItem[]; groups: string[]; home: string; search: boolean }
 > = {
   admissions: { badge: "AMS", title: "نظام إدارة القبول", nav: NAV, groups: NAV_GROUP_ORDER, home: "/ams", search: true },
-  students: { badge: "SIS", title: "شؤون الطلاب", nav: STUDENTS_NAV, groups: ["شؤون الطلاب"], home: "/ams/students", search: false },
+  students: { badge: "SIS", title: "شؤون الطلاب", nav: STUDENTS_NAV, groups: ["شؤون الطلاب", "إدارة البيانات"], home: "/ams/students", search: false },
   academics: {
     badge: "ATS",
     title: "التتبع الأكاديمي",
