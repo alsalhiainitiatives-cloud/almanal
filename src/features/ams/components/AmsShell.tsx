@@ -17,7 +17,9 @@ import {
   LogOut,
   Search,
   MessagesSquare,
+  ReceiptText,
   Settings,
+  Settings2,
   SlidersHorizontal,
   UsersRound,
   TicketCheck,
@@ -189,7 +191,14 @@ const MODULES: Record<
     home: "/ams/academics",
     search: false,
   },
-  finance: { badge: "FIN", title: "الإدارة المالية", nav: FINANCE_NAV, groups: ["الإدارة المالية"], home: "/ams/finance", search: false },
+  finance: {
+    badge: "FIN",
+    title: "الإدارة المالية",
+    nav: FINANCE_NAV,
+    groups: ["الإدارة المالية", "التحصيل والمتابعة", "التقارير والإعدادات"],
+    home: "/ams/finance",
+    search: false,
+  },
 };
 
 function moduleFor(pathname: string): ModuleKey {
