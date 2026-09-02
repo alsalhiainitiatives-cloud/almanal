@@ -16,7 +16,7 @@ import { adminTeacherDetail } from "@/features/academics/calendar.functions";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { PortalLayout } from "@/features/auth/components/PortalLayout";
 import { P } from "@/features/auth/rbac";
-import { NoAccess } from "./users";
+import { NoAccess } from "@/features/admin/components/UsersBoard";
 
 export const Route = createFileRoute("/_authenticated/admin/teachers/$teacherId")({
   head: () => ({
