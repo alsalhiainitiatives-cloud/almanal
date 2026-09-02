@@ -10,6 +10,8 @@ import {
   ClipboardList,
   MessagesSquare,
   KeyRound,
+  Link2,
+
   LogOut,
   ShieldCheck,
   UserCog,
