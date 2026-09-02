@@ -51,6 +51,7 @@ import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { useNotificationCounters } from "@/features/notifications/useNotificationCounters";
 import { cn } from "@/lib/utils";
 import { amsQueue } from "../ams.functions";
+import { canSeeLink } from "../nav-access";
 import { useAmsRealtime } from "../useAmsRealtime";
 import { StatusPill } from "./atoms";
 import { RegistrationSwitch } from "./RegistrationSwitch";
