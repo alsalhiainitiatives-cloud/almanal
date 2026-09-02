@@ -5,15 +5,18 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { EyeOff, FileText, Film, ImageIcon, Loader2, Printer } from "lucide-react";
+import { EyeOff, FileText, Film, ImageIcon, Link as LinkIcon, Loader2, Printer } from "lucide-react";
 import { useState } from "react";
 
+import { MediaViewerDialog, type MediaItem } from "@/components/media/MediaViewerDialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { SCALE_LABELS, TRIANGLE_LABELS } from "../assessments";
+import { EVIDENCE_KIND_LABELS_AR, SCALE_LABELS, TRIANGLE_LABELS } from "../assessments";
 import { REPORT_TYPE_LABELS, masteryLabel, type ReportType } from "../reports";
 import { academicsParentReportBoard } from "../reports.functions";
+import { EvaluationGuide } from "./EvaluationGuide";
 import { EvaluationTriangle } from "./EvaluationTriangle";
+
 
 const PRINT_CSS = `
 @media print {
