@@ -131,8 +131,18 @@ export async function listGuardianLinks(supabase: Db, userId: string) {
   const staffOwners = new Set(
     (roles ?? []).filter((r) => STAFF_ROLES.has(String(r.role))).map((r) => r.user_id),
   );
-  const inviteByChild = new Map<string, (typeof invitations)[number]>();
-  for (const inv of invitations ?? []) {
+  type InvitationRow = {
+    id: string;
+    application_id: string;
+    child_id: string | null;
+    token: string;
+    status: string;
+    expires_at: string;
+    created_at: string;
+    accepted_at: string | null;
+  };
+  const inviteByChild = new Map<string, InvitationRow>();
+  for (const inv of (invitations ?? []) as InvitationRow[]) {
     const key = inv.child_id ?? `app:${inv.application_id}`;
     if (!inviteByChild.has(key)) inviteByChild.set(key, inv);
   }
