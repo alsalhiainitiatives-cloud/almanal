@@ -21,6 +21,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { useNotificationCounters } from "@/features/notifications/useNotificationCounters";
+import { MODULE_PERMISSIONS, isSuperRole } from "@/features/ams/nav-access";
 import { useAuth } from "../AuthProvider";
 import { P, ROLE_COLORS, ROLE_LABELS } from "../rbac";
 import { PortalTrail } from "./PortalTrail";
@@ -130,21 +131,28 @@ export function PortalLayout({
   description: string;
   children: ReactNode;
 }) {
-  const { profile, roles, hasPermission, signOut, isReadOnly } = useAuth();
+  const { profile, roles, permissions, hasPermission, signOut, isReadOnly } = useAuth();
   const navigate = useNavigate();
   const counters = useNotificationCounters();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isStaffAccount = (roles as string[]).some((role) => role !== "parent");
 
 
+  const superRole = isSuperRole(roles as string[]);
+
+  /** Module tabs open when the user holds ANY permission inside that module. */
+  function visible(item: (typeof NAV_GROUPS)[number]["items"][number]): boolean {
+    if ("parentOnly" in item && item.parentOnly && isStaffAccount) return false;
+    if (superRole && item.featured) return true;
+    const moduleCodes = MODULE_PERMISSIONS[item.to];
+    if (moduleCodes && moduleCodes.some((code) => permissions.includes(code))) return true;
+    if (hasPermission(item.permission)) return true;
+    return "role" in item && (roles as string[]).includes(item.role as string);
+  }
+
   const groups = NAV_GROUPS.map((group) => ({
     label: group.label,
-    items: group.items.filter(
-      (item) =>
-        !("parentOnly" in item && item.parentOnly && isStaffAccount) &&
-        (hasPermission(item.permission) ||
-          ("role" in item && (roles as string[]).includes(item.role as string))),
-    ),
+    items: group.items.filter(visible),
   })).filter((group) => group.items.length > 0);
 
   async function handleSignOut() {
