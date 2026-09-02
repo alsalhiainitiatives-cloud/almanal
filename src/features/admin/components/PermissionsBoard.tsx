@@ -1,27 +1,43 @@
+/**
+ * Hierarchical, dynamic permissions matrix.
+ *
+ * Modules → sub-modules → actions are rendered from the merged registry
+ * (`permissionsConfig.ts` + `public.permissions`), so new features appear here
+ * automatically without UI changes.
+ */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, ShieldCheck } from "lucide-react";
-import { Fragment, useState } from "react";
+import { CheckCheck, Loader2, ShieldCheck, Square, UserCog } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/features/auth/AuthProvider";
 
-import { adminSetRolePermission, getRolePermissionMatrix } from "@/features/auth/admin.functions";
 import {
-  ALL_ROLES,
-  P,
-  PERMISSION_CATEGORY_LABELS,
-  ROLE_COLORS,
-  ROLE_LABELS,
-  type AppRole,
-} from "@/features/auth/rbac";
+  adminBulkSetRolePermissions,
+  adminSetRolePermission,
+  getRolePermissionMatrix,
+} from "@/features/auth/admin.functions";
+import {
+  actionLabel,
+  buildPermissionTree,
+  type MatrixModule,
+} from "@/features/auth/permissionsConfig";
+import { ALL_ROLES, P, ROLE_COLORS, ROLE_LABELS, type AppRole } from "@/features/auth/rbac";
 import { NoAccess } from "./UsersBoard";
-
 
 export function PermissionsBoard() {
   const { hasPermission, loadingContext } = useAuth();
   const canManage = hasPermission(P.permissionsManage) || hasPermission(P.rolesManage);
   const queryClient = useQueryClient();
+  const [activeRole, setActiveRole] = useState<AppRole>("registration_officer");
   const [pending, setPending] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
@@ -30,11 +46,32 @@ export function PermissionsBoard() {
     enabled: hasPermission(P.usersView),
   });
 
-  const mutation = useMutation({
+  const tree: MatrixModule[] = useMemo(
+    () => buildPermissionTree(data?.permissions ?? []),
+    [data?.permissions],
+  );
+
+  const grantedByRole = useMemo(() => {
+    const map = new Map<AppRole, Set<string>>();
+    for (const row of data?.rolePermissions ?? []) {
+      const set = map.get(row.role) ?? new Set<string>();
+      set.add(row.key);
+      map.set(row.role, set);
+    }
+    return map;
+  }, [data?.rolePermissions]);
+
+  const granted = grantedByRole.get(activeRole) ?? new Set<string>();
+  const allCodes = useMemo(() => tree.flatMap((m) => m.codes), [tree]);
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ["admin", "permission-matrix"] });
+
+  const single = useMutation({
     mutationFn: (input: { role: AppRole; permissionKey: string; granted: boolean }) =>
       adminSetRolePermission({ data: input }),
-    onSuccess: async (_result, input) => {
-      await queryClient.invalidateQueries({ queryKey: ["admin", "permission-matrix"] });
+    onSuccess: async (_r, input) => {
+      await invalidate();
       toast.success(input.granted ? "تم منح الصلاحية" : "تم سحب الصلاحية");
     },
     onError: (error) =>
@@ -42,104 +79,257 @@ export function PermissionsBoard() {
     onSettled: () => setPending(null),
   });
 
+  const bulk = useMutation({
+    mutationFn: (input: { role: AppRole; permissionKeys: string[]; granted: boolean }) =>
+      adminBulkSetRolePermissions({ data: input }),
+    onSuccess: async (_r, input) => {
+      await invalidate();
+      toast.success(
+        input.granted
+          ? `تم منح ${input.permissionKeys.length} صلاحية`
+          : `تم سحب ${input.permissionKeys.length} صلاحية`,
+      );
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "تعذّر تحديث الصلاحيات."),
+    onSettled: () => setPending(null),
+  });
+
+  const applyBulk = (codes: string[], nextGranted: boolean, token: string) => {
+    const targets = nextGranted
+      ? codes.filter((code) => !granted.has(code))
+      : codes.filter((code) => granted.has(code));
+    if (!targets.length) {
+      toast.info(nextGranted ? "كل الصلاحيات ممنوحة بالفعل" : "لا توجد صلاحيات لسحبها");
+      return;
+    }
+    setPending(token);
+    bulk.mutate({ role: activeRole, permissionKeys: targets, granted: nextGranted });
+  };
+
   if (!loadingContext && !hasPermission(P.usersView)) {
     return <NoAccess />;
   }
 
-  const permissions = data?.permissions ?? [];
-  const granted = new Set((data?.rolePermissions ?? []).map((r) => `${r.role}:${r.key}`));
-  const groups = permissions.reduce<Record<string, typeof permissions>>((acc, permission) => {
-    const category = permission.category ?? "general";
-    (acc[category] ??= []).push(permission);
-    return acc;
-  }, {});
+  const busy = bulk.isPending || single.isPending;
 
   return (
     <div className="space-y-5">
-      <section className="overflow-hidden rounded-[2rem] border border-border/60 bg-card shadow-soft">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 bg-muted/40 px-6 py-5">
+      {/* Sticky global controls */}
+      <div className="sticky top-2 z-20 space-y-4 rounded-[2rem] border border-border/60 bg-card/95 p-5 shadow-soft backdrop-blur">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 text-base font-extrabold text-foreground">
             <ShieldCheck className="size-5 text-primary" />
-            الصلاحيات حسب الدور
+            مصفوفة الصلاحيات الهرمية
           </h2>
-          {!canManage && (
+          <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-bold text-muted-foreground">
-              عرض فقط
+              {granted.size} / {allCodes.length} صلاحية ممنوحة
             </span>
-          )}
-        </header>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center gap-2 p-10 text-sm font-semibold text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" /> جارِ تحميل المصفوفة…
+            {!canManage && (
+              <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-bold text-muted-foreground">
+                عرض فقط
+              </span>
+            )}
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px] text-start text-sm">
-              <thead className="bg-muted/60 text-xs font-bold text-muted-foreground">
-                <tr>
-                  <th className="px-5 py-3 text-start">الصلاحية</th>
-                  {ALL_ROLES.map((role) => (
-                    <th key={role} className="px-3 py-3 text-center">
-                      <span
-                        className={`rounded-full px-3 py-1 text-[11px] font-bold ${ROLE_COLORS[role]}`}
-                      >
-                        {ROLE_LABELS[role]}
-                      </span>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(groups).map(([category, items]) => (
-                  <Fragment key={category}>
-                    <tr className="border-t border-border/60 bg-accent/30">
-                      <td
-                        colSpan={ALL_ROLES.length + 1}
-                        className="px-5 py-2 text-xs font-extrabold text-foreground"
-                      >
-                        {PERMISSION_CATEGORY_LABELS[category] ?? category}
-                      </td>
-                    </tr>
-                    {items.map((permission) => (
-                      <tr key={permission.key} className="border-t border-border/60">
-                        <td className="px-5 py-3">
-                          <p className="text-sm font-bold text-foreground">
-                            {permission.description_ar}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground" dir="ltr">
-                            {permission.key}
-                          </p>
-                        </td>
-                        {ALL_ROLES.map((role) => {
-                          const id = `${role}:${permission.key}`;
-                          return (
-                            <td key={id} className="px-3 py-3 text-center">
-                              <Checkbox
-                                checked={granted.has(id)}
-                                disabled={!canManage || pending === id}
-                                aria-label={`${ROLE_LABELS[role]} — ${permission.description_ar}`}
-                                onCheckedChange={(value) => {
-                                  setPending(id);
-                                  mutation.mutate({
-                                    role,
-                                    permissionKey: permission.key,
-                                    granted: value === true,
-                                  });
-                                }}
-                              />
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="flex items-center gap-1 text-xs font-bold text-muted-foreground">
+            <UserCog className="size-4" /> الدور:
+          </span>
+          {ALL_ROLES.map((role) => (
+            <button
+              key={role}
+              type="button"
+              onClick={() => setActiveRole(role)}
+              className={`rounded-full px-3 py-1 text-[11px] font-bold transition ${
+                activeRole === role
+                  ? ROLE_COLORS[role]
+                  : "bg-muted text-muted-foreground hover:bg-muted/70"
+              }`}
+            >
+              {ROLE_LABELS[role]}
+            </button>
+          ))}
+        </div>
+
+        {canManage && (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              disabled={busy}
+              className="bg-mint text-foreground hover:bg-mint/80"
+              onClick={() => applyBulk(allCodes, true, "global:all")}
+            >
+              {pending === "global:all" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <CheckCheck className="size-4" />
+              )}
+              تحديد كل الصلاحيات
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={busy}
+              onClick={() => applyBulk(allCodes, false, "global:none")}
+            >
+              {pending === "global:none" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Square className="size-4" />
+              )}
+              إلغاء تحديد الكل
+            </Button>
           </div>
         )}
-      </section>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center gap-2 rounded-[2rem] border border-border/60 bg-card p-10 text-sm font-semibold text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" /> جارِ تحميل المصفوفة…
+        </div>
+      ) : (
+        <Accordion
+          type="multiple"
+          defaultValue={tree.slice(0, 2).map((m) => m.module)}
+          className="space-y-3"
+        >
+          {tree.map((module) => {
+            const moduleGranted = module.codes.filter((code) => granted.has(code)).length;
+            return (
+              <AccordionItem
+                key={module.module}
+                value={module.module}
+                className="overflow-hidden rounded-[2rem] border border-border/60 bg-card shadow-soft"
+              >
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <span className="flex flex-1 flex-wrap items-center justify-between gap-3 pe-3">
+                    <span className="text-sm font-extrabold text-foreground">{module.label}</span>
+                    <span className="rounded-full bg-accent/50 px-3 py-1 text-[11px] font-bold text-foreground">
+                      {moduleGranted} / {module.codes.length}
+                    </span>
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className="space-y-4 border-t border-border/60 bg-muted/20 px-5 py-5">
+                  {canManage && (
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={busy}
+                        onClick={() => applyBulk(module.codes, true, `m:${module.module}:all`)}
+                      >
+                        تحديد كل «{module.label}»
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:bg-destructive/10"
+                        disabled={busy}
+                        onClick={() => applyBulk(module.codes, false, `m:${module.module}:none`)}
+                      >
+                        إلغاء تحديد «{module.label}»
+                      </Button>
+                    </div>
+                  )}
+
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    {module.subModules.map((sub) => {
+                      const codes = sub.permissions.map((p) => p.code);
+                      const subGranted = codes.filter((code) => granted.has(code)).length;
+                      return (
+                        <section
+                          key={`${module.module}:${sub.subModule}`}
+                          className="rounded-[1.5rem] border border-border/60 bg-card p-4"
+                        >
+                          <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-extrabold text-foreground">{sub.label}</p>
+                              <p className="text-[11px] font-semibold text-muted-foreground">
+                                {subGranted} من {codes.length} صلاحية
+                              </p>
+                            </div>
+                            {canManage && (
+                              <div className="flex gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 rounded-full px-2 text-[11px] font-bold text-mint-foreground"
+                                  disabled={busy}
+                                  onClick={() =>
+                                    applyBulk(codes, true, `s:${sub.subModule}:all`)
+                                  }
+                                >
+                                  الكل
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 rounded-full px-2 text-[11px] font-bold text-destructive"
+                                  disabled={busy}
+                                  onClick={() =>
+                                    applyBulk(codes, false, `s:${sub.subModule}:none`)
+                                  }
+                                >
+                                  لا شيء
+                                </Button>
+                              </div>
+                            )}
+                          </header>
+
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            {sub.permissions.map((permission) => {
+                              const id = `${activeRole}:${permission.code}`;
+                              return (
+                                <label
+                                  key={permission.code}
+                                  className="flex items-start gap-2 rounded-2xl border border-border/50 bg-muted/20 p-3"
+                                >
+                                  <Checkbox
+                                    checked={granted.has(permission.code)}
+                                    disabled={!canManage || busy}
+                                    aria-label={`${ROLE_LABELS[activeRole]} — ${permission.labelAr}`}
+                                    onCheckedChange={(value) => {
+                                      setPending(id);
+                                      single.mutate({
+                                        role: activeRole,
+                                        permissionKey: permission.code,
+                                        granted: value === true,
+                                      });
+                                    }}
+                                  />
+                                  <span className="min-w-0">
+                                    <span className="block text-xs font-bold text-foreground">
+                                      {permission.labelAr}
+                                    </span>
+                                    <span className="mt-1 flex flex-wrap items-center gap-1">
+                                      <span className="rounded-full bg-accent/50 px-2 py-0.5 text-[10px] font-bold text-foreground">
+                                        {actionLabel(permission.action)}
+                                      </span>
+                                      <span
+                                        className="text-[10px] text-muted-foreground"
+                                        dir="ltr"
+                                      >
+                                        {permission.code}
+                                      </span>
+                                    </span>
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </section>
+                      );
+                    })}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
+      )}
     </div>
   );
 }
