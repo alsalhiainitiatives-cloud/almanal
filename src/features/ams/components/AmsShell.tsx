@@ -8,6 +8,7 @@ import {
   CalendarDays,
   CalendarRange,
   ClipboardCheck,
+  FileSpreadsheet,
   CalendarClock,
   GraduationCap,
   Home,
@@ -101,14 +102,34 @@ const NAV_GROUP_ORDER = [
 
 /** Student Affairs is a separate operational module — no admissions links. */
 const STUDENTS_NAV: NavItem[] = [
-  { to: "/ams/students", label: "سجل الطلاب", icon: GraduationCap, exact: true, group: "شؤون الطلاب" },
+  {
+    to: "/ams/students",
+    label: "لوحة شؤون الطلاب",
+    icon: LayoutDashboard,
+    exact: true,
+    group: "شؤون الطلاب",
+  },
+  {
+    to: "/ams/students/registry",
+    label: "سجل الطلاب",
+    icon: GraduationCap,
+    exact: false,
+    group: "شؤون الطلاب",
+  },
   { to: "/ams/seats", label: "الفصول والمقاعد", icon: Armchair, exact: false, group: "شؤون الطلاب" },
+  {
+    to: "/ams/students/data",
+    label: "استيراد وتصدير الطلاب",
+    icon: FileSpreadsheet,
+    exact: false,
+    group: "إدارة البيانات",
+  },
   {
     to: "/ams/students/promotions",
     label: "نقل الطلاب بين المراحل",
     icon: UserRoundPlus,
     exact: false,
-    group: "شؤون الطلاب",
+    group: "إدارة البيانات",
   },
 ];
 
@@ -182,7 +203,7 @@ const MODULES: Record<
   { badge: string; title: string; nav: NavItem[]; groups: string[]; home: string; search: boolean }
 > = {
   admissions: { badge: "AMS", title: "نظام إدارة القبول", nav: NAV, groups: NAV_GROUP_ORDER, home: "/ams", search: true },
-  students: { badge: "SIS", title: "شؤون الطلاب", nav: STUDENTS_NAV, groups: ["شؤون الطلاب"], home: "/ams/students", search: false },
+  students: { badge: "SIS", title: "شؤون الطلاب", nav: STUDENTS_NAV, groups: ["شؤون الطلاب", "إدارة البيانات"], home: "/ams/students", search: false },
   academics: {
     badge: "ATS",
     title: "التتبع الأكاديمي",

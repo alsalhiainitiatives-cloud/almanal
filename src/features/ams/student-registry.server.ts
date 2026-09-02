@@ -214,7 +214,7 @@ export async function updateStudentRecord(
       parent_national_id: input.record.parent_national_id ?? null,
       parent_nationality: input.record.parent_nationality ?? null,
       parent_relationship: input.record.parent_relationship ?? null,
-      draft_data: { ...draft, ...parentDraft(input.record), imported: draft.imported ?? false },
+      draft_data: { ...draft, ...parentDraft(input.record), imported: draft.imported === true },
     })
     .eq("id", child.application_id);
 
