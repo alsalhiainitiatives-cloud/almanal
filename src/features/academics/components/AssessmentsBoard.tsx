@@ -594,6 +594,14 @@ export function AssessmentsBoard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <MediaViewerDialog
+        item={
+          viewer ? { url: viewer.url, kind: viewer.kind, name: viewer.title } : null
+        }
+        onClose={() => setViewer(null)}
+      />
+
     </div>
   );
 }
