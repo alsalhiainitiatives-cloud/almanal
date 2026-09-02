@@ -220,7 +220,7 @@ const EMPTY_SUMMARY: ReportSummary = {
 };
 
 /** Builds the curriculum tree + assessed cells for one child in one classroom. */
-async function buildChildReport(
+export async function buildChildReport(
   supabase: Db,
   classroomId: string,
   childId: string,
