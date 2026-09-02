@@ -218,6 +218,9 @@ export function AcademicsSettingsPanel() {
           )}
         </div>
       </section>
+
+      {canManageStorage(roles) ? <StorageMaintenancePanel /> : null}
+
     </div>
   );
 }
