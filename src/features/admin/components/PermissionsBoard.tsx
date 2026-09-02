@@ -134,24 +134,66 @@ export function PermissionsBoard() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Role picker — explicit cards so the active role is unmistakable */}
+        <div className="space-y-3">
           <span className="flex items-center gap-1 text-xs font-bold text-muted-foreground">
-            <UserCog className="size-4" /> الدور:
+            <UserCog className="size-4" /> اختر الدور الذي تريد تعديل صلاحياته:
           </span>
-          {ALL_ROLES.map((role) => (
-            <button
-              key={role}
-              type="button"
-              onClick={() => setActiveRole(role)}
-              className={`rounded-full px-3 py-1 text-[11px] font-bold transition ${
-                activeRole === role
-                  ? ROLE_COLORS[role]
-                  : "bg-muted text-muted-foreground hover:bg-muted/70"
-              }`}
-            >
-              {ROLE_LABELS[role]}
-            </button>
-          ))}
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {ALL_ROLES.map((role) => {
+              const active = activeRole === role;
+              const count = (grantedByRole.get(role) ?? new Set<string>()).size;
+              return (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => setActiveRole(role)}
+                  aria-pressed={active}
+                  className={`flex items-start gap-2 rounded-2xl border p-3 text-start transition ${
+                    active
+                      ? "border-primary bg-primary/10 shadow-soft ring-2 ring-primary/40"
+                      : "border-border/60 bg-card hover:bg-accent/40"
+                  }`}
+                >
+                  <span
+                    className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border ${
+                      active ? "border-primary bg-primary text-primary-foreground" : "border-border"
+                    }`}
+                  >
+                    {active && <Check className="size-3" />}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-xs font-extrabold text-foreground">
+                        {ROLE_LABELS[role]}
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${ROLE_COLORS[role]}`}
+                      >
+                        {count} صلاحية
+                      </span>
+                    </span>
+                    <span className="mt-1 block text-[10px] leading-5 text-muted-foreground">
+                      {ROLE_DESCRIPTIONS[role]}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3">
+            <UserCog className="size-4 text-primary" />
+            <p className="text-xs font-bold text-foreground">
+              أنت الآن تعدّل صلاحيات دور:{" "}
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold ${ROLE_COLORS[activeRole]}`}
+              >
+                {ROLE_LABELS[activeRole]}
+              </span>{" "}
+              — أي تعديل هنا يطبَّق على جميع المستخدمين الذين يحملون هذا الدور.
+            </p>
+          </div>
         </div>
 
         {canManage && (
