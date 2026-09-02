@@ -3336,6 +3336,12 @@ export type Database = {
         Returns: boolean
       }
       child_classroom_id: { Args: { _child_id: string }; Returns: string }
+      claim_child_by_identifier: {
+        Args: { _identifier: string }
+        Returns: {
+          child_names: string[]
+        }[]
+      }
       claim_parent_invitation: {
         Args: { _token: string }
         Returns: {
