@@ -13,7 +13,6 @@ import {
   CalendarClock,
   Globe,
   GraduationCap,
-  HardDrive,
   Home,
   Inbox,
   KeyRound,
