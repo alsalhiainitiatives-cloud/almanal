@@ -1982,22 +1982,34 @@ export type Database = {
       }
       permissions: {
         Row: {
+          action: string
           category: string
           created_at: string
           description_ar: string
           key: string
+          module_name: string
+          sort_order: number
+          sub_module_name: string
         }
         Insert: {
+          action?: string
           category?: string
           created_at?: string
           description_ar?: string
           key: string
+          module_name?: string
+          sort_order?: number
+          sub_module_name?: string
         }
         Update: {
+          action?: string
           category?: string
           created_at?: string
           description_ar?: string
           key?: string
+          module_name?: string
+          sort_order?: number
+          sub_module_name?: string
         }
         Relationships: []
       }
@@ -3307,6 +3319,14 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+      }
+      admin_set_role_permissions_bulk: {
+        Args: {
+          _granted: boolean
+          _permission_keys: string[]
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: number
       }
       admin_set_user_roles: {
         Args: {
