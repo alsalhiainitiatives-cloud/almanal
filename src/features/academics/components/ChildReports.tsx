@@ -33,6 +33,8 @@ export function ChildReports() {
   const loadBoard = useServerFn(academicsParentReportBoard);
   const [childId, setChildId] = useState<string | null>(null);
   const [reportType, setReportType] = useState<ReportType>("monthly");
+  const [viewer, setViewer] = useState<MediaItem | null>(null);
+
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["parent-academic-report", childId, reportType],
