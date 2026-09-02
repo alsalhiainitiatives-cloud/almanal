@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import {
   DEFAULT_LINE_COLOR,
   TRIANGLE_LABELS,
+  monthLabelOfColor,
   type TriangleLevel,
   type TriangleScale,
 } from "../assessments";
@@ -39,7 +40,15 @@ export function EvaluationTriangle({
 }: Props) {
   const lineColor = (index: number) => colors[index] ?? DEFAULT_LINE_COLOR;
   const next = (((level + 1) % 4) as TriangleLevel);
-  const label = `${TRIANGLE_LABELS[scale][level]}`;
+  // Tooltip: the state plus the month each achieved line was coloured with.
+  const months = Array.from({ length: level }, (_, i) => monthLabelOfColor(lineColor(i)))
+    .filter((m): m is string => Boolean(m))
+    .map((m) => m.split(" — ")[0]);
+  const uniqueMonths = [...new Set(months)];
+  const label = uniqueMonths.length
+    ? `${TRIANGLE_LABELS[scale][level]} — ${uniqueMonths.join(" ثم ")}`
+    : TRIANGLE_LABELS[scale][level];
+
 
   return (
     <button
