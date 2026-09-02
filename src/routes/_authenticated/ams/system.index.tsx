@@ -63,6 +63,18 @@ const CARDS = [
     icon: SlidersHorizontal,
     text: "خطوات نموذج التسجيل وحقوله وخدماته الإضافية.",
   },
+  {
+    to: "/ams/finance/settings",
+    label: "الإعدادات المالية",
+    icon: Wallet,
+    text: "الرسوم وخطط السداد والحسابات البنكية وسياسات الخصم.",
+  },
+  {
+    to: "/ams/academics/settings",
+    label: "إعدادات التتبع الأكاديمي",
+    icon: BookOpen,
+    text: "معايير التقييم وإعدادات المنهج والخطط الدراسية والتقارير.",
+  },
 ] as const;
 
 function SystemHome() {
