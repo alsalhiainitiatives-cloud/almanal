@@ -88,14 +88,6 @@ const NAV_GROUPS = [
         role: "teacher" as const,
         featured: true,
       },
-      {
-        to: "/ams/academics/calendar",
-        label: "تقويم الفصل",
-        icon: CalendarDays,
-        permission: P.applicationsReview,
-        role: "teacher" as const,
-        featured: false,
-      },
     ],
   },
   {
