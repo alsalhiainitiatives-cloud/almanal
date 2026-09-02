@@ -88,7 +88,9 @@ export function AssessmentsBoard() {
   const queryClient = useQueryClient();
 
   const [classroomId, setClassroomId] = useState<string | null>(null);
+  const [focusChildId, setFocusChildId] = useState<string>("all");
   const [openCell, setOpenCell] = useState<{ childId: string; lessonId: string } | null>(null);
+
 
   const queryKey = ["assessments-board", classroomId];
   const { data, isLoading, error } = useQuery({
