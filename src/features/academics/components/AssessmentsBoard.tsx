@@ -225,6 +225,80 @@ export function AssessmentsBoard() {
   const activeChild = board.children.find((c) => c.id === openCell?.childId);
   const activeLesson = board.lessons.find((l) => l.id === openCell?.lessonId);
 
+  const focusChild =
+    focusChildId === "all" ? null : (board.children.find((c) => c.id === focusChildId) ?? null);
+
+  /** Shared cell mutations so both the grid and the focused child view behave the same. */
+  const cycleFor = (
+    childId: string,
+    lessonId: string,
+    cell: { performanceLevel: TriangleLevel; growthLevel: TriangleLevel; performanceColors: string[]; growthColors: string[]; note: string | null },
+    scale: TriangleScale,
+    level: TriangleLevel,
+  ) => {
+    const colors =
+      scale === "performance"
+        ? [...normalizeColors(cell.performanceColors)]
+        : [...normalizeColors(cell.growthColors)];
+    if (level > 0) {
+      const idx = level - 1;
+      if (!colors[idx] || colors[idx] === DEFAULT_LINE_COLOR) colors[idx] = currentMonthColor();
+    }
+    save.mutate({
+      childId,
+      lessonId,
+      performanceLevel: scale === "performance" ? level : cell.performanceLevel,
+      growthLevel: scale === "growth" ? level : cell.growthLevel,
+      performanceColors:
+        scale === "performance" ? colors : normalizeColors(cell.performanceColors),
+      growthColors: scale === "growth" ? colors : normalizeColors(cell.growthColors),
+      note: cell.note,
+    });
+  };
+
+  const setColorFor = (
+    childId: string,
+    lessonId: string,
+    cell: { performanceLevel: TriangleLevel; growthLevel: TriangleLevel; performanceColors: string[]; growthColors: string[]; note: string | null },
+    scale: TriangleScale,
+    lineIndex: number,
+    hex: string,
+  ) => {
+    const colors =
+      scale === "performance"
+        ? [...normalizeColors(cell.performanceColors)]
+        : [...normalizeColors(cell.growthColors)];
+    colors[lineIndex] = hex;
+    const level = scale === "performance" ? cell.performanceLevel : cell.growthLevel;
+    const nextLevel = Math.max(level, lineIndex + 1) as TriangleLevel;
+    save.mutate({
+      childId,
+      lessonId,
+      performanceLevel: scale === "performance" ? nextLevel : cell.performanceLevel,
+      growthLevel: scale === "growth" ? nextLevel : cell.growthLevel,
+      performanceColors:
+        scale === "performance" ? colors : normalizeColors(cell.performanceColors),
+      growthColors: scale === "growth" ? colors : normalizeColors(cell.growthColors),
+      note: cell.note,
+    });
+  };
+
+  const DetailsButton = ({ childId, lessonId, count }: { childId: string; lessonId: string; count: number }) => (
+    <button
+      type="button"
+      onClick={() => setOpenCell({ childId, lessonId })}
+      className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-black text-primary shadow-sm transition hover:bg-primary hover:text-primary-foreground"
+    >
+      <Paperclip className="size-3.5" />
+      التفاصيل والأدلة
+      {count ? (
+        <span className="grid size-4 place-items-center rounded-full bg-primary text-[9px] font-black text-primary-foreground">
+          {count}
+        </span>
+      ) : null}
+    </button>
+  );
+
   return (
     <div className="space-y-5">
       <EvaluationGuide />
@@ -235,7 +309,10 @@ export function AssessmentsBoard() {
           <label className="text-[11px] font-black text-muted-foreground">الفصل</label>
           <Select
             value={board.selectedClassroomId ?? ""}
-            onValueChange={(value) => setClassroomId(value)}
+            onValueChange={(value) => {
+              setClassroomId(value);
+              setFocusChildId("all");
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="اختر الفصل" />
@@ -249,9 +326,27 @@ export function AssessmentsBoard() {
             </SelectContent>
           </Select>
         </div>
+        <div className="min-w-56 space-y-1.5">
+          <label className="text-[11px] font-black text-muted-foreground">الطفل</label>
+          <Select value={focusChildId} onValueChange={setFocusChildId}>
+            <SelectTrigger>
+              <SelectValue placeholder="كل الأطفال" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل الأطفال (شبكة الفصل)</SelectItem>
+              {board.children.map((child) => (
+                <SelectItem key={child.id} value={child.id}>
+                  {child.nameAr}
+                  {child.studentNumber ? ` — ${child.studentNumber}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex-1" />
         <MonthLegend />
       </div>
+
 
       {!board.classrooms.length ? (
         <EmptyState text="لا توجد فصول مسندة إليك حتى الآن — يرجى مراجعة إدارة المدرسة." />
