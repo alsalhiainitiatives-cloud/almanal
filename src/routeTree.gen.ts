@@ -36,6 +36,7 @@ import { Route as AuthenticatedReserveRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
 import { Route as AuthenticatedMyApplicationsRouteImport } from './routes/_authenticated/my-applications'
+import { Route as AuthenticatedLinkChildrenRouteImport } from './routes/_authenticated/link-children'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedClassChatRouteImport } from './routes/_authenticated/class-chat'
 import { Route as AuthenticatedChildReportsRouteImport } from './routes/_authenticated/child-reports'
@@ -218,6 +219,12 @@ const AuthenticatedMyApplicationsRoute =
   AuthenticatedMyApplicationsRouteImport.update({
     id: '/my-applications',
     path: '/my-applications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLinkChildrenRoute =
+  AuthenticatedLinkChildrenRouteImport.update({
+    id: '/link-children',
+    path: '/link-children',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -518,6 +525,7 @@ export interface FileRoutesByFullPath {
   '/child-reports': typeof AuthenticatedChildReportsRoute
   '/class-chat': typeof AuthenticatedClassChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/link-children': typeof AuthenticatedLinkChildrenRoute
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -594,6 +602,7 @@ export interface FileRoutesByTo {
   '/child-reports': typeof AuthenticatedChildReportsRoute
   '/class-chat': typeof AuthenticatedClassChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/link-children': typeof AuthenticatedLinkChildrenRoute
   '/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -672,6 +681,7 @@ export interface FileRoutesById {
   '/_authenticated/child-reports': typeof AuthenticatedChildReportsRoute
   '/_authenticated/class-chat': typeof AuthenticatedClassChatRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/link-children': typeof AuthenticatedLinkChildrenRoute
   '/_authenticated/my-applications': typeof AuthenticatedMyApplicationsRoute
   '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -750,6 +760,7 @@ export interface FileRouteTypes {
     | '/child-reports'
     | '/class-chat'
     | '/dashboard'
+    | '/link-children'
     | '/my-applications'
     | '/payments'
     | '/profile'
@@ -826,6 +837,7 @@ export interface FileRouteTypes {
     | '/child-reports'
     | '/class-chat'
     | '/dashboard'
+    | '/link-children'
     | '/my-applications'
     | '/payments'
     | '/profile'
@@ -903,6 +915,7 @@ export interface FileRouteTypes {
     | '/_authenticated/child-reports'
     | '/_authenticated/class-chat'
     | '/_authenticated/dashboard'
+    | '/_authenticated/link-children'
     | '/_authenticated/my-applications'
     | '/_authenticated/payments'
     | '/_authenticated/profile'
@@ -1176,6 +1189,13 @@ declare module '@tanstack/react-router' {
       path: '/my-applications'
       fullPath: '/my-applications'
       preLoaderRoute: typeof AuthenticatedMyApplicationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/link-children': {
+      id: '/_authenticated/link-children'
+      path: '/link-children'
+      fullPath: '/link-children'
+      preLoaderRoute: typeof AuthenticatedLinkChildrenRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -1522,6 +1542,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChildReportsRoute: typeof AuthenticatedChildReportsRoute
   AuthenticatedClassChatRoute: typeof AuthenticatedClassChatRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedLinkChildrenRoute: typeof AuthenticatedLinkChildrenRoute
   AuthenticatedMyApplicationsRoute: typeof AuthenticatedMyApplicationsRoute
   AuthenticatedPaymentsRoute: typeof AuthenticatedPaymentsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -1574,6 +1595,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChildReportsRoute: AuthenticatedChildReportsRoute,
   AuthenticatedClassChatRoute: AuthenticatedClassChatRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedLinkChildrenRoute: AuthenticatedLinkChildrenRoute,
   AuthenticatedMyApplicationsRoute: AuthenticatedMyApplicationsRoute,
   AuthenticatedPaymentsRoute: AuthenticatedPaymentsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,

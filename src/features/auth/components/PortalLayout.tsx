@@ -32,7 +32,9 @@ const NAV_GROUPS = [
     label: "حسابي وطلباتي",
     items: [
       { to: "/profile", label: "ملفي الشخصي ولوحتي", icon: UserCog, permission: P.profileEdit, featured: false },
+      { to: "/link-children", label: "ربط أبنائي", icon: Link2, permission: P.profileEdit, featured: false },
       { to: "/my-applications", label: "طلباتي وتتبع الطلب", icon: FileClock, permission: P.applicationsTrack, featured: false },
+
       { to: "/child-file", label: "ملف الطفل", icon: BabyIcon, permission: P.applicationsTrack, featured: false },
       {
         to: "/class-chat",
