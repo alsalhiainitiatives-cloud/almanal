@@ -6,7 +6,7 @@
  * automatically without UI changes.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCheck, Loader2, ShieldCheck, Square, UserCog } from "lucide-react";
+import { Check, CheckCheck, Loader2, ShieldCheck, Square, UserCog } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -30,7 +30,14 @@ import {
   buildPermissionTree,
   type MatrixModule,
 } from "@/features/auth/permissionsConfig";
-import { ALL_ROLES, P, ROLE_COLORS, ROLE_LABELS, type AppRole } from "@/features/auth/rbac";
+import {
+  ALL_ROLES,
+  P,
+  ROLE_COLORS,
+  ROLE_DESCRIPTIONS,
+  ROLE_LABELS,
+  type AppRole,
+} from "@/features/auth/rbac";
 import { NoAccess } from "./UsersBoard";
 
 export function PermissionsBoard() {
