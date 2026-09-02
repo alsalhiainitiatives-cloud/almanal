@@ -54,15 +54,10 @@ function monthBounds(month: string) {
 }
 
 async function guard(supabase: Db, userId: string) {
-  const roles = await ensureCapability(
-    supabase,
-    userId,
-    "view",
-    "ليس لديك صلاحية الوصول إلى سجل الطالب.",
-  ).catch((error: Error) => {
-    throw error;
-  });
-  return roles;
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  const roles = (data ?? []).map((r) => r.role as AppRole);
+  if (roles.includes("teacher")) return roles;
+  return ensureCapability(supabase, userId, "view", "ليس لديك صلاحية الوصول إلى سجل الطالب.");
 }
 
 export async function getStudentProfile(
