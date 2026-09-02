@@ -118,6 +118,21 @@ const STUDENTS_NAV: NavItem[] = [
   },
   { to: "/ams/seats", label: "الفصول والمقاعد", icon: Armchair, exact: false, group: "شؤون الطلاب" },
   {
+    to: "/ams/students/attendance",
+    label: "الحضور والغياب",
+    icon: CalendarCheck,
+    exact: false,
+    group: "شؤون الطلاب",
+  },
+  {
+    to: "/ams/students/guardians",
+    label: "ربط أولياء الأمور",
+    icon: Link2,
+    exact: false,
+    group: "إدارة البيانات",
+  },
+  {
+
     to: "/ams/students/data",
     label: "استيراد وتصدير الطلاب",
     icon: FileSpreadsheet,
