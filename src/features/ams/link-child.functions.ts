@@ -33,6 +33,13 @@ export const linkMyChild = createServerFn({ method: "POST" })
 export const myLinkedChildren = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    // Staff accounts own imported/placeholder student records technically, but those
+    // are NOT their own children — the guardian linking page must stay parent-only.
+    const { data: isStaff } = await context.supabase.rpc("is_school_staff", {
+      _user_id: context.userId,
+    });
+    if (isStaff === true) return { children: [], staff: true as const };
+
     const { data } = await context.supabase
       .from("application_children")
       .select(
