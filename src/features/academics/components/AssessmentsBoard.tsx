@@ -6,7 +6,18 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FileText, Film, ImageIcon, Loader2, Palette, Paperclip, Trash2, X } from "lucide-react";
+import {
+  FileText,
+  Film,
+  ImageIcon,
+  Link as LinkIcon,
+  Loader2,
+  Palette,
+  Paperclip,
+  Trash2,
+  X,
+} from "lucide-react";
+
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
