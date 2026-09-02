@@ -158,20 +158,8 @@ export function ChildReports() {
             <Stat label="أدلة رقمية" value={data.summary.evidences} />
           </section>
 
-          <section className="rounded-2xl border border-border/50 bg-background/60 p-3">
-            <p className="mb-2 text-[11px] font-black text-foreground">مفتاح ألوان الأشهر</p>
-            <div className="flex flex-wrap gap-2">
-              {data.monthColors.map((m) => (
-                <span
-                  key={m.month}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 px-2 py-1 text-[10px] font-bold"
-                >
-                  <span className="size-3 rounded-full" style={{ background: m.hex }} />
-                  {m.label}
-                </span>
-              ))}
-            </div>
-          </section>
+
+
 
           {!data.subjects.length ? (
             <p className="rounded-2xl border-2 border-dashed border-border/60 p-8 text-center text-sm font-bold text-muted-foreground">
