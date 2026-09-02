@@ -12,6 +12,7 @@ import { DECIDERS, notify } from "@/features/notifications/notifications.server"
 import { QURRA_STATUS_LABELS } from "@/features/admissions/eligibility";
 import { isValidAcademicNumber } from "./academic-number";
 import { issueAcademicNumber } from "./academic-number.server";
+import { ensureCapability } from "./capability-guard.server";
 import { can, type Capability, PAYMENT_STATUS_LABELS } from "./roles";
 
 type Db = SupabaseClient<Database>;

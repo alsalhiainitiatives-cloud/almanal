@@ -11,7 +11,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { buildChildReport } from "@/features/academics/reports.server";
 import type { ReportSubject, ReportSummary } from "@/features/academics/reports";
 import { ATTENDANCE_STATUSES, type AttendanceStatus } from "./attendance";
-import { can } from "./roles";
+import { ensureCapability } from "./capability-guard.server";
 
 type Db = SupabaseClient<Database>;
 
@@ -54,10 +54,15 @@ function monthBounds(month: string) {
 }
 
 async function guard(supabase: Db, userId: string) {
-  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-  const roles = (data ?? []).map((r) => r.role as AppRole);
-  if (!can(roles, "view") && !roles.includes("teacher"))
-    throw new Error("ليس لديك صلاحية الوصول إلى سجل الطالب.");
+  const roles = await ensureCapability(
+    supabase,
+    userId,
+    "view",
+    "ليس لديك صلاحية الوصول إلى سجل الطالب.",
+  ).catch((error: Error) => {
+    throw error;
+  });
+  return roles;
 }
 
 export async function getStudentProfile(
