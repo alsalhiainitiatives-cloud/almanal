@@ -361,40 +361,22 @@ export function AssessmentsBoard() {
                             onPick={(line, hex) => setColor("growth", line, hex)}
                           />
                         </div>
-                        <div className="mt-1.5 flex items-center justify-center gap-1">
-                          <Button
+                        <div className="mt-2 flex items-center justify-center">
+                          <button
                             type="button"
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 gap-1 px-2 text-[10px] font-black"
-                            disabled={uploading}
-                            onClick={() => {
-                              setUploadTarget({ childId: child.id, lessonId: lesson.id });
-                              uploadRef.current?.click();
-                            }}
+                            onClick={() => setOpenCell({ childId: child.id, lessonId: lesson.id })}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-black text-primary shadow-sm transition hover:bg-primary hover:text-primary-foreground"
                           >
                             <Paperclip className="size-3.5" />
-                            دليل
-                          </Button>
-                          {"evidences" in cell && cell.evidences.length ? (
-                            <button
-                              type="button"
-                              onClick={() => setOpenCell({ childId: child.id, lessonId: lesson.id })}
-                              className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary"
-                            >
-                              {cell.evidences.length}
-                            </button>
-                          ) : null}
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 px-2 text-[10px] font-black"
-                            onClick={() => setOpenCell({ childId: child.id, lessonId: lesson.id })}
-                          >
-                            تفاصيل
-                          </Button>
+                            التفاصيل والأدلة
+                            {"evidences" in cell && cell.evidences.length ? (
+                              <span className="grid size-4 place-items-center rounded-full bg-primary text-[9px] font-black text-primary-foreground">
+                                {cell.evidences.length}
+                              </span>
+                            ) : null}
+                          </button>
                         </div>
+
                       </td>
                     );
                   })}
