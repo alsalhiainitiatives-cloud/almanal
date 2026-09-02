@@ -5,18 +5,20 @@
  * class-chat activity and lesson assessments (evaluations).
  */
 
-export type CalendarEventKind = "lesson" | "chat" | "assessment";
+export type CalendarEventKind = "lesson" | "chat" | "assessment" | "attendance";
 
 export const EVENT_KIND_LABELS: Record<CalendarEventKind, string> = {
   lesson: "درس من الخطة",
   chat: "محادثة الفصل",
   assessment: "تقييمات",
+  attendance: "الحضور والغياب",
 };
 
 export const EVENT_KIND_STYLES: Record<CalendarEventKind, string> = {
   lesson: "border-primary/40 bg-primary/10 text-primary",
   chat: "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300",
   assessment: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  attendance: "border-violet-500/40 bg-violet-500/10 text-violet-700 dark:text-violet-300",
 };
 
 export type CalendarEvent = {

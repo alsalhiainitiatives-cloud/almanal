@@ -55,8 +55,13 @@ export async function getClassCalendar(
   const fromTs = `${start}T00:00:00.000Z`;
   const toTs = `${end}T23:59:59.999Z`;
 
-  const [{ data: classroom }, { data: plans }, { data: messages }, { data: assessments }] =
-    await Promise.all([
+  const [
+    { data: classroom },
+    { data: plans },
+    { data: messages },
+    { data: assessments },
+    { data: attendance },
+  ] = await Promise.all([
       supabase.from("classrooms").select("id, name_ar, color_hex").eq("id", classroomId).maybeSingle(),
       supabase
         .from("study_plans")
@@ -79,6 +84,13 @@ export async function getClassCalendar(
         .gte("updated_at", fromTs)
         .lte("updated_at", toTs)
         .limit(2000),
+      supabase
+        .from("attendance_records")
+        .select("attendance_date, status")
+        .eq("classroom_id", classroomId)
+        .gte("attendance_date", start)
+        .lte("attendance_date", end)
+        .limit(5000),
     ]);
 
   const planRows = (plans ?? []) as {
@@ -183,12 +195,35 @@ export async function getClassCalendar(
     });
   }
 
+  // Daily attendance summary (present/late vs absent) as one calendar chip.
+  const attendanceByDay = new Map<string, { present: number; absent: number; total: number }>();
+  for (const row of (attendance ?? []) as { attendance_date: string; status: string }[]) {
+    const entry = attendanceByDay.get(row.attendance_date) ?? { present: 0, absent: 0, total: 0 };
+    entry.total += 1;
+    if (row.status === "present" || row.status === "late") entry.present += 1;
+    else entry.absent += 1;
+    attendanceByDay.set(row.attendance_date, entry);
+  }
+  for (const [date, entry] of attendanceByDay) {
+    events.push({
+      id: `attendance:${date}`,
+      kind: "attendance",
+      date,
+      title: `حضور ${entry.present} من ${entry.total}`,
+      subtitle: entry.absent ? `${entry.absent} غياب` : "حضور كامل",
+      colorHex: null,
+      count: entry.total,
+      published: null,
+      link: "/ams/students/attendance",
+    });
+  }
+
   const totals = events.reduce<Record<CalendarEventKind, number>>(
     (acc, event) => {
       acc[event.kind] += event.kind === "lesson" ? 1 : (event.count ?? 1);
       return acc;
     },
-    { lesson: 0, chat: 0, assessment: 0 },
+    { lesson: 0, chat: 0, assessment: 0, attendance: 0 },
   );
 
   events.sort((a, b) => a.date.localeCompare(b.date) || a.kind.localeCompare(b.kind));
