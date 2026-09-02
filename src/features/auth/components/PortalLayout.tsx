@@ -97,11 +97,8 @@ const NAV_GROUPS = [
   {
     label: "إدارة النظام",
     items: [
-      { to: "/admin/site-content", label: "إعدادات الموقع الإلكتروني", icon: Globe, permission: P.settingsManage, featured: true },
-      { to: "/admin/inbox", label: "المراسلات والتقييمات", icon: MessagesSquare, permission: P.applicationsReview, featured: false },
-      { to: "/admin/users", label: "المستخدمون والأدوار", icon: Users, permission: P.usersView, featured: false },
-      { to: "/admin/permissions", label: "مصفوفة الصلاحيات", icon: KeyRound, permission: P.usersView, featured: false },
-      { to: "/admin/audit", label: "سجل العمليات", icon: ShieldCheck, permission: P.auditView, featured: false },
+      { to: "/ams/website", label: "الموقع الإلكتروني", icon: Globe, permission: P.applicationsReview, featured: true },
+      { to: "/ams/system", label: "إعدادات النظام", icon: KeyRound, permission: P.usersView, featured: true },
     ],
   },
 ] as const;
