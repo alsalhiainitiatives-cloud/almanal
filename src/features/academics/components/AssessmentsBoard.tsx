@@ -143,6 +143,47 @@ export function AssessmentsBoard() {
     onError: (e: Error) => toast.error(e.message || "تعذّر حذف الدليل."),
   });
 
+  // Lightweight evidence: an external link (Drive, YouTube…) instead of an upload.
+  const [linkMode, setLinkMode] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkName, setLinkName] = useState("");
+
+  const addLink = useMutation({
+    mutationFn: async () => {
+      if (!openCell || !data?.selectedClassroomId) throw new Error("لا يوجد فصل محدد.");
+      const cell = await ensureCell({
+        data: {
+          childId: openCell.childId,
+          lessonId: openCell.lessonId,
+          classroomId: data.selectedClassroomId,
+        },
+      });
+      return addEvidence({
+        data: {
+          assessmentId: cell.id,
+          externalUrl: linkUrl.trim(),
+          fileType: "link" as const,
+          fileName: linkName.trim() || null,
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("تم إضافة الرابط كدليل.");
+      setLinkMode(false);
+      setLinkUrl("");
+      setLinkName("");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message || "تعذّر إضافة الرابط."),
+  });
+
+  const [viewer, setViewer] = useState<{
+    url: string;
+    kind: EvidenceFileKind;
+    title: string;
+  } | null>(null);
+
+
   if (isLoading) {
     return (
       <div className="grid place-items-center rounded-3xl border border-border/60 bg-card p-14">
