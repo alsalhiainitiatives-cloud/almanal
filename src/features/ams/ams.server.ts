@@ -33,9 +33,7 @@ async function rolesOf(supabase: Db, userId: string): Promise<AppRole[]> {
 }
 
 async function guard(supabase: Db, userId: string, capability: Capability) {
-  const roles = await rolesOf(supabase, userId);
-  if (!can(roles, capability)) throw new Error("ليس لديك صلاحية تنفيذ هذا الإجراء.");
-  return roles;
+  return ensureCapability(supabase, userId, capability, "ليس لديك صلاحية تنفيذ هذا الإجراء.");
 }
 
 async function logEvent(

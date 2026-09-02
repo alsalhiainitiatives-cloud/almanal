@@ -11,7 +11,8 @@ import { ageInMonths } from "@/features/admissions/eligibility";
 import type { AppRole } from "@/features/auth/rbac";
 import { notify } from "@/features/notifications/notifications.server";
 import type { Database } from "@/integrations/supabase/types";
-import { can, type Capability } from "./roles";
+import { ensureCapability } from "./capability-guard.server";
+import type { Capability } from "./roles";
 
 type Db = SupabaseClient<Database>;
 
@@ -21,9 +22,7 @@ async function rolesOf(supabase: Db, userId: string) {
 }
 
 async function guard(supabase: Db, userId: string, capability: Capability) {
-  const roles = await rolesOf(supabase, userId);
-  if (!can(roles, capability)) throw new Error("ليس لديك صلاحية إدارة نقل الطلاب بين المراحل.");
-  return roles;
+  return ensureCapability(supabase, userId, capability, "ليس لديك صلاحية إدارة نقل الطلاب بين المراحل.");
 }
 
 export type PromotionCandidate = {

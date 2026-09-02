@@ -11,16 +11,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AppRole } from "@/features/auth/rbac";
 import type { Database } from "@/integrations/supabase/types";
 import { issueAcademicNumber } from "./academic-number.server";
-import { can, type Capability } from "./roles";
+import { ensureCapability } from "./capability-guard.server";
+import type { Capability } from "./roles";
 import type { StudentRecord } from "./student-import";
 
 type Db = SupabaseClient<Database>;
 
 async function guard(supabase: Db, userId: string, capability: Capability) {
-  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-  const roles = (data ?? []).map((r) => r.role as AppRole);
-  if (!can(roles, capability)) throw new Error("ليس لديك صلاحية إدارة سجل الطلاب.");
-  return roles;
+  return ensureCapability(supabase, userId, capability, "ليس لديك صلاحية إدارة سجل الطلاب.");
 }
 
 const childPatch = (record: StudentRecord) => ({
