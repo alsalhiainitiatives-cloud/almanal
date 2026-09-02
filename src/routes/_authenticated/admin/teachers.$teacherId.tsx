@@ -16,7 +16,7 @@ import { adminTeacherDetail } from "@/features/academics/calendar.functions";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { PortalLayout } from "@/features/auth/components/PortalLayout";
 import { P } from "@/features/auth/rbac";
-import { NoAccess } from "./users";
+import { NoAccess } from "@/features/admin/components/UsersBoard";
 
 export const Route = createFileRoute("/_authenticated/admin/teachers/$teacherId")({
   head: () => ({
@@ -63,7 +63,7 @@ function TeacherDetailPage() {
     >
       <div className="space-y-5">
         <Button asChild variant="outline" className="rounded-2xl font-bold">
-          <Link to="/admin/users">
+          <Link to="/ams/system/users">
             <ArrowRight className="size-4" />
             رجوع إلى المستخدمين
           </Link>
