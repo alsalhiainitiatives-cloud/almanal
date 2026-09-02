@@ -6,7 +6,18 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FileText, Film, ImageIcon, Loader2, Palette, Paperclip, Trash2, X } from "lucide-react";
+import {
+  FileText,
+  Film,
+  ImageIcon,
+  Link as LinkIcon,
+  Loader2,
+  Palette,
+  Paperclip,
+  Trash2,
+  X,
+} from "lucide-react";
+
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -18,7 +29,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { MediaViewerDialog } from "@/components/media/MediaViewerDialog";
+
 import {
   Select,
   SelectContent,
@@ -40,6 +54,8 @@ import {
   normalizeColors,
   type AssessmentBoard as Board,
   type AssessmentCell,
+  type EvidenceFileKind,
+
   type TriangleLevel,
   type TriangleScale,
 } from "../assessments";
@@ -51,7 +67,9 @@ import {
   assessmentsEnsureCell,
   assessmentsSave,
 } from "../assessments.functions";
+import { EvaluationGuide } from "./EvaluationGuide";
 import { EvaluationTriangle } from "./EvaluationTriangle";
+
 
 const EMPTY_CELL = {
   performanceLevel: 0 as TriangleLevel,
@@ -141,6 +159,47 @@ export function AssessmentsBoard() {
     onError: (e: Error) => toast.error(e.message || "تعذّر حذف الدليل."),
   });
 
+  // Lightweight evidence: an external link (Drive, YouTube…) instead of an upload.
+  const [linkMode, setLinkMode] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkName, setLinkName] = useState("");
+
+  const addLink = useMutation({
+    mutationFn: async () => {
+      if (!openCell || !data?.selectedClassroomId) throw new Error("لا يوجد فصل محدد.");
+      const cell = await ensureCell({
+        data: {
+          childId: openCell.childId,
+          lessonId: openCell.lessonId,
+          classroomId: data.selectedClassroomId,
+        },
+      });
+      return addEvidence({
+        data: {
+          assessmentId: cell.id,
+          externalUrl: linkUrl.trim(),
+          fileType: "link" as const,
+          fileName: linkName.trim() || null,
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("تم إضافة الرابط كدليل.");
+      setLinkMode(false);
+      setLinkUrl("");
+      setLinkName("");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message || "تعذّر إضافة الرابط."),
+  });
+
+  const [viewer, setViewer] = useState<{
+    url: string;
+    kind: EvidenceFileKind;
+    title: string;
+  } | null>(null);
+
+
   if (isLoading) {
     return (
       <div className="grid place-items-center rounded-3xl border border-border/60 bg-card p-14">
@@ -166,6 +225,8 @@ export function AssessmentsBoard() {
 
   return (
     <div className="space-y-5">
+      <EvaluationGuide />
+
       {/* Toolbar */}
       <div className="flex flex-wrap items-end gap-3 rounded-3xl border border-border/60 bg-card/80 p-4">
         <div className="min-w-56 space-y-1.5">
@@ -432,6 +493,8 @@ export function AssessmentsBoard() {
                         <ImageIcon className="size-4 text-primary" />
                       ) : item.fileType === "video" ? (
                         <Film className="size-4 text-primary" />
+                      ) : item.fileType === "link" ? (
+                        <LinkIcon className="size-4 text-primary" />
                       ) : (
                         <FileText className="size-4 text-primary" />
                       )}
@@ -439,14 +502,19 @@ export function AssessmentsBoard() {
                         {item.fileName ?? EVIDENCE_KIND_LABELS_AR[item.fileType]}
                       </span>
                       {item.url ? (
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noreferrer"
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setViewer({
+                              url: item.url as string,
+                              kind: item.fileType,
+                              title: item.fileName ?? EVIDENCE_KIND_LABELS_AR[item.fileType],
+                            })
+                          }
                           className="text-[11px] font-black text-primary underline"
                         >
                           عرض
-                        </a>
+                        </button>
                       ) : null}
                       <Button
                         type="button"
@@ -461,25 +529,79 @@ export function AssessmentsBoard() {
                   ))}
                 </ul>
               )}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-2 text-xs font-black"
-                disabled={uploading}
-                onClick={() => {
-                  if (!openCell) return;
-                  setUploadTarget(openCell);
-                  uploadRef.current?.click();
-                }}
-              >
-                {uploading ? <Loader2 className="size-4 animate-spin" /> : <Paperclip className="size-4" />}
-                رفع دليل (صورة / فيديو / PDF)
-              </Button>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 text-xs font-black"
+                  disabled={uploading}
+                  onClick={() => {
+                    if (!openCell) return;
+                    setUploadTarget(openCell);
+                    uploadRef.current?.click();
+                  }}
+                >
+                  {uploading ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Paperclip className="size-4" />
+                  )}
+                  رفع دليل (صورة / فيديو / PDF)
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 text-xs font-black"
+                  onClick={() => setLinkMode((v) => !v)}
+                >
+                  <LinkIcon className="size-4" />
+                  {linkMode ? "إلغاء الرابط" : "إضافة رابط خارجي"}
+                </Button>
+              </div>
+
+              {linkMode ? (
+                <div className="space-y-2 rounded-2xl border border-primary/30 bg-primary/5 p-3">
+                  <Input
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    placeholder="https://drive.google.com/..."
+                    dir="ltr"
+                    className="h-9 text-xs font-bold"
+                  />
+                  <Input
+                    value={linkName}
+                    onChange={(e) => setLinkName(e.target.value)}
+                    placeholder="اسم الدليل (اختياري)"
+                    className="h-9 text-xs font-bold"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="w-full text-xs font-black"
+                    disabled={!/^https?:\/\/.+/.test(linkUrl.trim()) || addLink.isPending}
+                    onClick={() => addLink.mutate()}
+                  >
+                    {addLink.isPending ? <Loader2 className="me-2 size-4 animate-spin" /> : null}
+                    حفظ الرابط كدليل
+                  </Button>
+                </div>
+              ) : null}
             </div>
+
           </div>
         </DialogContent>
       </Dialog>
+
+      <MediaViewerDialog
+        item={
+          viewer ? { url: viewer.url, kind: viewer.kind, name: viewer.title } : null
+        }
+        onClose={() => setViewer(null)}
+      />
+
     </div>
   );
 }

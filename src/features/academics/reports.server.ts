@@ -258,7 +258,7 @@ async function buildChildReport(
   let cellQuery = supabase
     .from("lesson_assessments")
     .select(
-      "id, lesson_id, performance_level, growth_level, performance_colors, growth_colors, note_ar, updated_at, assessment_evidences (id, file_path, file_type, file_name)",
+      "id, lesson_id, performance_level, growth_level, performance_colors, growth_colors, note_ar, updated_at, assessment_evidences (id, file_path, external_url, file_type, file_name)",
     )
     .eq("child_id", childId)
     .eq("classroom_id", classroomId)
@@ -277,13 +277,19 @@ async function buildChildReport(
     note_ar: string | null;
     updated_at: string | null;
     assessment_evidences:
-      | { id: string; file_path: string; file_type: string; file_name: string | null }[]
+      | {
+          id: string;
+          file_path: string | null;
+          external_url: string | null;
+          file_type: string;
+          file_name: string | null;
+        }[]
       | null;
   };
 
   const raw = (cellRows ?? []) as unknown as RawCell[];
   const urls = await signEvidence(
-    raw.flatMap((r) => (r.assessment_evidences ?? []).map((e) => e.file_path)),
+    raw.flatMap((r) => (r.assessment_evidences ?? []).map((e) => e.file_path ?? "")),
   );
 
   const cellByLesson = new Map<string, ReportCell>();
@@ -299,8 +305,9 @@ async function buildChildReport(
         id: e.id,
         fileType: e.file_type as EvidenceFileKind,
         fileName: e.file_name,
-        url: urls[e.file_path] ?? null,
+        url: e.file_path ? (urls[e.file_path] ?? null) : e.external_url,
       })),
+
     });
   }
 

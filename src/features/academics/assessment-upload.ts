@@ -9,12 +9,12 @@ import {
   ASSESSMENT_BUCKET,
   ASSESSMENT_EVIDENCE_LIMITS_MB,
   assessmentEvidenceKind,
-  type EvidenceFileKind,
+  type UploadedEvidenceKind,
 } from "./assessments";
 
 export type UploadedAssessmentEvidence = {
   filePath: string;
-  fileType: EvidenceFileKind;
+  fileType: UploadedEvidenceKind;
   fileName: string;
   fileSize: number;
 };

@@ -56,10 +56,14 @@ export const assessmentsAddEvidence = createServerFn({ method: "POST" })
     z
       .object({
         assessmentId: z.string().uuid(),
-        filePath: z.string().min(3).max(400),
-        fileType: z.enum(["image", "video", "pdf"]),
+        filePath: z.string().min(3).max(400).nullable().optional(),
+        externalUrl: z.string().url().max(1000).nullable().optional(),
+        fileType: z.enum(["image", "video", "pdf", "link"]),
         fileName: z.string().max(240).nullable().optional(),
         fileSize: z.number().int().nonnegative().nullable().optional(),
+      })
+      .refine((v) => Boolean(v.filePath || v.externalUrl), {
+        message: "يجب رفع ملف أو إدخال رابط للدليل.",
       })
       .parse(data),
   )
@@ -67,6 +71,7 @@ export const assessmentsAddEvidence = createServerFn({ method: "POST" })
     const { addAssessmentEvidence } = await import("./assessments.server");
     return addAssessmentEvidence(context.supabase, context.userId, data);
   });
+
 
 export const assessmentsDeleteEvidence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

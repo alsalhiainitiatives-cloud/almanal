@@ -18,19 +18,25 @@ import {
   type AcademicsSettings,
   type MonthColor,
 } from "../settings";
+import { canManageStorage } from "../maintenance";
 import {
   academicsSaveMonthColors,
   academicsSetChatClassroom,
   academicsSetChatGlobal,
   academicsSettingsBoard,
 } from "../settings.functions";
+import { StorageMaintenancePanel } from "./StorageMaintenancePanel";
+import { useAuth } from "@/features/auth/AuthProvider";
+
 
 export function AcademicsSettingsPanel() {
   const queryClient = useQueryClient();
+  const { roles } = useAuth();
   const fetchBoard = useServerFn(academicsSettingsBoard);
   const saveColors = useServerFn(academicsSaveMonthColors);
   const setGlobal = useServerFn(academicsSetChatGlobal);
   const setClassroom = useServerFn(academicsSetChatClassroom);
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["academics-settings"],
@@ -212,6 +218,9 @@ export function AcademicsSettingsPanel() {
           )}
         </div>
       </section>
+
+      {canManageStorage(roles) ? <StorageMaintenancePanel /> : null}
+
     </div>
   );
 }
