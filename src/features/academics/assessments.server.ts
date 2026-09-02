@@ -174,7 +174,7 @@ export async function getAssessmentBoard(
     ? await supabase
         .from("lesson_assessments")
         .select(
-          "id, child_id, lesson_id, performance_level, growth_level, performance_colors, growth_colors, note_ar, assessment_evidences (id, file_path, file_type, file_name)",
+          "id, child_id, lesson_id, performance_level, growth_level, performance_colors, growth_colors, note_ar, assessment_evidences (id, file_path, external_url, file_type, file_name)",
         )
         .eq("classroom_id", selected)
         .limit(4000)
@@ -190,13 +190,19 @@ export async function getAssessmentBoard(
     growth_colors: unknown;
     note_ar: string | null;
     assessment_evidences:
-      | { id: string; file_path: string; file_type: string; file_name: string | null }[]
+      | {
+          id: string;
+          file_path: string | null;
+          external_url: string | null;
+          file_type: string;
+          file_name: string | null;
+        }[]
       | null;
   };
 
   const raw = (assessmentRows ?? []) as unknown as RawRow[];
   const urls = await signEvidence(
-    raw.flatMap((r) => (r.assessment_evidences ?? []).map((e) => e.file_path)),
+    raw.flatMap((r) => (r.assessment_evidences ?? []).map((e) => e.file_path ?? "")),
   );
 
   const cells: AssessmentCell[] = raw.map((r) => ({
@@ -211,9 +217,10 @@ export async function getAssessmentBoard(
     evidences: (r.assessment_evidences ?? []).map((e) => ({
       id: e.id,
       filePath: e.file_path,
+      externalUrl: e.external_url,
       fileType: e.file_type as EvidenceFileKind,
       fileName: e.file_name,
-      url: urls[e.file_path] ?? null,
+      url: e.file_path ? (urls[e.file_path] ?? null) : e.external_url,
     })),
   }));
 
@@ -316,15 +323,20 @@ export async function addAssessmentEvidence(
   userId: string,
   input: {
     assessmentId: string;
-    filePath: string;
+    filePath?: string | null;
+    externalUrl?: string | null;
     fileType: EvidenceFileKind;
     fileName?: string | null;
     fileSize?: number | null;
   },
 ) {
+  if (!input.filePath && !input.externalUrl) {
+    throw new Error("يجب رفع ملف أو إدخال رابط للدليل.");
+  }
   const { error } = await supabase.from("assessment_evidences").insert({
     assessment_id: input.assessmentId,
-    file_path: input.filePath,
+    file_path: input.filePath ?? null,
+    external_url: input.externalUrl ?? null,
     file_type: input.fileType,
     file_name: input.fileName ?? null,
     file_size: input.fileSize ?? null,
