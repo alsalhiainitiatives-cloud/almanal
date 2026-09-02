@@ -30,6 +30,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TrackIndexRouteImport } from './routes/track.index'
 import { Route as AdmissionsIndexRouteImport } from './routes/admissions.index'
 import { Route as LegalSlugRouteImport } from './routes/legal.$slug'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedStudyPlansRouteImport } from './routes/_authenticated/study-plans'
 import { Route as AuthenticatedReserveRouteImport } from './routes/_authenticated/reserve'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -186,6 +187,11 @@ const AdmissionsIndexRoute = AdmissionsIndexRouteImport.update({
 const LegalSlugRoute = LegalSlugRouteImport.update({
   id: '/legal/$slug',
   path: '/legal/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedStudyPlansRoute = AuthenticatedStudyPlansRouteImport.update({
@@ -517,6 +523,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/reserve': typeof AuthenticatedReserveRoute
   '/study-plans': typeof AuthenticatedStudyPlansRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/admissions/': typeof AdmissionsIndexRoute
   '/track/': typeof TrackIndexRoute
@@ -592,6 +599,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/reserve': typeof AuthenticatedReserveRoute
   '/study-plans': typeof AuthenticatedStudyPlansRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/admissions': typeof AdmissionsIndexRoute
   '/track': typeof TrackIndexRoute
@@ -669,6 +677,7 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/reserve': typeof AuthenticatedReserveRoute
   '/_authenticated/study-plans': typeof AuthenticatedStudyPlansRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/admissions/': typeof AdmissionsIndexRoute
   '/track/': typeof TrackIndexRoute
@@ -746,6 +755,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reserve'
     | '/study-plans'
+    | '/invite/$token'
     | '/legal/$slug'
     | '/admissions/'
     | '/track/'
@@ -821,6 +831,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reserve'
     | '/study-plans'
+    | '/invite/$token'
     | '/legal/$slug'
     | '/admissions'
     | '/track'
@@ -897,6 +908,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/reserve'
     | '/_authenticated/study-plans'
+    | '/invite/$token'
     | '/legal/$slug'
     | '/admissions/'
     | '/track/'
@@ -965,6 +977,7 @@ export interface RootRouteChildren {
   StagesRoute: typeof StagesRoute
   TermsRoute: typeof TermsRoute
   TestimonialsRoute: typeof TestimonialsRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   LegalSlugRoute: typeof LegalSlugRoute
   AdmissionsIndexRoute: typeof AdmissionsIndexRoute
   TrackIndexRoute: typeof TrackIndexRoute
@@ -1121,6 +1134,13 @@ declare module '@tanstack/react-router' {
       path: '/legal/$slug'
       fullPath: '/legal/$slug'
       preLoaderRoute: typeof LegalSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/study-plans': {
@@ -1633,6 +1653,7 @@ const rootRouteChildren: RootRouteChildren = {
   StagesRoute: StagesRoute,
   TermsRoute: TermsRoute,
   TestimonialsRoute: TestimonialsRoute,
+  InviteTokenRoute: InviteTokenRoute,
   LegalSlugRoute: LegalSlugRoute,
   AdmissionsIndexRoute: AdmissionsIndexRoute,
   TrackIndexRoute: TrackIndexRoute,

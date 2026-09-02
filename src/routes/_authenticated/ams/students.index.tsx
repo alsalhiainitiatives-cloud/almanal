@@ -1,5 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Armchair, FileSpreadsheet, GraduationCap, UserRoundPlus } from "lucide-react";
+import {
+  Armchair,
+  CalendarCheck,
+  FileSpreadsheet,
+  GraduationCap,
+  Link2,
+  UserRoundPlus,
+} from "lucide-react";
 
 import { AmsShell } from "@/features/ams/components/AmsShell";
 
@@ -9,7 +16,8 @@ export const Route = createFileRoute("/_authenticated/ams/students/")({
       { title: "لوحة شؤون الطلاب | مدارس وروضة المنال" },
       {
         name: "description",
-        content: "لوحة شؤون الطلاب: سجل الطلاب، الفصول والمقاعد، استيراد وتصدير البيانات، ونقل المراحل.",
+        content:
+          "لوحة شؤون الطلاب: سجل الطلاب، الفصول والمقاعد، الحضور والغياب، ربط أولياء الأمور، استيراد وتصدير البيانات، ونقل المراحل.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -31,6 +39,18 @@ const CARDS = [
     text: "توزيع الطلاب على الفصول، متابعة الإشغال، والسعة المتاحة لكل مرحلة.",
   },
   {
+    to: "/ams/students/attendance",
+    label: "الحضور والغياب",
+    icon: CalendarCheck,
+    text: "تحضير يومي لكل فصل مع النسب الشهرية، ويظهر ملخّصه في تقويم الفصل.",
+  },
+  {
+    to: "/ams/students/guardians",
+    label: "ربط أولياء الأمور",
+    icon: Link2,
+    text: "دعوة أولياء أمور الطلاب المستوردين لإنشاء حساب وربط جميع أبنائهم تلقائيًا.",
+  },
+  {
     to: "/ams/students/data",
     label: "استيراد وتصدير الطلاب",
     icon: FileSpreadsheet,
@@ -43,6 +63,7 @@ const CARDS = [
     text: "ترقية الطلاب للعام الدراسي الجديد حسب العمر والمرحلة، فرديًا أو جماعيًا.",
   },
 ] as const;
+
 
 function StudentsHome() {
   return (
