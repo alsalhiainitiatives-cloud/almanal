@@ -5,7 +5,6 @@ import {
   HardDrive,
   KeyRound,
   ShieldCheck,
-  SlidersHorizontal,
   Users,
   Wallet,
 } from "lucide-react";
@@ -54,16 +53,10 @@ const CARDS = [
     text: "متابعة مساحة المرفقات وتنظيف الملفات غير المرتبطة.",
   },
   {
-    to: "/ams/seasons",
-    label: "مواسم التسجيل",
+    to: "/ams/system/registration",
+    label: "إعدادات نظام التسجيل",
     icon: CalendarClock,
-    text: "فتح وإغلاق مواسم القبول وربطها بالعام الدراسي.",
-  },
-  {
-    to: "/ams/form-builder",
-    label: "تخصيص نظام التسجيل",
-    icon: SlidersHorizontal,
-    text: "خطوات نموذج التسجيل وحقوله وخدماته الإضافية.",
+    text: "مواسم القبول وفتح وإغلاق التسجيل، وخطوات النموذج وحقوله ومستنداته.",
   },
   {
     to: "/ams/finance/settings",

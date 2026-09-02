@@ -71,6 +71,7 @@ import { Route as AuthenticatedAmsWebsiteReviewsRouteImport } from './routes/_au
 import { Route as AuthenticatedAmsWebsiteInboxRouteImport } from './routes/_authenticated/ams/website.inbox'
 import { Route as AuthenticatedAmsSystemUsersRouteImport } from './routes/_authenticated/ams/system.users'
 import { Route as AuthenticatedAmsSystemStorageRouteImport } from './routes/_authenticated/ams/system.storage'
+import { Route as AuthenticatedAmsSystemRegistrationRouteImport } from './routes/_authenticated/ams/system.registration'
 import { Route as AuthenticatedAmsSystemPermissionsRouteImport } from './routes/_authenticated/ams/system.permissions'
 import { Route as AuthenticatedAmsSystemAuditRouteImport } from './routes/_authenticated/ams/system.audit'
 import { Route as AuthenticatedAmsStudentsRegistryRouteImport } from './routes/_authenticated/ams/students.registry'
@@ -427,6 +428,12 @@ const AuthenticatedAmsSystemStorageRoute =
     path: '/ams/system/storage',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAmsSystemRegistrationRoute =
+  AuthenticatedAmsSystemRegistrationRouteImport.update({
+    id: '/ams/system/registration',
+    path: '/ams/system/registration',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAmsSystemPermissionsRoute =
   AuthenticatedAmsSystemPermissionsRouteImport.update({
     id: '/ams/system/permissions',
@@ -638,6 +645,7 @@ export interface FileRoutesByFullPath {
   '/ams/students/registry': typeof AuthenticatedAmsStudentsRegistryRoute
   '/ams/system/audit': typeof AuthenticatedAmsSystemAuditRoute
   '/ams/system/permissions': typeof AuthenticatedAmsSystemPermissionsRoute
+  '/ams/system/registration': typeof AuthenticatedAmsSystemRegistrationRoute
   '/ams/system/storage': typeof AuthenticatedAmsSystemStorageRoute
   '/ams/system/users': typeof AuthenticatedAmsSystemUsersRoute
   '/ams/website/inbox': typeof AuthenticatedAmsWebsiteInboxRoute
@@ -724,6 +732,7 @@ export interface FileRoutesByTo {
   '/ams/students/registry': typeof AuthenticatedAmsStudentsRegistryRoute
   '/ams/system/audit': typeof AuthenticatedAmsSystemAuditRoute
   '/ams/system/permissions': typeof AuthenticatedAmsSystemPermissionsRoute
+  '/ams/system/registration': typeof AuthenticatedAmsSystemRegistrationRoute
   '/ams/system/storage': typeof AuthenticatedAmsSystemStorageRoute
   '/ams/system/users': typeof AuthenticatedAmsSystemUsersRoute
   '/ams/website/inbox': typeof AuthenticatedAmsWebsiteInboxRoute
@@ -812,6 +821,7 @@ export interface FileRoutesById {
   '/_authenticated/ams/students/registry': typeof AuthenticatedAmsStudentsRegistryRoute
   '/_authenticated/ams/system/audit': typeof AuthenticatedAmsSystemAuditRoute
   '/_authenticated/ams/system/permissions': typeof AuthenticatedAmsSystemPermissionsRoute
+  '/_authenticated/ams/system/registration': typeof AuthenticatedAmsSystemRegistrationRoute
   '/_authenticated/ams/system/storage': typeof AuthenticatedAmsSystemStorageRoute
   '/_authenticated/ams/system/users': typeof AuthenticatedAmsSystemUsersRoute
   '/_authenticated/ams/website/inbox': typeof AuthenticatedAmsWebsiteInboxRoute
@@ -900,6 +910,7 @@ export interface FileRouteTypes {
     | '/ams/students/registry'
     | '/ams/system/audit'
     | '/ams/system/permissions'
+    | '/ams/system/registration'
     | '/ams/system/storage'
     | '/ams/system/users'
     | '/ams/website/inbox'
@@ -986,6 +997,7 @@ export interface FileRouteTypes {
     | '/ams/students/registry'
     | '/ams/system/audit'
     | '/ams/system/permissions'
+    | '/ams/system/registration'
     | '/ams/system/storage'
     | '/ams/system/users'
     | '/ams/website/inbox'
@@ -1073,6 +1085,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ams/students/registry'
     | '/_authenticated/ams/system/audit'
     | '/_authenticated/ams/system/permissions'
+    | '/_authenticated/ams/system/registration'
     | '/_authenticated/ams/system/storage'
     | '/_authenticated/ams/system/users'
     | '/_authenticated/ams/website/inbox'
@@ -1553,6 +1566,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAmsSystemStorageRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ams/system/registration': {
+      id: '/_authenticated/ams/system/registration'
+      path: '/ams/system/registration'
+      fullPath: '/ams/system/registration'
+      preLoaderRoute: typeof AuthenticatedAmsSystemRegistrationRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ams/system/permissions': {
       id: '/_authenticated/ams/system/permissions'
       path: '/ams/system/permissions'
@@ -1767,6 +1787,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAmsStudentsRegistryRoute: typeof AuthenticatedAmsStudentsRegistryRoute
   AuthenticatedAmsSystemAuditRoute: typeof AuthenticatedAmsSystemAuditRoute
   AuthenticatedAmsSystemPermissionsRoute: typeof AuthenticatedAmsSystemPermissionsRoute
+  AuthenticatedAmsSystemRegistrationRoute: typeof AuthenticatedAmsSystemRegistrationRoute
   AuthenticatedAmsSystemStorageRoute: typeof AuthenticatedAmsSystemStorageRoute
   AuthenticatedAmsSystemUsersRoute: typeof AuthenticatedAmsSystemUsersRoute
   AuthenticatedAmsWebsiteInboxRoute: typeof AuthenticatedAmsWebsiteInboxRoute
@@ -1840,6 +1861,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAmsSystemAuditRoute: AuthenticatedAmsSystemAuditRoute,
   AuthenticatedAmsSystemPermissionsRoute:
     AuthenticatedAmsSystemPermissionsRoute,
+  AuthenticatedAmsSystemRegistrationRoute:
+    AuthenticatedAmsSystemRegistrationRoute,
   AuthenticatedAmsSystemStorageRoute: AuthenticatedAmsSystemStorageRoute,
   AuthenticatedAmsSystemUsersRoute: AuthenticatedAmsSystemUsersRoute,
   AuthenticatedAmsWebsiteInboxRoute: AuthenticatedAmsWebsiteInboxRoute,
