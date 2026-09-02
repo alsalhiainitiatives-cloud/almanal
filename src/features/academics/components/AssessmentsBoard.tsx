@@ -436,6 +436,8 @@ export function AssessmentsBoard() {
                         <ImageIcon className="size-4 text-primary" />
                       ) : item.fileType === "video" ? (
                         <Film className="size-4 text-primary" />
+                      ) : item.fileType === "link" ? (
+                        <LinkIcon className="size-4 text-primary" />
                       ) : (
                         <FileText className="size-4 text-primary" />
                       )}
@@ -443,14 +445,19 @@ export function AssessmentsBoard() {
                         {item.fileName ?? EVIDENCE_KIND_LABELS_AR[item.fileType]}
                       </span>
                       {item.url ? (
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noreferrer"
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setViewer({
+                              url: item.url as string,
+                              kind: item.fileType,
+                              title: item.fileName ?? EVIDENCE_KIND_LABELS_AR[item.fileType],
+                            })
+                          }
                           className="text-[11px] font-black text-primary underline"
                         >
                           عرض
-                        </a>
+                        </button>
                       ) : null}
                       <Button
                         type="button"
@@ -465,22 +472,68 @@ export function AssessmentsBoard() {
                   ))}
                 </ul>
               )}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-2 text-xs font-black"
-                disabled={uploading}
-                onClick={() => {
-                  if (!openCell) return;
-                  setUploadTarget(openCell);
-                  uploadRef.current?.click();
-                }}
-              >
-                {uploading ? <Loader2 className="size-4 animate-spin" /> : <Paperclip className="size-4" />}
-                رفع دليل (صورة / فيديو / PDF)
-              </Button>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 text-xs font-black"
+                  disabled={uploading}
+                  onClick={() => {
+                    if (!openCell) return;
+                    setUploadTarget(openCell);
+                    uploadRef.current?.click();
+                  }}
+                >
+                  {uploading ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Paperclip className="size-4" />
+                  )}
+                  رفع دليل (صورة / فيديو / PDF)
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 text-xs font-black"
+                  onClick={() => setLinkMode((v) => !v)}
+                >
+                  <LinkIcon className="size-4" />
+                  {linkMode ? "إلغاء الرابط" : "إضافة رابط خارجي"}
+                </Button>
+              </div>
+
+              {linkMode ? (
+                <div className="space-y-2 rounded-2xl border border-primary/30 bg-primary/5 p-3">
+                  <Input
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    placeholder="https://drive.google.com/..."
+                    dir="ltr"
+                    className="h-9 text-xs font-bold"
+                  />
+                  <Input
+                    value={linkName}
+                    onChange={(e) => setLinkName(e.target.value)}
+                    placeholder="اسم الدليل (اختياري)"
+                    className="h-9 text-xs font-bold"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="w-full text-xs font-black"
+                    disabled={!/^https?:\/\/.+/.test(linkUrl.trim()) || addLink.isPending}
+                    onClick={() => addLink.mutate()}
+                  >
+                    {addLink.isPending ? <Loader2 className="me-2 size-4 animate-spin" /> : null}
+                    حفظ الرابط كدليل
+                  </Button>
+                </div>
+              ) : null}
             </div>
+
           </div>
         </DialogContent>
       </Dialog>
