@@ -285,17 +285,57 @@ export async function listAuditEntries(supabase: Db, limit: number) {
 
 export async function listRolePermissionMatrix(supabase: Db) {
   const [{ data: permissions }, { data: rolePermissions }] = await Promise.all([
-    supabase.from("permissions").select("key, description_ar, category").order("category"),
+    (supabase as any)
+      .from("permissions")
+      .select("key, description_ar, category, module_name, sub_module_name, action, sort_order")
+      .order("module_name")
+      .order("sub_module_name")
+      .order("sort_order"),
     supabase.from("role_permissions").select("role, permission_key"),
   ]);
   return {
-    permissions: permissions ?? [],
+    permissions: (permissions ?? []) as Array<{
+      key: string;
+      description_ar: string;
+      category: string | null;
+      module_name: string | null;
+      sub_module_name: string | null;
+      action: string | null;
+      sort_order: number | null;
+    }>,
     rolePermissions: (rolePermissions ?? []).map((r) => ({
       role: r.role as AppRole,
       key: r.permission_key,
     })),
   };
 }
+
+/** Admin-only: grant or revoke many permissions for one role in a single call. */
+export async function bulkSetRolePermissions(
+  supabase: Db,
+  actorId: string,
+  role: AppRole,
+  permissionKeys: string[],
+  granted: boolean,
+) {
+  const { data, error } = await (supabase as any).rpc("admin_set_role_permissions_bulk", {
+    _role: role,
+    _permission_keys: permissionKeys,
+    _granted: granted,
+  });
+  if (error) throw new Error("تعذّر تحديث الصلاحيات.");
+
+  await recordAudit({
+    userId: actorId,
+    action: granted ? "permissions.bulk_grant" : "permissions.bulk_revoke",
+    entity: "role_permissions",
+    entityId: role,
+    metadata: { role, count: permissionKeys.length, granted },
+    meta: getRequestMeta(),
+  });
+  return { ok: true as const, affected: Number(data ?? 0) };
+}
+
 export async function setRolePermission(
   supabase: Db,
   actorId: string,

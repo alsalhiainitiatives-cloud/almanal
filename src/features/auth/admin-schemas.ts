@@ -36,6 +36,23 @@ export const rolePermissionSchema = z.object({
 
 export type RolePermissionInput = z.infer<typeof rolePermissionSchema>;
 
+export const bulkRolePermissionSchema = z.object({
+  role: z.enum([
+    "parent",
+    "registration_officer",
+    "accountant",
+    "principal",
+    "supervisor",
+    "admin",
+    "teacher",
+  ]),
+  permissionKeys: z.array(z.string().min(1).max(120)).min(1).max(500),
+  granted: z.boolean(),
+});
+
+export type BulkRolePermissionInput = z.infer<typeof bulkRolePermissionSchema>;
+
+
 export const bulkUserPermissionSchema = z.object({
   userIds: z.array(z.string().uuid()).min(1, "اختر مستخدمًا واحدًا على الأقل").max(200),
   permissionKeys: z.array(z.string().min(1).max(120)).min(1, "اختر صلاحية واحدة على الأقل").max(60),
