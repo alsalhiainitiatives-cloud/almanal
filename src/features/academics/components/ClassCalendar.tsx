@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
+  UserCheck,
   Loader2,
   MessagesSquare,
 } from "lucide-react";
@@ -45,6 +46,7 @@ const KIND_ICONS: Record<CalendarEventKind, typeof CalendarDays> = {
   lesson: CalendarDays,
   chat: MessagesSquare,
   assessment: ClipboardCheck,
+  attendance: UserCheck,
 };
 
 export function ClassCalendar() {
@@ -54,6 +56,7 @@ export function ClassCalendar() {
     lesson: true,
     chat: true,
     assessment: true,
+    attendance: true,
   });
   const today = isoOf(new Date());
   const [selectedDay, setSelectedDay] = useState<string>(today);
