@@ -32,7 +32,14 @@ const NAV_GROUPS = [
     label: "حسابي",
     items: [
       { to: "/profile", label: "ملفي الشخصي ولوحتي", icon: UserCog, permission: P.profileEdit, featured: false },
-      { to: "/link-children", label: "ربط أبنائي", icon: Link2, permission: P.profileEdit, featured: false },
+      {
+        to: "/link-children",
+        label: "ربط أبنائي",
+        icon: Link2,
+        permission: P.profileEdit,
+        featured: false,
+        parentOnly: true,
+      },
     ],
   },
   {
@@ -127,14 +134,16 @@ export function PortalLayout({
   const navigate = useNavigate();
   const counters = useNotificationCounters();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isStaffAccount = (roles as string[]).some((role) => role !== "parent");
 
 
   const groups = NAV_GROUPS.map((group) => ({
     label: group.label,
     items: group.items.filter(
       (item) =>
-        hasPermission(item.permission) ||
-        ("role" in item && (roles as string[]).includes(item.role as string)),
+        !("parentOnly" in item && item.parentOnly && isStaffAccount) &&
+        (hasPermission(item.permission) ||
+          ("role" in item && (roles as string[]).includes(item.role as string))),
     ),
   })).filter((group) => group.items.length > 0);
 
