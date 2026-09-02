@@ -51,7 +51,9 @@ import {
   assessmentsEnsureCell,
   assessmentsSave,
 } from "../assessments.functions";
+import { EvaluationGuide } from "./EvaluationGuide";
 import { EvaluationTriangle } from "./EvaluationTriangle";
+
 
 const EMPTY_CELL = {
   performanceLevel: 0 as TriangleLevel,
