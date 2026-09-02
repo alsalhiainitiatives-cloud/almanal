@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   BookOpen,
   CalendarClock,
-  HardDrive,
   KeyRound,
   ShieldCheck,
   Users,
@@ -45,12 +44,6 @@ const CARDS = [
     label: "سجل العمليات",
     icon: ShieldCheck,
     text: "تتبّع كل تغيير حسّاس مع الجهاز وعنوان الإنترنت.",
-  },
-  {
-    to: "/ams/system/storage",
-    label: "التخزين والصيانة",
-    icon: HardDrive,
-    text: "متابعة مساحة المرفقات وتنظيف الملفات غير المرتبطة.",
   },
   {
     to: "/ams/system/registration",

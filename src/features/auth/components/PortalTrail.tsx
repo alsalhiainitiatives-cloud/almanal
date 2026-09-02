@@ -65,7 +65,6 @@ const NAVIGABLE = new Set([
   "/ams/system/users",
   "/ams/system/permissions",
   "/ams/system/audit",
-  "/ams/system/storage",
   "/admin/users",
   "/admin/permissions",
   "/admin/audit",

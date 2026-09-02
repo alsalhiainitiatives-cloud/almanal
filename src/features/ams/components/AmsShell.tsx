@@ -240,14 +240,6 @@ const SYSTEM_NAV: NavItem[] = [
   { to: "/ams/system/permissions", label: "مصفوفة الصلاحيات", icon: KeyRound, exact: false, group: "المستخدمون والصلاحيات" },
   { to: "/ams/system/audit", label: "سجل العمليات", icon: ShieldCheck, exact: false, group: "الحوكمة والصيانة" },
   {
-    to: "/ams/system/storage",
-    label: "التخزين والصيانة",
-    icon: HardDrive,
-    exact: false,
-    group: "الحوكمة والصيانة",
-    roles: ["admin", "supervisor", "principal"],
-  },
-  {
     to: "/ams/system/registration",
     label: "إعدادات نظام التسجيل",
     icon: CalendarClock,
