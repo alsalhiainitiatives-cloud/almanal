@@ -330,11 +330,13 @@ export function AmsShell({
   children: ReactNode;
   wide?: boolean;
 }) {
-  const { profile, roles, primaryRole, signOut } = useAuth();
+  const { profile, roles, permissions, primaryRole, signOut } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const activeModule = MODULES[moduleFor(pathname)];
   const navItems = activeModule.nav.filter(
-    (item) => !item.roles || item.roles.some((role) => (roles as string[]).includes(role)),
+    (item) =>
+      canSeeLink(item.to, roles as string[], permissions) ||
+      (item.roles?.some((role) => (roles as string[]).includes(role)) ?? false),
   );
   const navGroups = activeModule.groups.map((group) => ({
     group,
