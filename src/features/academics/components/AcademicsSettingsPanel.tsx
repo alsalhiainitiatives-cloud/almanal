@@ -31,10 +31,12 @@ import { useAuth } from "@/features/auth/AuthProvider";
 
 export function AcademicsSettingsPanel() {
   const queryClient = useQueryClient();
+  const { roles } = useAuth();
   const fetchBoard = useServerFn(academicsSettingsBoard);
   const saveColors = useServerFn(academicsSaveMonthColors);
   const setGlobal = useServerFn(academicsSetChatGlobal);
   const setClassroom = useServerFn(academicsSetChatClassroom);
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["academics-settings"],
