@@ -112,6 +112,14 @@ export async function listStudents(
       gender: row.gender,
       birth_date: row.birth_date,
       nationality: row.nationality,
+      birth_place: row.birth_place,
+      blood_type: row.blood_type,
+      medical_conditions: row.medical_conditions,
+      allergies: row.allergies,
+      special_needs: row.special_needs,
+      previous_school: row.previous_school,
+      last_grade: row.last_grade,
+      vaccination_status: row.vaccination_status,
       photo_url: row.photo_url,
       stage_id: row.stage_id,
       classroom_id: row.classroom_id,
@@ -126,6 +134,10 @@ export async function listStudents(
       seasonKind: app.season_id ? (seasonById.get(app.season_id)?.kind ?? null) : null,
       parentName: draftParent?.fullName || profile?.full_name || "—",
       parentPhone: draftParent?.mobile || profile?.phone || null,
+      parentEmail: draftParent?.email || profile?.email || null,
+      parentNationalId: app.parent_national_id,
+      parentNationality: app.parent_nationality,
+      parentRelationship: app.parent_relationship,
     };
   });
 

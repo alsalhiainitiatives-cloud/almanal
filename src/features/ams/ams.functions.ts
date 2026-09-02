@@ -52,6 +52,13 @@ import {
   listStudents,
   setStudentPhoto,
 } from "./students.server";
+import {
+  addStudent,
+  deleteStudentRecord,
+  importStudents,
+  updateStudentRecord,
+} from "./student-registry.server";
+import { studentRecordSchema } from "./student-import";
 
 const uuid = z.string().uuid();
 
@@ -413,6 +420,36 @@ export const amsStudentPhoto = createServerFn({ method: "POST" })
     z.object({ childId: uuid, photoUrl: z.string().max(400).nullable() }).parse(data),
   )
   .handler(async ({ data, context }) => setStudentPhoto(context.supabase, context.userId, data));
+
+/* ---------------- Student registry: import / add / edit / delete ---------------- */
+
+const academicYear = z.string().trim().min(4).max(40);
+
+export const amsStudentsImport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ academicYear, records: z.array(studentRecordSchema).min(1).max(400) }).parse(data),
+  )
+  .handler(async ({ data, context }) => importStudents(context.supabase, context.userId, data));
+
+export const amsStudentAdd = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ academicYear, record: studentRecordSchema }).parse(data),
+  )
+  .handler(async ({ data, context }) => addStudent(context.supabase, context.userId, data));
+
+export const amsStudentUpdate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ childId: uuid, record: studentRecordSchema }).parse(data),
+  )
+  .handler(async ({ data, context }) => updateStudentRecord(context.supabase, context.userId, data));
+
+export const amsStudentDelete = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ childId: uuid }).parse(data))
+  .handler(async ({ data, context }) => deleteStudentRecord(context.supabase, context.userId, data));
 
 /* ---------------- Age-based stage transfers ---------------- */
 
