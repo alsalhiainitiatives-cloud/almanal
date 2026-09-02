@@ -51,7 +51,6 @@ import { Route as AuthenticatedAmsReservationsRouteImport } from './routes/_auth
 import { Route as AuthenticatedAmsReportsRouteImport } from './routes/_authenticated/ams/reports'
 import { Route as AuthenticatedAmsQueueRouteImport } from './routes/_authenticated/ams/queue'
 import { Route as AuthenticatedAmsFormBuilderRouteImport } from './routes/_authenticated/ams/form-builder'
-import { Route as AuthenticatedAmsFinanceRouteImport } from './routes/_authenticated/ams/finance'
 import { Route as AuthenticatedAmsActivityRouteImport } from './routes/_authenticated/ams/activity'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminSiteContentRouteImport } from './routes/_authenticated/admin/site-content'
@@ -297,11 +296,6 @@ const AuthenticatedAmsFormBuilderRoute =
     path: '/ams/form-builder',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAmsFinanceRoute = AuthenticatedAmsFinanceRouteImport.update({
-  id: '/ams/finance',
-  path: '/ams/finance',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedAmsActivityRoute =
   AuthenticatedAmsActivityRouteImport.update({
     id: '/ams/activity',
@@ -349,9 +343,9 @@ const AuthenticatedAmsStudentsIndexRoute =
   } as any)
 const AuthenticatedAmsFinanceIndexRoute =
   AuthenticatedAmsFinanceIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAmsFinanceRoute,
+    id: '/ams/finance/',
+    path: '/ams/finance/',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAmsAcademicsIndexRoute =
   AuthenticatedAmsAcademicsIndexRouteImport.update({
@@ -379,27 +373,27 @@ const AuthenticatedAmsStudentsChildIdRoute =
   } as any)
 const AuthenticatedAmsFinanceSettingsRoute =
   AuthenticatedAmsFinanceSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedAmsFinanceRoute,
+    id: '/ams/finance/settings',
+    path: '/ams/finance/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAmsFinanceReportsRoute =
   AuthenticatedAmsFinanceReportsRouteImport.update({
-    id: '/reports',
-    path: '/reports',
-    getParentRoute: () => AuthenticatedAmsFinanceRoute,
+    id: '/ams/finance/reports',
+    path: '/ams/finance/reports',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAmsFinanceInvoicesRoute =
   AuthenticatedAmsFinanceInvoicesRouteImport.update({
-    id: '/invoices',
-    path: '/invoices',
-    getParentRoute: () => AuthenticatedAmsFinanceRoute,
+    id: '/ams/finance/invoices',
+    path: '/ams/finance/invoices',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAmsFinanceClaimsRoute =
   AuthenticatedAmsFinanceClaimsRouteImport.update({
-    id: '/claims',
-    path: '/claims',
-    getParentRoute: () => AuthenticatedAmsFinanceRoute,
+    id: '/ams/finance/claims',
+    path: '/ams/finance/claims',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAmsApplicationsApplicationIdRoute =
   AuthenticatedAmsApplicationsApplicationIdRouteImport.update({
@@ -504,7 +498,6 @@ export interface FileRoutesByFullPath {
   '/admin/site-content': typeof AuthenticatedAdminSiteContentRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/ams/activity': typeof AuthenticatedAmsActivityRoute
-  '/ams/finance': typeof AuthenticatedAmsFinanceRouteWithChildren
   '/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
   '/ams/queue': typeof AuthenticatedAmsQueueRoute
   '/ams/reports': typeof AuthenticatedAmsReportsRoute
@@ -649,7 +642,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/site-content': typeof AuthenticatedAdminSiteContentRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/ams/activity': typeof AuthenticatedAmsActivityRoute
-  '/_authenticated/ams/finance': typeof AuthenticatedAmsFinanceRouteWithChildren
   '/_authenticated/ams/form-builder': typeof AuthenticatedAmsFormBuilderRoute
   '/_authenticated/ams/queue': typeof AuthenticatedAmsQueueRoute
   '/_authenticated/ams/reports': typeof AuthenticatedAmsReportsRoute
@@ -723,7 +715,6 @@ export interface FileRouteTypes {
     | '/admin/site-content'
     | '/admin/users'
     | '/ams/activity'
-    | '/ams/finance'
     | '/ams/form-builder'
     | '/ams/queue'
     | '/ams/reports'
@@ -867,7 +858,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/site-content'
     | '/_authenticated/admin/users'
     | '/_authenticated/ams/activity'
-    | '/_authenticated/ams/finance'
     | '/_authenticated/ams/form-builder'
     | '/_authenticated/ams/queue'
     | '/_authenticated/ams/reports'
@@ -1228,13 +1218,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAmsFormBuilderRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/ams/finance': {
-      id: '/_authenticated/ams/finance'
-      path: '/ams/finance'
-      fullPath: '/ams/finance'
-      preLoaderRoute: typeof AuthenticatedAmsFinanceRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/ams/activity': {
       id: '/_authenticated/ams/activity'
       path: '/ams/activity'
@@ -1293,10 +1276,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/ams/finance/': {
       id: '/_authenticated/ams/finance/'
-      path: '/'
+      path: '/ams/finance'
       fullPath: '/ams/finance/'
       preLoaderRoute: typeof AuthenticatedAmsFinanceIndexRouteImport
-      parentRoute: typeof AuthenticatedAmsFinanceRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ams/academics/': {
       id: '/_authenticated/ams/academics/'
@@ -1328,31 +1311,31 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/ams/finance/settings': {
       id: '/_authenticated/ams/finance/settings'
-      path: '/settings'
+      path: '/ams/finance/settings'
       fullPath: '/ams/finance/settings'
       preLoaderRoute: typeof AuthenticatedAmsFinanceSettingsRouteImport
-      parentRoute: typeof AuthenticatedAmsFinanceRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ams/finance/reports': {
       id: '/_authenticated/ams/finance/reports'
-      path: '/reports'
+      path: '/ams/finance/reports'
       fullPath: '/ams/finance/reports'
       preLoaderRoute: typeof AuthenticatedAmsFinanceReportsRouteImport
-      parentRoute: typeof AuthenticatedAmsFinanceRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ams/finance/invoices': {
       id: '/_authenticated/ams/finance/invoices'
-      path: '/invoices'
+      path: '/ams/finance/invoices'
       fullPath: '/ams/finance/invoices'
       preLoaderRoute: typeof AuthenticatedAmsFinanceInvoicesRouteImport
-      parentRoute: typeof AuthenticatedAmsFinanceRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ams/finance/claims': {
       id: '/_authenticated/ams/finance/claims'
-      path: '/claims'
+      path: '/ams/finance/claims'
       fullPath: '/ams/finance/claims'
       preLoaderRoute: typeof AuthenticatedAmsFinanceClaimsRouteImport
-      parentRoute: typeof AuthenticatedAmsFinanceRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ams/applications/$applicationId': {
       id: '/_authenticated/ams/applications/$applicationId'
@@ -1434,28 +1417,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedAmsFinanceRouteChildren {
-  AuthenticatedAmsFinanceClaimsRoute: typeof AuthenticatedAmsFinanceClaimsRoute
-  AuthenticatedAmsFinanceInvoicesRoute: typeof AuthenticatedAmsFinanceInvoicesRoute
-  AuthenticatedAmsFinanceReportsRoute: typeof AuthenticatedAmsFinanceReportsRoute
-  AuthenticatedAmsFinanceSettingsRoute: typeof AuthenticatedAmsFinanceSettingsRoute
-  AuthenticatedAmsFinanceIndexRoute: typeof AuthenticatedAmsFinanceIndexRoute
-}
-
-const AuthenticatedAmsFinanceRouteChildren: AuthenticatedAmsFinanceRouteChildren =
-  {
-    AuthenticatedAmsFinanceClaimsRoute: AuthenticatedAmsFinanceClaimsRoute,
-    AuthenticatedAmsFinanceInvoicesRoute: AuthenticatedAmsFinanceInvoicesRoute,
-    AuthenticatedAmsFinanceReportsRoute: AuthenticatedAmsFinanceReportsRoute,
-    AuthenticatedAmsFinanceSettingsRoute: AuthenticatedAmsFinanceSettingsRoute,
-    AuthenticatedAmsFinanceIndexRoute: AuthenticatedAmsFinanceIndexRoute,
-  }
-
-const AuthenticatedAmsFinanceRouteWithChildren =
-  AuthenticatedAmsFinanceRoute._addFileChildren(
-    AuthenticatedAmsFinanceRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedChildFileRoute: typeof AuthenticatedChildFileRoute
   AuthenticatedChildReportsRoute: typeof AuthenticatedChildReportsRoute
@@ -1472,7 +1433,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminSiteContentRoute: typeof AuthenticatedAdminSiteContentRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAmsActivityRoute: typeof AuthenticatedAmsActivityRoute
-  AuthenticatedAmsFinanceRoute: typeof AuthenticatedAmsFinanceRouteWithChildren
   AuthenticatedAmsFormBuilderRoute: typeof AuthenticatedAmsFormBuilderRoute
   AuthenticatedAmsQueueRoute: typeof AuthenticatedAmsQueueRoute
   AuthenticatedAmsReportsRoute: typeof AuthenticatedAmsReportsRoute
@@ -1494,9 +1454,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAmsAcademicsReportsRoute: typeof AuthenticatedAmsAcademicsReportsRoute
   AuthenticatedAmsAcademicsSettingsRoute: typeof AuthenticatedAmsAcademicsSettingsRoute
   AuthenticatedAmsApplicationsApplicationIdRoute: typeof AuthenticatedAmsApplicationsApplicationIdRoute
+  AuthenticatedAmsFinanceClaimsRoute: typeof AuthenticatedAmsFinanceClaimsRoute
+  AuthenticatedAmsFinanceInvoicesRoute: typeof AuthenticatedAmsFinanceInvoicesRoute
+  AuthenticatedAmsFinanceReportsRoute: typeof AuthenticatedAmsFinanceReportsRoute
+  AuthenticatedAmsFinanceSettingsRoute: typeof AuthenticatedAmsFinanceSettingsRoute
   AuthenticatedAmsStudentsChildIdRoute: typeof AuthenticatedAmsStudentsChildIdRoute
   AuthenticatedAmsStudentsPromotionsRoute: typeof AuthenticatedAmsStudentsPromotionsRoute
   AuthenticatedAmsAcademicsIndexRoute: typeof AuthenticatedAmsAcademicsIndexRoute
+  AuthenticatedAmsFinanceIndexRoute: typeof AuthenticatedAmsFinanceIndexRoute
   AuthenticatedAmsStudentsIndexRoute: typeof AuthenticatedAmsStudentsIndexRoute
 }
 
@@ -1516,7 +1481,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminSiteContentRoute: AuthenticatedAdminSiteContentRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAmsActivityRoute: AuthenticatedAmsActivityRoute,
-  AuthenticatedAmsFinanceRoute: AuthenticatedAmsFinanceRouteWithChildren,
   AuthenticatedAmsFormBuilderRoute: AuthenticatedAmsFormBuilderRoute,
   AuthenticatedAmsQueueRoute: AuthenticatedAmsQueueRoute,
   AuthenticatedAmsReportsRoute: AuthenticatedAmsReportsRoute,
@@ -1545,10 +1509,15 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAmsAcademicsSettingsRoute,
   AuthenticatedAmsApplicationsApplicationIdRoute:
     AuthenticatedAmsApplicationsApplicationIdRoute,
+  AuthenticatedAmsFinanceClaimsRoute: AuthenticatedAmsFinanceClaimsRoute,
+  AuthenticatedAmsFinanceInvoicesRoute: AuthenticatedAmsFinanceInvoicesRoute,
+  AuthenticatedAmsFinanceReportsRoute: AuthenticatedAmsFinanceReportsRoute,
+  AuthenticatedAmsFinanceSettingsRoute: AuthenticatedAmsFinanceSettingsRoute,
   AuthenticatedAmsStudentsChildIdRoute: AuthenticatedAmsStudentsChildIdRoute,
   AuthenticatedAmsStudentsPromotionsRoute:
     AuthenticatedAmsStudentsPromotionsRoute,
   AuthenticatedAmsAcademicsIndexRoute: AuthenticatedAmsAcademicsIndexRoute,
+  AuthenticatedAmsFinanceIndexRoute: AuthenticatedAmsFinanceIndexRoute,
   AuthenticatedAmsStudentsIndexRoute: AuthenticatedAmsStudentsIndexRoute,
 }
 

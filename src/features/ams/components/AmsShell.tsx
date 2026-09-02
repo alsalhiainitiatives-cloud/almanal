@@ -139,8 +139,39 @@ const ACADEMICS_NAV: NavItem[] = [
 
 /** Finance is a separate operational module — no admissions links. */
 const FINANCE_NAV: NavItem[] = [
-  { to: "/ams/finance", label: "لوحة الإدارة المالية", icon: Wallet, exact: false, group: "الإدارة المالية" },
+  { to: "/ams/finance", label: "لوحة الإدارة المالية", icon: LayoutDashboard, exact: true, group: "الإدارة المالية" },
+  {
+    to: "/ams/finance/invoices",
+    label: "الفواتير والدفعات",
+    icon: Wallet,
+    exact: false,
+    group: "التحصيل والمتابعة",
+  },
+  {
+    to: "/ams/finance/claims",
+    label: "المطالبات السنوية",
+    icon: ReceiptText,
+    exact: false,
+    group: "التحصيل والمتابعة",
+    roles: ["admin", "accountant"],
+  },
+  {
+    to: "/ams/finance/reports",
+    label: "التقارير المالية",
+    icon: BarChart3,
+    exact: false,
+    group: "التقارير والإعدادات",
+  },
+  {
+    to: "/ams/finance/settings",
+    label: "الإعدادات المالية",
+    icon: Settings2,
+    exact: false,
+    group: "التقارير والإعدادات",
+    roles: ["admin", "accountant"],
+  },
 ];
+
 
 type ModuleKey = "admissions" | "students" | "finance" | "academics";
 
