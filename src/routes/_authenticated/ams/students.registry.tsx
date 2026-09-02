@@ -13,7 +13,7 @@ import { isValidAcademicNumber } from "@/features/ams/academic-number";
 import { ageInMonths, formatAge } from "@/features/admissions/eligibility";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_authenticated/ams/students/")({
+export const Route = createFileRoute("/_authenticated/ams/students/registry")({
   head: () => ({
     meta: [
       { title: "شؤون الطلاب — مدارس وروضة المنال" },

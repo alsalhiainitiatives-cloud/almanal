@@ -58,10 +58,10 @@ import { Route as AuthenticatedAdminPermissionsRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminInboxRouteImport } from './routes/_authenticated/admin/inbox'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
 import { Route as AdmissionsStageSlugIndexRouteImport } from './routes/admissions.stage.$slug.index'
-import { Route as AuthenticatedAmsStudentsIndexRouteImport } from './routes/_authenticated/ams/students.index'
 import { Route as AuthenticatedAmsFinanceIndexRouteImport } from './routes/_authenticated/ams/finance.index'
 import { Route as AuthenticatedAmsAcademicsIndexRouteImport } from './routes/_authenticated/ams/academics.index'
 import { Route as AdmissionsStageSlugClassroomsRouteImport } from './routes/admissions.stage.$slug.classrooms'
+import { Route as AuthenticatedAmsStudentsRegistryRouteImport } from './routes/_authenticated/ams/students.registry'
 import { Route as AuthenticatedAmsStudentsPromotionsRouteImport } from './routes/_authenticated/ams/students.promotions'
 import { Route as AuthenticatedAmsStudentsChildIdRouteImport } from './routes/_authenticated/ams/students.$childId'
 import { Route as AuthenticatedAmsFinanceSettingsRouteImport } from './routes/_authenticated/ams/finance.settings'
@@ -335,12 +335,6 @@ const AdmissionsStageSlugIndexRoute =
     path: '/admissions/stage/$slug/',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedAmsStudentsIndexRoute =
-  AuthenticatedAmsStudentsIndexRouteImport.update({
-    id: '/ams/students/',
-    path: '/ams/students/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedAmsFinanceIndexRoute =
   AuthenticatedAmsFinanceIndexRouteImport.update({
     id: '/ams/finance/',
@@ -358,6 +352,12 @@ const AdmissionsStageSlugClassroomsRoute =
     id: '/admissions/stage/$slug/classrooms',
     path: '/admissions/stage/$slug/classrooms',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedAmsStudentsRegistryRoute =
+  AuthenticatedAmsStudentsRegistryRouteImport.update({
+    id: '/ams/students/registry',
+    path: '/ams/students/registry',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAmsStudentsPromotionsRoute =
   AuthenticatedAmsStudentsPromotionsRouteImport.update({
@@ -526,10 +526,10 @@ export interface FileRoutesByFullPath {
   '/ams/finance/settings': typeof AuthenticatedAmsFinanceSettingsRoute
   '/ams/students/$childId': typeof AuthenticatedAmsStudentsChildIdRoute
   '/ams/students/promotions': typeof AuthenticatedAmsStudentsPromotionsRoute
+  '/ams/students/registry': typeof AuthenticatedAmsStudentsRegistryRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
   '/ams/academics/': typeof AuthenticatedAmsAcademicsIndexRoute
   '/ams/finance/': typeof AuthenticatedAmsFinanceIndexRoute
-  '/ams/students/': typeof AuthenticatedAmsStudentsIndexRoute
   '/admissions/stage/$slug/': typeof AdmissionsStageSlugIndexRoute
   '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
 }
@@ -597,10 +597,10 @@ export interface FileRoutesByTo {
   '/ams/finance/settings': typeof AuthenticatedAmsFinanceSettingsRoute
   '/ams/students/$childId': typeof AuthenticatedAmsStudentsChildIdRoute
   '/ams/students/promotions': typeof AuthenticatedAmsStudentsPromotionsRoute
+  '/ams/students/registry': typeof AuthenticatedAmsStudentsRegistryRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
   '/ams/academics': typeof AuthenticatedAmsAcademicsIndexRoute
   '/ams/finance': typeof AuthenticatedAmsFinanceIndexRoute
-  '/ams/students': typeof AuthenticatedAmsStudentsIndexRoute
   '/admissions/stage/$slug': typeof AdmissionsStageSlugIndexRoute
   '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
 }
@@ -670,10 +670,10 @@ export interface FileRoutesById {
   '/_authenticated/ams/finance/settings': typeof AuthenticatedAmsFinanceSettingsRoute
   '/_authenticated/ams/students/$childId': typeof AuthenticatedAmsStudentsChildIdRoute
   '/_authenticated/ams/students/promotions': typeof AuthenticatedAmsStudentsPromotionsRoute
+  '/_authenticated/ams/students/registry': typeof AuthenticatedAmsStudentsRegistryRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
   '/_authenticated/ams/academics/': typeof AuthenticatedAmsAcademicsIndexRoute
   '/_authenticated/ams/finance/': typeof AuthenticatedAmsFinanceIndexRoute
-  '/_authenticated/ams/students/': typeof AuthenticatedAmsStudentsIndexRoute
   '/admissions/stage/$slug/': typeof AdmissionsStageSlugIndexRoute
   '/admissions/stage/$slug/classroom/$classroomSlug': typeof AdmissionsStageSlugClassroomClassroomSlugRoute
 }
@@ -743,10 +743,10 @@ export interface FileRouteTypes {
     | '/ams/finance/settings'
     | '/ams/students/$childId'
     | '/ams/students/promotions'
+    | '/ams/students/registry'
     | '/admissions/stage/$slug/classrooms'
     | '/ams/academics/'
     | '/ams/finance/'
-    | '/ams/students/'
     | '/admissions/stage/$slug/'
     | '/admissions/stage/$slug/classroom/$classroomSlug'
   fileRoutesByTo: FileRoutesByTo
@@ -814,10 +814,10 @@ export interface FileRouteTypes {
     | '/ams/finance/settings'
     | '/ams/students/$childId'
     | '/ams/students/promotions'
+    | '/ams/students/registry'
     | '/admissions/stage/$slug/classrooms'
     | '/ams/academics'
     | '/ams/finance'
-    | '/ams/students'
     | '/admissions/stage/$slug'
     | '/admissions/stage/$slug/classroom/$classroomSlug'
   id:
@@ -886,10 +886,10 @@ export interface FileRouteTypes {
     | '/_authenticated/ams/finance/settings'
     | '/_authenticated/ams/students/$childId'
     | '/_authenticated/ams/students/promotions'
+    | '/_authenticated/ams/students/registry'
     | '/admissions/stage/$slug/classrooms'
     | '/_authenticated/ams/academics/'
     | '/_authenticated/ams/finance/'
-    | '/_authenticated/ams/students/'
     | '/admissions/stage/$slug/'
     | '/admissions/stage/$slug/classroom/$classroomSlug'
   fileRoutesById: FileRoutesById
@@ -1267,13 +1267,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdmissionsStageSlugIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/ams/students/': {
-      id: '/_authenticated/ams/students/'
-      path: '/ams/students'
-      fullPath: '/ams/students/'
-      preLoaderRoute: typeof AuthenticatedAmsStudentsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/ams/finance/': {
       id: '/_authenticated/ams/finance/'
       path: '/ams/finance'
@@ -1294,6 +1287,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admissions/stage/$slug/classrooms'
       preLoaderRoute: typeof AdmissionsStageSlugClassroomsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/ams/students/registry': {
+      id: '/_authenticated/ams/students/registry'
+      path: '/ams/students/registry'
+      fullPath: '/ams/students/registry'
+      preLoaderRoute: typeof AuthenticatedAmsStudentsRegistryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ams/students/promotions': {
       id: '/_authenticated/ams/students/promotions'
@@ -1460,9 +1460,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAmsFinanceSettingsRoute: typeof AuthenticatedAmsFinanceSettingsRoute
   AuthenticatedAmsStudentsChildIdRoute: typeof AuthenticatedAmsStudentsChildIdRoute
   AuthenticatedAmsStudentsPromotionsRoute: typeof AuthenticatedAmsStudentsPromotionsRoute
+  AuthenticatedAmsStudentsRegistryRoute: typeof AuthenticatedAmsStudentsRegistryRoute
   AuthenticatedAmsAcademicsIndexRoute: typeof AuthenticatedAmsAcademicsIndexRoute
   AuthenticatedAmsFinanceIndexRoute: typeof AuthenticatedAmsFinanceIndexRoute
-  AuthenticatedAmsStudentsIndexRoute: typeof AuthenticatedAmsStudentsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1516,9 +1516,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAmsStudentsChildIdRoute: AuthenticatedAmsStudentsChildIdRoute,
   AuthenticatedAmsStudentsPromotionsRoute:
     AuthenticatedAmsStudentsPromotionsRoute,
+  AuthenticatedAmsStudentsRegistryRoute: AuthenticatedAmsStudentsRegistryRoute,
   AuthenticatedAmsAcademicsIndexRoute: AuthenticatedAmsAcademicsIndexRoute,
   AuthenticatedAmsFinanceIndexRoute: AuthenticatedAmsFinanceIndexRoute,
-  AuthenticatedAmsStudentsIndexRoute: AuthenticatedAmsStudentsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
