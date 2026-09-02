@@ -740,26 +740,60 @@ export function AssessmentsBoard() {
   );
 }
 
+/** Groups flat lessons into subject › topic sections for the focused child view. */
+function groupLessons(lessons: Board["lessons"]) {
+  const subjects: {
+    nameAr: string;
+    colorHex: string;
+    topics: { nameAr: string; lessons: Board["lessons"] }[];
+  }[] = [];
+  for (const lesson of lessons) {
+    let subject = subjects.find((s) => s.nameAr === lesson.subjectNameAr);
+    if (!subject) {
+      subject = { nameAr: lesson.subjectNameAr, colorHex: lesson.subjectColorHex, topics: [] };
+      subjects.push(subject);
+    }
+    let topic = subject.topics.find((t) => t.nameAr === lesson.topicNameAr);
+    if (!topic) {
+      topic = { nameAr: lesson.topicNameAr, lessons: [] };
+      subject.topics.push(topic);
+    }
+    topic.lessons.push(lesson);
+  }
+  return subjects;
+}
+
 function ScaleControl({
   scale,
   level,
   colors,
+  size,
   onCycle,
   onPick,
 }: {
   scale: TriangleScale;
   level: TriangleLevel;
   colors: string[];
+  size?: number;
   onCycle: (next: TriangleLevel) => void;
   onPick: (lineIndex: number, hex: string) => void;
 }) {
   const [line, setLine] = useState(0);
   return (
     <div className="flex flex-col items-center gap-1">
-      <span className="text-[9px] font-black text-muted-foreground">{SCALE_LABELS[scale]}</span>
+      <span className={cn("font-black text-muted-foreground", size ? "text-xs" : "text-[9px]")}>
+        {SCALE_LABELS[scale]}
+      </span>
       <div className="flex items-center gap-1">
-        <EvaluationTriangle scale={scale} level={level} colors={colors} onCycle={onCycle} />
+        <EvaluationTriangle
+          scale={scale}
+          level={level}
+          colors={colors}
+          size={size}
+          onCycle={onCycle}
+        />
         <Popover>
+
           <PopoverTrigger asChild>
             <button
               type="button"
