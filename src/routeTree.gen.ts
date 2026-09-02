@@ -66,6 +66,7 @@ import { Route as AdmissionsStageSlugClassroomsRouteImport } from './routes/admi
 import { Route as AuthenticatedAmsStudentsPromotionsRouteImport } from './routes/_authenticated/ams/students.promotions'
 import { Route as AuthenticatedAmsStudentsChildIdRouteImport } from './routes/_authenticated/ams/students.$childId'
 import { Route as AuthenticatedAmsFinanceInvoicesRouteImport } from './routes/_authenticated/ams/finance.invoices'
+import { Route as AuthenticatedAmsFinanceClaimsRouteImport } from './routes/_authenticated/ams/finance.claims'
 import { Route as AuthenticatedAmsApplicationsApplicationIdRouteImport } from './routes/_authenticated/ams/applications.$applicationId'
 import { Route as AuthenticatedAmsAcademicsSettingsRouteImport } from './routes/_authenticated/ams/academics.settings'
 import { Route as AuthenticatedAmsAcademicsReportsRouteImport } from './routes/_authenticated/ams/academics.reports'
@@ -380,6 +381,12 @@ const AuthenticatedAmsFinanceInvoicesRoute =
     path: '/invoices',
     getParentRoute: () => AuthenticatedAmsFinanceRoute,
   } as any)
+const AuthenticatedAmsFinanceClaimsRoute =
+  AuthenticatedAmsFinanceClaimsRouteImport.update({
+    id: '/claims',
+    path: '/claims',
+    getParentRoute: () => AuthenticatedAmsFinanceRoute,
+  } as any)
 const AuthenticatedAmsApplicationsApplicationIdRoute =
   AuthenticatedAmsApplicationsApplicationIdRouteImport.update({
     id: '/ams/applications/$applicationId',
@@ -506,6 +513,7 @@ export interface FileRoutesByFullPath {
   '/ams/academics/reports': typeof AuthenticatedAmsAcademicsReportsRoute
   '/ams/academics/settings': typeof AuthenticatedAmsAcademicsSettingsRoute
   '/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
+  '/ams/finance/claims': typeof AuthenticatedAmsFinanceClaimsRoute
   '/ams/finance/invoices': typeof AuthenticatedAmsFinanceInvoicesRoute
   '/ams/students/$childId': typeof AuthenticatedAmsStudentsChildIdRoute
   '/ams/students/promotions': typeof AuthenticatedAmsStudentsPromotionsRoute
@@ -574,6 +582,7 @@ export interface FileRoutesByTo {
   '/ams/academics/reports': typeof AuthenticatedAmsAcademicsReportsRoute
   '/ams/academics/settings': typeof AuthenticatedAmsAcademicsSettingsRoute
   '/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
+  '/ams/finance/claims': typeof AuthenticatedAmsFinanceClaimsRoute
   '/ams/finance/invoices': typeof AuthenticatedAmsFinanceInvoicesRoute
   '/ams/students/$childId': typeof AuthenticatedAmsStudentsChildIdRoute
   '/ams/students/promotions': typeof AuthenticatedAmsStudentsPromotionsRoute
@@ -645,6 +654,7 @@ export interface FileRoutesById {
   '/_authenticated/ams/academics/reports': typeof AuthenticatedAmsAcademicsReportsRoute
   '/_authenticated/ams/academics/settings': typeof AuthenticatedAmsAcademicsSettingsRoute
   '/_authenticated/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
+  '/_authenticated/ams/finance/claims': typeof AuthenticatedAmsFinanceClaimsRoute
   '/_authenticated/ams/finance/invoices': typeof AuthenticatedAmsFinanceInvoicesRoute
   '/_authenticated/ams/students/$childId': typeof AuthenticatedAmsStudentsChildIdRoute
   '/_authenticated/ams/students/promotions': typeof AuthenticatedAmsStudentsPromotionsRoute
@@ -716,6 +726,7 @@ export interface FileRouteTypes {
     | '/ams/academics/reports'
     | '/ams/academics/settings'
     | '/ams/applications/$applicationId'
+    | '/ams/finance/claims'
     | '/ams/finance/invoices'
     | '/ams/students/$childId'
     | '/ams/students/promotions'
@@ -784,6 +795,7 @@ export interface FileRouteTypes {
     | '/ams/academics/reports'
     | '/ams/academics/settings'
     | '/ams/applications/$applicationId'
+    | '/ams/finance/claims'
     | '/ams/finance/invoices'
     | '/ams/students/$childId'
     | '/ams/students/promotions'
@@ -854,6 +866,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ams/academics/reports'
     | '/_authenticated/ams/academics/settings'
     | '/_authenticated/ams/applications/$applicationId'
+    | '/_authenticated/ams/finance/claims'
     | '/_authenticated/ams/finance/invoices'
     | '/_authenticated/ams/students/$childId'
     | '/_authenticated/ams/students/promotions'
@@ -1294,6 +1307,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAmsFinanceInvoicesRouteImport
       parentRoute: typeof AuthenticatedAmsFinanceRoute
     }
+    '/_authenticated/ams/finance/claims': {
+      id: '/_authenticated/ams/finance/claims'
+      path: '/claims'
+      fullPath: '/ams/finance/claims'
+      preLoaderRoute: typeof AuthenticatedAmsFinanceClaimsRouteImport
+      parentRoute: typeof AuthenticatedAmsFinanceRoute
+    }
     '/_authenticated/ams/applications/$applicationId': {
       id: '/_authenticated/ams/applications/$applicationId'
       path: '/ams/applications/$applicationId'
@@ -1375,12 +1395,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAmsFinanceRouteChildren {
+  AuthenticatedAmsFinanceClaimsRoute: typeof AuthenticatedAmsFinanceClaimsRoute
   AuthenticatedAmsFinanceInvoicesRoute: typeof AuthenticatedAmsFinanceInvoicesRoute
   AuthenticatedAmsFinanceIndexRoute: typeof AuthenticatedAmsFinanceIndexRoute
 }
 
 const AuthenticatedAmsFinanceRouteChildren: AuthenticatedAmsFinanceRouteChildren =
   {
+    AuthenticatedAmsFinanceClaimsRoute: AuthenticatedAmsFinanceClaimsRoute,
     AuthenticatedAmsFinanceInvoicesRoute: AuthenticatedAmsFinanceInvoicesRoute,
     AuthenticatedAmsFinanceIndexRoute: AuthenticatedAmsFinanceIndexRoute,
   }
