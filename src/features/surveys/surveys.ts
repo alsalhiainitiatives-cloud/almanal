@@ -30,13 +30,7 @@ export const SURVEY_STATUS_LABELS: Record<SurveyStatus, string> = {
   closed: "مغلقة",
 };
 
-export const LIKERT_LABELS = [
-  "غير موافق بشدة",
-  "غير موافق",
-  "محايد",
-  "موافق",
-  "موافق بشدة",
-];
+export const LIKERT_LABELS = ["غير موافق بشدة", "غير موافق", "محايد", "موافق", "موافق بشدة"];
 
 export const SNOOZE_OPTIONS = [
   { value: 1, label: "ساعة واحدة" },
@@ -45,7 +39,12 @@ export const SNOOZE_OPTIONS = [
   { value: 168, label: "أسبوع" },
 ];
 
-export type SurveyOption = { id: string; question_id: string; option_text: string; order_index: number };
+export type SurveyOption = {
+  id: string;
+  question_id: string;
+  option_text: string;
+  order_index: number;
+};
 
 export type SurveyQuestion = {
   id: string;
@@ -124,7 +123,10 @@ export function emptySurveyDraft(): SurveyDraft {
 
 const orderQuestions = (rows: unknown[]): SurveyQuestion[] =>
   (rows as SurveyQuestion[])
-    .map((q) => ({ ...q, options: (q.options ?? []).slice().sort((a, b) => a.order_index - b.order_index) }))
+    .map((q) => ({
+      ...q,
+      options: (q.options ?? []).slice().sort((a, b) => a.order_index - b.order_index),
+    }))
     .sort((a, b) => a.order_index - b.order_index);
 
 /** Staff: every survey with its questions and options. */
@@ -348,7 +350,10 @@ export async function nextSurveyForParent(parentId: string): Promise<PendingSurv
 
   const answered = new Set((responses.data ?? []).map((r) => r.survey_id));
   const statusMap = new Map(
-    (statuses.data ?? []).map((s) => [s.survey_id, s as { status: string; snoozed_until: string | null }]),
+    (statuses.data ?? []).map((s) => [
+      s.survey_id,
+      s as { status: string; snoozed_until: string | null },
+    ]),
   );
 
   for (const row of data ?? []) {
@@ -406,14 +411,23 @@ export async function submitSurvey(
     .single();
   if (error) throw error;
 
-  const rows: { response_id: string; question_id: string; answer_text: string | null; answer_numeric: number | null }[] =
-    [];
+  const rows: {
+    response_id: string;
+    question_id: string;
+    answer_text: string | null;
+    answer_numeric: number | null;
+  }[] = [];
   for (const question of survey.questions) {
     const value = values[question.id];
     if (!value) continue;
     if (question.question_type === "multiple_choice") {
       for (const choice of value.choices ?? []) {
-        rows.push({ response_id: response.id, question_id: question.id, answer_text: choice, answer_numeric: null });
+        rows.push({
+          response_id: response.id,
+          question_id: question.id,
+          answer_text: choice,
+          answer_numeric: null,
+        });
       }
       continue;
     }
