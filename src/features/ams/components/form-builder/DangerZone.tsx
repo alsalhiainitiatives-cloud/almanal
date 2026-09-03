@@ -10,11 +10,11 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { PURGE_PHRASE } from "../../upload-settings";
 import {
-import { useConfirm } from "@/components/ui/confirm-dialog";
   registrationDataExport,
   registrationDataPurge,
   registrationStatsGet,
 } from "../../upload-settings.functions";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const STATS_KEY = ["ams", "registration-stats"];
 
