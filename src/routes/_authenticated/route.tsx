@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,7 +15,9 @@ import { supabase } from "@/integrations/supabase/client";
  */
 function AuthenticatedGate() {
   const navigate = useNavigate();
-  const href = useRouterState({ select: (s) => s.location.href });
+  // Captured once so the redirect target can't change and re-trigger the effect.
+  const initialHref = useRef(useRouterState({ select: (s) => s.location.href }));
+  const redirected = useRef(false);
   const [status, setStatus] = useState<"checking" | "authed" | "anon">("checking");
 
   useEffect(() => {
@@ -30,8 +32,10 @@ function AuthenticatedGate() {
   }, []);
 
   useEffect(() => {
-    if (status === "anon") void navigate({ to: "/auth", search: { next: href }, replace: true });
-  }, [status, navigate, href]);
+    if (status !== "anon" || redirected.current) return;
+    redirected.current = true;
+    void navigate({ to: "/auth", search: { next: initialHref.current }, replace: true });
+  }, [status, navigate]);
 
   if (status !== "authed") {
     return (
