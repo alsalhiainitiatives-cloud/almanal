@@ -49,6 +49,7 @@ import { PortalTrail } from "@/features/auth/components/PortalTrail";
 import { ROLE_COLORS, ROLE_LABELS } from "@/features/auth/rbac";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { useNotificationCounters } from "@/features/notifications/useNotificationCounters";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { cn } from "@/lib/utils";
 import { amsQueue } from "../ams.functions";
 import { canSeeLink } from "../nav-access";
@@ -434,9 +435,12 @@ export function AmsShell({
 
             <div className="rounded-3xl border border-border/60 bg-card/80 p-4 shadow-sm backdrop-blur">
               <div className="flex items-center gap-2.5">
-                <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-sm font-extrabold text-primary">
-                  {(profile?.fullName ?? "؟").trim().charAt(0)}
-                </span>
+                <UserAvatar
+                  name={profile?.fullName}
+                  src={profile?.avatarUrl}
+                  className="size-9 rounded-xl"
+                  fallbackClassName="rounded-xl text-sm font-extrabold"
+                />
                 <div className="min-w-0">
                   <p className="truncate text-xs font-extrabold text-foreground">{profile?.fullName ?? "مستخدم"}</p>
                   <span

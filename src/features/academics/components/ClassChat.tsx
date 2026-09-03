@@ -30,6 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useClearNotificationKind } from "@/features/notifications/useNotificationCounters";
 import { supabase } from "@/integrations/supabase/client";
 
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { cn } from "@/lib/utils";
 
 import {
@@ -277,9 +278,12 @@ export function ClassChat() {
                     key={m.id}
                     className={cn("flex max-w-[85%] gap-2", m.mine ? "ms-auto flex-row-reverse" : "me-auto")}
                   >
-                    <Avatar className="size-8 shrink-0">
-                      <AvatarFallback className="text-xs">{initials(m.senderName)}</AvatarFallback>
-                    </Avatar>
+                    <UserAvatar
+                      name={m.senderName}
+                      src={m.senderAvatarUrl}
+                      className="size-8 shrink-0"
+                      fallbackClassName="text-xs"
+                    />
                     <div
                       className={cn(
                         "rounded-2xl px-3 py-2 text-sm shadow-sm",
