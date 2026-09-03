@@ -235,17 +235,15 @@ function PersonalDataForm() {
           </select>
         </Field>
         <div className="sm:col-span-2">
-          <Field label="رابط الصورة الشخصية (اختياري)" id="avatar" error={errors.avatarUrl}>
-            <Input
-              id="avatar"
-              dir="ltr"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://…"
-              className="h-12 rounded-2xl border-border/70 bg-background/80"
-            />
-          </Field>
+          <AvatarPicker
+            userId={profile?.id ?? null}
+            value={avatarUrl}
+            onChange={setAvatarUrl}
+            error={errors.avatarUrl}
+            name={fullName || profile?.email || "المستخدم"}
+          />
         </div>
+
       </div>
 
       <Button
