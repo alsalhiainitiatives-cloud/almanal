@@ -77,7 +77,8 @@ const CARDS = [
 ] as const;
 
 function AcademicsHome() {
-  const { roles } = useAuth();
+  const { roles, permissions } = useAuth();
+  const cards = CARDS.filter((card) => canSeeLink(card.to, roles as string[], permissions));
 
   if (!canViewAcademics(roles)) {
     return (
@@ -96,7 +97,7 @@ function AcademicsHome() {
       wide
     >
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {CARDS.map((card) => (
+        {cards.map((card) => (
           <Link
             key={card.to}
             to={card.to}

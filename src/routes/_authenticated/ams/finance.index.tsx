@@ -52,7 +52,7 @@ const CARDS = [
 ] as const;
 
 function FinanceHome() {
-  const { roles } = useAuth();
+  const { roles, permissions } = useAuth();
   const list = roles as string[];
 
   if (!canViewFinance(list)) {
@@ -66,7 +66,9 @@ function FinanceHome() {
   }
 
   const manage = canManageFinance(list);
-  const cards = CARDS.filter((c) => !c.manage || manage);
+  const cards = CARDS.filter(
+    (c) => (!c.manage || manage) && canSeeLink(c.to, roles as string[], permissions),
+  );
 
   return (
     <AmsShell
