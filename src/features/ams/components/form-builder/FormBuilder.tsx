@@ -305,9 +305,12 @@ export function FormBuilder() {
                             variant="ghost"
                             className="size-7 rounded-lg text-destructive"
                             onClick={() => {
-                              if (confirm(`حذف مرحلة «${step.name_ar}» وكل حقولها؟`)) {
-                                stepDelete.mutate(step.id);
-                              }
+                              void confirmAction({
+                                title: `حذف مرحلة «${step.name_ar}»؟`,
+                                description: "سيتم حذف المرحلة وكل الحقول التابعة لها نهائيًا.",
+                                confirmLabel: "حذف المرحلة",
+                                tone: "danger",
+                              }).then((ok) => ok && stepDelete.mutate(step.id));
                             }}
                           >
                             <Trash2 className="size-3.5" />
@@ -428,9 +431,12 @@ export function FormBuilder() {
                               variant="ghost"
                               className="size-8 rounded-lg text-destructive"
                               onClick={() => {
-                                if (confirm(`حذف الحقل «${field.label_ar}»؟`)) {
-                                  fieldDelete.mutate(field.id);
-                                }
+                                void confirmAction({
+                                  title: `حذف الحقل «${field.label_ar}»؟`,
+                                  description: "سيُحذف الحقل من نموذج التسجيل نهائيًا.",
+                                  confirmLabel: "حذف الحقل",
+                                  tone: "danger",
+                                }).then((ok) => ok && fieldDelete.mutate(field.id));
                               }}
                             >
                               <Trash2 className="size-3.5" />
@@ -527,7 +533,12 @@ export function FormBuilder() {
                     variant="ghost"
                     className="size-8 rounded-lg text-destructive"
                     onClick={() => {
-                      if (confirm(`حذف نوع المستند «${doc.name_ar}»؟`)) docDelete.mutate(doc.id);
+                      void confirmAction({
+                        title: `حذف نوع المستند «${doc.name_ar}»؟`,
+                        description: "لن يُطلب هذا المستند من أولياء الأمور بعد الحذف.",
+                        confirmLabel: "حذف المستند",
+                        tone: "danger",
+                      }).then((ok) => ok && docDelete.mutate(doc.id));
                     }}
                   >
                     <Trash2 className="size-3.5" />

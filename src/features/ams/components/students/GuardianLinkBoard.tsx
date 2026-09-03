@@ -364,13 +364,13 @@ export function GuardianLinkBoard() {
                             disabled={unlink.isPending}
                             className="rounded-xl text-[11px] font-black text-destructive hover:bg-destructive/10"
                             onClick={() => {
-                              if (
-                                !window.confirm(
-                                  `سيتم فصل ${row.childName} (وأشقاؤه في نفس الملف) عن حساب ولي الأمر، ويمكن إعادة الربط لاحقًا. هل تريد المتابعة؟`,
-                                )
-                              )
-                                return;
-                              unlink.mutate(row.childId);
+                              void confirmAction({
+                                title: `فصل ${row.childName} عن حساب ولي الأمر؟`,
+                                description:
+                                  "سيتم فصل الطفل وأشقاؤه في نفس الملف عن الحساب، ويمكن إعادة الربط لاحقًا.",
+                                confirmLabel: "إلغاء الربط",
+                                tone: "danger",
+                              }).then((ok) => ok && unlink.mutate(row.childId));
                             }}
                           >
                             {unlink.isPending ? (

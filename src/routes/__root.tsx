@@ -15,6 +15,7 @@ import { installStaleChunkReload, recoverFromStaleChunk } from "../lib/stale-chu
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Toaster } from "@/components/ui/sonner";
+import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { school } from "@/data/site";
 import { AuthProvider } from "@/features/auth/AuthProvider";
 import { SiteContentProvider } from "@/features/site-content/SiteContentProvider";
@@ -184,6 +185,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <SiteContentProvider content={content}>
         <AuthProvider>
+        <ConfirmProvider>
         <div className="flex min-h-screen flex-col">
           <Header />
           <main className="flex-1">
@@ -193,6 +195,7 @@ function RootComponent() {
           <Footer />
         </div>
         <Toaster position="top-center" richColors />
+        </ConfirmProvider>
         </AuthProvider>
       </SiteContentProvider>
     </QueryClientProvider>

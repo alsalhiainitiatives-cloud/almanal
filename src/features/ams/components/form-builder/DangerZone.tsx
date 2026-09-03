@@ -184,9 +184,13 @@ export function DangerZone() {
               className="mt-4 rounded-xl"
               disabled={!canPurge}
               onClick={() => {
-                if (confirm("تأكيد أخير: سيتم حذف كل بيانات التسجيل نهائيًا. هل أنت متأكد؟")) {
-                  purgeMutation.mutate();
-                }
+                void confirmAction({
+                  title: "تأكيد أخير قبل الحذف النهائي",
+                  description:
+                    "سيتم حذف كل بيانات التسجيل والمرفقات نهائيًا دون إمكانية استرجاع. هل أنت متأكد؟",
+                  confirmLabel: "نعم، احذف كل البيانات",
+                  tone: "danger",
+                }).then((ok) => ok && purgeMutation.mutate());
               }}
             >
               {purgeMutation.isPending ? (
