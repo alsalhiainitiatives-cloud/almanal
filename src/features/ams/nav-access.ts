@@ -39,7 +39,7 @@ export const MODULE_PERMISSIONS: Record<string, string[]> = {
     "teacher_assignments.view",
   ],
   "/ams/finance": ["invoices.view", "payments.manage", "receipts.print", "reports.financial"],
-  "/ams/website": ["website.content_manage", "inbox.view", "reviews.moderate"],
+  "/ams/website": ["website.content_manage", "inbox.view", "reviews.moderate", "surveys.view", "surveys.create", "surveys.analytics"],
   "/ams/system": [
     "users.view",
     "roles.manage",
@@ -89,10 +89,11 @@ export const LINK_PERMISSIONS: Record<string, string[]> = {
   "/ams/finance/settings": ["settings.manage", "payments.manage"],
 
   // Website
-  "/ams/website": ["website.content_manage", "inbox.view", "reviews.moderate"],
+  "/ams/website": ["website.content_manage", "inbox.view", "reviews.moderate", "surveys.view", "surveys.create", "surveys.analytics"],
   "/ams/website/settings": ["website.content_manage"],
   "/ams/website/inbox": ["inbox.view"],
   "/ams/website/reviews": ["reviews.moderate"],
+  "/ams/website/surveys": ["surveys.view", "surveys.create", "surveys.analytics", "surveys.export"],
 
   // System
   "/ams/system": ["settings.manage", "users.view", "audit.view", "permissions.manage"],

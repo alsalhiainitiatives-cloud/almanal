@@ -82,6 +82,7 @@ export const ACCESS_MAP: AccessModule[] = [
       { to: "/ams/website/settings", label: "إعدادات المحتوى" },
       { to: "/ams/website/inbox", label: "المراسلات الواردة" },
       { to: "/ams/website/reviews", label: "التقييمات والآراء" },
+      { to: "/ams/website/surveys", label: "الاستبانات وآراء أولياء الأمور" },
     ],
   },
   {

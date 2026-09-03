@@ -95,6 +95,13 @@ export const P = {
   inboxExport: "inbox.export",
   inboxDelete: "inbox.delete",
   reviewsModerate: "reviews.moderate",
+  surveysView: "surveys.view",
+  surveysCreate: "surveys.create",
+  surveysUpdate: "surveys.update",
+  surveysDelete: "surveys.delete",
+  surveysPublish: "surveys.publish",
+  surveysAnalytics: "surveys.analytics",
+  surveysExport: "surveys.export",
 } as const;
 
 export function passwordStrength(value: string): {
