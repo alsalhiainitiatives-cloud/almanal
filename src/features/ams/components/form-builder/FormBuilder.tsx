@@ -50,6 +50,7 @@ import { StepDialog } from "./StepDialog";
 import { DocTypeDialog } from "./DocTypeDialog";
 import { UploadSettingsPanel } from "./UploadSettingsPanel";
 import { DangerZone } from "./DangerZone";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 export type DocTypeRow = {
   id: string;
@@ -66,6 +67,7 @@ export type DocTypeRow = {
 const CONFIG_KEY = ["ams", "form-config"];
 
 export function FormBuilder() {
+  const confirmAction = useConfirm();
   const queryClient = useQueryClient();
   const load = useServerFn(formConfigGet);
 

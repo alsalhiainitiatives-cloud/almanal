@@ -11,10 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState, SkeletonRows } from "@/features/ams/components/atoms";
 import { linkMyChild, myLinkedChildren, unlinkChildGuardian } from "@/features/ams/link-child.functions";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const KEY = ["parent", "linked-children"];
 
 export function LinkMyChildBoard() {
+  const confirmAction = useConfirm();
   const queryClient = useQueryClient();
   const [identifier, setIdentifier] = useState("");
 

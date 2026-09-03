@@ -27,6 +27,7 @@ import { unlinkChildGuardian } from "@/features/ams/link-child.functions";
 import { usePermissions } from "@/features/auth/usePermissions";
 import { openWhatsapp } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const KEY = ["ams", "guardian-links"];
 
@@ -39,6 +40,7 @@ function statusOf(row: Row): InvitationStatus | null {
 }
 
 export function GuardianLinkBoard() {
+  const confirmAction = useConfirm();
   const queryClient = useQueryClient();
   const { can } = usePermissions();
   const canUnlink = can("guardians.unlink");

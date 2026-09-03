@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { PURGE_PHRASE } from "../../upload-settings";
 import {
+import { useConfirm } from "@/components/ui/confirm-dialog";
   registrationDataExport,
   registrationDataPurge,
   registrationStatsGet,
@@ -37,6 +38,7 @@ function toCsv(rows: Record<string, unknown>[]) {
 }
 
 export function DangerZone() {
+  const confirmAction = useConfirm();
   const { roles } = useAuth();
   const isAdmin = (roles as string[]).includes("admin");
   const queryClient = useQueryClient();
