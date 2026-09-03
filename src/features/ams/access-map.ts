@@ -3,12 +3,26 @@
  * inside it. Used by the role visibility screen to explain — per role — which
  * tabs appear and which inner pages open.
  */
-import { LINK_PERMISSIONS, MODULE_PERMISSIONS, isSuperRole } from "./nav-access";
+import { LINK_PERMISSIONS, MODULE_PERMISSIONS, PORTAL_PERMISSIONS, isSuperRole } from "./nav-access";
 
 export type AccessLink = { to: string; label: string };
 export type AccessModule = { to: string; label: string; links: AccessLink[] };
 
 export const ACCESS_MAP: AccessModule[] = [
+  {
+    to: "/profile",
+    label: "بوابة ولي الأمر",
+    links: [
+      { to: "/profile", label: "ملفي الشخصي ولوحتي" },
+      { to: "/link-children", label: "ربط أبنائي" },
+      { to: "/my-applications", label: "طلباتي وتتبع الطلب" },
+      { to: "/child-file", label: "ملف الطفل" },
+      { to: "/child-reports", label: "تقارير طفلي الأكاديمية" },
+      { to: "/study-plans", label: "خطة طفلي الدراسية" },
+      { to: "/class-chat", label: "محادثة فصل طفلي" },
+      { to: "/payments", label: "المدفوعات والرسوم" },
+    ],
+  },
   {
     to: "/ams",
     label: "نظام إدارة القبول",
@@ -85,6 +99,8 @@ export const ACCESS_MAP: AccessModule[] = [
 
 /** Permission codes required (any-of) for a link; empty means always visible. */
 export function linkRequirements(to: string): string[] {
+  const portal = PORTAL_PERMISSIONS[to];
+  if (portal) return [portal];
   return LINK_PERMISSIONS[to] ?? [];
 }
 
@@ -92,15 +108,19 @@ export function linkRequirements(to: string): string[] {
 export function resolveAccess(role: string, permissions: readonly string[]) {
   const superRole = isSuperRole([role]);
   return ACCESS_MAP.map((module) => {
+    const isPortal = module.to === "/profile";
     const moduleCodes = MODULE_PERMISSIONS[module.to] ?? [];
-    const moduleVisible =
-      superRole || moduleCodes.length === 0 || moduleCodes.some((c) => permissions.includes(c));
     const links = module.links.map((link) => {
       const required = linkRequirements(link.to);
-      const visible =
-        superRole || required.length === 0 || required.some((c) => permissions.includes(c));
+      // Parent-portal items never inherit the super-role bypass.
+      const visible = isPortal
+        ? required.some((c) => permissions.includes(c))
+        : superRole || required.length === 0 || required.some((c) => permissions.includes(c));
       return { ...link, required, visible };
     });
+    const moduleVisible = isPortal
+      ? links.some((l) => l.visible)
+      : superRole || moduleCodes.length === 0 || moduleCodes.some((c) => permissions.includes(c));
     return { ...module, moduleVisible, superRole, links };
   });
 }
