@@ -287,7 +287,6 @@ export function MessagesInbox({ abilities }: { abilities: InboxAbilities }) {
 }
 
 function MessageCard({
-  const confirmAction = useConfirm();
   row,
   open,
   abilities,
