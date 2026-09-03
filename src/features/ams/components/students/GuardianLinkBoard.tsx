@@ -4,7 +4,7 @@
  */
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Copy, Link2, Loader2, MessageCircle, Search, ShieldX, UserPlus } from "lucide-react";
+import { CheckCircle2, Copy, Link2, Loader2, MessageCircle, Search, ShieldX, Unlink, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,8 @@ import {
   inviteUrl,
   type InvitationStatus,
 } from "@/features/ams/guardians";
+import { unlinkChildGuardian } from "@/features/ams/link-child.functions";
+import { usePermissions } from "@/features/auth/usePermissions";
 import { openWhatsapp } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +40,8 @@ function statusOf(row: Row): InvitationStatus | null {
 
 export function GuardianLinkBoard() {
   const queryClient = useQueryClient();
+  const { can } = usePermissions();
+  const canUnlink = can("guardians.unlink");
   const [q, setQ] = useState("");
   const [stageId, setStageId] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
@@ -61,6 +65,20 @@ export function GuardianLinkBoard() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: KEY });
       toast.success("تم إلغاء الدعوة.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const unlink = useMutation({
+    mutationFn: (childId: string) => unlinkChildGuardian({ data: { childId } }),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: KEY });
+      const names = result.childNames.filter(Boolean);
+      toast.success(
+        names.length > 1
+          ? `تم إلغاء الربط: ${names.join(" · ")}`
+          : `تم إلغاء ربط ${names[0] ?? "الطالب"} بولي الأمر.`,
+      );
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -314,6 +332,7 @@ export function GuardianLinkBoard() {
                     <th className="px-4 py-3 text-start">المرحلة / الفصل</th>
                     <th className="px-4 py-3 text-start">حساب ولي الأمر</th>
                     <th className="px-4 py-3 text-start">تاريخ الربط</th>
+                    {canUnlink ? <th className="px-4 py-3 text-start">إجراءات</th> : null}
                   </tr>
                 </thead>
                 <tbody>
@@ -337,6 +356,32 @@ export function GuardianLinkBoard() {
                           ? new Date(row.invitation.acceptedAt).toLocaleDateString("ar-SA-u-ca-gregory")
                           : "تسجيل نظامي"}
                       </td>
+                      {canUnlink ? (
+                        <td className="px-4 py-3">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={unlink.isPending}
+                            className="rounded-xl text-[11px] font-black text-destructive hover:bg-destructive/10"
+                            onClick={() => {
+                              if (
+                                !window.confirm(
+                                  `سيتم فصل ${row.childName} (وأشقاؤه في نفس الملف) عن حساب ولي الأمر، ويمكن إعادة الربط لاحقًا. هل تريد المتابعة؟`,
+                                )
+                              )
+                                return;
+                              unlink.mutate(row.childId);
+                            }}
+                          >
+                            {unlink.isPending ? (
+                              <Loader2 className="size-3.5 animate-spin" />
+                            ) : (
+                              <Unlink className="size-3.5" />
+                            )}
+                            إلغاء الربط
+                          </Button>
+                        </td>
+                      ) : null}
                     </tr>
                   ))}
                 </tbody>
