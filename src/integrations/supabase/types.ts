@@ -1866,6 +1866,44 @@ export type Database = {
           },
         ]
       }
+      parent_survey_status: {
+        Row: {
+          created_at: string
+          id: string
+          parent_id: string
+          snoozed_until: string | null
+          status: string
+          survey_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          parent_id: string
+          snoozed_until?: string | null
+          status?: string
+          survey_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          parent_id?: string
+          snoozed_until?: string | null
+          status?: string
+          survey_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_survey_status_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_plan_settings: {
         Row: {
           academic_year: string
@@ -2973,6 +3011,198 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      survey_answers: {
+        Row: {
+          answer_numeric: number | null
+          answer_text: string | null
+          created_at: string
+          id: string
+          question_id: string
+          response_id: string
+        }
+        Insert: {
+          answer_numeric?: number | null
+          answer_text?: string | null
+          created_at?: string
+          id?: string
+          question_id: string
+          response_id: string
+        }
+        Update: {
+          answer_numeric?: number | null
+          answer_text?: string | null
+          created_at?: string
+          id?: string
+          question_id?: string
+          response_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "survey_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_answers_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "survey_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_options: {
+        Row: {
+          created_at: string
+          id: string
+          option_text: string
+          order_index: number
+          question_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_text: string
+          order_index?: number
+          question_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_text?: string
+          order_index?: number
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_options_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "survey_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_questions: {
+        Row: {
+          created_at: string
+          id: string
+          is_required: boolean
+          order_index: number
+          question_text: string
+          question_type: string
+          survey_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          order_index?: number
+          question_text: string
+          question_type?: string
+          survey_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          order_index?: number
+          question_text?: string
+          question_type?: string
+          survey_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_questions_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_responses: {
+        Row: {
+          created_at: string
+          id: string
+          parent_id: string
+          submitted_at: string
+          survey_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          parent_id: string
+          submitted_at?: string
+          survey_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          parent_id?: string
+          submitted_at?: string
+          survey_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_responses_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      surveys: {
+        Row: {
+          allow_snooze: boolean
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          is_mandatory: boolean
+          snooze_duration_hours: number
+          start_date: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          allow_snooze?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_mandatory?: boolean
+          snooze_duration_hours?: number
+          start_date?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          allow_snooze?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_mandatory?: boolean
+          snooze_duration_hours?: number
+          start_date?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       teacher_classrooms: {
         Row: {
