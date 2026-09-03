@@ -4,13 +4,13 @@
  */
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, IdCard, Link2, Loader2, ShieldAlert, Users } from "lucide-react";
+import { BadgeCheck, IdCard, Link2, Loader2, ShieldAlert, Unlink, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState, SkeletonRows } from "@/features/ams/components/atoms";
-import { linkMyChild, myLinkedChildren } from "@/features/ams/link-child.functions";
+import { linkMyChild, myLinkedChildren, unlinkChildGuardian } from "@/features/ams/link-child.functions";
 
 const KEY = ["parent", "linked-children"];
 
@@ -31,6 +31,15 @@ export function LinkMyChildBoard() {
           ? `تم الربط بنجاح: ${names.join(" · ")} (تم ربط الأشقاء تلقائيًا).`
           : `تم ربط ${names[0] ?? "الطالب"} بحسابك بنجاح.`,
       );
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const unlink = useMutation({
+    mutationFn: (childId: string) => unlinkChildGuardian({ data: { childId } }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: KEY });
+      toast.success("تم إلغاء ربط الطفل بحسابك.");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -119,6 +128,28 @@ export function LinkMyChildBoard() {
                   <p className="mt-1 text-xs text-muted-foreground">
                     {child.stage ?? "—"} · {child.classroom ?? "بدون فصل"}
                   </p>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={unlink.isPending}
+                    onClick={() => {
+                      if (
+                        !window.confirm(
+                          `سيتم إلغاء ربط ${child.name} (وأشقائه في نفس الملف) بحسابك. هل تريد المتابعة؟`,
+                        )
+                      )
+                        return;
+                      unlink.mutate(child.id);
+                    }}
+                    className="mt-3 h-8 rounded-xl px-3 text-[11px] font-black text-destructive hover:bg-destructive/10"
+                  >
+                    {unlink.isPending ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Unlink className="size-3.5" />
+                    )}
+                    إلغاء الربط
+                  </Button>
                 </li>
               ))}
             </ul>
