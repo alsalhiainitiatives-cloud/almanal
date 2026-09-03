@@ -26,7 +26,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { useAuth } from "../AuthProvider";
 import { P, ROLE_COLORS, ROLE_LABELS } from "../rbac";
 import { PortalTrail } from "./PortalTrail";
-
+import { ParentSurveyPrompt } from "@/features/surveys/components/ParentSurveyPrompt";
 
 /** Grouped, ordered navigation: personal services → operations → administration. */
 const NAV_GROUPS = [
@@ -169,8 +169,10 @@ export function PortalLayout({
   }
 
   return (
-    <div className="gradient-soft-cream min-h-[80vh] py-10">
-      <div className="container mx-auto grid gap-8 px-4 lg:grid-cols-[280px_1fr]">
+    <>
+      <ParentSurveyPrompt />
+      <div className="gradient-soft-cream min-h-[80vh] py-10">
+        <div className="container mx-auto grid gap-8 px-4 lg:grid-cols-[280px_1fr]">
         {/* Side navigation */}
         <aside className="no-print lg:sticky lg:top-24 lg:self-start">
           <div className="rounded-[2rem] border border-border/60 bg-card/90 p-5 shadow-soft backdrop-blur">
@@ -285,7 +287,8 @@ export function PortalLayout({
           </header>
           <div className="mt-6 space-y-6">{children}</div>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

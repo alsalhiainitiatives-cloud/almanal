@@ -16,6 +16,7 @@ import {
   Home,
   Inbox,
   KeyRound,
+  ListChecks,
   LayoutDashboard,
   Link2,
   ListOrdered,
@@ -219,7 +220,7 @@ const FINANCE_NAV: NavItem[] = [
 ];
 
 
-/** Website module — public site content, inbound messages and reviews. */
+/** Website module — public site content, inbound messages, reviews and surveys. */
 const WEBSITE_NAV: NavItem[] = [
   { to: "/ams/website", label: "لوحة الموقع الإلكتروني", icon: LayoutDashboard, exact: true, group: "الموقع الإلكتروني" },
   {
@@ -232,6 +233,7 @@ const WEBSITE_NAV: NavItem[] = [
   },
   { to: "/ams/website/inbox", label: "المراسلات الواردة", icon: MessagesSquare, exact: false, group: "المراسلات والتقييمات" },
   { to: "/ams/website/reviews", label: "التقييمات والآراء", icon: Star, exact: false, group: "المراسلات والتقييمات" },
+  { to: "/ams/website/surveys", label: "الاستبانات وآراء الأولياء", icon: ListChecks, exact: false, group: "المراسلات والتقييمات" },
 ];
 
 /** System module — users, roles, permissions, audit and platform setup. */

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Globe, MessagesSquare, Star } from "lucide-react";
+import { ClipboardList, Globe, MessagesSquare, Star } from "lucide-react";
 
 import { AmsShell } from "@/features/ams/components/AmsShell";
 import { canSeeLink } from "@/features/ams/nav-access";
@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/ams/website/")({
       { title: "الموقع الإلكتروني — مدارس وروضة المنال" },
       {
         name: "description",
-        content: "إدارة محتوى الموقع العام والمراسلات الواردة وتقييمات أولياء الأمور.",
+        content: "إدارة محتوى الموقع العام والمراسلات والتقييمات واستبانات أولياء الأمور.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -39,12 +39,18 @@ const CARDS = [
     icon: Star,
     text: "مراجعة آراء أولياء الأمور قبل نشرها في الموقع.",
   },
+  {
+    to: "/ams/website/surveys",
+    label: "الاستبانات والآراء",
+    icon: ClipboardList,
+    text: "صمّم استبانات ديناميكية، تابع المشاركة، وحلّل صوت أولياء الأمور.",
+  },
 ] as const;
 
 function WebsiteHome() {
   const { hasPermission, roles, permissions } = useAuth();
   const cards = CARDS.filter((card) => canSeeLink(card.to, roles as string[], permissions));
-  const allowed = hasPermission(P.settingsManage) || hasPermission(P.applicationsReview);
+  const allowed = cards.length > 0 || hasPermission(P.settingsManage) || hasPermission(P.applicationsReview);
 
   if (!allowed) {
     return (

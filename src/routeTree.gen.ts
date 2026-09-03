@@ -66,6 +66,7 @@ import { Route as AuthenticatedAmsStudentsIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedAmsFinanceIndexRouteImport } from './routes/_authenticated/ams/finance.index'
 import { Route as AuthenticatedAmsAcademicsIndexRouteImport } from './routes/_authenticated/ams/academics.index'
 import { Route as AdmissionsStageSlugClassroomsRouteImport } from './routes/admissions.stage.$slug.classrooms'
+import { Route as AuthenticatedAmsWebsiteSurveysRouteImport } from './routes/_authenticated/ams/website.surveys'
 import { Route as AuthenticatedAmsWebsiteSettingsRouteImport } from './routes/_authenticated/ams/website.settings'
 import { Route as AuthenticatedAmsWebsiteReviewsRouteImport } from './routes/_authenticated/ams/website.reviews'
 import { Route as AuthenticatedAmsWebsiteInboxRouteImport } from './routes/_authenticated/ams/website.inbox'
@@ -397,6 +398,12 @@ const AdmissionsStageSlugClassroomsRoute =
     path: '/admissions/stage/$slug/classrooms',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedAmsWebsiteSurveysRoute =
+  AuthenticatedAmsWebsiteSurveysRouteImport.update({
+    id: '/ams/website/surveys',
+    path: '/ams/website/surveys',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAmsWebsiteSettingsRoute =
   AuthenticatedAmsWebsiteSettingsRouteImport.update({
     id: '/ams/website/settings',
@@ -643,6 +650,7 @@ export interface FileRoutesByFullPath {
   '/ams/website/inbox': typeof AuthenticatedAmsWebsiteInboxRoute
   '/ams/website/reviews': typeof AuthenticatedAmsWebsiteReviewsRoute
   '/ams/website/settings': typeof AuthenticatedAmsWebsiteSettingsRoute
+  '/ams/website/surveys': typeof AuthenticatedAmsWebsiteSurveysRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
   '/ams/academics/': typeof AuthenticatedAmsAcademicsIndexRoute
   '/ams/finance/': typeof AuthenticatedAmsFinanceIndexRoute
@@ -729,6 +737,7 @@ export interface FileRoutesByTo {
   '/ams/website/inbox': typeof AuthenticatedAmsWebsiteInboxRoute
   '/ams/website/reviews': typeof AuthenticatedAmsWebsiteReviewsRoute
   '/ams/website/settings': typeof AuthenticatedAmsWebsiteSettingsRoute
+  '/ams/website/surveys': typeof AuthenticatedAmsWebsiteSurveysRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
   '/ams/academics': typeof AuthenticatedAmsAcademicsIndexRoute
   '/ams/finance': typeof AuthenticatedAmsFinanceIndexRoute
@@ -817,6 +826,7 @@ export interface FileRoutesById {
   '/_authenticated/ams/website/inbox': typeof AuthenticatedAmsWebsiteInboxRoute
   '/_authenticated/ams/website/reviews': typeof AuthenticatedAmsWebsiteReviewsRoute
   '/_authenticated/ams/website/settings': typeof AuthenticatedAmsWebsiteSettingsRoute
+  '/_authenticated/ams/website/surveys': typeof AuthenticatedAmsWebsiteSurveysRoute
   '/admissions/stage/$slug/classrooms': typeof AdmissionsStageSlugClassroomsRoute
   '/_authenticated/ams/academics/': typeof AuthenticatedAmsAcademicsIndexRoute
   '/_authenticated/ams/finance/': typeof AuthenticatedAmsFinanceIndexRoute
@@ -905,6 +915,7 @@ export interface FileRouteTypes {
     | '/ams/website/inbox'
     | '/ams/website/reviews'
     | '/ams/website/settings'
+    | '/ams/website/surveys'
     | '/admissions/stage/$slug/classrooms'
     | '/ams/academics/'
     | '/ams/finance/'
@@ -991,6 +1002,7 @@ export interface FileRouteTypes {
     | '/ams/website/inbox'
     | '/ams/website/reviews'
     | '/ams/website/settings'
+    | '/ams/website/surveys'
     | '/admissions/stage/$slug/classrooms'
     | '/ams/academics'
     | '/ams/finance'
@@ -1078,6 +1090,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ams/website/inbox'
     | '/_authenticated/ams/website/reviews'
     | '/_authenticated/ams/website/settings'
+    | '/_authenticated/ams/website/surveys'
     | '/admissions/stage/$slug/classrooms'
     | '/_authenticated/ams/academics/'
     | '/_authenticated/ams/finance/'
@@ -1518,6 +1531,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdmissionsStageSlugClassroomsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/ams/website/surveys': {
+      id: '/_authenticated/ams/website/surveys'
+      path: '/ams/website/surveys'
+      fullPath: '/ams/website/surveys'
+      preLoaderRoute: typeof AuthenticatedAmsWebsiteSurveysRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ams/website/settings': {
       id: '/_authenticated/ams/website/settings'
       path: '/ams/website/settings'
@@ -1772,6 +1792,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAmsWebsiteInboxRoute: typeof AuthenticatedAmsWebsiteInboxRoute
   AuthenticatedAmsWebsiteReviewsRoute: typeof AuthenticatedAmsWebsiteReviewsRoute
   AuthenticatedAmsWebsiteSettingsRoute: typeof AuthenticatedAmsWebsiteSettingsRoute
+  AuthenticatedAmsWebsiteSurveysRoute: typeof AuthenticatedAmsWebsiteSurveysRoute
   AuthenticatedAmsAcademicsIndexRoute: typeof AuthenticatedAmsAcademicsIndexRoute
   AuthenticatedAmsFinanceIndexRoute: typeof AuthenticatedAmsFinanceIndexRoute
   AuthenticatedAmsStudentsIndexRoute: typeof AuthenticatedAmsStudentsIndexRoute
@@ -1846,6 +1867,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAmsWebsiteInboxRoute: AuthenticatedAmsWebsiteInboxRoute,
   AuthenticatedAmsWebsiteReviewsRoute: AuthenticatedAmsWebsiteReviewsRoute,
   AuthenticatedAmsWebsiteSettingsRoute: AuthenticatedAmsWebsiteSettingsRoute,
+  AuthenticatedAmsWebsiteSurveysRoute: AuthenticatedAmsWebsiteSurveysRoute,
   AuthenticatedAmsAcademicsIndexRoute: AuthenticatedAmsAcademicsIndexRoute,
   AuthenticatedAmsFinanceIndexRoute: AuthenticatedAmsFinanceIndexRoute,
   AuthenticatedAmsStudentsIndexRoute: AuthenticatedAmsStudentsIndexRoute,
