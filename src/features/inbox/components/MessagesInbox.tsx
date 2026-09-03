@@ -309,7 +309,9 @@ function MessageCard({
   onUpdate: (patch: { status?: ContactMessageStatus; priority?: string; staff_note?: string }) => void;
   onDelete: () => void;
 }) {
+  const confirmAction = useConfirm();
   const [templateKey, setTemplateKey] = useState(MESSAGE_TEMPLATES[0].key);
+
   const [waDraft, setWaDraft] = useState<WhatsappDraft | null>(null);
   const template = MESSAGE_TEMPLATES.find((item) => item.key === templateKey) ?? MESSAGE_TEMPLATES[0];
   const body = template.build({ name: row.name, subject: row.subject, program: row.program });
