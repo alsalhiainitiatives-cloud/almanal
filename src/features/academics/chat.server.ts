@@ -203,7 +203,7 @@ export async function getChatBoard(
     (senderProfiles ?? []).map((p) => [p.id, p.avatar_url as string | null]),
   );
   const avatarPaths = [...avatarById.values()].filter(
-    (v): v is string => Boolean(v) && !/^(https?:|data:)/i.test(v),
+    (v): v is string => typeof v === "string" && v.length > 0 && !/^(https?:|data:)/i.test(v),
   );
 
   const paths = ordered.flatMap((r) =>

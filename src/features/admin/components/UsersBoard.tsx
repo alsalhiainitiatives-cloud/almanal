@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,

@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useNotificationCounters } from "@/features/notifications/useNotificationCounters";
 import { MODULE_PERMISSIONS, canSeePortalLink, isSuperRole } from "@/features/ams/nav-access";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useAuth } from "../AuthProvider";
 import { P, ROLE_COLORS, ROLE_LABELS } from "../rbac";
 import { PortalTrail } from "./PortalTrail";
