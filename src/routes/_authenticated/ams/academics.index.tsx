@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { AmsShell } from "@/features/ams/components/AmsShell";
+import { canSeeLink } from "@/features/ams/nav-access";
 import { ACADEMIC_ROLE_LABELS, academicRole, canViewAcademics } from "@/features/academics/academics";
 import { useAuth } from "@/features/auth/AuthProvider";
 

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { BarChart3, ReceiptText, Settings2, Wallet } from "lucide-react";
 
 import { AmsShell } from "@/features/ams/components/AmsShell";
+import { canSeeLink } from "@/features/ams/nav-access";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { canManageFinance, canViewFinance } from "@/features/finance/access";
 

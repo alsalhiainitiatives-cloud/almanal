@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Globe, MessagesSquare, Star } from "lucide-react";
 
 import { AmsShell } from "@/features/ams/components/AmsShell";
+import { canSeeLink } from "@/features/ams/nav-access";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { P } from "@/features/auth/rbac";
 
