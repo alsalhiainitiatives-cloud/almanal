@@ -565,7 +565,9 @@ export async function myFinance(supabase: Db, userId: string) {
     supabase.from("payment_plan_settings").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
     supabase
       .from("applications")
-      .select("id, application_number, status, academic_year")
+      .select(
+        "id, application_number, student_number, status, academic_year, draft_data, application_children (name_ar)",
+      )
       .eq("parent_id", userId)
       .eq("status", "approved"),
     ids.length
@@ -575,6 +577,16 @@ export async function myFinance(supabase: Db, userId: string) {
 
   const invoicedApps = new Set((invoices ?? []).map((i) => i.application_id));
 
+  type ApprovedRow = {
+    id: string;
+    application_number: string | null;
+    student_number: string | null;
+    status: string;
+    academic_year: string;
+    draft_data: Record<string, unknown> | null;
+    application_children: { name_ar: string }[] | null;
+  };
+
   return {
     invoices: invoices ?? [],
     installments: installments.data ?? [],
@@ -583,9 +595,75 @@ export async function myFinance(supabase: Db, userId: string) {
     settings: settings.data ?? null,
     planSettings: plan.data ?? null,
     messages: messages.data ?? [],
-    /** Approved applications that still need the parent to pick a payment plan. */
-    pendingPlans: (approved.data ?? []).filter((a) => !invoicedApps.has(a.id)),
+    /**
+     * Approved applications that still need the parent to pick a payment plan.
+     * Imported students (added by the school and later linked to the guardian)
+     * are flagged so the portal can explain why a plan is required.
+     */
+    pendingPlans: ((approved.data ?? []) as unknown as ApprovedRow[])
+      .filter((a) => !invoicedApps.has(a.id))
+      .map((a) => ({
+        id: a.id,
+        application_number: a.application_number ?? a.student_number,
+        academic_year: a.academic_year,
+        imported: (a.draft_data as Record<string, unknown> | null)?.["imported"] === true,
+        childNames: (a.application_children ?? []).map((c) => c.name_ar),
+      })),
   };
+}
+
+/**
+ * Notifies a guardian (and the accounting team) about every linked child that
+ * still has no payment plan. Used right after a guardian claims children so
+ * imported students never stay outside the financial governance loop.
+ */
+export async function notifyMissingPlansForParent(supabase: Db, parentId: string) {
+  const [{ data: apps }, { data: invoices }] = await Promise.all([
+    supabase
+      .from("applications")
+      .select("id, application_number, student_number, application_children (name_ar)")
+      .eq("parent_id", parentId)
+      .eq("status", "approved"),
+    supabase.from("invoices").select("application_id").eq("parent_id", parentId),
+  ]);
+
+  const invoiced = new Set((invoices ?? []).map((i) => i.application_id));
+  const missing = ((apps ?? []) as unknown as {
+    id: string;
+    application_number: string | null;
+    student_number: string | null;
+    application_children: { name_ar: string }[] | null;
+  }[]).filter((a) => !invoiced.has(a.id));
+  if (!missing.length) return { pending: 0 };
+
+  const names = missing
+    .flatMap((a) => (a.application_children ?? []).map((c) => c.name_ar))
+    .slice(0, 6)
+    .join("، ");
+
+  await notify(supabase, {
+    userIds: [parentId],
+    kind: "finance.plan_required",
+    title: "مطلوب اختيار خطة سداد",
+    body: names
+      ? `تم ربط ${names} بحسابك ولا توجد خطة سداد بعد — افتح «المدفوعات والرسوم» لاختيار خطة السداد واستكمال الإجراءات.`
+      : "يوجد طفل مرتبط بحسابك بدون خطة سداد — افتح «المدفوعات والرسوم» لاختيار خطة السداد.",
+    applicationId: missing[0]?.id ?? null,
+    link: "/payments",
+    severity: "warning",
+  });
+
+  await notify(supabase, {
+    roles: ["accountant", "admin"],
+    kind: "finance.plan_required",
+    title: "ولي أمر مرتبط بأطفال بدون خطة سداد",
+    body: names ? `بانتظار اختيار خطة السداد: ${names}` : `عدد الطلبات بدون خطة: ${missing.length}`,
+    applicationId: missing[0]?.id ?? null,
+    link: "/ams/finance",
+    severity: "info",
+  });
+
+  return { pending: missing.length };
 }
 
 /* ------------------------------------------------------------------ */
@@ -700,7 +778,9 @@ export async function financeOverview(supabase: Db, userId: string) {
    */
   const { data: completedApps } = await supabase
     .from("applications")
-    .select("id, application_number, student_number, parent_id, academic_year, status, submitted_at, created_at")
+    .select(
+      "id, application_number, student_number, parent_id, academic_year, status, submitted_at, created_at, draft_data",
+    )
     .in("status", ["submitted", "under_review", "principal_review", "approved"])
     .order("created_at", { ascending: false })
     .limit(500);
@@ -747,6 +827,18 @@ export async function financeOverview(supabase: Db, userId: string) {
     (extraProfiles.data ?? []).filter((p) => !seenProfiles.has(p.id)),
   );
 
+  /**
+   * Imported students technically belong to the staff account that uploaded
+   * them until a guardian claims them. Finance needs to tell the two cases
+   * apart: "waiting for the guardian link" vs "guardian must pick a plan".
+   */
+  const { data: ownerRoles } = unplannedParentIds.length
+    ? await supabase.from("user_roles").select("user_id, role").in("user_id", unplannedParentIds)
+    : { data: [] as { user_id: string; role: string }[] };
+  const staffOwners = new Set(
+    (ownerRoles ?? []).filter((r) => r.role !== "parent").map((r) => r.user_id),
+  );
+
   return {
     invoices: invoices ?? [],
     installments: installments.data ?? [],
@@ -756,6 +848,8 @@ export async function financeOverview(supabase: Db, userId: string) {
     unplanned: unplannedApps.map((a) => ({
       ...a,
       qurraFullyCovered: qurraApproved.has(a.id) && !withServices.has(a.id),
+      imported: ((a.draft_data ?? {}) as Record<string, unknown>)["imported"] === true,
+      awaitingGuardianLink: staffOwners.has(a.parent_id),
     })),
     settings: settings.data ?? null,
     planSettings: plan.data ?? null,

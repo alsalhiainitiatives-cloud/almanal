@@ -16,12 +16,14 @@ import { PlanPicker } from "./PlanPicker";
 export function PlanChooser({
   applicationId,
   applicationNumber,
+  childNames,
   qurraMessage,
   qurraServicesMessage,
   onDone,
 }: {
   applicationId: string;
   applicationNumber: string | null;
+  childNames?: string[];
   qurraMessage?: string;
   qurraServicesMessage?: string;
   onDone: () => void;

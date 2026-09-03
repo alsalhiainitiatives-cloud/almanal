@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+import { notifyMissingPlansForParent } from "@/features/finance/finance.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
 
 const ERRORS: Record<string, string> = {
   identifier_too_short: "الرقم المدخل غير صالح — أدخل رقم هوية الطفل أو رقمه الأكاديمي كاملًا.",
@@ -26,7 +28,10 @@ export const linkMyChild = createServerFn({ method: "POST" })
       throw new Error(key ? ERRORS[key] : "تعذّر إتمام الربط، حاول مرة أخرى.");
     }
     const first = (rows as { child_names: string[] }[] | null)?.[0];
-    return { childNames: first?.child_names ?? [] };
+    // Newly linked children must enter the financial governance loop: remind the
+    // guardian (and accounting) whenever a linked child has no payment plan yet.
+    const plans = await notifyMissingPlansForParent(context.supabase, context.userId);
+    return { childNames: first?.child_names ?? [], pendingPlans: plans.pending };
   });
 
 /** Children already linked to the signed-in guardian account. */

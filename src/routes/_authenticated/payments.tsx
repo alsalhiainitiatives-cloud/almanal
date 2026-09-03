@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Eye, FileText, Loader2, Printer, ReceiptText, Search, Sparkles, Upload, Wallet } from "lucide-react";
+import { ArrowLeft, Eye, FileText, Loader2, Printer, ReceiptText, Search, Sparkles, TriangleAlert, Upload, Wallet } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -145,11 +145,34 @@ function PaymentsPage() {
                 />
               </div>
             ) : null}
+            {pendingPlans.length ? (
+              <div className="flex items-start gap-3 rounded-[2rem] border border-amber-300/70 bg-amber-50 p-5">
+                <TriangleAlert className="mt-0.5 size-5 shrink-0 text-amber-700" />
+                <div>
+                  <p className="text-sm font-black text-amber-900">
+                    مطلوب اختيار خطة سداد ({pendingPlans.length})
+                  </p>
+                  <p className="mt-1 text-xs font-bold leading-relaxed text-amber-900/80">
+                    {pendingPlans.some((app) => app.imported)
+                      ? "تم ربط أبنائك المسجلين لدى المدرسة بحسابك، ولم يتم بعد اعتماد خطة السداد الخاصة بهم. اختر الخطة المناسبة أدناه لاستكمال الإجراءات المالية."
+                      : "لديك طلبات مقبولة بدون خطة سداد — اختر الخطة المناسبة أدناه لاستكمال الإجراءات المالية."}
+                  </p>
+                  <p className="mt-2 text-[11px] font-black text-amber-900">
+                    {pendingPlans
+                      .flatMap((app) => app.childNames)
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
             {pendingPlans.map((app) => (
               <PlanChooser
                 key={app.id}
                 applicationId={app.id}
                 applicationNumber={app.application_number}
+                childNames={app.childNames}
                 qurraMessage={settings?.qurra_message_ar}
                 qurraServicesMessage={settings?.qurra_services_message_ar}
                 onDone={() => queryClient.invalidateQueries({ queryKey: ["my-finance"] })}

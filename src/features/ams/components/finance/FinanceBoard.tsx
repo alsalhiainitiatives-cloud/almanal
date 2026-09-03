@@ -267,6 +267,10 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
                         <span className="rounded-full bg-mint px-2 py-0.5 text-[10px] font-black text-mint-foreground">
                           مشمول بدعم قرة — لا مستحقات
                         </span>
+                      ) : app.awaitingGuardianLink ? (
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-black text-muted-foreground">
+                          بانتظار ربط ولي الأمر
+                        </span>
                       ) : (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black text-amber-800">
                           لم يتم اختيار خطة سداد
@@ -274,12 +278,14 @@ export function FinanceBoard({ canManage }: { canManage: boolean }) {
                       )}
                     </span>
                     <span className="mt-1 block truncate text-[11px] font-bold text-muted-foreground">
-                      {profile?.full_name ?? "ولي أمر"} — {childOf(app.id)}
+                      {app.awaitingGuardianLink ? "سجل مستورد — بدون ولي أمر مرتبط" : (profile?.full_name ?? "ولي أمر")}{" "}
+                      — {childOf(app.id)}
+                      {app.imported ? " · مستورد" : ""}
                     </span>
                     <span className="mt-1 block text-[11px] font-bold text-muted-foreground" dir="ltr">
-                      {profile?.phone ?? "بدون جوال"}
+                      {app.awaitingGuardianLink ? "—" : (profile?.phone ?? "بدون جوال")}
                     </span>
-                    {profile?.phone && !app.qurraFullyCovered ? (
+                    {profile?.phone && !app.qurraFullyCovered && !app.awaitingGuardianLink ? (
                       <Button
                         size="sm"
                         variant="outline"

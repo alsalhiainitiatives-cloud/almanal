@@ -50,5 +50,9 @@ export const claimGuardianInvitation = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => z.object({ token: z.string().trim().min(16).max(80) }).parse(data))
   .handler(async ({ data, context }) => {
     const { claimInvitation } = await import("./guardians.server");
-    return claimInvitation(context.supabase, data.token);
+    const result = await claimInvitation(context.supabase, data.token);
+    // Linked children with no invoice yet need a payment plan: notify guardian + finance.
+    const { notifyMissingPlansForParent } = await import("@/features/finance/finance.server");
+    const plans = await notifyMissingPlansForParent(context.supabase, context.userId);
+    return { ...result, pendingPlans: plans.pending };
   });
