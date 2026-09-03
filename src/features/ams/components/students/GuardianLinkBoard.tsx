@@ -27,6 +27,7 @@ import { unlinkChildGuardian } from "@/features/ams/link-child.functions";
 import { usePermissions } from "@/features/auth/usePermissions";
 import { openWhatsapp } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const KEY = ["ams", "guardian-links"];
 
@@ -39,6 +40,7 @@ function statusOf(row: Row): InvitationStatus | null {
 }
 
 export function GuardianLinkBoard() {
+  const confirmAction = useConfirm();
   const queryClient = useQueryClient();
   const { can } = usePermissions();
   const canUnlink = can("guardians.unlink");
@@ -364,13 +366,13 @@ export function GuardianLinkBoard() {
                             disabled={unlink.isPending}
                             className="rounded-xl text-[11px] font-black text-destructive hover:bg-destructive/10"
                             onClick={() => {
-                              if (
-                                !window.confirm(
-                                  `سيتم فصل ${row.childName} (وأشقاؤه في نفس الملف) عن حساب ولي الأمر، ويمكن إعادة الربط لاحقًا. هل تريد المتابعة؟`,
-                                )
-                              )
-                                return;
-                              unlink.mutate(row.childId);
+                              void confirmAction({
+                                title: `فصل ${row.childName} عن حساب ولي الأمر؟`,
+                                description:
+                                  "سيتم فصل الطفل وأشقاؤه في نفس الملف عن الحساب، ويمكن إعادة الربط لاحقًا.",
+                                confirmLabel: "إلغاء الربط",
+                                tone: "danger",
+                              }).then((ok) => ok && unlink.mutate(row.childId));
                             }}
                           >
                             {unlink.isPending ? (

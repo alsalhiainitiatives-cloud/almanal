@@ -40,6 +40,7 @@ import {
 } from "../inbox";
 import { MESSAGE_TEMPLATES, mailtoLink } from "../templates";
 import {
+import { useConfirm } from "@/components/ui/confirm-dialog";
   WhatsappConfirmDialog,
   type WhatsappDraft,
 } from "@/components/whatsapp-confirm-dialog";
@@ -308,7 +309,9 @@ function MessageCard({
   onUpdate: (patch: { status?: ContactMessageStatus; priority?: string; staff_note?: string }) => void;
   onDelete: () => void;
 }) {
+  const confirmAction = useConfirm();
   const [templateKey, setTemplateKey] = useState(MESSAGE_TEMPLATES[0].key);
+
   const [waDraft, setWaDraft] = useState<WhatsappDraft | null>(null);
   const template = MESSAGE_TEMPLATES.find((item) => item.key === templateKey) ?? MESSAGE_TEMPLATES[0];
   const body = template.build({ name: row.name, subject: row.subject, program: row.program });
@@ -503,7 +506,12 @@ function MessageCard({
                   className="rounded-2xl text-destructive hover:text-destructive"
                   disabled={busy}
                   onClick={() => {
-                    if (window.confirm("سيتم حذف الرسالة نهائيًا. هل تريد المتابعة؟")) onDelete();
+                    void confirmAction({
+                      title: "حذف الرسالة نهائيًا؟",
+                      description: "لن تتمكّن من استعادة الرسالة أو سجلها بعد الحذف.",
+                      confirmLabel: "حذف نهائي",
+                      tone: "danger",
+                    }).then((ok) => ok && onDelete());
                   }}
                 >
                   <Trash2 className="size-4" />

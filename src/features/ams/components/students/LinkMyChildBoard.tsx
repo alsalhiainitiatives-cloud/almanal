@@ -11,10 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState, SkeletonRows } from "@/features/ams/components/atoms";
 import { linkMyChild, myLinkedChildren, unlinkChildGuardian } from "@/features/ams/link-child.functions";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const KEY = ["parent", "linked-children"];
 
 export function LinkMyChildBoard() {
+  const confirmAction = useConfirm();
   const queryClient = useQueryClient();
   const [identifier, setIdentifier] = useState("");
 
@@ -133,13 +135,13 @@ export function LinkMyChildBoard() {
                     variant="ghost"
                     disabled={unlink.isPending}
                     onClick={() => {
-                      if (
-                        !window.confirm(
-                          `سيتم إلغاء ربط ${child.name} (وأشقائه في نفس الملف) بحسابك. هل تريد المتابعة؟`,
-                        )
-                      )
-                        return;
-                      unlink.mutate(child.id);
+                      void confirmAction({
+                        title: `إلغاء ربط ${child.name} بحسابك؟`,
+                        description:
+                          "سيتم فصل الطفل وأشقائه في نفس الملف عن حسابك، ويمكنك إعادة الربط لاحقًا برقم الهوية.",
+                        confirmLabel: "إلغاء الربط",
+                        tone: "danger",
+                      }).then((ok) => ok && unlink.mutate(child.id));
                     }}
                     className="mt-3 h-8 rounded-xl px-3 text-[11px] font-black text-destructive hover:bg-destructive/10"
                   >

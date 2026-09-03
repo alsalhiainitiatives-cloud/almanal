@@ -11,6 +11,7 @@ import { Eye, EyeOff, FileText, Film, ImageIcon, Loader2, Printer } from "lucide
 import { toast } from "sonner";
 import { useMemo, useState } from "react";
 
+import { ReportLetterhead, ReportSignatures, ReportStamp } from "@/components/reports/ReportLetterhead";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -234,18 +235,17 @@ export function AcademicReports() {
           dir="rtl"
           className="space-y-6 rounded-3xl border border-border/60 bg-card p-6"
         >
-          <header className="space-y-1 border-b border-border/60 pb-4 text-center">
-            <p className="text-xs font-bold text-muted-foreground">روضة ومدارس المنال — عنيزة</p>
-            <h2 className="text-xl font-black text-primary">
-              {REPORT_TYPE_LABELS[data.reportType]} — {data.child.nameAr}
-            </h2>
-            <p className="text-xs font-bold text-muted-foreground">{data.periodLabel}</p>
-            <p className="text-xs font-bold text-muted-foreground">
-              {data.stageNameAr} · {data.classroomNameAr}
-              {data.child.studentNumber ? ` · ${data.child.studentNumber}` : ""}
-              {data.teacherNames.length ? ` · المعلمة: ${data.teacherNames.join("، ")}` : ""}
-            </p>
-          </header>
+          <ReportLetterhead
+            badge={REPORT_TYPE_LABELS[data.reportType]}
+            documentTitle={`تقرير الطالب/ة: ${data.child.nameAr}`}
+            subtitle={data.periodLabel}
+            meta={[
+              data.stageNameAr,
+              data.classroomNameAr,
+              data.child.studentNumber ? `الرقم الأكاديمي: ${data.child.studentNumber}` : null,
+              data.teacherNames.length ? `المعلمة: ${data.teacherNames.join("، ")}` : null,
+            ]}
+          />
 
           <section className="grid grid-cols-2 gap-3 md:grid-cols-5">
             <Stat label="دروس المنهج" value={data.summary.lessons} />
@@ -367,9 +367,8 @@ export function AcademicReports() {
             ))
           )}
 
-          <footer className="border-t border-border/60 pt-3 text-center text-[10px] font-bold text-muted-foreground">
-            تقرير غير قابل للتعديل — صادر من نظام التتبع الأكاديمي بروضة ومدارس المنال
-          </footer>
+          <ReportSignatures roles={["المعلمة المسؤولة", "المشرفة التربوية", "ولي الأمر"]} />
+          <ReportStamp note="تقرير غير قابل للتعديل — صادر من نظام التتبع الأكاديمي" />
         </div>
       )}
     </div>

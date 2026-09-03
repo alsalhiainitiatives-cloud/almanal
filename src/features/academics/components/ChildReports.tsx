@@ -11,6 +11,7 @@ import { useState } from "react";
 import { MediaViewerDialog, type MediaItem } from "@/components/media/MediaViewerDialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ReportLetterhead, ReportSignatures, ReportStamp } from "@/components/reports/ReportLetterhead";
 import { EVIDENCE_KIND_LABELS_AR, SCALE_LABELS, TRIANGLE_LABELS } from "../assessments";
 import { REPORT_TYPE_LABELS, masteryLabel, type ReportType } from "../reports";
 import { academicsParentReportBoard } from "../reports.functions";
@@ -142,18 +143,18 @@ export function ChildReports() {
           dir="rtl"
           className="space-y-6 rounded-3xl border border-border/60 bg-card p-6"
         >
-          <header className="space-y-1 border-b border-border/60 pb-4 text-center">
-            <p className="text-xs font-bold text-muted-foreground">روضة ومدارس المنال — عنيزة</p>
-            <h2 className="text-xl font-black text-primary">
-              {REPORT_TYPE_LABELS[data.reportType]} — {active.childName}
-            </h2>
-            <p className="text-xs font-bold text-muted-foreground">{data.periodLabel}</p>
-            <p className="text-xs font-bold text-muted-foreground">
-              {active.stageName ?? "—"} · {active.classroomName ?? "—"}
-              {active.studentNumber ? ` · ${active.studentNumber}` : ""}
-              {data.teacherNames.length ? ` · المعلمة: ${data.teacherNames.join("، ")}` : ""}
-            </p>
-          </header>
+          <ReportLetterhead
+            badge={REPORT_TYPE_LABELS[data.reportType]}
+            documentTitle={`تقرير الطالب/ة: ${active.childName}`}
+            subtitle={data.periodLabel}
+            meta={[
+              active.stageName,
+              active.classroomName,
+              active.studentNumber ? `الرقم الأكاديمي: ${active.studentNumber}` : null,
+              data.teacherNames.length ? `المعلمة: ${data.teacherNames.join("، ")}` : null,
+            ]}
+          />
+
 
           <section className="grid grid-cols-2 gap-3 md:grid-cols-5">
             <Stat label="دروس المنهج" value={data.summary.lessons} />
@@ -273,9 +274,8 @@ export function ChildReports() {
             ))
           )}
 
-          <footer className="border-t border-border/60 pt-3 text-center text-[10px] font-bold text-muted-foreground">
-            تقرير غير قابل للتعديل — صادر من نظام التتبع الأكاديمي بروضة ومدارس المنال
-          </footer>
+          <ReportSignatures roles={["المعلمة المسؤولة", "المشرفة التربوية", "ولي الأمر"]} />
+          <ReportStamp note="تقرير غير قابل للتعديل — صادر من نظام التتبع الأكاديمي" />
         </div>
       )}
     </div>
