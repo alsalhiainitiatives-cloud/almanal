@@ -192,12 +192,26 @@ export async function getChatBoard(
     .limit(200);
 
   const ordered = [...(rows ?? [])].reverse();
+
+  // Sender pictures: profiles store either an absolute URL or a storage path
+  // inside the same private bucket used for attachments.
+  const senderIds = [...new Set(ordered.map((r) => r.sender_id).filter(Boolean))];
+  const { data: senderProfiles } = senderIds.length
+    ? await supabase.from("profiles").select("id, avatar_url").in("id", senderIds)
+    : { data: [] as { id: string; avatar_url: string | null }[] };
+  const avatarById = new Map(
+    (senderProfiles ?? []).map((p) => [p.id, p.avatar_url as string | null]),
+  );
+  const avatarPaths = [...avatarById.values()].filter(
+    (v): v is string => Boolean(v) && !/^(https?:|data:)/i.test(v),
+  );
+
   const paths = ordered.flatMap((r) =>
     normalizeAttachments(r.attachments)
       .map((a) => a.path)
       .filter((p): p is string => Boolean(p)),
   );
-  const signed = await signPaths(paths);
+  const signed = await signPaths([...paths, ...avatarPaths]);
 
   const messages: ChatMessage[] = ordered.map((r) => ({
     id: r.id,
@@ -205,6 +219,11 @@ export async function getChatBoard(
     parentMessageId: r.parent_message_id,
     senderId: r.sender_id,
     senderName: r.sender_name,
+    senderAvatarUrl: (() => {
+      const raw = avatarById.get(r.sender_id) ?? null;
+      if (!raw) return null;
+      return /^(https?:|data:)/i.test(raw) ? raw : (signed[raw] ?? null);
+    })(),
     senderRole: r.sender_role,
     body: r.deleted_at ? "" : r.body,
     attachments: r.deleted_at
