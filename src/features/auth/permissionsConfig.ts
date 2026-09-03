@@ -58,6 +58,7 @@ export const MODULE_ORDER: string[] = [
 
 export const SUB_MODULE_LABELS: Record<string, string> = {
   dashboard: "لوحة المعلومات والملف الشخصي",
+  portal: "بوابة ولي الأمر",
   applications: "طلبات التسجيل",
   documents: "المستندات",
   seats: "المقاعد وتوزيع الفصول",
@@ -99,6 +100,15 @@ export type PermissionEntry = {
 export const PERMISSION_REGISTRY: PermissionEntry[] = [
   { code: "dashboard.view", module: "general", subModule: "dashboard", action: "read", labelAr: "عرض لوحة المعلومات" },
   { code: "profile.edit", module: "general", subModule: "dashboard", action: "update", labelAr: "تعديل الملف الشخصي" },
+
+  { code: "portal.profile", module: "general", subModule: "portal", action: "read", labelAr: "إظهار «ملفي الشخصي ولوحتي»" },
+  { code: "portal.children_link", module: "general", subModule: "portal", action: "update", labelAr: "إظهار «ربط أبنائي»" },
+  { code: "portal.applications", module: "general", subModule: "portal", action: "read", labelAr: "إظهار «طلباتي وتتبع الطلب»" },
+  { code: "portal.child_file", module: "general", subModule: "portal", action: "read", labelAr: "إظهار «ملف الطفل»" },
+  { code: "portal.child_reports", module: "general", subModule: "portal", action: "read", labelAr: "إظهار «تقارير طفلي الأكاديمية»" },
+  { code: "portal.study_plan", module: "general", subModule: "portal", action: "read", labelAr: "إظهار «خطة طفلي الدراسية»" },
+  { code: "portal.class_chat", module: "general", subModule: "portal", action: "read", labelAr: "إظهار «محادثة فصل طفلي»" },
+  { code: "portal.payments", module: "general", subModule: "portal", action: "read", labelAr: "إظهار «المدفوعات والرسوم»" },
 
   { code: "applications.view", module: "admissions", subModule: "applications", action: "read", labelAr: "عرض الطلبات" },
   { code: "applications.submit", module: "admissions", subModule: "applications", action: "create", labelAr: "تقديم طلب تسجيل" },

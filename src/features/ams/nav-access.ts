@@ -117,3 +117,25 @@ export function canSeeLink(
   if (!required || required.length === 0) return true;
   return required.some((code) => permissions.includes(code));
 }
+
+/**
+ * Parent-portal items are governed by explicit `portal.*` permissions —
+ * deliberately WITHOUT the super-role bypass, so an admin only sees the
+ * parent tabs when the permission is granted to their role.
+ */
+export const PORTAL_PERMISSIONS: Record<string, string> = {
+  "/profile": "portal.profile",
+  "/link-children": "portal.children_link",
+  "/my-applications": "portal.applications",
+  "/child-file": "portal.child_file",
+  "/child-reports": "portal.child_reports",
+  "/study-plans": "portal.study_plan",
+  "/class-chat": "portal.class_chat",
+  "/payments": "portal.payments",
+};
+
+export function canSeePortalLink(to: string, permissions: readonly string[]): boolean {
+  const code = PORTAL_PERMISSIONS[to];
+  if (!code) return true;
+  return permissions.includes(code);
+}

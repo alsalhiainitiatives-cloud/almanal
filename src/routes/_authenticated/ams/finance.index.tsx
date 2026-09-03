@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { BarChart3, ReceiptText, Settings2, Wallet } from "lucide-react";
 
 import { AmsShell } from "@/features/ams/components/AmsShell";
+import { canSeeLink } from "@/features/ams/nav-access";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { canManageFinance, canViewFinance } from "@/features/finance/access";
 
@@ -51,7 +52,7 @@ const CARDS = [
 ] as const;
 
 function FinanceHome() {
-  const { roles } = useAuth();
+  const { roles, permissions } = useAuth();
   const list = roles as string[];
 
   if (!canViewFinance(list)) {
@@ -65,7 +66,9 @@ function FinanceHome() {
   }
 
   const manage = canManageFinance(list);
-  const cards = CARDS.filter((c) => !c.manage || manage);
+  const cards = CARDS.filter(
+    (c) => (!c.manage || manage) && canSeeLink(c.to, roles as string[], permissions),
+  );
 
   return (
     <AmsShell

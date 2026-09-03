@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 
 import { AmsShell } from "@/features/ams/components/AmsShell";
+import { canSeeLink } from "@/features/ams/nav-access";
+import { useAuth } from "@/features/auth/AuthProvider";
 
 export const Route = createFileRoute("/_authenticated/ams/students/")({
   head: () => ({
@@ -66,6 +68,9 @@ const CARDS = [
 
 
 function StudentsHome() {
+  const { roles, permissions } = useAuth();
+  const cards = CARDS.filter((card) => canSeeLink(card.to, roles as string[], permissions));
+
   return (
     <AmsShell
       title="لوحة شؤون الطلاب"
@@ -73,7 +78,7 @@ function StudentsHome() {
       wide
     >
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {CARDS.map((card) => (
+        {cards.map((card) => (
           <Link
             key={card.to}
             to={card.to}

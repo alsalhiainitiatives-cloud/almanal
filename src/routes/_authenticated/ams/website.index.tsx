@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Globe, MessagesSquare, Star } from "lucide-react";
 
 import { AmsShell } from "@/features/ams/components/AmsShell";
+import { canSeeLink } from "@/features/ams/nav-access";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { P } from "@/features/auth/rbac";
 
@@ -41,7 +42,8 @@ const CARDS = [
 ] as const;
 
 function WebsiteHome() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, roles, permissions } = useAuth();
+  const cards = CARDS.filter((card) => canSeeLink(card.to, roles as string[], permissions));
   const allowed = hasPermission(P.settingsManage) || hasPermission(P.applicationsReview);
 
   if (!allowed) {
@@ -61,7 +63,7 @@ function WebsiteHome() {
       wide
     >
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {CARDS.map((card) => (
+        {cards.map((card) => (
           <Link
             key={card.to}
             to={card.to}
