@@ -287,7 +287,6 @@ export function PortalLayout({
           </header>
           <div className="mt-6 space-y-6">{children}</div>
         </div>
-      </div>
         </div>
       </div>
     </>
