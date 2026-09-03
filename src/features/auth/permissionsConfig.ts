@@ -136,6 +136,7 @@ export const PERMISSION_REGISTRY: PermissionEntry[] = [
   { code: "children.manage", module: "students", subModule: "children", action: "update", labelAr: "إدارة الأبناء" },
   { code: "guardians.link", module: "students", subModule: "guardians", action: "update", labelAr: "ربط الأطفال بأولياء أمورهم" },
   { code: "guardians.invite", module: "students", subModule: "guardians", action: "create", labelAr: "دعوة أولياء الأمور للمنصة" },
+  { code: "guardians.unlink", module: "students", subModule: "guardians", action: "delete", labelAr: "إلغاء ربط طفل بولي أمر" },
   { code: "attendance.view", module: "students", subModule: "attendance", action: "read", labelAr: "عرض سجل الحضور والغياب" },
   { code: "attendance.record", module: "students", subModule: "attendance", action: "update", labelAr: "رصد الحضور والغياب" },
   { code: "attendance.export", module: "students", subModule: "attendance", action: "export", labelAr: "تصدير تقارير الحضور" },
