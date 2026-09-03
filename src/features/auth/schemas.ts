@@ -30,7 +30,17 @@ export const profileSchema = z.object({
   fullName: z.string().trim().min(3, "أدخل الاسم الكامل").max(120),
   phone: z.string().trim().max(20).optional().or(z.literal("")),
   preferredLanguage: z.enum(["ar", "en"]),
-  avatarUrl: z.string().trim().url("رابط الصورة غير صحيح").max(500).optional().or(z.literal("")),
+  // Either an absolute URL or an internal storage path (avatars/<uid>/file.jpg)
+  avatarUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .refine((value) => !value || /^https?:\/\//i.test(value) || /^[\w./-]+$/.test(value), {
+      message: "رابط الصورة غير صحيح",
+    })
+    .optional()
+    .or(z.literal("")),
+
 });
 
 export type SignInInput = z.infer<typeof signInSchema>;
