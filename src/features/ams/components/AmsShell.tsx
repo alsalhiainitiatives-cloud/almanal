@@ -220,7 +220,7 @@ const FINANCE_NAV: NavItem[] = [
 ];
 
 
-/** Website module — public site content, inbound messages and reviews. */
+/** Website module — public site content, inbound messages, reviews and surveys. */
 const WEBSITE_NAV: NavItem[] = [
   { to: "/ams/website", label: "لوحة الموقع الإلكتروني", icon: LayoutDashboard, exact: true, group: "الموقع الإلكتروني" },
   {

@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/ams/website/")({
       { title: "الموقع الإلكتروني — مدارس وروضة المنال" },
       {
         name: "description",
-        content: "إدارة محتوى الموقع العام والمراسلات الواردة وتقييمات أولياء الأمور.",
+        content: "إدارة محتوى الموقع العام والمراسلات والتقييمات واستبانات أولياء الأمور.",
       },
       { name: "robots", content: "noindex" },
     ],

@@ -81,6 +81,7 @@ export const SUB_MODULE_LABELS: Record<string, string> = {
   general_reports: "تقارير عامة",
   content: "محتوى الموقع",
   reviews: "التقييمات الواردة",
+  surveys: "الاستبانات والآراء",
   users: "المستخدمون",
   roles: "الأدوار والصلاحيات",
   audit: "سجل العمليات",
@@ -186,6 +187,13 @@ export const PERMISSION_REGISTRY: PermissionEntry[] = [
 
   { code: "website.content_manage", module: "website", subModule: "content", action: "update", labelAr: "إدارة محتوى الموقع الإلكتروني" },
   { code: "reviews.moderate", module: "website", subModule: "reviews", action: "update", labelAr: "اعتماد أو رفض تقييمات أولياء الأمور" },
+  { code: "surveys.view", module: "website", subModule: "surveys", action: "read", labelAr: "عرض الاستبانات" },
+  { code: "surveys.create", module: "website", subModule: "surveys", action: "create", labelAr: "إنشاء استبانة" },
+  { code: "surveys.update", module: "website", subModule: "surveys", action: "update", labelAr: "تعديل الاستبانات" },
+  { code: "surveys.delete", module: "website", subModule: "surveys", action: "delete", labelAr: "حذف الاستبانات" },
+  { code: "surveys.publish", module: "website", subModule: "surveys", action: "publish", labelAr: "نشر الاستبانات" },
+  { code: "surveys.analytics", module: "website", subModule: "surveys", action: "read", labelAr: "عرض تحليلات الاستبانات" },
+  { code: "surveys.export", module: "website", subModule: "surveys", action: "export", labelAr: "تصدير تقارير الاستبانات" },
 
   { code: "users.view", module: "system", subModule: "users", action: "read", labelAr: "عرض المستخدمين" },
   { code: "users.create", module: "system", subModule: "users", action: "create", labelAr: "إضافة مستخدم" },
