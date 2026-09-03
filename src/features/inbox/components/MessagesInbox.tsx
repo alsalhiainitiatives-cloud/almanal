@@ -40,10 +40,10 @@ import {
 } from "../inbox";
 import { MESSAGE_TEMPLATES, mailtoLink } from "../templates";
 import {
-import { useConfirm } from "@/components/ui/confirm-dialog";
   WhatsappConfirmDialog,
   type WhatsappDraft,
 } from "@/components/whatsapp-confirm-dialog";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 export type InboxAbilities = {
   canReply: boolean;

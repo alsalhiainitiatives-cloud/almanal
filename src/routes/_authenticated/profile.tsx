@@ -1,6 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Clock, KeyRound, Loader2, LogOut, Monitor, Save, ShieldCheck, Sparkles, UserCog } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+  Clock,
+  ImagePlus,
+  KeyRound,
+  Loader2,
+  LogOut,
+  Monitor,
+  Save,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  UserCog,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -14,6 +26,8 @@ import { revokeOtherSessions, updateMyProfile } from "@/features/auth/auth.funct
 import { ROLE_DESCRIPTIONS, ROLE_LABELS } from "@/features/auth/rbac";
 import { passwordSchema, profileSchema } from "@/features/auth/schemas";
 import { supabase } from "@/integrations/supabase/client";
+import { uploadClassroomMedia, useClassroomMediaUrls } from "@/lib/classroom-media";
+import { optimizeAttachment } from "@/lib/upload-compression";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -235,17 +249,15 @@ function PersonalDataForm() {
           </select>
         </Field>
         <div className="sm:col-span-2">
-          <Field label="رابط الصورة الشخصية (اختياري)" id="avatar" error={errors.avatarUrl}>
-            <Input
-              id="avatar"
-              dir="ltr"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://…"
-              className="h-12 rounded-2xl border-border/70 bg-background/80"
-            />
-          </Field>
+          <AvatarPicker
+            userId={profile?.id ?? null}
+            value={avatarUrl}
+            onChange={setAvatarUrl}
+            error={errors.avatarUrl}
+            name={fullName || profile?.email || "المستخدم"}
+          />
         </div>
+
       </div>
 
       <Button
@@ -257,6 +269,124 @@ function PersonalDataForm() {
         حفظ التغييرات
       </Button>
     </form>
+  );
+}
+
+/** Profile picture picker: direct upload to secure storage, or an external link. */
+function AvatarPicker({
+  userId,
+  value,
+  onChange,
+  error,
+  name,
+}: {
+  userId: string | null;
+  value: string;
+  onChange: (next: string) => void;
+  error?: string | undefined;
+  name: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const isPath = !!value && !/^https?:\/\//i.test(value);
+  const signed = useClassroomMediaUrls(isPath ? [value] : []);
+  const preview = isPath ? signed[value] : value;
+
+  async function onPick(file: File | undefined) {
+    if (!file) return;
+    if (!userId) {
+      toast.error("تعذّر تحديد الحساب — أعد تحميل الصفحة.");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("اختر ملف صورة (JPG أو PNG أو WEBP).");
+      return;
+    }
+    setUploading(true);
+    try {
+      const { file: optimized } = await optimizeAttachment(file, {
+        maxDimension: 600,
+        quality: 0.85,
+        maxMb: 3,
+        enabled: true,
+      });
+      const path = await uploadClassroomMedia(optimized, `avatars/${userId}`);
+      onChange(path);
+      toast.success("تم رفع الصورة — لا تنسَ حفظ التغييرات.");
+    } catch (uploadError) {
+      toast.error(uploadError instanceof Error ? uploadError.message : "تعذّر رفع الصورة.");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  return (
+    <div className="rounded-[1.75rem] border border-border/60 bg-background/60 p-5">
+      <p className="text-sm font-black text-foreground">الصورة الشخصية</p>
+      <p className="mt-1 text-xs font-semibold text-muted-foreground">
+        ارفع صورة من جهازك أو ألصق رابطًا خارجيًا — تظهر الصورة في حسابك داخل المنصة.
+      </p>
+
+      <div className="mt-4 flex flex-wrap items-center gap-4">
+        <div className="grid size-24 place-items-center overflow-hidden rounded-3xl border-2 border-primary/25 bg-muted/50">
+          {preview ? (
+            <img src={preview} alt={name} className="h-full w-full object-cover" />
+          ) : (
+            <span className="text-3xl font-black text-primary/50">{name.trim().charAt(0)}</span>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => void onPick(e.target.files?.[0])}
+          />
+          <Button
+            type="button"
+            variant="soft"
+            disabled={uploading}
+            onClick={() => inputRef.current?.click()}
+            className="rounded-2xl font-bold"
+          >
+            {uploading ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}
+            رفع صورة
+          </Button>
+          {value ? (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onChange("")}
+              className="rounded-2xl font-bold text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="size-4" />
+              إزالة الصورة
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <Field label="أو رابط صورة خارجي (اختياري)" id="avatar" error={error}>
+          <Input
+            id="avatar"
+            dir="ltr"
+            value={isPath ? "" : value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="https://…"
+            className="h-12 rounded-2xl border-border/70 bg-background/80"
+          />
+        </Field>
+        {isPath ? (
+          <p className="mt-2 text-[11px] font-bold text-muted-foreground">
+            الصورة الحالية مرفوعة داخل النظام بشكل آمن.
+          </p>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
