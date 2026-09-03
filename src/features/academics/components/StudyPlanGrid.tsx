@@ -4,6 +4,7 @@
  */
 import { Clock, StickyNote } from "lucide-react";
 
+import { ReportLetterhead, ReportStamp } from "@/components/reports/ReportLetterhead";
 import { SCHOOL_DAYS, formatPlanRange, planTitle, type StudyPlan } from "../plans";
 
 export function StudyPlanGrid({
@@ -15,17 +16,13 @@ export function StudyPlanGrid({
 }) {
   return (
     <div dir="rtl" className="rounded-3xl border border-border/60 bg-card p-5">
-      <header className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-border/60 pb-3">
-        <div>
-          <p className="text-[11px] font-black text-muted-foreground">{schoolName}</p>
-          <h3 className="text-base font-black text-foreground">{planTitle(plan)}</h3>
-          <p className="text-xs text-muted-foreground">
-            {plan.classroomName ?? "الفصل"}
-            {plan.stageName ? ` · ${plan.stageName}` : ""}
-          </p>
-        </div>
-        <p className="text-xs font-bold text-muted-foreground">{formatPlanRange(plan)}</p>
-      </header>
+      <ReportLetterhead
+        className="mb-4"
+        badge="الخطة الدراسية"
+        documentTitle={planTitle(plan)}
+        subtitle={formatPlanRange(plan)}
+        meta={[plan.classroomName, plan.stageName]}
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {SCHOOL_DAYS.map((d) => {
@@ -74,6 +71,10 @@ export function StudyPlanGrid({
           {plan.notes}
         </p>
       ) : null}
+
+      <div className="mt-4 border-t border-border/60 pt-3">
+        <ReportStamp note={`الخطة الدراسية المعتمدة — ${schoolName}`} />
+      </div>
     </div>
   );
 }

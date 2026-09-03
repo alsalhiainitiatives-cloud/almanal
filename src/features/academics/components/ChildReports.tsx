@@ -11,6 +11,7 @@ import { useState } from "react";
 import { MediaViewerDialog, type MediaItem } from "@/components/media/MediaViewerDialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ReportLetterhead, ReportSignatures, ReportStamp } from "@/components/reports/ReportLetterhead";
 import { EVIDENCE_KIND_LABELS_AR, SCALE_LABELS, TRIANGLE_LABELS } from "../assessments";
 import { REPORT_TYPE_LABELS, masteryLabel, type ReportType } from "../reports";
 import { academicsParentReportBoard } from "../reports.functions";
@@ -273,9 +274,8 @@ export function ChildReports() {
             ))
           )}
 
-          <footer className="border-t border-border/60 pt-3 text-center text-[10px] font-bold text-muted-foreground">
-            تقرير غير قابل للتعديل — صادر من نظام التتبع الأكاديمي بروضة ومدارس المنال
-          </footer>
+          <ReportSignatures roles={["المعلمة المسؤولة", "المشرفة التربوية", "ولي الأمر"]} />
+          <ReportStamp note="تقرير غير قابل للتعديل — صادر من نظام التتبع الأكاديمي" />
         </div>
       )}
     </div>
