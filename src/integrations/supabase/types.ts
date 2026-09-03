@@ -3503,6 +3503,13 @@ export type Database = {
           updated_at: string
         }[]
       }
+      unlink_child_guardian: {
+        Args: { _child_id: string }
+        Returns: {
+          child_names: string[]
+          guardian_id: string
+        }[]
+      }
       withdraw_my_application: {
         Args: { _application_id: string }
         Returns: boolean
