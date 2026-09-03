@@ -693,10 +693,16 @@ export async function listInvoiceMessages(supabase: Db, userId: string, invoiceI
     .order("created_at");
   const authorIds = [...new Set((data ?? []).map((m) => m.author_id))];
   const { data: profiles } = authorIds.length
-    ? await supabase.from("profiles").select("id, full_name").in("id", authorIds)
+    ? await supabase.from("profiles").select("id, full_name, avatar_url").in("id", authorIds)
     : { data: [] };
-  const names = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
-  return (data ?? []).map((m) => ({ ...m, author_name: names.get(m.author_id) ?? "مستخدم" }));
+  const rows = (profiles ?? []) as { id: string; full_name: string | null; avatar_url: string | null }[];
+  const names = new Map(rows.map((p) => [p.id, p.full_name]));
+  const avatars = new Map(rows.map((p) => [p.id, p.avatar_url]));
+  return (data ?? []).map((m) => ({
+    ...m,
+    author_name: names.get(m.author_id) ?? "مستخدم",
+    author_avatar: avatars.get(m.author_id) ?? null,
+  }));
 }
 
 export async function postInvoiceMessage(

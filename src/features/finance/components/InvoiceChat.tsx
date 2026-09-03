@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { cn } from "@/lib/utils";
 import { invoiceMessageSend, invoiceMessagesGet } from "../finance.functions";
 
@@ -54,7 +55,13 @@ export function InvoiceChat({ invoiceId, asStaff }: { invoiceId: string; asStaff
             )}
           >
             <p className="flex items-center justify-between gap-2 text-[11px] font-black text-muted-foreground">
-              <span>
+              <span className="flex items-center gap-2">
+                <UserAvatar
+                  name={message.author_name}
+                  src={message.author_avatar}
+                  className="size-7"
+                  fallbackClassName="text-[10px]"
+                />
                 {message.author_name} · {message.is_staff ? "الإدارة المالية" : "ولي الأمر"}
               </span>
               <span>{new Date(message.created_at).toLocaleString("ar-SA")}</span>
