@@ -1,8 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import {
   BarChart3,
-  CalendarDays,
-  Check,
   ChevronDown,
   ChevronUp,
   Download,
@@ -46,7 +44,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { exportExcel } from "@/features/ams/reports-export";
-import { school } from "@/data/site";
 import { ReportLetterhead } from "@/components/reports/ReportLetterhead";
 import {
   QUESTION_TYPE_LABELS,
@@ -58,7 +55,6 @@ import {
   type SurveyWithQuestions,
   emptySurveyDraft,
   draftFromSurvey,
-  listSurveys,
   loadSurveyResults,
   saveSurvey,
   setSurveyStatus,
@@ -935,8 +931,4 @@ function Metric({ label, value }: { label: string; value: string | number }) {
       <p className="mt-2 text-2xl font-black text-primary">{value}</p>
     </div>
   );
-}
-
-export async function fetchSurveys() {
-  return listSurveys();
 }
