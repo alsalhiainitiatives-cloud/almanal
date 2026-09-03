@@ -232,8 +232,8 @@ const WEBSITE_NAV: NavItem[] = [
     roles: ["admin", "supervisor", "principal"],
   },
   { to: "/ams/website/inbox", label: "المراسلات الواردة", icon: MessagesSquare, exact: false, group: "المراسلات والتقييمات" },
-  { to: "/ams/website/reviews", label: "التقييمات والآراء", icon: Star, exact: false, group: "المراسلات والتقييمات" },
-  { to: "/ams/website/surveys", label: "الاستبانات وآراء الأولياء", icon: ListChecks, exact: false, group: "المراسلات والتقييمات" },
+  { to: "/ams/website/reviews", label: "التقييمات والتعليقات", icon: Star, exact: false, group: "المراسلات والتقييمات" },
+  { to: "/ams/website/surveys", label: "الاستبانات", icon: ListChecks, exact: false, group: "المراسلات والتقييمات" },
 ];
 
 /** System module — users, roles, permissions, audit and platform setup. */
