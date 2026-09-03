@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useNotificationCounters } from "@/features/notifications/useNotificationCounters";
 import { MODULE_PERMISSIONS, canSeePortalLink, isSuperRole } from "@/features/ams/nav-access";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useAuth } from "../AuthProvider";
 import { P, ROLE_COLORS, ROLE_LABELS } from "../rbac";
 import { PortalTrail } from "./PortalTrail";
@@ -174,9 +175,12 @@ export function PortalLayout({
         <aside className="no-print lg:sticky lg:top-24 lg:self-start">
           <div className="rounded-[2rem] border border-border/60 bg-card/90 p-5 shadow-soft backdrop-blur">
             <div className="flex items-center gap-3">
-              <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-lg font-extrabold text-primary">
-                {(profile?.fullName ?? "؟").trim().charAt(0)}
-              </span>
+              <UserAvatar
+                name={profile?.fullName}
+                src={profile?.avatarUrl}
+                className="size-12 shrink-0 rounded-2xl"
+                fallbackClassName="rounded-2xl text-lg font-extrabold"
+              />
               <div className="min-w-0">
                 <p className="truncate text-sm font-extrabold text-foreground">
                   {profile?.fullName ?? "مستخدم"}

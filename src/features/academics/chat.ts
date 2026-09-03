@@ -29,6 +29,7 @@ export type ChatMessage = {
   parentMessageId: string | null;
   senderId: string;
   senderName: string | null;
+  senderAvatarUrl: string | null;
   senderRole: string;
   body: string;
   attachments: ChatAttachment[];

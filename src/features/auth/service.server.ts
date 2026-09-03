@@ -228,7 +228,7 @@ export async function listUsersWithRoles(supabase: Db) {
   const [{ data: profiles }, { data: roles }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, full_name, email, phone, last_login_at, created_at")
+      .select("id, full_name, email, phone, avatar_url, last_login_at, created_at")
       .order("created_at", { ascending: false })
       .limit(200),
     supabase.from("user_roles").select("user_id, role"),
@@ -239,6 +239,7 @@ export async function listUsersWithRoles(supabase: Db) {
     fullName: p.full_name,
     email: p.email,
     phone: p.phone,
+    avatarUrl: p.avatar_url as string | null,
     lastLoginAt: p.last_login_at,
     createdAt: p.created_at,
     roles: (roles ?? [])

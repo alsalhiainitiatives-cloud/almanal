@@ -16,12 +16,14 @@ import { PlanPicker } from "./PlanPicker";
 export function PlanChooser({
   applicationId,
   applicationNumber,
+  childNames,
   qurraMessage,
   qurraServicesMessage,
   onDone,
 }: {
   applicationId: string;
   applicationNumber: string | null;
+  childNames?: string[];
   qurraMessage?: string;
   qurraServicesMessage?: string;
   onDone: () => void;
@@ -66,6 +68,9 @@ export function PlanChooser({
         <p className="text-sm font-black text-foreground">
           المصروفات الدراسية — طلب رقم {applicationNumber ?? "—"}
         </p>
+        {childNames?.length ? (
+          <p className="mt-1 text-xs font-black text-primary">{childNames.join(" · ")}</p>
+        ) : null}
         <p className="mt-1 text-xs font-bold text-muted-foreground">
           تم قبول الطلب. اختر طريقة السداد المناسبة لتظهر لك جدولة الدفعات وبيانات التحويل.
         </p>

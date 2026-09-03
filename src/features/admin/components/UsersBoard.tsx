@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -153,10 +154,15 @@ export function UsersBoard() {
                         )}
                       </td>
                       <td className="px-5 py-4">
-                        <p className="font-bold text-foreground">{user.fullName}</p>
-                        <p className="text-xs text-muted-foreground" dir="ltr">
-                          {user.email ?? user.phone ?? "—"}
-                        </p>
+                        <div className="flex items-center gap-2.5">
+                          <UserAvatar name={user.fullName} src={user.avatarUrl} className="size-9" />
+                          <div className="min-w-0">
+                            <p className="font-bold text-foreground">{user.fullName}</p>
+                            <p className="text-xs text-muted-foreground" dir="ltr">
+                              {user.email ?? user.phone ?? "—"}
+                            </p>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex flex-wrap gap-1.5">
