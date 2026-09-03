@@ -75,3 +75,30 @@ export const myLinkedChildren = createServerFn({ method: "GET" })
       }),
     };
   });
+
+const UNLINK_ERRORS: Record<string, string> = {
+  forbidden: "لا تملك صلاحية إلغاء هذا الربط.",
+  child_not_found: "لم يتم العثور على الطالب.",
+  not_linked: "هذا الطالب غير مرتبط بحساب ولي أمر.",
+  no_custodian: "تعذّر إلغاء الربط — تواصل مع إدارة المدرسة.",
+};
+
+/**
+ * Removes the link between a child (and the siblings in the same file) and the
+ * guardian account. Usable by the guardian themself, or by staff holding
+ * `guardians.unlink`; the database function enforces both paths.
+ */
+export const unlinkChildGuardian = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ childId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase.rpc("unlink_child_guardian", {
+      _child_id: data.childId,
+    });
+    if (error) {
+      const key = Object.keys(UNLINK_ERRORS).find((k) => error.message.includes(k));
+      throw new Error(key ? UNLINK_ERRORS[key] : "تعذّر إلغاء الربط، حاول مرة أخرى.");
+    }
+    const first = (rows as { child_names: string[] }[] | null)?.[0];
+    return { childNames: first?.child_names ?? [] };
+  });
