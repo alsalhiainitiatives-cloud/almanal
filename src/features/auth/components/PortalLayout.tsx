@@ -21,7 +21,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { useNotificationCounters } from "@/features/notifications/useNotificationCounters";
-import { MODULE_PERMISSIONS, isSuperRole } from "@/features/ams/nav-access";
+import { MODULE_PERMISSIONS, canSeePortalLink, isSuperRole } from "@/features/ams/nav-access";
 import { useAuth } from "../AuthProvider";
 import { P, ROLE_COLORS, ROLE_LABELS } from "../rbac";
 import { PortalTrail } from "./PortalTrail";
@@ -32,12 +32,12 @@ const NAV_GROUPS = [
   {
     label: "حسابي",
     items: [
-      { to: "/profile", label: "ملفي الشخصي ولوحتي", icon: UserCog, permission: P.profileEdit, featured: false },
+      { to: "/profile", label: "ملفي الشخصي ولوحتي", icon: UserCog, portal: "portal.profile", featured: false },
       {
         to: "/link-children",
         label: "ربط أبنائي",
         icon: Link2,
-        permission: P.profileEdit,
+        portal: "portal.children_link",
         featured: false,
         parentOnly: true,
       },
@@ -46,25 +46,25 @@ const NAV_GROUPS = [
   {
     label: "طلبات الالتحاق",
     items: [
-      { to: "/my-applications", label: "طلباتي وتتبع الطلب", icon: FileClock, permission: P.applicationsTrack, featured: false },
+      { to: "/my-applications", label: "طلباتي وتتبع الطلب", icon: FileClock, portal: "portal.applications", featured: false },
     ],
   },
   {
     label: "متابعة طفلي",
     items: [
-      { to: "/child-file", label: "ملف الطفل", icon: BabyIcon, permission: P.applicationsTrack, featured: false },
+      { to: "/child-file", label: "ملف الطفل", icon: BabyIcon, portal: "portal.child_file", featured: false },
       {
         to: "/child-reports",
         label: "تقارير طفلي الأكاديمية",
         icon: ClipboardList,
-        permission: P.applicationsTrack,
+        portal: "portal.child_reports",
         featured: false,
       },
       {
         to: "/study-plans",
         label: "خطة طفلي الدراسية",
         icon: CalendarRange,
-        permission: P.applicationsTrack,
+        portal: "portal.study_plan",
         featured: false,
         notifyKind: "study_plan",
       },
@@ -72,7 +72,7 @@ const NAV_GROUPS = [
         to: "/class-chat",
         label: "محادثة فصل طفلي",
         icon: MessagesSquare,
-        permission: P.applicationsTrack,
+        portal: "portal.class_chat",
         featured: false,
         notifyKind: "chat_message",
       },
@@ -81,7 +81,7 @@ const NAV_GROUPS = [
   {
     label: "الرسوم والمدفوعات",
     items: [
-      { to: "/payments", label: "المدفوعات والرسوم", icon: Wallet, permission: P.applicationsTrack, featured: false },
+      { to: "/payments", label: "المدفوعات والرسوم", icon: Wallet, portal: "portal.payments", featured: false },
     ],
   },
 
@@ -142,6 +142,12 @@ export function PortalLayout({
 
   /** Module tabs open when the user holds ANY permission inside that module. */
   function visible(item: (typeof NAV_GROUPS)[number]["items"][number]): boolean {
+    // Parent-portal items are governed only by their explicit `portal.*`
+    // permission — no super-role bypass — so admins can be excluded from them.
+    if ("portal" in item && item.portal) {
+      if ("parentOnly" in item && item.parentOnly && isStaffAccount) return false;
+      return canSeePortalLink(item.to, permissions);
+    }
     if ("parentOnly" in item && item.parentOnly && isStaffAccount) return false;
     if (superRole && item.featured) return true;
     const moduleCodes = MODULE_PERMISSIONS[item.to];
