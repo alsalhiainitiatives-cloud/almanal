@@ -68,14 +68,24 @@ import {
 
 type Props = { surveys: SurveyWithQuestions[]; onRefresh: () => Promise<void> };
 
+/**
+ * Explicit report palette: CSS variables in this project are `oklch(...)`
+ * values, so `hsl(var(--token))` produced invalid colors that Recharts painted
+ * black. Fixed hex values keep charts vivid on screen and in PDF exports.
+ */
 const COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--gold))",
-  "hsl(var(--mint))",
-  "hsl(var(--sky))",
-  "hsl(var(--lavender))",
-  "hsl(var(--destructive))",
+  "#7B1E3A",
+  "#C99A2E",
+  "#2F7D6B",
+  "#3A6EA5",
+  "#8E6BC1",
+  "#D2694A",
+  "#4FA3A1",
+  "#B5476B",
 ];
+const AXIS_COLOR = "#6B5560";
+const GRID_COLOR = "#E3D8DC";
+
 
 function toInputDate(value: string | null) {
   return value ? value.slice(0, 16) : "";
