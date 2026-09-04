@@ -70,9 +70,13 @@ export function ParentSurveyPrompt() {
     }
     setSubmitting(true);
     try {
-      await submitSurvey(user.id, pending.survey, values);
+      const { referenceCode } = await submitSurvey(user.id, pending.survey, values);
       setPending(null);
-      toast.success("شكرًا لك، تم إرسال رأيك بنجاح");
+      toast.success(
+        referenceCode
+          ? `شكرًا لك، تم إرسال رأيك — الرقم المرجعي ${referenceCode}`
+          : "شكرًا لك، تم إرسال رأيك بنجاح",
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "تعذر إرسال الاستبانة");
     } finally {
