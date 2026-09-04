@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart3,
   ChevronDown,
@@ -46,13 +46,17 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { exportExcel } from "@/features/ams/reports-export";
 import { ReportLetterhead } from "@/components/reports/ReportLetterhead";
 import {
+  AUDIENCE_LABELS,
   QUESTION_TYPE_LABELS,
   SNOOZE_OPTIONS,
   SURVEY_STATUS_LABELS,
   type QuestionDraft,
   type QuestionType,
+  type StageWithClassrooms,
+  type SurveyAudienceKind,
   type SurveyDraft,
   type SurveyWithQuestions,
+  listStagesWithClassrooms,
   emptySurveyDraft,
   draftFromSurvey,
   loadSurveyResults,
