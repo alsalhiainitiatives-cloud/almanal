@@ -120,7 +120,28 @@ export function SurveyManager({ surveys, onRefresh }: Props) {
   const [tab, setTab] = useState("surveys");
   const [saving, setSaving] = useState(false);
   const [analyticsId, setAnalyticsId] = useState<string>(surveys[0]?.id ?? "");
+  const [stages, setStages] = useState<StageWithClassrooms[]>([]);
   const confirm = useConfirm();
+
+  useEffect(() => {
+    listStagesWithClassrooms()
+      .then(setStages)
+      .catch(() => {
+        /* Audience names are a convenience, never a blocker. */
+      });
+  }, []);
+
+  /** Tell the targeted parents a live survey is waiting for them. */
+  async function announce(survey: SurveyWithQuestions | { id: string } & Record<string, unknown>) {
+    try {
+      const count = await notifySurveyAudience(survey as SurveyWithQuestions);
+      toast.success(
+        count ? `تم إشعار ${count} من أولياء الأمور` : "لا يوجد أولياء أمور مطابقون للجمهور المحدد",
+      );
+    } catch {
+      toast.error("تم النشر لكن تعذر إرسال الإشعارات");
+    }
+  }
 
   async function commit(next: SurveyDraft) {
     const validation = validateDraft(next);
@@ -130,10 +151,19 @@ export function SurveyManager({ surveys, onRefresh }: Props) {
     }
     setSaving(true);
     try {
-      await saveSurvey(next);
+      const id = await saveSurvey(next);
       toast.success(
         next.status === "active" ? "تم نشر الاستبانة بنجاح" : "تم حفظ الاستبانة كمسودة",
       );
+      if (next.status === "active") {
+        await announce({
+          id,
+          title: next.title,
+          audience_kind: next.audience_kind,
+          target_stage_ids: next.target_stage_ids,
+          target_classroom_ids: next.target_classroom_ids,
+        });
+      }
       setDraft(null);
       await onRefresh();
       setTab("surveys");
@@ -148,11 +178,13 @@ export function SurveyManager({ surveys, onRefresh }: Props) {
     try {
       await setSurveyStatus(survey.id, status);
       toast.success(status === "active" ? "تم نشر الاستبانة" : "تم إغلاق الاستبانة");
+      if (status === "active") await announce(survey);
       await onRefresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "تعذر تحديث الحالة");
     }
   }
+
 
   async function remove(survey: SurveyWithQuestions) {
     if (
