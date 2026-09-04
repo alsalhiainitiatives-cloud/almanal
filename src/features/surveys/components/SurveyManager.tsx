@@ -270,6 +270,16 @@ export function SurveyManager({ surveys, onRefresh }: Props) {
                   >
                     <ChevronDown className="size-4" /> تعديل
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl font-bold"
+                    title="إنشاء نسخة من الاستبانة"
+                    onClick={() => duplicate(survey)}
+                  >
+                    <Copy className="size-4" /> تكرار
+                  </Button>
+
                   {survey.status === "draft" || survey.status === "closed" ? (
                     <Button
                       size="sm"
