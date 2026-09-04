@@ -161,10 +161,9 @@ export function SurveyManager({ surveys, onRefresh }: Props) {
 
   /** Open a fresh draft prefilled from an existing survey (questions + settings). */
   function duplicate(survey: SurveyWithQuestions) {
-    const source = draftFromSurvey(survey);
+    const { id: _surveyId, ...source } = draftFromSurvey(survey);
     setDraft({
       ...source,
-      id: undefined,
       title: `${survey.title} (نسخة)`,
       status: "draft",
       questions: source.questions.map(({ id: _id, ...question }) => ({ ...question })),
