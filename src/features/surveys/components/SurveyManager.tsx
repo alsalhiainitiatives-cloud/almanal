@@ -807,6 +807,8 @@ function AnalyticsPanel({
     null,
   );
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const exportRef = useRef<HTMLDivElement>(null);
