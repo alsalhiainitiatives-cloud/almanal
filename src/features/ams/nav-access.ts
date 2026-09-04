@@ -133,6 +133,7 @@ export const PORTAL_PERMISSIONS: Record<string, string> = {
   "/study-plans": "portal.study_plan",
   "/class-chat": "portal.class_chat",
   "/payments": "portal.payments",
+  "/surveys": "portal.surveys",
 };
 
 export function canSeePortalLink(to: string, permissions: readonly string[]): boolean {

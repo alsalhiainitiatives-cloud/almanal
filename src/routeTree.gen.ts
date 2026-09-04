@@ -31,6 +31,7 @@ import { Route as TrackIndexRouteImport } from './routes/track.index'
 import { Route as AdmissionsIndexRouteImport } from './routes/admissions.index'
 import { Route as LegalSlugRouteImport } from './routes/legal.$slug'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as AuthenticatedSurveysRouteImport } from './routes/_authenticated/surveys'
 import { Route as AuthenticatedStudyPlansRouteImport } from './routes/_authenticated/study-plans'
 import { Route as AuthenticatedReserveRouteImport } from './routes/_authenticated/reserve'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -204,6 +205,11 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
   path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedSurveysRoute = AuthenticatedSurveysRouteImport.update({
+  id: '/surveys',
+  path: '/surveys',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedStudyPlansRoute = AuthenticatedStudyPlansRouteImport.update({
   id: '/study-plans',
@@ -601,6 +607,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/reserve': typeof AuthenticatedReserveRoute
   '/study-plans': typeof AuthenticatedStudyPlansRoute
+  '/surveys': typeof AuthenticatedSurveysRoute
   '/invite/$token': typeof InviteTokenRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/admissions/': typeof AdmissionsIndexRoute
@@ -688,6 +695,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/reserve': typeof AuthenticatedReserveRoute
   '/study-plans': typeof AuthenticatedStudyPlansRoute
+  '/surveys': typeof AuthenticatedSurveysRoute
   '/invite/$token': typeof InviteTokenRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/admissions': typeof AdmissionsIndexRoute
@@ -777,6 +785,7 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/reserve': typeof AuthenticatedReserveRoute
   '/_authenticated/study-plans': typeof AuthenticatedStudyPlansRoute
+  '/_authenticated/surveys': typeof AuthenticatedSurveysRoute
   '/invite/$token': typeof InviteTokenRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/admissions/': typeof AdmissionsIndexRoute
@@ -866,6 +875,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reserve'
     | '/study-plans'
+    | '/surveys'
     | '/invite/$token'
     | '/legal/$slug'
     | '/admissions/'
@@ -953,6 +963,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reserve'
     | '/study-plans'
+    | '/surveys'
     | '/invite/$token'
     | '/legal/$slug'
     | '/admissions'
@@ -1041,6 +1052,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/reserve'
     | '/_authenticated/study-plans'
+    | '/_authenticated/surveys'
     | '/invite/$token'
     | '/legal/$slug'
     | '/admissions/'
@@ -1285,6 +1297,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/invite/$token'
       preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/surveys': {
+      id: '/_authenticated/surveys'
+      path: '/surveys'
+      fullPath: '/surveys'
+      preLoaderRoute: typeof AuthenticatedSurveysRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/study-plans': {
       id: '/_authenticated/study-plans'
@@ -1748,6 +1767,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedReserveRoute: typeof AuthenticatedReserveRoute
   AuthenticatedStudyPlansRoute: typeof AuthenticatedStudyPlansRoute
+  AuthenticatedSurveysRoute: typeof AuthenticatedSurveysRoute
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminInboxRoute: typeof AuthenticatedAdminInboxRoute
   AuthenticatedAdminPermissionsRoute: typeof AuthenticatedAdminPermissionsRoute
@@ -1811,6 +1831,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedReserveRoute: AuthenticatedReserveRoute,
   AuthenticatedStudyPlansRoute: AuthenticatedStudyPlansRoute,
+  AuthenticatedSurveysRoute: AuthenticatedSurveysRoute,
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminInboxRoute: AuthenticatedAdminInboxRoute,
   AuthenticatedAdminPermissionsRoute: AuthenticatedAdminPermissionsRoute,

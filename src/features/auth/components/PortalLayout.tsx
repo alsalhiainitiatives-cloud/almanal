@@ -80,6 +80,18 @@ const NAV_GROUPS = [
     ],
   },
   {
+    label: "الاستبانات",
+    items: [
+      {
+        to: "/surveys",
+        label: "استبانات أولياء الأمور",
+        icon: ClipboardList,
+        portal: "portal.surveys",
+        featured: false,
+      },
+    ],
+  },
+  {
     label: "الرسوم والمدفوعات",
     items: [
       { to: "/payments", label: "المدفوعات والرسوم", icon: Wallet, portal: "portal.payments", featured: false },

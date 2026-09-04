@@ -170,6 +170,13 @@ export const PERMISSION_REGISTRY: PermissionEntry[] = [
     action: "read",
     labelAr: "إظهار «المدفوعات والرسوم»",
   },
+  {
+    code: "portal.surveys",
+    module: "general",
+    subModule: "portal",
+    action: "read",
+    labelAr: "إظهار «استبانات أولياء الأمور»",
+  },
 
   {
     code: "applications.view",
