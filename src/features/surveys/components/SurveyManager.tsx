@@ -89,12 +89,23 @@ const AXIS_COLOR = "#6B5560";
 const GRID_COLOR = "#E3D8DC";
 
 
+/**
+ * `datetime-local` inputs speak local wall-clock time. Slicing the raw UTC ISO
+ * string shifted every saved survey by the timezone offset (+3h in Riyadh), so
+ * re-saving a survey pushed its start date into the future and parents stopped
+ * seeing it. Convert both directions through the local timezone.
+ */
 function toInputDate(value: string | null) {
-  return value ? value.slice(0, 16) : "";
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 function fromInputDate(value: string) {
   return value ? new Date(value).toISOString() : null;
 }
+
 function questionIcon(type: QuestionType) {
   if (type === "text") return Type;
   if (type === "rating_stars") return Star;

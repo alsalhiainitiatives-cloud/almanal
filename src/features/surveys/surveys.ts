@@ -626,3 +626,65 @@ export function missingRequired(
     })
     .map((q) => q.question_text);
 }
+
+/**
+ * Notify the parents a survey actually targets. Publishing used to be silent,
+ * so a survey aimed at one classroom looked "undelivered" until the parent
+ * happened to open the portal.
+ */
+export async function notifySurveyAudience(survey: Survey): Promise<number> {
+  let query = supabase
+    .from("application_children")
+    .select("stage_id, classroom_id, applications!inner (parent_id, status)")
+    .eq("applications.status", "approved")
+    .limit(500);
+
+  const kind = survey.audience_kind ?? "all";
+  if (kind === "stages") {
+    if (!survey.target_stage_ids?.length) return 0;
+    query = query.in("stage_id", survey.target_stage_ids);
+  } else if (kind === "classrooms") {
+    if (!survey.target_classroom_ids?.length) return 0;
+    query = query.in("classroom_id", survey.target_classroom_ids);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  const parentIds = [
+    ...new Set(
+      ((data ?? []) as unknown as { applications: { parent_id: string | null } | null }[])
+        .map((row) => row.applications?.parent_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  if (!parentIds.length) return 0;
+
+  const { error: rpcError } = await supabase.rpc("dispatch_notification", {
+    _user_ids: parentIds,
+    _roles: [],
+    _kind: "survey_published",
+    _title_ar: "استبانة جديدة بانتظار رأيك",
+    _body_ar: `تمت إتاحة «${survey.title}» — شاركنا رأيك من صفحة الاستبانات.`,
+    _link: "/surveys",
+    _severity: "info",
+  });
+  if (rpcError) throw rpcError;
+  return parentIds.length;
+}
+
+/** Names of the stages/classrooms a survey targets, for staff-facing summaries. */
+export function audienceSummary(survey: Survey, stages: StageWithClassrooms[]): string {
+  const kind = survey.audience_kind ?? "all";
+  if (kind === "all") return AUDIENCE_LABELS.all;
+  if (kind === "stages") {
+    const names = stages
+      .filter((stage) => (survey.target_stage_ids ?? []).includes(stage.id))
+      .map((stage) => stage.name_ar);
+    return names.length ? `مراحل: ${names.join("، ")}` : "مراحل غير محددة";
+  }
+  const names = stages
+    .flatMap((stage) => stage.classrooms)
+    .filter((room) => (survey.target_classroom_ids ?? []).includes(room.id))
+    .map((room) => room.name_ar);
+  return names.length ? `فصول: ${names.join("، ")}` : "فصول غير محددة";
+}
