@@ -1099,12 +1099,36 @@ function AnalyticsPanel({
                     <ResponsiveContainer width="100%" height="100%">
                       {question.question_type === "rating_stars" ||
                       question.question_type === "likert_scale" ? (
-                        <BarChart data={chartData(question)}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                          <XAxis dataKey="name" />
-                          <YAxis allowDecimals={false} />
-                          <Tooltip />
-                          <Bar dataKey="value" fill={COLORS[0]} radius={[6, 6, 0, 0]} />
+                        <BarChart data={chartData(question)} margin={{ top: 10, right: 8, left: 0 }}>
+                          <CartesianGrid
+                            strokeDasharray="4 4"
+                            vertical={false}
+                            stroke={GRID_COLOR}
+                          />
+                          <XAxis
+                            dataKey="name"
+                            tick={{ fill: AXIS_COLOR, fontSize: 12, fontWeight: 700 }}
+                            stroke={GRID_COLOR}
+                          />
+                          <YAxis
+                            allowDecimals={false}
+                            tick={{ fill: AXIS_COLOR, fontSize: 12, fontWeight: 700 }}
+                            stroke={GRID_COLOR}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              borderRadius: 14,
+                              border: `1px solid ${GRID_COLOR}`,
+                              background: "#ffffff",
+                              fontWeight: 700,
+                              direction: "rtl",
+                            }}
+                          />
+                          <Bar dataKey="value" radius={[10, 10, 4, 4]} maxBarSize={54}>
+                            {chartData(question).map((_, index) => (
+                              <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Bar>
                         </BarChart>
                       ) : (
                         <PieChart>
@@ -1114,15 +1138,29 @@ function AnalyticsPanel({
                             nameKey="name"
                             cx="50%"
                             cy="50%"
-                            outerRadius={75}
-                            label
+                            innerRadius={38}
+                            outerRadius={78}
+                            paddingAngle={3}
+                            stroke="#ffffff"
+                            strokeWidth={2}
+                            label={{ fill: AXIS_COLOR, fontSize: 12, fontWeight: 700 }}
                           >
                             {chartData(question).map((_, index) => (
                               <Cell key={index} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
-                          <Tooltip />
-                          <Legend />
+                          <Tooltip
+                            contentStyle={{
+                              borderRadius: 14,
+                              border: `1px solid ${GRID_COLOR}`,
+                              background: "#ffffff",
+                              fontWeight: 700,
+                              direction: "rtl",
+                            }}
+                          />
+                          <Legend
+                            wrapperStyle={{ fontSize: 12, fontWeight: 700, color: AXIS_COLOR }}
+                          />
                         </PieChart>
                       )}
                     </ResponsiveContainer>
