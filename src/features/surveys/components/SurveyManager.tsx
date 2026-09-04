@@ -291,17 +291,36 @@ export function SurveyManager({ surveys, onRefresh }: Props) {
                       <span className="rounded-full bg-muted px-3 py-1">
                         {survey.questions.length} أسئلة
                       </span>
+                      <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">
+                        {audienceSummary(survey, stages)}
+                      </span>
                       {survey.start_date ? (
                         <span className="rounded-full bg-muted px-3 py-1">
-                          تبدأ {new Date(survey.start_date).toLocaleDateString("ar-SA")}
+                          تبدأ{" "}
+                          {new Date(survey.start_date).toLocaleString("ar-SA", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
                         </span>
                       ) : null}
                       {survey.end_date ? (
                         <span className="rounded-full bg-muted px-3 py-1">
-                          تنتهي {new Date(survey.end_date).toLocaleDateString("ar-SA")}
+                          تنتهي{" "}
+                          {new Date(survey.end_date).toLocaleString("ar-SA", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                        </span>
+                      ) : null}
+                      {survey.status === "active" &&
+                      survey.start_date &&
+                      new Date(survey.start_date) > new Date() ? (
+                        <span className="rounded-full bg-destructive/10 px-3 py-1 text-destructive">
+                          لم تبدأ بعد — لن تظهر لأولياء الأمور قبل تاريخ البداية
                         </span>
                       ) : null}
                     </div>
+
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 lg:max-w-xs lg:justify-end">
