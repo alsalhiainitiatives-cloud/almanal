@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart3,
   ChevronDown,
+  Copy,
+
   ChevronUp,
   Download,
   FileSpreadsheet,
