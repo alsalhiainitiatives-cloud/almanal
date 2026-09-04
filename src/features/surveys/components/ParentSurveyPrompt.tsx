@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Check, CircleHelp, Clock3, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,6 +28,15 @@ export function ParentSurveyPrompt() {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const refreshPending = useCallback(async () => {
+    if (!user || !roles.includes("parent")) return;
+    try {
+      setPending(await nextSurveyForParent(user.id));
+    } catch {
+      /* A survey must never block the parent portal when data is unavailable. */
+    }
+  }, [roles, user]);
+
   useEffect(() => {
     if (initializing || loadingContext || !user || !roles.includes("parent")) return;
     let mounted = true;
@@ -42,6 +51,19 @@ export function ParentSurveyPrompt() {
       mounted = false;
     };
   }, [initializing, loadingContext, roles, user]);
+
+  useEffect(() => {
+    if (initializing || loadingContext || !user || !roles.includes("parent")) return;
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void refreshPending();
+    };
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [initializing, loadingContext, refreshPending, roles, user]);
 
   function setValue(questionId: string, value: AnswerValue) {
     setValues((current) => ({ ...current, [questionId]: value }));

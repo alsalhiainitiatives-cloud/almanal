@@ -374,14 +374,33 @@ export async function listStagesWithClassrooms(): Promise<StageWithClassrooms[]>
 
 export type ParentAudience = { stageIds: string[]; classroomIds: string[] };
 
-/** Stages and classrooms of the children currently linked to this parent. */
+/**
+ * Stages and classrooms of every approved child linked to this parent.
+ *
+ * Fetch applications first instead of relying on an embedded PostgREST join.
+ * This makes the "any child matches" rule explicit and avoids losing siblings
+ * when a guardian has children across multiple applications/stages.
+ */
 export async function parentAudience(parentId: string): Promise<ParentAudience> {
-  const { data } = await supabase
-    .from("application_children")
-    .select("stage_id, classroom_id, applications!inner (parent_id)")
-    .eq("applications.parent_id", parentId)
+  const { data: applications, error: applicationsError } = await supabase
+    .from("applications")
+    .select("id")
+    .eq("parent_id", parentId)
+    .eq("status", "approved")
     .limit(200);
-  const rows = (data ?? []) as { stage_id: string | null; classroom_id: string | null }[];
+  if (applicationsError) throw applicationsError;
+
+  const applicationIds = (applications ?? []).map((application) => application.id);
+  if (!applicationIds.length) return { stageIds: [], classroomIds: [] };
+
+  const { data, error } = await supabase
+    .from("application_children")
+    .select("stage_id, classroom_id")
+    .in("application_id", applicationIds)
+    .limit(500);
+  if (error) throw error;
+
+  const rows = data ?? [];
   return {
     stageIds: [...new Set(rows.map((r) => r.stage_id).filter((id): id is string => Boolean(id)))],
     classroomIds: [
@@ -396,7 +415,10 @@ export function matchesAudience(survey: Survey, audience: ParentAudience): boole
   if (survey.audience_kind === "stages") {
     return (survey.target_stage_ids ?? []).some((id) => audience.stageIds.includes(id));
   }
-  return (survey.target_classroom_ids ?? []).some((id) => audience.classroomIds.includes(id));
+  if (survey.audience_kind === "classrooms") {
+    return (survey.target_classroom_ids ?? []).some((id) => audience.classroomIds.includes(id));
+  }
+  return false;
 }
 
 /* ------------------------- Parent side ------------------------- */

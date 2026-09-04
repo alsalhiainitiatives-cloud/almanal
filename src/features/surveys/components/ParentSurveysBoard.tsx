@@ -44,6 +44,19 @@ export function ParentSurveysBoard() {
     void refresh();
   }, [initializing, loadingContext, refresh]);
 
+  useEffect(() => {
+    if (initializing || loadingContext || !user) return;
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [initializing, loadingContext, refresh, user]);
+
   async function handleSubmit(item: ParentSurveyItem) {
     if (!user) return;
     const missing = missingRequired(item.survey, values);
