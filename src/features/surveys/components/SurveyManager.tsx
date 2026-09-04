@@ -59,6 +59,8 @@ import {
   type SurveyDraft,
   type SurveyWithQuestions,
   listStagesWithClassrooms,
+  audienceSummary,
+  notifySurveyAudience,
   emptySurveyDraft,
   draftFromSurvey,
   loadSurveyResults,
@@ -66,6 +68,7 @@ import {
   setSurveyStatus,
   deleteSurvey,
   validateDraft,
+
 } from "../surveys";
 
 type Props = { surveys: SurveyWithQuestions[]; onRefresh: () => Promise<void> };
@@ -117,7 +120,28 @@ export function SurveyManager({ surveys, onRefresh }: Props) {
   const [tab, setTab] = useState("surveys");
   const [saving, setSaving] = useState(false);
   const [analyticsId, setAnalyticsId] = useState<string>(surveys[0]?.id ?? "");
+  const [stages, setStages] = useState<StageWithClassrooms[]>([]);
   const confirm = useConfirm();
+
+  useEffect(() => {
+    listStagesWithClassrooms()
+      .then(setStages)
+      .catch(() => {
+        /* Audience names are a convenience, never a blocker. */
+      });
+  }, []);
+
+  /** Tell the targeted parents a live survey is waiting for them. */
+  async function announce(survey: SurveyWithQuestions | { id: string } & Record<string, unknown>) {
+    try {
+      const count = await notifySurveyAudience(survey as SurveyWithQuestions);
+      toast.success(
+        count ? `تم إشعار ${count} من أولياء الأمور` : "لا يوجد أولياء أمور مطابقون للجمهور المحدد",
+      );
+    } catch {
+      toast.error("تم النشر لكن تعذر إرسال الإشعارات");
+    }
+  }
 
   async function commit(next: SurveyDraft) {
     const validation = validateDraft(next);
@@ -127,10 +151,19 @@ export function SurveyManager({ surveys, onRefresh }: Props) {
     }
     setSaving(true);
     try {
-      await saveSurvey(next);
+      const id = await saveSurvey(next);
       toast.success(
         next.status === "active" ? "تم نشر الاستبانة بنجاح" : "تم حفظ الاستبانة كمسودة",
       );
+      if (next.status === "active") {
+        await announce({
+          id,
+          title: next.title,
+          audience_kind: next.audience_kind,
+          target_stage_ids: next.target_stage_ids,
+          target_classroom_ids: next.target_classroom_ids,
+        });
+      }
       setDraft(null);
       await onRefresh();
       setTab("surveys");
@@ -145,11 +178,13 @@ export function SurveyManager({ surveys, onRefresh }: Props) {
     try {
       await setSurveyStatus(survey.id, status);
       toast.success(status === "active" ? "تم نشر الاستبانة" : "تم إغلاق الاستبانة");
+      if (status === "active") await announce(survey);
       await onRefresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "تعذر تحديث الحالة");
     }
   }
+
 
   async function remove(survey: SurveyWithQuestions) {
     if (
@@ -256,17 +291,36 @@ export function SurveyManager({ surveys, onRefresh }: Props) {
                       <span className="rounded-full bg-muted px-3 py-1">
                         {survey.questions.length} أسئلة
                       </span>
+                      <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">
+                        {audienceSummary(survey, stages)}
+                      </span>
                       {survey.start_date ? (
                         <span className="rounded-full bg-muted px-3 py-1">
-                          تبدأ {new Date(survey.start_date).toLocaleDateString("ar-SA")}
+                          تبدأ{" "}
+                          {new Date(survey.start_date).toLocaleString("ar-SA", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
                         </span>
                       ) : null}
                       {survey.end_date ? (
                         <span className="rounded-full bg-muted px-3 py-1">
-                          تنتهي {new Date(survey.end_date).toLocaleDateString("ar-SA")}
+                          تنتهي{" "}
+                          {new Date(survey.end_date).toLocaleString("ar-SA", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                        </span>
+                      ) : null}
+                      {survey.status === "active" &&
+                      survey.start_date &&
+                      new Date(survey.start_date) > new Date() ? (
+                        <span className="rounded-full bg-destructive/10 px-3 py-1 text-destructive">
+                          لم تبدأ بعد — لن تظهر لأولياء الأمور قبل تاريخ البداية
                         </span>
                       ) : null}
                     </div>
+
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 lg:max-w-xs lg:justify-end">
