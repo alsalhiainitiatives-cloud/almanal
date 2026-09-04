@@ -856,30 +856,105 @@ function AnalyticsPanel({
       ? values
       : [{ name: "إجابات نصية", value: answers.filter((answer) => answer.answer_text).length }];
   };
+  /**
+   * Snapshot the report and paginate it into A4 pages.
+   * `skipFonts` avoids the CORS failure on remote font stylesheets and
+   * cross-origin images are dropped instead of aborting the whole capture,
+   * which is what previously made the export fail outright.
+   */
   async function exportPdf() {
     if (!exportRef.current || !survey) return;
+    setExporting(true);
     try {
       const { toPng } = await import("html-to-image");
       const { jsPDF } = await import("jspdf");
-      const data = await toPng(exportRef.current, {
+      const node = exportRef.current;
+      const options = {
         pixelRatio: 2,
-        cacheBust: true,
-        backgroundColor: "#fff",
-      });
-      const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+        backgroundColor: "#ffffff",
+        skipFonts: true,
+        width: node.scrollWidth,
+        height: node.scrollHeight,
+        filter: (element: HTMLElement) => {
+          if (element instanceof HTMLImageElement && element.src.startsWith("http")) {
+            try {
+              return new URL(element.src).origin === window.location.origin;
+            } catch {
+              return false;
+            }
+          }
+          return true;
+        },
+      } as Parameters<typeof toPng>[1];
+
+      let data = "";
+      for (let attempt = 0; attempt < 2 && !data; attempt += 1) {
+        try {
+          data = await toPng(node, options);
+        } catch {
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+      }
+      if (!data) throw new Error("تعذر تجهيز صورة التقرير، أعد المحاولة بعد تحديث التحليل");
+
       const image = await new Promise<HTMLImageElement>((resolve, reject) => {
         const img = new Image();
         img.onload = () => resolve(img);
         img.onerror = () => reject(new Error("تعذر تجهيز التقرير"));
         img.src = data;
       });
+
+      const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
       const margin = 24;
-      const width = pdf.internal.pageSize.getWidth() - margin * 2;
-      const height = (image.height / image.width) * width;
-      pdf.addImage(data, "PNG", margin, margin, width, height);
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const renderWidth = pageWidth - margin * 2;
+      const scale = renderWidth / image.width;
+      const usableHeight = pageHeight - margin * 2;
+      const sliceHeight = Math.floor(usableHeight / scale);
+
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("تعذر تجهيز التقرير");
+
+      let offset = 0;
+      let page = 0;
+      while (offset < image.height) {
+        const currentHeight = Math.min(sliceHeight, image.height - offset);
+        canvas.width = image.width;
+        canvas.height = currentHeight;
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(
+          image,
+          0,
+          offset,
+          image.width,
+          currentHeight,
+          0,
+          0,
+          image.width,
+          currentHeight,
+        );
+        if (page > 0) pdf.addPage();
+        pdf.addImage(
+          canvas.toDataURL("image/png"),
+          "PNG",
+          margin,
+          margin,
+          renderWidth,
+          currentHeight * scale,
+        );
+        offset += currentHeight;
+        page += 1;
+      }
+
       pdf.save(`تقرير-${survey.title.slice(0, 40)}.pdf`);
+      toast.success("تم تصدير التقرير بصيغة PDF");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "تعذر تصدير التقرير");
+    } finally {
+      setExporting(false);
     }
   }
   function exportRaw() {
