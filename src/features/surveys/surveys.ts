@@ -39,6 +39,14 @@ export const SNOOZE_OPTIONS = [
   { value: 168, label: "أسبوع" },
 ];
 
+export type SurveyAudienceKind = "all" | "stages" | "classrooms";
+
+export const AUDIENCE_LABELS: Record<SurveyAudienceKind, string> = {
+  all: "جميع أولياء الأمور",
+  stages: "أولياء أمور مراحل محددة",
+  classrooms: "أولياء أمور فصول محددة",
+};
+
 export type SurveyOption = {
   id: string;
   question_id: string;
@@ -67,6 +75,9 @@ export type Survey = {
   start_date: string | null;
   end_date: string | null;
   created_at: string;
+  audience_kind: SurveyAudienceKind;
+  target_stage_ids: string[];
+  target_classroom_ids: string[];
 };
 
 export type SurveyWithQuestions = Survey & { questions: SurveyQuestion[] };
@@ -104,6 +115,9 @@ export type SurveyDraft = {
   snooze_duration_hours: number;
   start_date: string | null;
   end_date: string | null;
+  audience_kind: SurveyAudienceKind;
+  target_stage_ids: string[];
+  target_classroom_ids: string[];
   questions: QuestionDraft[];
 };
 
@@ -117,6 +131,9 @@ export function emptySurveyDraft(): SurveyDraft {
     snooze_duration_hours: 24,
     start_date: null,
     end_date: null,
+    audience_kind: "all",
+    target_stage_ids: [],
+    target_classroom_ids: [],
     questions: [],
   };
 }
@@ -134,7 +151,7 @@ export async function listSurveys(): Promise<SurveyWithQuestions[]> {
   const { data, error } = await supabase
     .from("surveys")
     .select(
-      "id, title, description, status, is_mandatory, allow_snooze, snooze_duration_hours, start_date, end_date, created_at, survey_questions(id, survey_id, question_text, question_type, order_index, is_required, survey_options(id, question_id, option_text, order_index))",
+      "id, title, description, status, is_mandatory, allow_snooze, snooze_duration_hours, start_date, end_date, created_at, audience_kind, target_stage_ids, target_classroom_ids, survey_questions(id, survey_id, question_text, question_type, order_index, is_required, survey_options(id, question_id, option_text, order_index))",
     )
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -168,6 +185,9 @@ export function draftFromSurvey(survey: SurveyWithQuestions): SurveyDraft {
     snooze_duration_hours: survey.snooze_duration_hours,
     start_date: survey.start_date,
     end_date: survey.end_date,
+    audience_kind: survey.audience_kind ?? "all",
+    target_stage_ids: survey.target_stage_ids ?? [],
+    target_classroom_ids: survey.target_classroom_ids ?? [],
     questions: survey.questions.map((q) => ({
       id: q.id,
       question_text: q.question_text,
@@ -192,6 +212,12 @@ export function validateDraft(draft: SurveyDraft): string | null {
       return `السؤال رقم ${index + 1} يحتاج خيارين على الأقل.`;
     }
   }
+  if (draft.audience_kind === "stages" && !draft.target_stage_ids.length) {
+    return "اختر مرحلة دراسية واحدة على الأقل لتخصيص الاستبانة.";
+  }
+  if (draft.audience_kind === "classrooms" && !draft.target_classroom_ids.length) {
+    return "اختر فصلًا واحدًا على الأقل لتخصيص الاستبانة.";
+  }
   if (draft.start_date && draft.end_date && draft.start_date > draft.end_date) {
     return "تاريخ النهاية يجب أن يكون بعد تاريخ البداية.";
   }
@@ -209,6 +235,9 @@ export async function saveSurvey(draft: SurveyDraft): Promise<string> {
     snooze_duration_hours: draft.snooze_duration_hours,
     start_date: draft.start_date,
     end_date: draft.end_date,
+    audience_kind: draft.audience_kind,
+    target_stage_ids: draft.audience_kind === "stages" ? draft.target_stage_ids : [],
+    target_classroom_ids: draft.audience_kind === "classrooms" ? draft.target_classroom_ids : [],
   };
 
   let surveyId = draft.id;
@@ -320,6 +349,56 @@ export async function loadSurveyResults(surveyId: string): Promise<SurveyResults
   };
 }
 
+/* ------------------------- Audience targeting ------------------------- */
+
+export type StageWithClassrooms = {
+  id: string;
+  name_ar: string;
+  classrooms: { id: string; name_ar: string }[];
+};
+
+/** Stage + classroom tree used by the builder to pick the survey audience. */
+export async function listStagesWithClassrooms(): Promise<StageWithClassrooms[]> {
+  const [{ data: stages }, { data: classrooms }] = await Promise.all([
+    supabase.from("stages").select("id, name_ar, sort_order").order("sort_order"),
+    supabase.from("classrooms").select("id, name_ar, stage_id, sort_order").order("sort_order"),
+  ]);
+  return (stages ?? []).map((stage) => ({
+    id: stage.id,
+    name_ar: stage.name_ar,
+    classrooms: (classrooms ?? [])
+      .filter((room) => room.stage_id === stage.id)
+      .map((room) => ({ id: room.id, name_ar: room.name_ar })),
+  }));
+}
+
+export type ParentAudience = { stageIds: string[]; classroomIds: string[] };
+
+/** Stages and classrooms of the children currently linked to this parent. */
+export async function parentAudience(parentId: string): Promise<ParentAudience> {
+  const { data } = await supabase
+    .from("application_children")
+    .select("stage_id, classroom_id, applications!inner (parent_id)")
+    .eq("applications.parent_id", parentId)
+    .limit(200);
+  const rows = (data ?? []) as { stage_id: string | null; classroom_id: string | null }[];
+  return {
+    stageIds: [...new Set(rows.map((r) => r.stage_id).filter((id): id is string => Boolean(id)))],
+    classroomIds: [
+      ...new Set(rows.map((r) => r.classroom_id).filter((id): id is string => Boolean(id))),
+    ],
+  };
+}
+
+/** A survey reaches a parent when it targets everyone, or one of their stages/classes. */
+export function matchesAudience(survey: Survey, audience: ParentAudience): boolean {
+  if ((survey.audience_kind ?? "all") === "all") return true;
+  if (survey.audience_kind === "stages") {
+    return (survey.target_stage_ids ?? []).some((id) => audience.stageIds.includes(id));
+  }
+  return (survey.target_classroom_ids ?? []).some((id) => audience.classroomIds.includes(id));
+}
+
 /* ------------------------- Parent side ------------------------- */
 
 export type PendingSurvey = { survey: SurveyWithQuestions; mustAnswer: boolean };
@@ -334,18 +413,19 @@ export async function nextSurveyForParent(parentId: string): Promise<PendingSurv
   const { data, error } = await supabase
     .from("surveys")
     .select(
-      "id, title, description, status, is_mandatory, allow_snooze, snooze_duration_hours, start_date, end_date, created_at, survey_questions(id, survey_id, question_text, question_type, order_index, is_required, survey_options(id, question_id, option_text, order_index))",
+      "id, title, description, status, is_mandatory, allow_snooze, snooze_duration_hours, start_date, end_date, created_at, audience_kind, target_stage_ids, target_classroom_ids, survey_questions(id, survey_id, question_text, question_type, order_index, is_required, survey_options(id, question_id, option_text, order_index))",
     )
     .eq("status", "active")
     .order("created_at", { ascending: true });
   if (error) throw error;
 
-  const [statuses, responses] = await Promise.all([
+  const [statuses, responses, audience] = await Promise.all([
     supabase
       .from("parent_survey_status")
       .select("survey_id, status, snoozed_until")
       .eq("parent_id", parentId),
     supabase.from("survey_responses").select("survey_id").eq("parent_id", parentId),
+    parentAudience(parentId),
   ]);
 
   const answered = new Set((responses.data ?? []).map((r) => r.survey_id));
@@ -364,6 +444,7 @@ export async function nextSurveyForParent(parentId: string): Promise<PendingSurv
     if (survey.start_date && survey.start_date > now) continue;
     if (survey.end_date && survey.end_date < now) continue;
     if (answered.has(survey.id)) continue;
+    if (!matchesAudience(survey, audience)) continue;
 
     const state = statusMap.get(survey.id);
     if (state?.status === "completed") continue;
@@ -407,7 +488,7 @@ export async function submitSurvey(
   const { data: response, error } = await supabase
     .from("survey_responses")
     .insert({ survey_id: survey.id, parent_id: parentId })
-    .select("id")
+    .select("id, reference_code")
     .single();
   if (error) throw error;
 
@@ -451,6 +532,81 @@ export async function submitSurvey(
       { onConflict: "parent_id,survey_id" },
     );
   if (statusError) throw statusError;
+
+  return { referenceCode: response.reference_code ?? null };
+}
+
+/* ------------------------- Parent survey list ------------------------- */
+
+export type ParentSurveyItem = {
+  survey: SurveyWithQuestions;
+  completed: boolean;
+  expired: boolean;
+  referenceCode: string | null;
+  submittedAt: string | null;
+};
+
+/**
+ * Every survey addressed to this parent: still open (متاح) or past its
+ * closing date (منتهي), with their own submission reference when answered.
+ */
+export async function listParentSurveys(parentId: string): Promise<ParentSurveyItem[]> {
+  const now = new Date().toISOString();
+  const [{ data, error }, responses, audience] = await Promise.all([
+    supabase
+      .from("surveys")
+      .select(
+        "id, title, description, status, is_mandatory, allow_snooze, snooze_duration_hours, start_date, end_date, created_at, audience_kind, target_stage_ids, target_classroom_ids, survey_questions(id, survey_id, question_text, question_type, order_index, is_required, survey_options(id, question_id, option_text, order_index))",
+      )
+      .eq("status", "active")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("survey_responses")
+      .select("survey_id, reference_code, submitted_at")
+      .eq("parent_id", parentId),
+    parentAudience(parentId),
+  ]);
+  if (error) throw error;
+
+  const mine = new Map(
+    (responses.data ?? []).map((row) => [
+      row.survey_id,
+      row as { reference_code: string | null; submitted_at: string },
+    ]),
+  );
+
+  const items: ParentSurveyItem[] = [];
+  for (const row of data ?? []) {
+    const { survey_questions: questions, ...rest } = row as Record<string, unknown> & {
+      survey_questions: unknown[];
+    };
+    const survey = rest as unknown as Survey;
+    if (survey.start_date && survey.start_date > now) continue;
+    if (!matchesAudience(survey, audience)) continue;
+
+    const built: SurveyWithQuestions = {
+      ...survey,
+      questions: orderQuestions(
+        (questions ?? []).map((q) => {
+          const { survey_options: options, ...q2 } = q as Record<string, unknown> & {
+            survey_options: unknown[];
+          };
+          return { ...q2, options: options ?? [] };
+        }),
+      ),
+    };
+    if (!built.questions.length) continue;
+
+    const response = mine.get(survey.id);
+    items.push({
+      survey: built,
+      completed: Boolean(response),
+      expired: Boolean(survey.end_date && survey.end_date < now),
+      referenceCode: response?.reference_code ?? null,
+      submittedAt: response?.submitted_at ?? null,
+    });
+  }
+  return items;
 }
 
 /** Client-side required-field validation for the parent modal. */

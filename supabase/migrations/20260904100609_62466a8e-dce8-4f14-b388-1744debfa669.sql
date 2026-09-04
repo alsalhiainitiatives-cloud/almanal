@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.notify_parent_survey_submitted() FROM PUBLIC, anon, authenticated;
