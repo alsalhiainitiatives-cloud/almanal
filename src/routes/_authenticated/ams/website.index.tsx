@@ -35,13 +35,13 @@ const CARDS = [
   },
   {
     to: "/ams/website/reviews",
-    label: "التقييمات والآراء",
+    label: "التقييمات والتعليقات",
     icon: Star,
     text: "مراجعة آراء أولياء الأمور قبل نشرها في الموقع.",
   },
   {
     to: "/ams/website/surveys",
-    label: "الاستبانات والآراء",
+    label: "الاستبانات ",
     icon: ClipboardList,
     text: "صمّم استبانات ديناميكية، تابع المشاركة، وحلّل صوت أولياء الأمور.",
   },
