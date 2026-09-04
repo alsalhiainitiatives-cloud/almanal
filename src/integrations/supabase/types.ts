@@ -3132,6 +3132,7 @@ export type Database = {
           created_at: string
           id: string
           parent_id: string
+          reference_code: string | null
           submitted_at: string
           survey_id: string
         }
@@ -3139,6 +3140,7 @@ export type Database = {
           created_at?: string
           id?: string
           parent_id: string
+          reference_code?: string | null
           submitted_at?: string
           survey_id: string
         }
@@ -3146,6 +3148,7 @@ export type Database = {
           created_at?: string
           id?: string
           parent_id?: string
+          reference_code?: string | null
           submitted_at?: string
           survey_id?: string
         }
@@ -3162,6 +3165,7 @@ export type Database = {
       surveys: {
         Row: {
           allow_snooze: boolean
+          audience_kind: string
           created_at: string
           created_by: string | null
           description: string | null
@@ -3171,11 +3175,14 @@ export type Database = {
           snooze_duration_hours: number
           start_date: string | null
           status: string
+          target_classroom_ids: string[]
+          target_stage_ids: string[]
           title: string
           updated_at: string
         }
         Insert: {
           allow_snooze?: boolean
+          audience_kind?: string
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -3185,11 +3192,14 @@ export type Database = {
           snooze_duration_hours?: number
           start_date?: string | null
           status?: string
+          target_classroom_ids?: string[]
+          target_stage_ids?: string[]
           title: string
           updated_at?: string
         }
         Update: {
           allow_snooze?: boolean
+          audience_kind?: string
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -3199,6 +3209,8 @@ export type Database = {
           snooze_duration_hours?: number
           start_date?: string | null
           status?: string
+          target_classroom_ids?: string[]
+          target_stage_ids?: string[]
           title?: string
           updated_at?: string
         }
