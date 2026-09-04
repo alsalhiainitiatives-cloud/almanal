@@ -293,7 +293,28 @@ function SurveyBuilder({
   onCancel: () => void;
   onSave: (draft: SurveyDraft) => void;
 }) {
+  const [stages, setStages] = useState<StageWithClassrooms[]>([]);
+  useEffect(() => {
+    listStagesWithClassrooms()
+      .then(setStages)
+      .catch(() => {
+        /* Targeting stays optional when the stage tree is unavailable. */
+      });
+  }, []);
+
   const update = (patch: Partial<SurveyDraft>) => onChange({ ...draft, ...patch });
+  const toggleStage = (id: string) =>
+    update({
+      target_stage_ids: draft.target_stage_ids.includes(id)
+        ? draft.target_stage_ids.filter((item) => item !== id)
+        : [...draft.target_stage_ids, id],
+    });
+  const toggleClassroom = (id: string) =>
+    update({
+      target_classroom_ids: draft.target_classroom_ids.includes(id)
+        ? draft.target_classroom_ids.filter((item) => item !== id)
+        : [...draft.target_classroom_ids, id],
+    });
   const addQuestion = () =>
     onChange({
       ...draft,
@@ -408,6 +429,84 @@ function SurveyBuilder({
                 onChange={(e) => update({ end_date: fromInputDate(e.target.value) })}
                 className="mt-2 h-12 rounded-2xl"
               />
+            </div>
+            <div className="sm:col-span-2 border-t border-border/60 pt-5">
+              <Label className="font-black">الجمهور المستهدف</Label>
+              <p className="mt-1 text-xs font-semibold text-muted-foreground">
+                حدّد من يرى هذه الاستبانة: جميع أولياء الأمور، أو أولياء أمور مراحل محددة، أو فصول
+                محددة داخل مرحلة.
+              </p>
+              <Select
+                value={draft.audience_kind}
+                onValueChange={(value) =>
+                  update({
+                    audience_kind: value as SurveyAudienceKind,
+                    target_stage_ids: value === "stages" ? draft.target_stage_ids : [],
+                    target_classroom_ids: value === "classrooms" ? draft.target_classroom_ids : [],
+                  })
+                }
+              >
+                <SelectTrigger className="mt-3 h-12 w-full rounded-2xl sm:w-72">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(AUDIENCE_LABELS) as SurveyAudienceKind[]).map((kind) => (
+                    <SelectItem key={kind} value={kind}>
+                      {AUDIENCE_LABELS[kind]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {draft.audience_kind === "stages" ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {stages.map((stage) => {
+                    const active = draft.target_stage_ids.includes(stage.id);
+                    return (
+                      <button
+                        type="button"
+                        key={stage.id}
+                        onClick={() => toggleStage(stage.id)}
+                        className={`rounded-xl border px-4 py-2 text-xs font-black transition ${active ? "border-primary bg-primary/10 text-primary" : "border-border/60 text-muted-foreground hover:border-primary/40"}`}
+                      >
+                        {stage.name_ar}
+                      </button>
+                    );
+                  })}
+                  {!stages.length ? (
+                    <p className="text-xs font-bold text-muted-foreground">لا توجد مراحل معرّفة.</p>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {draft.audience_kind === "classrooms" ? (
+                <div className="mt-4 space-y-3">
+                  {stages.map((stage) => (
+                    <div key={stage.id} className="rounded-2xl border border-border/60 p-3">
+                      <p className="text-xs font-black text-foreground">{stage.name_ar}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {stage.classrooms.length ? (
+                          stage.classrooms.map((room) => {
+                            const active = draft.target_classroom_ids.includes(room.id);
+                            return (
+                              <button
+                                type="button"
+                                key={room.id}
+                                onClick={() => toggleClassroom(room.id)}
+                                className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition ${active ? "border-primary bg-primary/10 text-primary" : "border-border/60 text-muted-foreground hover:border-primary/40"}`}
+                              >
+                                {room.name_ar}
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <p className="text-xs font-bold text-muted-foreground">لا توجد فصول.</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
         </TabsContent>
