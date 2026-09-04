@@ -39,6 +39,14 @@ export const SNOOZE_OPTIONS = [
   { value: 168, label: "أسبوع" },
 ];
 
+export type SurveyAudienceKind = "all" | "stages" | "classrooms";
+
+export const AUDIENCE_LABELS: Record<SurveyAudienceKind, string> = {
+  all: "جميع أولياء الأمور",
+  stages: "أولياء أمور مراحل محددة",
+  classrooms: "أولياء أمور فصول محددة",
+};
+
 export type SurveyOption = {
   id: string;
   question_id: string;
@@ -67,6 +75,9 @@ export type Survey = {
   start_date: string | null;
   end_date: string | null;
   created_at: string;
+  audience_kind: SurveyAudienceKind;
+  target_stage_ids: string[];
+  target_classroom_ids: string[];
 };
 
 export type SurveyWithQuestions = Survey & { questions: SurveyQuestion[] };
@@ -104,6 +115,9 @@ export type SurveyDraft = {
   snooze_duration_hours: number;
   start_date: string | null;
   end_date: string | null;
+  audience_kind: SurveyAudienceKind;
+  target_stage_ids: string[];
+  target_classroom_ids: string[];
   questions: QuestionDraft[];
 };
 
@@ -117,6 +131,9 @@ export function emptySurveyDraft(): SurveyDraft {
     snooze_duration_hours: 24,
     start_date: null,
     end_date: null,
+    audience_kind: "all",
+    target_stage_ids: [],
+    target_classroom_ids: [],
     questions: [],
   };
 }
@@ -134,7 +151,7 @@ export async function listSurveys(): Promise<SurveyWithQuestions[]> {
   const { data, error } = await supabase
     .from("surveys")
     .select(
-      "id, title, description, status, is_mandatory, allow_snooze, snooze_duration_hours, start_date, end_date, created_at, survey_questions(id, survey_id, question_text, question_type, order_index, is_required, survey_options(id, question_id, option_text, order_index))",
+      "id, title, description, status, is_mandatory, allow_snooze, snooze_duration_hours, start_date, end_date, created_at, audience_kind, target_stage_ids, target_classroom_ids, survey_questions(id, survey_id, question_text, question_type, order_index, is_required, survey_options(id, question_id, option_text, order_index))",
     )
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -168,6 +185,9 @@ export function draftFromSurvey(survey: SurveyWithQuestions): SurveyDraft {
     snooze_duration_hours: survey.snooze_duration_hours,
     start_date: survey.start_date,
     end_date: survey.end_date,
+    audience_kind: survey.audience_kind ?? "all",
+    target_stage_ids: survey.target_stage_ids ?? [],
+    target_classroom_ids: survey.target_classroom_ids ?? [],
     questions: survey.questions.map((q) => ({
       id: q.id,
       question_text: q.question_text,
@@ -192,6 +212,12 @@ export function validateDraft(draft: SurveyDraft): string | null {
       return `السؤال رقم ${index + 1} يحتاج خيارين على الأقل.`;
     }
   }
+  if (draft.audience_kind === "stages" && !draft.target_stage_ids.length) {
+    return "اختر مرحلة دراسية واحدة على الأقل لتخصيص الاستبانة.";
+  }
+  if (draft.audience_kind === "classrooms" && !draft.target_classroom_ids.length) {
+    return "اختر فصلًا واحدًا على الأقل لتخصيص الاستبانة.";
+  }
   if (draft.start_date && draft.end_date && draft.start_date > draft.end_date) {
     return "تاريخ النهاية يجب أن يكون بعد تاريخ البداية.";
   }
@@ -209,6 +235,9 @@ export async function saveSurvey(draft: SurveyDraft): Promise<string> {
     snooze_duration_hours: draft.snooze_duration_hours,
     start_date: draft.start_date,
     end_date: draft.end_date,
+    audience_kind: draft.audience_kind,
+    target_stage_ids: draft.audience_kind === "stages" ? draft.target_stage_ids : [],
+    target_classroom_ids: draft.audience_kind === "classrooms" ? draft.target_classroom_ids : [],
   };
 
   let surveyId = draft.id;
@@ -334,7 +363,7 @@ export async function nextSurveyForParent(parentId: string): Promise<PendingSurv
   const { data, error } = await supabase
     .from("surveys")
     .select(
-      "id, title, description, status, is_mandatory, allow_snooze, snooze_duration_hours, start_date, end_date, created_at, survey_questions(id, survey_id, question_text, question_type, order_index, is_required, survey_options(id, question_id, option_text, order_index))",
+      "id, title, description, status, is_mandatory, allow_snooze, snooze_duration_hours, start_date, end_date, created_at, audience_kind, target_stage_ids, target_classroom_ids, survey_questions(id, survey_id, question_text, question_type, order_index, is_required, survey_options(id, question_id, option_text, order_index))",
     )
     .eq("status", "active")
     .order("created_at", { ascending: true });
