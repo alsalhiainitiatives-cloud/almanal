@@ -1054,10 +1054,10 @@ function AnalyticsPanel({
           <Button
             variant="outline"
             onClick={exportPdf}
-            disabled={!results}
+            disabled={!results || exporting}
             className="rounded-xl font-bold"
           >
-            <Download className="size-4" /> PDF
+            <Download className="size-4" /> {exporting ? "جارٍ التصدير..." : "PDF"}
           </Button>
         </div>
       </div>
