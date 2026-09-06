@@ -188,9 +188,42 @@ export function PrivateChatPanel({
 
   const list = contacts.data?.contacts ?? [];
 
+  const unreadFor = (contact: PrivateContact) => {
+    if (!contact.chatId || !contact.lastMessageAt) return false;
+    if (peer?.peerId === contact.peerId) return false;
+    const at = seen[contact.chatId];
+    return !at || contact.lastMessageAt > at;
+  };
+  const unreadCount = list.filter(unreadFor).length;
+
+  useEffect(() => {
+    onUnreadChange?.(unreadCount);
+  }, [unreadCount, onUnreadChange]);
+
+  // Opening a conversation clears its badge.
+  useEffect(() => {
+    if (!chatId) return;
+    const at = list.find((c) => c.chatId === chatId)?.lastMessageAt ?? null;
+    markSeen(chatId, at);
+    setSeen(readSeen());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatId, messages.length]);
+
+  // "شات فردي" jumps straight into the first available contact.
+  useEffect(() => {
+    if (!autoSelectFirst || peer || !list.length) return;
+    const first = list[0]!;
+    setPeer({ peerId: first.peerId, chatId: first.chatId });
+  }, [autoSelectFirst, peer, list]);
+
   return (
-    <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
-      <Card className="h-fit p-3 lg:sticky lg:top-24">
+    <div
+      className={cn(
+        "grid gap-3",
+        embedded ? "h-full grid-cols-[220px_1fr]" : "gap-4 lg:grid-cols-[260px_1fr]",
+      )}
+    >
+      <Card className={cn("p-3", embedded ? "min-h-0 overflow-y-auto" : "h-fit lg:sticky lg:top-24")}>
         <p className="px-1 pb-2 text-xs font-semibold text-muted-foreground">
           جهات المحادثة الخاصة
         </p>
@@ -228,6 +261,12 @@ export function PrivateChatPanel({
                     {contact.lastPreview || contact.subtitle || "—"}
                   </span>
                 </span>
+                {unreadFor(contact) ? (
+                  <span
+                    className="size-2.5 shrink-0 rounded-full bg-destructive"
+                    aria-label="رسائل جديدة"
+                  />
+                ) : null}
               </button>
             ))}
           </div>
@@ -239,7 +278,10 @@ export function PrivateChatPanel({
         ) : null}
       </Card>
 
-      <Card className="flex h-[70vh] flex-col overflow-hidden">
+      <Card
+        className={cn("flex flex-col overflow-hidden", embedded ? "min-h-0 h-full" : "h-[70vh]")}
+      >
+
         {!peer ? (
           <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground">
             اختر جهة من القائمة لبدء محادثة خاصة.
