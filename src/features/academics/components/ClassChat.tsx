@@ -457,6 +457,9 @@ export function ClassChat() {
           </div>
         </div>
       </Card>
+        )}
+      </div>
     </div>
   );
 }
+
