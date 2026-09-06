@@ -73,6 +73,8 @@ export const SUB_MODULE_LABELS: Record<string, string> = {
   study_plans: "الخطط الدراسية",
   academic_reports: "التقارير الأكاديمية",
   class_chat: "محادثة الفصل",
+  private_chat: "المحادثات الخاصة",
+
   announcements: "الإعلانات",
   inbox: "المراسلات",
   notifications: "الإشعارات",
