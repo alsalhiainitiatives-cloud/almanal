@@ -27,7 +27,6 @@ import { useAuth } from "../AuthProvider";
 import { P, ROLE_COLORS, ROLE_LABELS } from "../rbac";
 import { PortalTrail } from "./PortalTrail";
 import { ParentSurveyPrompt } from "@/features/surveys/components/ParentSurveyPrompt";
-import { FloatingChatDock } from "@/features/academics/components/FloatingChatDock";
 
 /** Grouped, ordered navigation: personal services → operations → administration. */
 const NAV_GROUPS = [
@@ -303,7 +302,6 @@ export function PortalLayout({
         </div>
       </div>
 
-      <FloatingChatDock />
     </>
   );
 }
