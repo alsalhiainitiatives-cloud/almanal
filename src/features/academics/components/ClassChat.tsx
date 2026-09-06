@@ -233,21 +233,50 @@ export function ClassChat() {
   const active = rooms.find((r) => r.classroomId === activeRoomId) ?? rooms[0]!;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-      <Card className="h-fit p-3 lg:sticky lg:top-24">
-        <p className="px-1 pb-2 text-xs font-semibold text-muted-foreground">غرف المحادثة</p>
-        <div className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
-          {rooms.map((room) => (
-            <div key={`${room.classroomId}-${room.childName ?? ""}`} className="min-w-[220px] lg:min-w-0">
-              <RoomButton
-                room={room}
-                active={room.classroomId === active.classroomId}
-                onSelect={() => setRoomId(room.classroomId)}
-              />
-            </div>
-          ))}
-        </div>
-      </Card>
+    <div className="space-y-4">
+      <div className="inline-flex rounded-2xl border border-border/60 bg-muted/40 p-1 text-sm font-bold">
+        <button
+          type="button"
+          onClick={() => setTab("group")}
+          className={cn(
+            "flex items-center gap-2 rounded-xl px-4 py-2 transition",
+            tab === "group" ? "bg-card text-primary shadow-sm" : "text-muted-foreground",
+          )}
+        >
+          <Users className="size-4" /> الشات الجماعي
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("private")}
+          className={cn(
+            "flex items-center gap-2 rounded-xl px-4 py-2 transition",
+            tab === "private" ? "bg-card text-primary shadow-sm" : "text-muted-foreground",
+          )}
+        >
+          <MessagesSquare className="size-4" /> الرسائل الخاصة
+        </button>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
+        <Card className="h-fit p-3 lg:sticky lg:top-24">
+          <p className="px-1 pb-2 text-xs font-semibold text-muted-foreground">غرف المحادثة</p>
+          <div className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
+            {rooms.map((room) => (
+              <div key={`${room.classroomId}-${room.childName ?? ""}`} className="min-w-[220px] lg:min-w-0">
+                <RoomButton
+                  room={room}
+                  active={room.classroomId === active.classroomId}
+                  onSelect={() => setRoomId(room.classroomId)}
+                />
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {tab === "private" ? (
+          <PrivateChatPanel classroomId={active.classroomId} />
+        ) : (
+
 
       <Card className="flex h-[70vh] flex-col overflow-hidden">
         <div className="flex items-center gap-3 border-b border-border/60 bg-muted/30 px-4 py-3">
