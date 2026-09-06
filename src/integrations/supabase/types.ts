@@ -2051,6 +2051,85 @@ export type Database = {
         }
         Relationships: []
       }
+      private_chats: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          parent_id: string
+          teacher_id: string
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          parent_id: string
+          teacher_id: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          parent_id?: string
+          teacher_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "private_chats_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      private_messages: {
+        Row: {
+          attachment_name: string | null
+          attachment_type: string | null
+          attachment_url: string | null
+          chat_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          sender_id: string
+          text: string
+        }
+        Insert: {
+          attachment_name?: string | null
+          attachment_type?: string | null
+          attachment_url?: string | null
+          chat_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          sender_id: string
+          text?: string
+        }
+        Update: {
+          attachment_name?: string | null
+          attachment_type?: string | null
+          attachment_url?: string | null
+          chat_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          sender_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "private_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "private_chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -3580,6 +3659,10 @@ export type Database = {
       assessment_classroom_id: {
         Args: { _assessment_id: string }
         Returns: string
+      }
+      can_access_private_chat: {
+        Args: { _chat_id: string; _user_id: string }
+        Returns: boolean
       }
       can_read_classroom_curriculum: {
         Args: { _classroom_id: string; _user_id: string }
