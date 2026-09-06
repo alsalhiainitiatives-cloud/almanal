@@ -47,7 +47,37 @@ function KindIcon({ kind }: { kind: string }) {
   return <FileText className="size-4" />;
 }
 
-export function PrivateChatPanel({ classroomId }: { classroomId: string }) {
+const SEEN_KEY = "private-chat-seen";
+
+function readSeen(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(SEEN_KEY) ?? "{}") as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+function markSeen(chatId: string, at: string | null) {
+  const seen = readSeen();
+  seen[chatId] = at ?? new Date().toISOString();
+  try {
+    localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+export function PrivateChatPanel({
+  classroomId,
+  embedded = false,
+  autoSelectFirst = false,
+  onUnreadChange,
+}: {
+  classroomId: string;
+  embedded?: boolean;
+  autoSelectFirst?: boolean;
+  onUnreadChange?: (count: number) => void;
+}) {
   const queryClient = useQueryClient();
   const loadContacts = useServerFn(privateContacts);
   const loadThread = useServerFn(privateThread);
@@ -62,12 +92,18 @@ export function PrivateChatPanel({ classroomId }: { classroomId: string }) {
   const [uploading, setUploading] = useState(false);
   const [emojisOpen, setEmojisOpen] = useState(false);
   const [media, setMedia] = useState<MediaItem | null>(null);
+  const [seen, setSeen] = useState<Record<string, string>>({});
   const fileRef = useRef<HTMLInputElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setSeen(readSeen());
+  }, []);
+
+  useEffect(() => {
     setPeer(null);
   }, [classroomId]);
+
 
   const contacts = useQuery({
     queryKey: ["private-chat-contacts", classroomId],
@@ -152,9 +188,42 @@ export function PrivateChatPanel({ classroomId }: { classroomId: string }) {
 
   const list = contacts.data?.contacts ?? [];
 
+  const unreadFor = (contact: PrivateContact) => {
+    if (!contact.chatId || !contact.lastMessageAt) return false;
+    if (peer?.peerId === contact.peerId) return false;
+    const at = seen[contact.chatId];
+    return !at || contact.lastMessageAt > at;
+  };
+  const unreadCount = list.filter(unreadFor).length;
+
+  useEffect(() => {
+    onUnreadChange?.(unreadCount);
+  }, [unreadCount, onUnreadChange]);
+
+  // Opening a conversation clears its badge.
+  useEffect(() => {
+    if (!chatId) return;
+    const at = list.find((c) => c.chatId === chatId)?.lastMessageAt ?? null;
+    markSeen(chatId, at);
+    setSeen(readSeen());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatId, messages.length]);
+
+  // "شات فردي" jumps straight into the first available contact.
+  useEffect(() => {
+    if (!autoSelectFirst || peer || !list.length) return;
+    const first = list[0]!;
+    setPeer({ peerId: first.peerId, chatId: first.chatId });
+  }, [autoSelectFirst, peer, list]);
+
   return (
-    <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
-      <Card className="h-fit p-3 lg:sticky lg:top-24">
+    <div
+      className={cn(
+        "grid gap-3",
+        embedded ? "h-full grid-cols-[220px_1fr]" : "gap-4 lg:grid-cols-[260px_1fr]",
+      )}
+    >
+      <Card className={cn("p-3", embedded ? "min-h-0 overflow-y-auto" : "h-fit lg:sticky lg:top-24")}>
         <p className="px-1 pb-2 text-xs font-semibold text-muted-foreground">
           جهات المحادثة الخاصة
         </p>
@@ -192,6 +261,12 @@ export function PrivateChatPanel({ classroomId }: { classroomId: string }) {
                     {contact.lastPreview || contact.subtitle || "—"}
                   </span>
                 </span>
+                {unreadFor(contact) ? (
+                  <span
+                    className="size-2.5 shrink-0 rounded-full bg-destructive"
+                    aria-label="رسائل جديدة"
+                  />
+                ) : null}
               </button>
             ))}
           </div>
@@ -203,7 +278,10 @@ export function PrivateChatPanel({ classroomId }: { classroomId: string }) {
         ) : null}
       </Card>
 
-      <Card className="flex h-[70vh] flex-col overflow-hidden">
+      <Card
+        className={cn("flex flex-col overflow-hidden", embedded ? "min-h-0 h-full" : "h-[70vh]")}
+      >
+
         {!peer ? (
           <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground">
             اختر جهة من القائمة لبدء محادثة خاصة.
