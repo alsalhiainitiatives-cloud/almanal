@@ -12,12 +12,27 @@ export function isStaleChunkError(error: unknown): boolean {
   );
 }
 
+// A stale route chunk can also resolve to a module whose route options never
+// arrive, so the router then reads them off `undefined` while loading the match
+// ("Cannot read properties of undefined (reading 'component')"). Same cause,
+// same cure: reload once against the fresh asset manifest.
+function isStaleRouteModuleError(error: unknown): boolean {
+  const message =
+    error instanceof Error ? error.message : typeof error === "string" ? error : "";
+  return /Cannot read properties of undefined \(reading '(component|errorComponent|pendingComponent|notFoundComponent|options)'\)|undefined is not an object \(evaluating '.*\.(component|options)'\)/i.test(
+    message,
+  );
+}
+
 export function recoverFromStaleChunk(error: unknown, chunkUrl?: string): boolean {
   if (typeof window === "undefined") return false;
-  if (!isStaleChunkError(error)) return false;
+  const routeModuleError = isStaleRouteModuleError(error);
+  if (!isStaleChunkError(error) && !routeModuleError) return false;
 
   const message = error instanceof Error ? error.message : String(error);
-  const url = chunkUrl ?? message.match(/https?:\/\/\S+/)?.[0] ?? "unknown";
+  const url = routeModuleError
+    ? `route:${window.location.pathname}`
+    : (chunkUrl ?? message.match(/https?:\/\/\S+/)?.[0] ?? "unknown");
   const key = STORAGE_PREFIX + url;
 
   try {
