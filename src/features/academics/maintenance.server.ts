@@ -18,6 +18,7 @@ import {
   type ChatWipeScope,
   type EvidencePreview,
   type MaintenanceBoard,
+  type PrivateWipePreview,
   type RetentionWindow,
 } from "./maintenance";
 
@@ -230,4 +231,95 @@ export async function runChatWipe(
   }
 
   return { messages: ids.length, storageRemoved: paths.length, scopeLabel: target.label };
+}
+
+export async function previewPrivateWipe(
+  supabase: Db,
+  userId: string,
+  input: { scope: ChatWipeScope; classroomId?: string | null; stageId?: string | null },
+): Promise<PrivateWipePreview> {
+  await assertManager(supabase, userId);
+  const target = await chatTarget(supabase, input);
+  if (!target.classroomIds.length) {
+    return { chats: 0, messages: 0, attachments: 0, scopeLabel: target.label };
+  }
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: chats } = await supabaseAdmin
+    .from("private_chats")
+    .select("id")
+    .in("class_id", target.classroomIds)
+    .limit(5000);
+
+  const chatIds = (chats ?? []).map((c) => c.id);
+  if (!chatIds.length) return { chats: 0, messages: 0, attachments: 0, scopeLabel: target.label };
+
+  const { data: messages } = await supabaseAdmin
+    .from("private_messages")
+    .select("id, attachment_url")
+    .in("chat_id", chatIds)
+    .limit(20000);
+
+  const rows = messages ?? [];
+  return {
+    chats: chatIds.length,
+    messages: rows.length,
+    attachments: rows.filter((r) => Boolean(r.attachment_url)).length,
+    scopeLabel: target.label,
+  };
+}
+
+export async function runPrivateWipe(
+  supabase: Db,
+  userId: string,
+  input: { scope: ChatWipeScope; classroomId?: string | null; stageId?: string | null },
+): Promise<{ chats: number; messages: number; storageRemoved: number; scopeLabel: string }> {
+  await assertManager(supabase, userId);
+  const target = await chatTarget(supabase, input);
+  if (!target.classroomIds.length) {
+    return { chats: 0, messages: 0, storageRemoved: 0, scopeLabel: target.label };
+  }
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: chats, error } = await supabaseAdmin
+    .from("private_chats")
+    .select("id")
+    .in("class_id", target.classroomIds)
+    .limit(5000);
+  if (error) throw new Error(error.message);
+
+  const chatIds = (chats ?? []).map((c) => c.id);
+  if (!chatIds.length) {
+    return { chats: 0, messages: 0, storageRemoved: 0, scopeLabel: target.label };
+  }
+
+  const { data: messages } = await supabaseAdmin
+    .from("private_messages")
+    .select("id, attachment_url")
+    .in("chat_id", chatIds)
+    .limit(20000);
+
+  const rows = messages ?? [];
+  const paths = rows
+    .map((r) => r.attachment_url)
+    .filter((p): p is string => Boolean(p) && !/^https?:\/\//i.test(p ?? ""));
+
+  for (let i = 0; i < paths.length; i += 100) {
+    await supabaseAdmin.storage.from(CHAT_BUCKET).remove(paths.slice(i, i + 100));
+  }
+
+  for (let i = 0; i < chatIds.length; i += 200) {
+    const { error: delError } = await supabaseAdmin
+      .from("private_chats")
+      .delete()
+      .in("id", chatIds.slice(i, i + 200));
+    if (delError) throw new Error(delError.message);
+  }
+
+  return {
+    chats: chatIds.length,
+    messages: rows.length,
+    storageRemoved: paths.length,
+    scopeLabel: target.label,
+  };
 }

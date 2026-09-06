@@ -73,6 +73,8 @@ export const SUB_MODULE_LABELS: Record<string, string> = {
   study_plans: "الخطط الدراسية",
   academic_reports: "التقارير الأكاديمية",
   class_chat: "محادثة الفصل",
+  private_chat: "المحادثات الخاصة",
+
   announcements: "الإعلانات",
   inbox: "المراسلات",
   notifications: "الإشعارات",
@@ -546,6 +548,35 @@ export const PERMISSION_REGISTRY: PermissionEntry[] = [
     labelAr: "حذف رسائل الفصل",
   },
   {
+    code: "private_chat.view",
+    module: "communications",
+    subModule: "private_chat",
+    action: "read",
+    labelAr: "الاطلاع على المحادثات الخاصة",
+  },
+  {
+    code: "private_chat.post",
+    module: "communications",
+    subModule: "private_chat",
+    action: "create",
+    labelAr: "إرسال رسائل خاصة",
+  },
+  {
+    code: "private_chat.media_delete",
+    module: "communications",
+    subModule: "private_chat",
+    action: "delete",
+    labelAr: "حذف مرفقات ورسائل المحادثات الخاصة",
+  },
+  {
+    code: "private_chat.wipe",
+    module: "communications",
+    subModule: "private_chat",
+    action: "delete",
+    labelAr: "مسح سجل المحادثات الخاصة",
+  },
+  {
+
     code: "announcements.view",
     module: "communications",
     subModule: "announcements",

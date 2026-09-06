@@ -58,3 +58,11 @@ export type ChatWipePreview = {
   attachments: number;
   scopeLabel: string;
 };
+
+/** Private (1-on-1) conversations wiped alongside the group history. */
+export type PrivateWipePreview = {
+  chats: number;
+  messages: number;
+  attachments: number;
+  scopeLabel: string;
+};

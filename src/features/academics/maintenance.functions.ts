@@ -54,3 +54,21 @@ export const maintenanceWipeChat = createServerFn({ method: "POST" })
     const { runChatWipe } = await import("./maintenance.server");
     return runChatWipe(context.supabase, context.userId, data);
   });
+
+export const maintenancePreviewPrivateWipe = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => scopeSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { previewPrivateWipe } = await import("./maintenance.server");
+    return previewPrivateWipe(context.supabase, context.userId, data);
+  });
+
+export const maintenanceWipePrivate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    scopeSchema.extend({ confirm: z.literal(WIPE_CONFIRM_WORD) }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { runPrivateWipe } = await import("./maintenance.server");
+    return runPrivateWipe(context.supabase, context.userId, data);
+  });

@@ -37,6 +37,7 @@ import {
   type ChatWipeScope,
   type EvidencePreview,
   type MaintenanceBoard,
+  type PrivateWipePreview,
   type RetentionWindow,
 } from "../maintenance";
 import {
@@ -44,7 +45,9 @@ import {
   maintenanceCleanEvidence,
   maintenancePreviewChatWipe,
   maintenancePreviewEvidence,
+  maintenancePreviewPrivateWipe,
   maintenanceWipeChat,
+  maintenanceWipePrivate,
 } from "../maintenance.functions";
 
 export function StorageMaintenancePanel() {
@@ -54,6 +57,8 @@ export function StorageMaintenancePanel() {
   const cleanEvidence = useServerFn(maintenanceCleanEvidence);
   const previewWipe = useServerFn(maintenancePreviewChatWipe);
   const wipeChat = useServerFn(maintenanceWipeChat);
+  const previewPrivate = useServerFn(maintenancePreviewPrivateWipe);
+  const wipePrivate = useServerFn(maintenanceWipePrivate);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["academics-maintenance"],
@@ -67,6 +72,7 @@ export function StorageMaintenancePanel() {
 
   const [evidenceConfirm, setEvidenceConfirm] = useState<EvidencePreview | null>(null);
   const [chatConfirm, setChatConfirm] = useState<ChatWipePreview | null>(null);
+  const [privateConfirm, setPrivateConfirm] = useState<PrivateWipePreview | null>(null);
   const [typed, setTyped] = useState("");
 
   const invalidate = () => {
@@ -118,6 +124,25 @@ export function StorageMaintenancePanel() {
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message || "تعذّر مسح المحادثات."),
+  });
+
+  const openPrivate = useMutation({
+    mutationFn: () => previewPrivate({ data: scopePayload() }) as Promise<PrivateWipePreview>,
+    onSuccess: (result) => {
+      setTyped("");
+      setPrivateConfirm(result);
+    },
+    onError: (e: Error) => toast.error(e.message || "تعذّر حساب المحادثات الخاصة."),
+  });
+
+  const runPrivate = useMutation({
+    mutationFn: () => wipePrivate({ data: { ...scopePayload(), confirm: WIPE_CONFIRM_WORD } }),
+    onSuccess: (result) => {
+      toast.success(`تم مسح ${result.chats} محادثة خاصة من ${result.scopeLabel}.`);
+      setPrivateConfirm(null);
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message || "تعذّر مسح المحادثات الخاصة."),
   });
 
   if (isLoading) {
@@ -260,7 +285,7 @@ export function StorageMaintenancePanel() {
             </div>
           ) : null}
 
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <Button
               type="button"
               variant="destructive"
@@ -281,7 +306,61 @@ export function StorageMaintenancePanel() {
             </Button>
           </div>
         </div>
+
+        <div className="rounded-2xl border border-destructive/30 bg-card/70 p-3">
+          <p className="text-xs font-black text-foreground">المحادثات الخاصة (معلمة ⇄ ولي أمر)</p>
+          <p className="mt-1 text-[11px] font-bold text-muted-foreground">
+            يمسح كل المحادثات الفردية ومرفقاتها داخل النطاق المحدد أعلاه.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-3 font-black text-destructive"
+            disabled={
+              openPrivate.isPending ||
+              (scope === "classroom" && !classroomId) ||
+              (scope === "stage" && !stageId)
+            }
+            onClick={() => openPrivate.mutate()}
+          >
+            {openPrivate.isPending ? (
+              <Loader2 className="me-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="me-2 h-4 w-4" />
+            )}
+            مراجعة ومسح المحادثات الخاصة
+          </Button>
+        </div>
       </section>
+
+      {/* Private wipe confirmation */}
+      <Dialog open={!!privateConfirm} onOpenChange={(o) => !o && setPrivateConfirm(null)}>
+        <DialogContent dir="rtl" className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-black">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              تأكيد مسح المحادثات الخاصة
+            </DialogTitle>
+            <DialogDescription className="text-xs font-bold">
+              {privateConfirm?.scopeLabel ?? "—"} — سيتم حذف {privateConfirm?.chats ?? 0} محادثة و
+              {" "}
+              {privateConfirm?.messages ?? 0} رسالة و{privateConfirm?.attachments ?? 0} مرفقًا نهائيًا.
+            </DialogDescription>
+          </DialogHeader>
+          <ConfirmBox typed={typed} setTyped={setTyped} />
+          <Button
+            type="button"
+            variant="destructive"
+            className="w-full font-black"
+            disabled={!confirmed || runPrivate.isPending}
+            onClick={() => runPrivate.mutate()}
+          >
+            {runPrivate.isPending ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : null}
+            مسح نهائي
+          </Button>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Evidence confirmation */}
       <Dialog open={!!evidenceConfirm} onOpenChange={(o) => !o && setEvidenceConfirm(null)}>
