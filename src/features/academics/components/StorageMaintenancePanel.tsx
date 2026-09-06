@@ -37,6 +37,7 @@ import {
   type ChatWipeScope,
   type EvidencePreview,
   type MaintenanceBoard,
+  type PrivateWipePreview,
   type RetentionWindow,
 } from "../maintenance";
 import {
@@ -44,7 +45,9 @@ import {
   maintenanceCleanEvidence,
   maintenancePreviewChatWipe,
   maintenancePreviewEvidence,
+  maintenancePreviewPrivateWipe,
   maintenanceWipeChat,
+  maintenanceWipePrivate,
 } from "../maintenance.functions";
 
 export function StorageMaintenancePanel() {
@@ -54,6 +57,8 @@ export function StorageMaintenancePanel() {
   const cleanEvidence = useServerFn(maintenanceCleanEvidence);
   const previewWipe = useServerFn(maintenancePreviewChatWipe);
   const wipeChat = useServerFn(maintenanceWipeChat);
+  const previewPrivate = useServerFn(maintenancePreviewPrivateWipe);
+  const wipePrivate = useServerFn(maintenanceWipePrivate);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["academics-maintenance"],
@@ -67,6 +72,7 @@ export function StorageMaintenancePanel() {
 
   const [evidenceConfirm, setEvidenceConfirm] = useState<EvidencePreview | null>(null);
   const [chatConfirm, setChatConfirm] = useState<ChatWipePreview | null>(null);
+  const [privateConfirm, setPrivateConfirm] = useState<PrivateWipePreview | null>(null);
   const [typed, setTyped] = useState("");
 
   const invalidate = () => {
@@ -118,6 +124,25 @@ export function StorageMaintenancePanel() {
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message || "تعذّر مسح المحادثات."),
+  });
+
+  const openPrivate = useMutation({
+    mutationFn: () => previewPrivate({ data: scopePayload() }) as Promise<PrivateWipePreview>,
+    onSuccess: (result) => {
+      setTyped("");
+      setPrivateConfirm(result);
+    },
+    onError: (e: Error) => toast.error(e.message || "تعذّر حساب المحادثات الخاصة."),
+  });
+
+  const runPrivate = useMutation({
+    mutationFn: () => wipePrivate({ data: { ...scopePayload(), confirm: WIPE_CONFIRM_WORD } }),
+    onSuccess: (result) => {
+      toast.success(`تم مسح ${result.chats} محادثة خاصة من ${result.scopeLabel}.`);
+      setPrivateConfirm(null);
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message || "تعذّر مسح المحادثات الخاصة."),
   });
 
   if (isLoading) {
