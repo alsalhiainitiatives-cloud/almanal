@@ -47,7 +47,37 @@ function KindIcon({ kind }: { kind: string }) {
   return <FileText className="size-4" />;
 }
 
-export function PrivateChatPanel({ classroomId }: { classroomId: string }) {
+const SEEN_KEY = "private-chat-seen";
+
+function readSeen(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(SEEN_KEY) ?? "{}") as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+function markSeen(chatId: string, at: string | null) {
+  const seen = readSeen();
+  seen[chatId] = at ?? new Date().toISOString();
+  try {
+    localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+export function PrivateChatPanel({
+  classroomId,
+  embedded = false,
+  autoSelectFirst = false,
+  onUnreadChange,
+}: {
+  classroomId: string;
+  embedded?: boolean;
+  autoSelectFirst?: boolean;
+  onUnreadChange?: (count: number) => void;
+}) {
   const queryClient = useQueryClient();
   const loadContacts = useServerFn(privateContacts);
   const loadThread = useServerFn(privateThread);
@@ -62,12 +92,18 @@ export function PrivateChatPanel({ classroomId }: { classroomId: string }) {
   const [uploading, setUploading] = useState(false);
   const [emojisOpen, setEmojisOpen] = useState(false);
   const [media, setMedia] = useState<MediaItem | null>(null);
+  const [seen, setSeen] = useState<Record<string, string>>({});
   const fileRef = useRef<HTMLInputElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setSeen(readSeen());
+  }, []);
+
+  useEffect(() => {
     setPeer(null);
   }, [classroomId]);
+
 
   const contacts = useQuery({
     queryKey: ["private-chat-contacts", classroomId],
