@@ -12,9 +12,11 @@ import {
   FileText,
   Image as ImageIcon,
   Loader2,
+  MessagesSquare,
   Paperclip,
   Send,
   Trash2,
+  Users,
   Video,
   X,
 } from "lucide-react";
@@ -42,6 +44,7 @@ import {
 } from "../chat";
 import { uploadChatAttachment } from "../chat-upload";
 import { chatBoard, chatDeleteMessage, chatSendMessage } from "../chat.functions";
+import { PrivateChatPanel } from "./PrivateChatPanel";
 
 function initials(name: string | null) {
   const clean = (name ?? "؟").trim();
@@ -127,6 +130,7 @@ export function ClassChat() {
   useClearNotificationKind(["chat_message"]);
 
 
+  const [tab, setTab] = useState<"group" | "private">("group");
   const [roomId, setRoomId] = useState<string | null>(null);
   const [body, setBody] = useState("");
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
