@@ -57,7 +57,6 @@ import { canSeeLink } from "../nav-access";
 import { useAmsRealtime } from "../useAmsRealtime";
 import { StatusPill } from "./atoms";
 import { RegistrationSwitch } from "./RegistrationSwitch";
-import { FloatingChatDock } from "@/features/academics/components/FloatingChatDock";
 
 
 type NavItem = {
@@ -557,7 +556,6 @@ export function AmsShell({
         </CommandList>
       </CommandDialog>
 
-      <FloatingChatDock />
     </div>
   );
 }
