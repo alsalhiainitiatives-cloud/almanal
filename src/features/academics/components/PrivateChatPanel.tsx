@@ -16,7 +16,6 @@ import {
   Send,
   Smile,
   Trash2,
-  Trash,
   Video,
   X,
 } from "lucide-react";
@@ -386,7 +385,7 @@ export function PrivateChatPanel({ classroomId }: { classroomId: string }) {
         )}
       </Card>
 
-      <MediaViewerDialog item={media} onOpenChange={(open) => (!open ? setMedia(null) : null)} />
+      <MediaViewerDialog item={media} onClose={() => setMedia(null)} />
     </div>
   );
 }
