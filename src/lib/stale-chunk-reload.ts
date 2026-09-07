@@ -35,9 +35,12 @@ export function recoverFromStaleChunk(error: unknown, chunkUrl?: string): boolea
     : (chunkUrl ?? message.match(/https?:\/\/\S+/)?.[0] ?? "unknown");
   const key = STORAGE_PREFIX + url;
 
+  let attempt = 1;
   try {
-    if (sessionStorage.getItem(key)) return false;
-    sessionStorage.setItem(key, "1");
+    attempt = Number(sessionStorage.getItem(key) ?? "0") + 1;
+    // Two tries: the first reload can still be served a cached index.html.
+    if (attempt > 2) return false;
+    sessionStorage.setItem(key, String(attempt));
   } catch {
     // sessionStorage unavailable (private mode): fall through to a single reload.
   }
@@ -55,6 +58,10 @@ export function recoverFromStaleChunk(error: unknown, chunkUrl?: string): boolea
         const regs = await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map((r) => r.unregister()));
       }
+      // A plain `caches` purge does not touch the browser's HTTP cache, so the
+      // reload can be handed the same stale index.html again. Revalidate the
+      // document (and the module graph entry) before reloading.
+      await fetch(window.location.href, { cache: "reload", credentials: "same-origin" });
     } catch {
       // best effort
     }
