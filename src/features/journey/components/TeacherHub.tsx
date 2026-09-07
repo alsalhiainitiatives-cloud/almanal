@@ -560,6 +560,28 @@ export function TeacherHub() {
         )}
       </Tabs>
 
+      {/* Direct 1-on-1 chat with the guardian of one child */}
+      <Dialog open={Boolean(chatChild)} onOpenChange={(open) => !open && setChatChild(null)}>
+        <DialogContent className="flex h-[80vh] max-w-4xl flex-col overflow-hidden p-0" dir="rtl">
+          <DialogHeader className="border-b border-border/60 px-5 py-4 text-right">
+            <DialogTitle className="text-sm font-black">
+              شات فردي — ولي أمر {chatChild?.name ?? ""}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="min-h-0 flex-1 p-3">
+            {chatChild && selectedClassroom ? (
+              <PrivateChatPanel
+                classroomId={selectedClassroom}
+                embedded
+                initialChildId={chatChild.id}
+              />
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
+
       {/* Weekly plan dialog */}
       <Dialog open={planOpen} onOpenChange={setPlanOpen}>
         <DialogContent className="max-w-xl">
