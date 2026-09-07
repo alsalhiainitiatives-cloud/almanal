@@ -94,6 +94,16 @@ export async function getQurraBoard(
         .limit(5000),
     ]);
 
+  // The yearly amount owed by Qurra per child is entered once, not per month.
+  const { data: annualRows } = await supabase
+    .from("qurra_annual_dues")
+    .select("child_id, total_due")
+    .eq("academic_year", academicYear)
+    .limit(5000);
+  const annualDueOf = new Map(
+    (annualRows ?? []).map((r) => [r.child_id as string, Number(r.total_due) || 0]),
+  );
+
   const stageName = new Map((stages ?? []).map((s) => [s.id, s.name_ar]));
   const classroomRow = new Map((classrooms ?? []).map((c) => [c.id, c]));
   const parentName = new Map((profiles ?? []).map((p) => [p.id, p.full_name ?? null]));
@@ -150,6 +160,8 @@ export async function getQurraBoard(
       };
     }
     const list = Object.values(cells);
+    const totalTransferred = list.reduce((s, c) => s + c.transferredAmount, 0);
+    const annualDue = annualDueOf.get(child.id) ?? 0;
     return {
       childId: child.id,
       name: child.name_ar,
@@ -159,9 +171,11 @@ export async function getQurraBoard(
       parentName: (app ? parentName.get(app.parent_id) : null) ?? null,
       monthlyFee: monthlyFeeFor(child.stage_id, child.classroom_id),
       cells,
-      totalDue: list.reduce((s, c) => s + c.dueAmount, 0),
-      totalTransferred: list.reduce((s, c) => s + c.transferredAmount, 0),
+      annualDue,
+      totalDue: annualDue,
+      totalTransferred,
       totalConfirmed: list.reduce((s, c) => s + (c.confirmed ? c.transferredAmount : 0), 0),
+      remaining: Math.max(0, annualDue - totalTransferred),
     };
   });
 
@@ -240,23 +254,52 @@ export async function saveQurraCell(
   return { ok: true };
 }
 
-/** Fill the "due" cell of every covered child for one month with the monthly tuition. */
-export async function prefillQurraMonth(
+/** Set (once per year) the total amount Qurra owes for one child. */
+export async function saveQurraAnnualDue(
   supabase: Db,
   userId: string,
-  input: { academicYear: string; month: number },
+  input: { childId: string; academicYear: string; totalDue: number; note?: string | null },
+) {
+  await guard(supabase, userId, true);
+
+  const { data: existing } = await supabase
+    .from("qurra_annual_dues")
+    .select("id, note")
+    .eq("child_id", input.childId)
+    .eq("academic_year", input.academicYear)
+    .maybeSingle();
+
+  const payload = {
+    child_id: input.childId,
+    academic_year: input.academicYear,
+    total_due: Math.max(0, Number(input.totalDue) || 0),
+    note: input.note ?? existing?.note ?? null,
+    recorded_by: userId,
+  };
+
+  const { error } = existing
+    ? await supabase.from("qurra_annual_dues").update(payload).eq("id", existing.id)
+    : await supabase.from("qurra_annual_dues").insert(payload);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+/** Fill the yearly due of every covered child from the active fee plan. */
+export async function prefillQurraAnnualDues(
+  supabase: Db,
+  userId: string,
+  input: { academicYear: string; months?: number | null },
 ) {
   await guard(supabase, userId, true);
   const board = await getQurraBoard(supabase, userId, { academicYear: input.academicYear });
+  const months = Math.max(1, input.months || 10);
   let count = 0;
   for (const row of board.rows) {
-    const cell = row.cells[input.month];
-    if (!row.monthlyFee || (cell && cell.dueAmount > 0)) continue;
-    await saveQurraCell(supabase, userId, {
+    if (!row.monthlyFee || row.annualDue > 0) continue;
+    await saveQurraAnnualDue(supabase, userId, {
       childId: row.childId,
       academicYear: input.academicYear,
-      month: input.month,
-      dueAmount: row.monthlyFee,
+      totalDue: row.monthlyFee * months,
     });
     count += 1;
   }

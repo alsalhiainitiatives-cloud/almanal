@@ -40,9 +40,13 @@ export type QurraStudentRow = {
   parentName: string | null;
   monthlyFee: number;
   cells: Record<number, QurraCell>;
+  /** Entered once per child for the whole school year. */
+  annualDue: number;
   totalDue: number;
   totalTransferred: number;
   totalConfirmed: number;
+  /** Annual due minus everything Qurra transferred so far. */
+  remaining: number;
 };
 
 export type QurraBoard = {
