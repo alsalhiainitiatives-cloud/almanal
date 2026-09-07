@@ -85,6 +85,7 @@ export const LINK_PERMISSIONS: Record<string, string[]> = {
   "/ams/finance": ["invoices.view", "payments.manage", "reports.financial"],
   "/ams/finance/invoices": ["invoices.view", "payments.manage"],
   "/ams/finance/claims": ["payments.manage"],
+  "/ams/finance/qurra": ["payments.manage", "invoices.view"],
   "/ams/finance/reports": ["reports.financial"],
   "/ams/finance/settings": ["settings.manage", "payments.manage"],
 
