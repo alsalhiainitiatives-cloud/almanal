@@ -3,20 +3,22 @@
  * digital evidence attached by the teacher. A classroom's reports only appear
  * here when the teacher enabled "show to parents" for that classroom.
  */
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { EyeOff, FileText, Film, ImageIcon, Link as LinkIcon, Loader2, Printer } from "lucide-react";
-import { useState } from "react";
+import { EyeOff, FileText, Film, ImageIcon, Link as LinkIcon, Loader2, Play, Printer } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { MediaViewerDialog, type MediaItem } from "@/components/media/MediaViewerDialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ReportLetterhead, ReportSignatures, ReportStamp } from "@/components/reports/ReportLetterhead";
-import { EVIDENCE_KIND_LABELS_AR, SCALE_LABELS, TRIANGLE_LABELS } from "../assessments";
-import { REPORT_TYPE_LABELS, masteryLabel, type ReportType } from "../reports";
+import { supabase } from "@/integrations/supabase/client";
+import { EVIDENCE_KIND_LABELS_AR, SCALE_LABELS } from "../assessments";
+import { REPORT_TYPE_LABELS, type ReportEvidence, type ReportType } from "../reports";
 import { academicsParentReportBoard } from "../reports.functions";
+import type { MonthColor } from "../settings";
 import { EvaluationGuide } from "./EvaluationGuide";
-import { EvaluationTriangle } from "./EvaluationTriangle";
+import { ParentProgressStepper } from "./ParentProgressStepper";
 
 
 const PRINT_CSS = `
@@ -37,10 +39,28 @@ export function ChildReports() {
   const [viewer, setViewer] = useState<MediaItem | null>(null);
 
 
+  const queryClient = useQueryClient();
+
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["parent-academic-report", childId, reportType],
     queryFn: () => loadBoard({ data: { childId, reportType } }),
   });
+
+  // Live sync: any change a teacher makes to an evaluation or its evidence
+  // refreshes the stepper and helper text without a page reload.
+  useEffect(() => {
+    const channel = supabase.channel(`parent-report-live:${Math.random().toString(36).slice(2)}`);
+    for (const table of ["lesson_assessments", "assessment_evidences"] as const) {
+      channel.on("postgres_changes", { event: "*", schema: "public", table }, () => {
+        queryClient.invalidateQueries({ queryKey: ["parent-academic-report"] });
+      });
+    }
+    channel.subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
 
   if (isLoading) {
     return (
@@ -199,62 +219,33 @@ export function ChildReports() {
                             <tr key={lesson.id} className="border-t border-border/50 align-top">
                               <td className="p-2 font-bold">{lesson.nameAr}</td>
                               <td className="p-2">
-                                <Cell
+                                <ParentProgressStepper
                                   scale="performance"
                                   level={lesson.cell?.performanceLevel ?? 0}
                                   colors={lesson.cell?.performanceColors ?? []}
+                                  monthColors={data.monthColors}
                                 />
                               </td>
                               <td className="p-2">
-                                <Cell
+                                <ParentProgressStepper
                                   scale="growth"
                                   level={lesson.cell?.growthLevel ?? 0}
                                   colors={lesson.cell?.growthColors ?? []}
+                                  monthColors={data.monthColors}
                                 />
                               </td>
                               <td className="p-2 text-[11px] font-bold text-muted-foreground">
                                 {lesson.cell?.note ?? "—"}
                               </td>
-                              <td className="p-2">
+                              <td className="w-[190px] p-2">
                                 {lesson.cell?.evidences.length ? (
-                                  <div className="flex flex-wrap gap-1.5">
+                                  <div className="flex w-[170px] flex-col gap-2">
                                     {lesson.cell.evidences.map((ev) => (
-                                      <button
+                                      <EvidenceCard
                                         key={ev.id}
-                                        type="button"
-                                        disabled={!ev.url}
-                                        onClick={() =>
-                                          ev.url &&
-                                          setViewer({
-                                            url: ev.url,
-                                            kind: ev.fileType,
-                                            name:
-                                              ev.fileName ?? EVIDENCE_KIND_LABELS_AR[ev.fileType],
-                                          })
-                                        }
-                                        title="عرض داخل المنصة"
-                                        className="inline-flex items-center gap-1 rounded-lg border border-border/60 p-1 text-[10px] font-bold transition hover:border-primary/60 hover:bg-primary/5 disabled:opacity-50 print:hidden"
-                                      >
-                                        {ev.fileType === "image" && ev.url ? (
-                                          <img
-                                            src={ev.url}
-                                            alt={ev.fileName ?? "دليل"}
-                                            className="h-12 w-12 rounded-md object-cover"
-                                          />
-                                        ) : ev.fileType === "video" ? (
-                                          <Film className="h-4 w-4" />
-                                        ) : ev.fileType === "link" ? (
-                                          <LinkIcon className="h-4 w-4" />
-                                        ) : ev.fileType === "image" ? (
-                                          <ImageIcon className="h-4 w-4" />
-                                        ) : (
-                                          <FileText className="h-4 w-4" />
-                                        )}
-                                        <span className="max-w-[90px] truncate">
-                                          {ev.fileName ?? "ملف"}
-                                        </span>
-                                      </button>
-
+                                        evidence={ev}
+                                        onOpen={setViewer}
+                                      />
                                     ))}
                                   </div>
                                 ) : (
@@ -282,22 +273,54 @@ export function ChildReports() {
   );
 }
 
-function Cell({
-  scale,
-  level,
-  colors,
+/** Uniform 16:9 evidence card — always opens inside the platform viewer. */
+function EvidenceCard({
+  evidence,
+  onOpen,
 }: {
-  scale: "performance" | "growth";
-  level: 0 | 1 | 2 | 3;
-  colors: string[];
+  evidence: ReportEvidence;
+  onOpen: (item: MediaItem) => void;
 }) {
+  const label = evidence.fileName ?? EVIDENCE_KIND_LABELS_AR[evidence.fileType];
+  const Icon =
+    evidence.fileType === "video"
+      ? Play
+      : evidence.fileType === "image"
+        ? ImageIcon
+        : evidence.fileType === "link"
+          ? LinkIcon
+          : FileText;
+
   return (
-    <div className="flex items-center gap-2">
-      <EvaluationTriangle scale={scale} level={level} colors={colors} size={36} readOnly />
-      <span className="text-[11px] font-bold text-muted-foreground">
-        {level === 0 ? masteryLabel(0) : TRIANGLE_LABELS[scale][level]}
-      </span>
-    </div>
+    <button
+      type="button"
+      disabled={!evidence.url}
+      title="عرض داخل المنصة"
+      onClick={() =>
+        evidence.url && onOpen({ url: evidence.url, kind: evidence.fileType, name: label })
+      }
+      className="group w-full overflow-hidden rounded-xl border border-border/60 bg-background/60 text-right transition hover:border-primary/60 hover:shadow-md disabled:opacity-50 print:hidden"
+    >
+      <div className="relative aspect-video w-full overflow-hidden bg-muted">
+        {evidence.fileType === "image" && evidence.url ? (
+          <img
+            src={evidence.url}
+            alt={label}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : null}
+        <span className="absolute inset-0 grid place-items-center bg-foreground/25 text-white transition group-hover:bg-foreground/40">
+          <span className="grid size-9 place-items-center rounded-full bg-white/90 text-foreground shadow">
+            <Icon className="size-4" />
+          </span>
+        </span>
+      </div>
+      <div className="flex items-center gap-1 px-2 py-1.5">
+        {evidence.fileType === "video" ? <Film className="size-3 shrink-0" /> : null}
+        <span className="truncate text-[10px] font-bold text-muted-foreground">{label}</span>
+      </div>
+    </button>
   );
 }
 
