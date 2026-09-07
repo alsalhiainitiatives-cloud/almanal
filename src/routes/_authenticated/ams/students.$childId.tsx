@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Camera, Download, Printer, Trash2 } from "lucide-react";
+import { Camera, Download, Pencil, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   StudentFileDocument,
   studentFilePdfOptions,
 } from "@/features/ams/components/students/StudentFileDocument";
+import { StudentEditDialog } from "@/features/ams/components/students/StudentEditDialog";
 import { StudentProfileTabs } from "@/features/ams/components/students/StudentProfileTabs";
 import { buildStudentFileHtml, downloadStudentFilePdf } from "@/features/ams/student-file";
 import { uploadClassroomMedia, useClassroomMediaUrls } from "@/lib/classroom-media";
@@ -33,6 +34,7 @@ function StudentFilePage() {
   const queryClient = useQueryClient();
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [editing, setEditing] = useState(false);
   const logoUrl = useBrandLogoUrl();
 
   const { data, isLoading, error } = useQuery({
@@ -128,6 +130,14 @@ function StudentFilePage() {
               حذف الصورة
             </Button>
           )}
+          <Button
+            variant="outline"
+            className="rounded-2xl text-xs font-bold"
+            onClick={() => setEditing(true)}
+          >
+            <Pencil className="size-3.5" />
+            تعديل البيانات
+          </Button>
           <Button variant="soft" className="rounded-2xl text-xs font-bold" onClick={() => void onDownloadPdf()}>
             <Download className="size-3.5" />
             تنزيل PDF
@@ -142,6 +152,7 @@ function StudentFilePage() {
       <StudentProfileTabs childId={childId} file={data}>
         <StudentFileDocument data={data} photoSrc={photoSrc} />
       </StudentProfileTabs>
+      <StudentEditDialog childId={childId} open={editing} onOpenChange={setEditing} />
     </AmsShell>
   );
 }
