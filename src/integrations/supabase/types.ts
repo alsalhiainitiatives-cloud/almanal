@@ -2217,6 +2217,59 @@ export type Database = {
           },
         ]
       }
+      qurra_monthly_payments: {
+        Row: {
+          academic_year: string
+          child_id: string
+          confirmed: boolean
+          confirmed_at: string | null
+          created_at: string
+          due_amount: number
+          id: string
+          month: number
+          note: string | null
+          recorded_by: string | null
+          transferred_amount: number
+          updated_at: string
+        }
+        Insert: {
+          academic_year: string
+          child_id: string
+          confirmed?: boolean
+          confirmed_at?: string | null
+          created_at?: string
+          due_amount?: number
+          id?: string
+          month: number
+          note?: string | null
+          recorded_by?: string | null
+          transferred_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          child_id?: string
+          confirmed?: boolean
+          confirmed_at?: string | null
+          created_at?: string
+          due_amount?: number
+          id?: string
+          month?: number
+          note?: string | null
+          recorded_by?: string | null
+          transferred_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qurra_monthly_payments_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "application_children"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       qurra_requests: {
         Row: {
           application_id: string
