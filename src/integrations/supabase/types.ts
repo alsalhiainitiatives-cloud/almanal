@@ -2217,6 +2217,47 @@ export type Database = {
           },
         ]
       }
+      qurra_annual_dues: {
+        Row: {
+          academic_year: string
+          child_id: string
+          created_at: string
+          id: string
+          note: string | null
+          recorded_by: string | null
+          total_due: number
+          updated_at: string
+        }
+        Insert: {
+          academic_year: string
+          child_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          recorded_by?: string | null
+          total_due?: number
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          child_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          recorded_by?: string | null
+          total_due?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qurra_annual_dues_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "application_children"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       qurra_monthly_payments: {
         Row: {
           academic_year: string
