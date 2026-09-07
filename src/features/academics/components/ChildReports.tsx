@@ -219,62 +219,33 @@ export function ChildReports() {
                             <tr key={lesson.id} className="border-t border-border/50 align-top">
                               <td className="p-2 font-bold">{lesson.nameAr}</td>
                               <td className="p-2">
-                                <Cell
+                                <ParentProgressStepper
                                   scale="performance"
                                   level={lesson.cell?.performanceLevel ?? 0}
                                   colors={lesson.cell?.performanceColors ?? []}
+                                  monthColors={data.monthColors}
                                 />
                               </td>
                               <td className="p-2">
-                                <Cell
+                                <ParentProgressStepper
                                   scale="growth"
                                   level={lesson.cell?.growthLevel ?? 0}
                                   colors={lesson.cell?.growthColors ?? []}
+                                  monthColors={data.monthColors}
                                 />
                               </td>
                               <td className="p-2 text-[11px] font-bold text-muted-foreground">
                                 {lesson.cell?.note ?? "—"}
                               </td>
-                              <td className="p-2">
+                              <td className="w-[190px] p-2">
                                 {lesson.cell?.evidences.length ? (
-                                  <div className="flex flex-wrap gap-1.5">
+                                  <div className="flex w-[170px] flex-col gap-2">
                                     {lesson.cell.evidences.map((ev) => (
-                                      <button
+                                      <EvidenceCard
                                         key={ev.id}
-                                        type="button"
-                                        disabled={!ev.url}
-                                        onClick={() =>
-                                          ev.url &&
-                                          setViewer({
-                                            url: ev.url,
-                                            kind: ev.fileType,
-                                            name:
-                                              ev.fileName ?? EVIDENCE_KIND_LABELS_AR[ev.fileType],
-                                          })
-                                        }
-                                        title="عرض داخل المنصة"
-                                        className="inline-flex items-center gap-1 rounded-lg border border-border/60 p-1 text-[10px] font-bold transition hover:border-primary/60 hover:bg-primary/5 disabled:opacity-50 print:hidden"
-                                      >
-                                        {ev.fileType === "image" && ev.url ? (
-                                          <img
-                                            src={ev.url}
-                                            alt={ev.fileName ?? "دليل"}
-                                            className="h-12 w-12 rounded-md object-cover"
-                                          />
-                                        ) : ev.fileType === "video" ? (
-                                          <Film className="h-4 w-4" />
-                                        ) : ev.fileType === "link" ? (
-                                          <LinkIcon className="h-4 w-4" />
-                                        ) : ev.fileType === "image" ? (
-                                          <ImageIcon className="h-4 w-4" />
-                                        ) : (
-                                          <FileText className="h-4 w-4" />
-                                        )}
-                                        <span className="max-w-[90px] truncate">
-                                          {ev.fileName ?? "ملف"}
-                                        </span>
-                                      </button>
-
+                                        evidence={ev}
+                                        onOpen={setViewer}
+                                      />
                                     ))}
                                   </div>
                                 ) : (
