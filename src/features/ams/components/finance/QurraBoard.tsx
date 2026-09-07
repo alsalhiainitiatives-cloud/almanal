@@ -1,7 +1,8 @@
 /**
  * Qurra initiative follow-up: an Excel-like grid of covered students (rows) and
- * school-year months (columns). Every month holds three cells — the amount
- * transferred by Qurra, the amount due, and a confirmation tick.
+ * school-year months (columns). The amount owed by Qurra is entered once per
+ * child for the whole year; each month holds the transferred amount and a
+ * confirmation tick, and the remaining balance drops as transfers arrive.
  */
 import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,9 +24,10 @@ import { exportExcel, exportPdf, type Column, type Row } from "@/features/ams/re
 import { money } from "@/features/finance/pricing";
 import { QURRA_MONTHS, type QurraCell } from "@/features/finance/qurra";
 import {
+  qurraAnnualDueSave,
+  qurraAnnualPrefill,
   qurraBoardGet,
   qurraCellSave,
-  qurraMonthPrefill,
 } from "@/features/finance/qurra.functions";
 import { cn } from "@/lib/utils";
 
@@ -35,10 +37,11 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
   const queryClient = useQueryClient();
   const loadBoard = useServerFn(qurraBoardGet);
   const saveCell = useServerFn(qurraCellSave);
-  const prefill = useServerFn(qurraMonthPrefill);
+  const saveAnnualDue = useServerFn(qurraAnnualDueSave);
+  const prefill = useServerFn(qurraAnnualPrefill);
 
   const [year, setYear] = useState<string | null>(null);
-  const [prefillMonth, setPrefillMonth] = useState<number>(QURRA_MONTHS[0]!.month);
+  const [prefillMonths, setPrefillMonths] = useState<number>(10);
 
   const board = useQuery({
     queryKey: [...KEY, year],
@@ -63,10 +66,17 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const saveDue = useMutation({
+    mutationFn: (input: { childId: string; totalDue: number }) =>
+      saveAnnualDue({ data: { ...input, academicYear } }),
+    onSuccess: () => refresh(),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const prefillMutation = useMutation({
-    mutationFn: () => prefill({ data: { academicYear, month: prefillMonth } }),
+    mutationFn: () => prefill({ data: { academicYear, months: prefillMonths } }),
     onSuccess: (res) => {
-      toast.success(`تم تعبئة المبلغ المستحق لـ ${res.updated} طالبًا`);
+      toast.success(`تم تعبئة المستحق السنوي لـ ${res.updated} طالبًا`);
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -77,13 +87,13 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
       { key: "name", label: "الطالب" },
       { key: "academic_number", label: "الرقم الأكاديمي" },
       { key: "classroom", label: "الفصل" },
+      { key: "total_due", label: "المستحق السنوي" },
       ...QURRA_MONTHS.flatMap((m) => [
         { key: `t_${m.month}`, label: `${m.label} — محوّل` },
-        { key: `d_${m.month}`, label: `${m.label} — مستحق` },
         { key: `c_${m.month}`, label: `${m.label} — سُدد` },
       ]),
       { key: "total_transferred", label: "إجمالي المحوّل" },
-      { key: "total_due", label: "إجمالي المستحق" },
+      { key: "remaining", label: "المتبقي" },
       { key: "total_confirmed", label: "إجمالي المسدد" },
     ],
     [],
@@ -97,13 +107,13 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
           academic_number: r.academicNumber ?? "—",
           classroom: r.classroomName ?? "—",
           total_transferred: r.totalTransferred,
-          total_due: r.totalDue,
+          total_due: r.annualDue,
+          remaining: r.remaining,
           total_confirmed: r.totalConfirmed,
         };
         for (const m of QURRA_MONTHS) {
           const cell: QurraCell | undefined = r.cells[m.month];
           row[`t_${m.month}`] = cell?.transferredAmount ?? 0;
-          row[`d_${m.month}`] = cell?.dueAmount ?? 0;
           row[`c_${m.month}`] = cell?.confirmed ? "نعم" : "لا";
         }
         return row;
@@ -160,15 +170,17 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
 
         {canManage ? (
           <>
-            <span className="ms-2 text-xs font-black text-foreground">تعبئة المستحق لشهر</span>
-            <Select value={String(prefillMonth)} onValueChange={(v) => setPrefillMonth(Number(v))}>
-              <SelectTrigger className="h-10 w-36 rounded-xl text-xs font-bold">
+            <span className="ms-2 text-xs font-black text-foreground">
+              تعبئة المستحق السنوي (عدد أشهر الرسوم)
+            </span>
+            <Select value={String(prefillMonths)} onValueChange={(v) => setPrefillMonths(Number(v))}>
+              <SelectTrigger className="h-10 w-28 rounded-xl text-xs font-bold">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {QURRA_MONTHS.map((m) => (
-                  <SelectItem key={m.month} value={String(m.month)} className="text-xs font-bold">
-                    {m.label}
+                {[8, 9, 10, 11, 12].map((n) => (
+                  <SelectItem key={n} value={String(n)} className="text-xs font-bold">
+                    {n} أشهر
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -238,10 +250,16 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
                 <th className="sticky right-0 z-20 min-w-56 border border-border/50 bg-primary/10 p-3 text-xs font-black text-foreground">
                   الطالب
                 </th>
+                <th
+                  rowSpan={2}
+                  className="min-w-32 border border-border/50 bg-secondary/20 p-2 text-center text-xs font-black text-foreground"
+                >
+                  المستحق السنوي
+                </th>
                 {QURRA_MONTHS.map((m) => (
                   <th
                     key={m.month}
-                    colSpan={3}
+                    colSpan={2}
                     className="border border-border/50 p-2 text-center text-xs font-black text-foreground"
                   >
                     {m.label}
@@ -258,12 +276,11 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
                 {QURRA_MONTHS.map((m) => (
                   <Fragment key={`h-${m.month}`}>
                     <th className="min-w-24 border border-border/50 p-2">محوّل من قرة</th>
-                    <th className="min-w-24 border border-border/50 p-2">المستحق</th>
                     <th className="min-w-16 border border-border/50 p-2">سُدد</th>
                   </Fragment>
                 ))}
                 <th className="min-w-24 border border-border/50 bg-secondary/10 p-2">المحوّل</th>
-                <th className="min-w-24 border border-border/50 bg-secondary/10 p-2">المستحق</th>
+                <th className="min-w-24 border border-border/50 bg-secondary/10 p-2">المتبقي</th>
                 <th className="min-w-24 border border-border/50 bg-secondary/10 p-2">المسدد</th>
               </tr>
             </thead>
@@ -275,6 +292,13 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
                     <p className="text-[0.65rem] font-bold text-muted-foreground">
                       {r.classroomName ?? "بدون فصل"} · {r.academicNumber ?? "—"}
                     </p>
+                  </td>
+                  <td className="border border-border/50 bg-secondary/5 p-1 text-center">
+                    <AmountCell
+                      value={r.annualDue}
+                      disabled={!canManage}
+                      onCommit={(v) => saveDue.mutate({ childId: r.childId, totalDue: v })}
+                    />
                   </td>
                   {QURRA_MONTHS.map((m) => {
                     const cell = r.cells[m.month] ?? {
@@ -294,13 +318,6 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
                             onCommit={(v) =>
                               save.mutate({ childId: r.childId, month: m.month, transferredAmount: v })
                             }
-                          />
-                        </td>
-                        <td className="border border-border/50 p-1">
-                          <AmountCell
-                            value={cell.dueAmount}
-                            disabled={!canManage}
-                            onCommit={(v) => save.mutate({ childId: r.childId, month: m.month, dueAmount: v })}
                           />
                         </td>
                         <td
@@ -323,8 +340,13 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
                   <td className="border border-border/50 bg-secondary/5 p-2 font-black text-foreground">
                     {money(r.totalTransferred)}
                   </td>
-                  <td className="border border-border/50 bg-secondary/5 p-2 font-black text-foreground">
-                    {money(r.totalDue)}
+                  <td
+                    className={cn(
+                      "border border-border/50 bg-secondary/5 p-2 font-black",
+                      r.remaining > 0 ? "text-amber-700" : "text-emerald-700",
+                    )}
+                  >
+                    {money(r.remaining)}
                   </td>
                   <td className="border border-border/50 bg-secondary/5 p-2 font-black text-emerald-700">
                     {money(r.totalConfirmed)}
@@ -333,20 +355,19 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
               ))}
               <tr className="bg-primary/10 font-black">
                 <td className="sticky right-0 z-10 border border-border/50 bg-primary/10 p-3">الإجمالي</td>
+                <td className="border border-border/50 p-2">{money(totals.due)}</td>
                 {QURRA_MONTHS.map((m) => {
                   const t = rows.reduce((s, r) => s + (r.cells[m.month]?.transferredAmount ?? 0), 0);
-                  const d = rows.reduce((s, r) => s + (r.cells[m.month]?.dueAmount ?? 0), 0);
                   const c = rows.filter((r) => r.cells[m.month]?.confirmed).length;
                   return (
                     <Fragment key={`total-${m.month}`}>
                       <td className="border border-border/50 p-2">{money(t)}</td>
-                      <td className="border border-border/50 p-2">{money(d)}</td>
                       <td className="border border-border/50 p-2 text-center">{c}</td>
                     </Fragment>
                   );
                 })}
                 <td className="border border-border/50 p-2">{money(totals.transferred)}</td>
-                <td className="border border-border/50 p-2">{money(totals.due)}</td>
+                <td className="border border-border/50 p-2">{money(totals.remaining)}</td>
                 <td className="border border-border/50 p-2">{money(totals.confirmed)}</td>
               </tr>
             </tbody>
