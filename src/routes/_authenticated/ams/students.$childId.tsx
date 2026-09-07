@@ -34,6 +34,7 @@ function StudentFilePage() {
   const queryClient = useQueryClient();
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [editing, setEditing] = useState(false);
   const logoUrl = useBrandLogoUrl();
 
   const { data, isLoading, error } = useQuery({
