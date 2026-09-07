@@ -94,7 +94,6 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
       ]),
       { key: "total_transferred", label: "إجمالي المحوّل" },
       { key: "remaining", label: "المتبقي" },
-      { key: "total_confirmed", label: "إجمالي المسدد" },
     ],
     [],
   );
