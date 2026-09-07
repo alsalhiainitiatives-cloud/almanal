@@ -33,6 +33,9 @@ import {
   TicketCheck,
   UserRoundPlus,
   Wallet,
+  HandCoins,
+} from "lucide-react";
+
 import { useEffect, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
