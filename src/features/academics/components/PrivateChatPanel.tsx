@@ -71,11 +71,14 @@ export function PrivateChatPanel({
   classroomId,
   embedded = false,
   autoSelectFirst = false,
+  initialChildId = null,
   onUnreadChange,
 }: {
   classroomId: string;
   embedded?: boolean;
   autoSelectFirst?: boolean;
+  /** Opens straight into the guardian of this child (teacher view). */
+  initialChildId?: string | null;
   onUnreadChange?: (count: number) => void;
 }) {
   const queryClient = useQueryClient();
@@ -209,12 +212,20 @@ export function PrivateChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatId, messages.length]);
 
-  // "شات فردي" jumps straight into the first available contact.
+  // "شات فردي" jumps straight into the guardian of a chosen child, else the first contact.
   useEffect(() => {
-    if (!autoSelectFirst || peer || !list.length) return;
+    if (peer || !list.length) return;
+    if (initialChildId) {
+      const match = list.find((c) => (c.childIds ?? []).includes(initialChildId));
+      if (match) {
+        setPeer({ peerId: match.peerId, chatId: match.chatId });
+        return;
+      }
+    }
+    if (!autoSelectFirst) return;
     const first = list[0]!;
     setPeer({ peerId: first.peerId, chatId: first.chatId });
-  }, [autoSelectFirst, peer, list]);
+  }, [autoSelectFirst, initialChildId, peer, list]);
 
   return (
     <div
