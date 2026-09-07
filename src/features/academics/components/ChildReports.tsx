@@ -3,20 +3,22 @@
  * digital evidence attached by the teacher. A classroom's reports only appear
  * here when the teacher enabled "show to parents" for that classroom.
  */
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { EyeOff, FileText, Film, ImageIcon, Link as LinkIcon, Loader2, Printer } from "lucide-react";
-import { useState } from "react";
+import { EyeOff, FileText, Film, ImageIcon, Link as LinkIcon, Loader2, Play, Printer } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { MediaViewerDialog, type MediaItem } from "@/components/media/MediaViewerDialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ReportLetterhead, ReportSignatures, ReportStamp } from "@/components/reports/ReportLetterhead";
-import { EVIDENCE_KIND_LABELS_AR, SCALE_LABELS, TRIANGLE_LABELS } from "../assessments";
-import { REPORT_TYPE_LABELS, masteryLabel, type ReportType } from "../reports";
+import { supabase } from "@/integrations/supabase/client";
+import { EVIDENCE_KIND_LABELS_AR, SCALE_LABELS } from "../assessments";
+import { REPORT_TYPE_LABELS, type ReportEvidence, type ReportType } from "../reports";
 import { academicsParentReportBoard } from "../reports.functions";
+import type { MonthColor } from "../settings";
 import { EvaluationGuide } from "./EvaluationGuide";
-import { EvaluationTriangle } from "./EvaluationTriangle";
+import { ParentProgressStepper } from "./ParentProgressStepper";
 
 
 const PRINT_CSS = `
