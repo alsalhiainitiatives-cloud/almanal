@@ -106,7 +106,7 @@ export async function listPrivateContacts(
     });
   }
 
-  let peers: { peerId: string; subtitle: string | null }[] = [];
+  let peers: { peerId: string; subtitle: string | null; childIds: string[] }[] = [];
 
   if (role === "parent") {
     const { data: links } = await supabaseAdmin
@@ -116,30 +116,36 @@ export async function listPrivateContacts(
     peers = [...new Set((links ?? []).map((l) => l.teacher_id).filter(Boolean))].map((id) => ({
       peerId: id as string,
       subtitle: "معلمة الفصل",
+      childIds: [],
     }));
   } else if (role === "teacher") {
     const { data: children } = await supabaseAdmin
       .from("application_children")
-      .select("name_ar, applications!inner (parent_id, status)")
+      .select("id, name_ar, applications!inner (parent_id, status)")
       .eq("classroom_id", input.classroomId)
       .eq("applications.status", "approved")
       .limit(300);
-    const byParent = new Map<string, string[]>();
+    const byParent = new Map<string, { names: string[]; childIds: string[] }>();
     for (const row of (children ?? []) as unknown as {
+      id: string;
       name_ar: string;
       applications: { parent_id: string | null } | null;
     }[]) {
       const parentId = row.applications?.parent_id;
       if (!parentId) continue;
-      byParent.set(parentId, [...(byParent.get(parentId) ?? []), row.name_ar]);
+      const entry = byParent.get(parentId) ?? { names: [], childIds: [] };
+      entry.names.push(row.name_ar);
+      entry.childIds.push(row.id);
+      byParent.set(parentId, entry);
     }
-    peers = [...byParent.entries()].map(([peerId, names]) => ({
+    peers = [...byParent.entries()].map(([peerId, entry]) => ({
       peerId,
-      subtitle: `ولي أمر ${names.slice(0, 2).join(" و")}`,
+      subtitle: `ولي أمر ${entry.names.slice(0, 2).join(" و")}`,
+      childIds: entry.childIds,
     }));
   } else {
     // Staff moderation: only conversations that already exist.
-    peers = chatRows.map((c) => ({ peerId: c.teacher_id, subtitle: "محادثة خاصة" }));
+    peers = chatRows.map((c) => ({ peerId: c.teacher_id, subtitle: "محادثة خاصة", childIds: [] }));
   }
 
   const peerIds = [...new Set(peers.map((p) => p.peerId))];
@@ -169,6 +175,7 @@ export async function listPrivateContacts(
       name: profile?.full_name?.trim() || "عضو",
       avatarUrl: resolveAvatar(profile?.avatar_url ?? null, signed),
       subtitle: p.subtitle,
+      childIds: p.childIds,
       chatId,
       lastMessageAt: last?.at ?? null,
       lastPreview: last?.preview ?? null,

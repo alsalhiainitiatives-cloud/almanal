@@ -16,6 +16,8 @@ export type PrivateContact = {
   avatarUrl: string | null;
   /** "معلمة الفصل" or "والد أحمد / والدة سارة". */
   subtitle: string | null;
+  /** Children linking this contact to the classroom (teacher view). */
+  childIds: string[];
   chatId: string | null;
   lastMessageAt: string | null;
   lastPreview: string | null;

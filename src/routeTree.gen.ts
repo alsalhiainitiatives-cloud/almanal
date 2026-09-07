@@ -83,6 +83,7 @@ import { Route as AuthenticatedAmsStudentsAttendanceRouteImport } from './routes
 import { Route as AuthenticatedAmsStudentsChildIdRouteImport } from './routes/_authenticated/ams/students.$childId'
 import { Route as AuthenticatedAmsFinanceSettingsRouteImport } from './routes/_authenticated/ams/finance.settings'
 import { Route as AuthenticatedAmsFinanceReportsRouteImport } from './routes/_authenticated/ams/finance.reports'
+import { Route as AuthenticatedAmsFinanceQurraRouteImport } from './routes/_authenticated/ams/finance.qurra'
 import { Route as AuthenticatedAmsFinanceInvoicesRouteImport } from './routes/_authenticated/ams/finance.invoices'
 import { Route as AuthenticatedAmsFinanceClaimsRouteImport } from './routes/_authenticated/ams/finance.claims'
 import { Route as AuthenticatedAmsApplicationsApplicationIdRouteImport } from './routes/_authenticated/ams/applications.$applicationId'
@@ -500,6 +501,12 @@ const AuthenticatedAmsFinanceReportsRoute =
     path: '/ams/finance/reports',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAmsFinanceQurraRoute =
+  AuthenticatedAmsFinanceQurraRouteImport.update({
+    id: '/ams/finance/qurra',
+    path: '/ams/finance/qurra',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAmsFinanceInvoicesRoute =
   AuthenticatedAmsFinanceInvoicesRouteImport.update({
     id: '/ams/finance/invoices',
@@ -642,6 +649,7 @@ export interface FileRoutesByFullPath {
   '/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
   '/ams/finance/claims': typeof AuthenticatedAmsFinanceClaimsRoute
   '/ams/finance/invoices': typeof AuthenticatedAmsFinanceInvoicesRoute
+  '/ams/finance/qurra': typeof AuthenticatedAmsFinanceQurraRoute
   '/ams/finance/reports': typeof AuthenticatedAmsFinanceReportsRoute
   '/ams/finance/settings': typeof AuthenticatedAmsFinanceSettingsRoute
   '/ams/students/$childId': typeof AuthenticatedAmsStudentsChildIdRoute
@@ -730,6 +738,7 @@ export interface FileRoutesByTo {
   '/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
   '/ams/finance/claims': typeof AuthenticatedAmsFinanceClaimsRoute
   '/ams/finance/invoices': typeof AuthenticatedAmsFinanceInvoicesRoute
+  '/ams/finance/qurra': typeof AuthenticatedAmsFinanceQurraRoute
   '/ams/finance/reports': typeof AuthenticatedAmsFinanceReportsRoute
   '/ams/finance/settings': typeof AuthenticatedAmsFinanceSettingsRoute
   '/ams/students/$childId': typeof AuthenticatedAmsStudentsChildIdRoute
@@ -820,6 +829,7 @@ export interface FileRoutesById {
   '/_authenticated/ams/applications/$applicationId': typeof AuthenticatedAmsApplicationsApplicationIdRoute
   '/_authenticated/ams/finance/claims': typeof AuthenticatedAmsFinanceClaimsRoute
   '/_authenticated/ams/finance/invoices': typeof AuthenticatedAmsFinanceInvoicesRoute
+  '/_authenticated/ams/finance/qurra': typeof AuthenticatedAmsFinanceQurraRoute
   '/_authenticated/ams/finance/reports': typeof AuthenticatedAmsFinanceReportsRoute
   '/_authenticated/ams/finance/settings': typeof AuthenticatedAmsFinanceSettingsRoute
   '/_authenticated/ams/students/$childId': typeof AuthenticatedAmsStudentsChildIdRoute
@@ -910,6 +920,7 @@ export interface FileRouteTypes {
     | '/ams/applications/$applicationId'
     | '/ams/finance/claims'
     | '/ams/finance/invoices'
+    | '/ams/finance/qurra'
     | '/ams/finance/reports'
     | '/ams/finance/settings'
     | '/ams/students/$childId'
@@ -998,6 +1009,7 @@ export interface FileRouteTypes {
     | '/ams/applications/$applicationId'
     | '/ams/finance/claims'
     | '/ams/finance/invoices'
+    | '/ams/finance/qurra'
     | '/ams/finance/reports'
     | '/ams/finance/settings'
     | '/ams/students/$childId'
@@ -1087,6 +1099,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ams/applications/$applicationId'
     | '/_authenticated/ams/finance/claims'
     | '/_authenticated/ams/finance/invoices'
+    | '/_authenticated/ams/finance/qurra'
     | '/_authenticated/ams/finance/reports'
     | '/_authenticated/ams/finance/settings'
     | '/_authenticated/ams/students/$childId'
@@ -1662,6 +1675,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAmsFinanceReportsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ams/finance/qurra': {
+      id: '/_authenticated/ams/finance/qurra'
+      path: '/ams/finance/qurra'
+      fullPath: '/ams/finance/qurra'
+      preLoaderRoute: typeof AuthenticatedAmsFinanceQurraRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ams/finance/invoices': {
       id: '/_authenticated/ams/finance/invoices'
       path: '/ams/finance/invoices'
@@ -1797,6 +1817,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAmsApplicationsApplicationIdRoute: typeof AuthenticatedAmsApplicationsApplicationIdRoute
   AuthenticatedAmsFinanceClaimsRoute: typeof AuthenticatedAmsFinanceClaimsRoute
   AuthenticatedAmsFinanceInvoicesRoute: typeof AuthenticatedAmsFinanceInvoicesRoute
+  AuthenticatedAmsFinanceQurraRoute: typeof AuthenticatedAmsFinanceQurraRoute
   AuthenticatedAmsFinanceReportsRoute: typeof AuthenticatedAmsFinanceReportsRoute
   AuthenticatedAmsFinanceSettingsRoute: typeof AuthenticatedAmsFinanceSettingsRoute
   AuthenticatedAmsStudentsChildIdRoute: typeof AuthenticatedAmsStudentsChildIdRoute
@@ -1868,6 +1889,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAmsApplicationsApplicationIdRoute,
   AuthenticatedAmsFinanceClaimsRoute: AuthenticatedAmsFinanceClaimsRoute,
   AuthenticatedAmsFinanceInvoicesRoute: AuthenticatedAmsFinanceInvoicesRoute,
+  AuthenticatedAmsFinanceQurraRoute: AuthenticatedAmsFinanceQurraRoute,
   AuthenticatedAmsFinanceReportsRoute: AuthenticatedAmsFinanceReportsRoute,
   AuthenticatedAmsFinanceSettingsRoute: AuthenticatedAmsFinanceSettingsRoute,
   AuthenticatedAmsStudentsChildIdRoute: AuthenticatedAmsStudentsChildIdRoute,

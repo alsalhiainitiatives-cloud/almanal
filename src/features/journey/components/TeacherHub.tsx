@@ -7,6 +7,7 @@ import {
   Loader2,
   Pencil,
   Plus,
+  MessageCircle,
   Sparkles,
   Trash2,
   Users,
@@ -35,6 +36,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { PrivateChatPanel } from "@/features/academics/components/PrivateChatPanel";
 import { cn } from "@/lib/utils";
 import {
   journeyAddEvidence,
@@ -110,6 +112,7 @@ export function TeacherHub() {
 
   const data = hub.data;
   const selectedClassroom = data?.selected ?? null;
+  const [chatChild, setChatChild] = useState<{ id: string; name: string } | null>(null);
   const children = data?.children ?? [];
   const activeChildId = childId && children.some((c) => c.id === childId) ? childId : (children[0]?.id ?? null);
   const childSkills = useMemo(
@@ -330,19 +333,31 @@ export function TeacherHub() {
         <TabsContent value="skills" className="mt-4 grid gap-4 lg:grid-cols-[260px_1fr]">
           <aside className="space-y-1.5 rounded-[1.5rem] border border-border/60 bg-card/90 p-3 shadow-soft">
             {children.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setChildId(c.id)}
-                className={cn(
-                  "w-full rounded-2xl px-3 py-2.5 text-right text-sm font-bold transition-colors",
-                  activeChildId === c.id
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                )}
-              >
-                {c.name}
-              </button>
+              <div key={c.id} className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setChildId(c.id)}
+                  className={cn(
+                    "flex-1 rounded-2xl px-3 py-2.5 text-right text-sm font-bold transition-colors",
+                    activeChildId === c.id
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  )}
+                >
+                  {c.name}
+                </button>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  title={`شات فردي مع ولي أمر ${c.name}`}
+                  aria-label={`شات فردي مع ولي أمر ${c.name}`}
+                  className="size-9 shrink-0 rounded-xl text-primary hover:bg-primary/10"
+                  onClick={() => setChatChild({ id: c.id, name: c.name })}
+                >
+                  <MessageCircle className="size-4" />
+                </Button>
+              </div>
             ))}
             {!children.length && (
               <p className="p-3 text-xs font-bold text-muted-foreground">لا يوجد أطفال مسكّنون في هذا الفصل.</p>

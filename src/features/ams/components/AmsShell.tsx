@@ -33,7 +33,9 @@ import {
   TicketCheck,
   UserRoundPlus,
   Wallet,
+  HandCoins,
 } from "lucide-react";
+
 import { useEffect, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -201,6 +203,13 @@ const FINANCE_NAV: NavItem[] = [
     exact: false,
     group: "التحصيل والمتابعة",
     roles: ["admin", "accountant"],
+  },
+  {
+    to: "/ams/finance/qurra",
+    label: "متابعة سداد قرة",
+    icon: HandCoins,
+    exact: false,
+    group: "التحصيل والمتابعة",
   },
   {
     to: "/ams/finance/reports",

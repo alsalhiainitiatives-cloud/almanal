@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BarChart3, ReceiptText, Settings2, Wallet } from "lucide-react";
+import { BarChart3, HandCoins, ReceiptText, Settings2, Wallet } from "lucide-react";
 
 import { AmsShell } from "@/features/ams/components/AmsShell";
 import { canSeeLink } from "@/features/ams/nav-access";
@@ -34,6 +34,13 @@ const CARDS = [
     icon: ReceiptText,
     text: "إصدار مطالبة العام الدراسي الجديد للطلاب المستمرين.",
     manage: true,
+  },
+  {
+    to: "/ams/finance/qurra",
+    label: "متابعة سداد مبادرة قرة",
+    icon: HandCoins,
+    text: "جدول شهري للطلاب المشمولين بدعم قرة: المبلغ المحوّل، المستحق، وتأكيد السداد.",
+    manage: false,
   },
   {
     to: "/ams/finance/reports",
