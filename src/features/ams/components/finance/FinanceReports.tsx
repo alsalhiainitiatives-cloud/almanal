@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { qurraBoardGet } from "@/features/finance/qurra.functions";
 import { financeOverviewGet } from "@/features/finance/finance.functions";
 import { dateAr, isOverdue, money } from "@/features/finance/pricing";
 import { exportExcel, exportPdf, type Column, type Row } from "@/features/ams/reports-export";
@@ -92,11 +93,24 @@ type Tab = "summary" | "invoices" | "aging" | "monthly";
 /** Read-only financial analytics for the kindergarten with branded exports. */
 export function FinanceReports() {
   const load = useServerFn(financeOverviewGet);
+  const loadQurra = useServerFn(qurraBoardGet);
   const { data, isLoading } = useQuery({ queryKey: KEY, queryFn: () => load() });
+  // Qurra transfers live in their own monthly ledger, folded into the summary.
+  const qurraBoard = useQuery({
+    queryKey: [...KEY, "qurra"],
+    queryFn: () => loadQurra({ data: {} }),
+  });
   const [tab, setTab] = useState<Tab>("summary");
   const [year, setYear] = useState<string>("all");
 
   const lateAfter = data?.planSettings?.late_after_days ?? 0;
+  const qurraTotals = qurraBoard.data?.totals ?? {
+    due: 0,
+    transferred: 0,
+    confirmed: 0,
+    students: 0,
+    remaining: 0,
+  };
 
   const model = useMemo(() => {
     const allInvoices = data?.invoices ?? [];
@@ -212,6 +226,9 @@ export function FinanceReports() {
       },
       { label: "إيصالات بانتظار الاعتماد", value: pendingReceipts.length },
       { label: "فواتير مشمولة بدعم قرة", value: qurra.length },
+      { label: "طلاب مشمولون بدعم قرة", value: qurraTotals.students },
+      { label: "محوّل من مبادرة قرة", value: Math.round(qurraTotals.transferred) },
+      { label: "مستحق على مبادرة قرة", value: Math.round(qurraTotals.remaining) },
       { label: "طلبات بلا خطة سداد", value: (data?.unplanned ?? []).length },
     ];
 
@@ -232,7 +249,7 @@ export function FinanceReports() {
         pending: pendingReceipts.length,
       },
     };
-  }, [data, lateAfter, year]);
+  }, [data, lateAfter, year, qurraTotals]);
 
   const active = {
     summary: { columns: SUMMARY_COLUMNS, rows: model.summary, title: "الملخص المالي العام" },
