@@ -53,10 +53,10 @@ export async function getQurraBoard(
   const { data: apps } = appIds.length
     ? await supabase
         .from("applications")
-        .select("id, academic_year, parent_id, status")
+        .select("id, academic_year, parent_id, status, student_number")
         .in("id", appIds)
         .eq("status", "approved")
-    : { data: [] as { id: string; academic_year: string; parent_id: string; status: string }[] };
+    : { data: [] as { id: string; academic_year: string; parent_id: string; status: string; student_number: string | null }[] };
 
   const years = [...new Set((apps ?? []).map((a) => a.academic_year).filter(Boolean))].sort().reverse();
   const academicYear = input.academicYear || years[0] || ACADEMIC_YEAR;
@@ -66,7 +66,7 @@ export async function getQurraBoard(
   const { data: children } = scopedAppIds.length
     ? await supabase
         .from("application_children")
-        .select("id, name_ar, application_id, academic_number, stage_id, classroom_id")
+        .select("id, name_ar, application_id, stage_id, classroom_id")
         .in("application_id", scopedAppIds)
     : { data: [] as Record<string, string | null>[] };
 
@@ -74,7 +74,6 @@ export async function getQurraBoard(
     id: string;
     name_ar: string;
     application_id: string;
-    academic_number: string | null;
     stage_id: string | null;
     classroom_id: string | null;
   }[];
@@ -154,7 +153,7 @@ export async function getQurraBoard(
     return {
       childId: child.id,
       name: child.name_ar,
-      academicNumber: child.academic_number,
+      academicNumber: app?.student_number ?? null,
       stageName: (child.stage_id ? stageName.get(child.stage_id) : null) ?? null,
       classroomName: classroom?.name_ar ?? null,
       parentName: (app ? parentName.get(app.parent_id) : null) ?? null,
