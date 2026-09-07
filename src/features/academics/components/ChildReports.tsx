@@ -273,22 +273,54 @@ export function ChildReports() {
   );
 }
 
-function Cell({
-  scale,
-  level,
-  colors,
+/** Uniform 16:9 evidence card — always opens inside the platform viewer. */
+function EvidenceCard({
+  evidence,
+  onOpen,
 }: {
-  scale: "performance" | "growth";
-  level: 0 | 1 | 2 | 3;
-  colors: string[];
+  evidence: ReportEvidence;
+  onOpen: (item: MediaItem) => void;
 }) {
+  const label = evidence.fileName ?? EVIDENCE_KIND_LABELS_AR[evidence.fileType];
+  const Icon =
+    evidence.fileType === "video"
+      ? Play
+      : evidence.fileType === "image"
+        ? ImageIcon
+        : evidence.fileType === "link"
+          ? LinkIcon
+          : FileText;
+
   return (
-    <div className="flex items-center gap-2">
-      <EvaluationTriangle scale={scale} level={level} colors={colors} size={36} readOnly />
-      <span className="text-[11px] font-bold text-muted-foreground">
-        {level === 0 ? masteryLabel(0) : TRIANGLE_LABELS[scale][level]}
-      </span>
-    </div>
+    <button
+      type="button"
+      disabled={!evidence.url}
+      title="عرض داخل المنصة"
+      onClick={() =>
+        evidence.url && onOpen({ url: evidence.url, kind: evidence.fileType, name: label })
+      }
+      className="group w-full overflow-hidden rounded-xl border border-border/60 bg-background/60 text-right transition hover:border-primary/60 hover:shadow-md disabled:opacity-50 print:hidden"
+    >
+      <div className="relative aspect-video w-full overflow-hidden bg-muted">
+        {evidence.fileType === "image" && evidence.url ? (
+          <img
+            src={evidence.url}
+            alt={label}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : null}
+        <span className="absolute inset-0 grid place-items-center bg-foreground/25 text-white transition group-hover:bg-foreground/40">
+          <span className="grid size-9 place-items-center rounded-full bg-white/90 text-foreground shadow">
+            <Icon className="size-4" />
+          </span>
+        </span>
+      </div>
+      <div className="flex items-center gap-1 px-2 py-1.5">
+        {evidence.fileType === "video" ? <Film className="size-3 shrink-0" /> : null}
+        <span className="truncate text-[10px] font-bold text-muted-foreground">{label}</span>
+      </div>
+    </button>
   );
 }
 
