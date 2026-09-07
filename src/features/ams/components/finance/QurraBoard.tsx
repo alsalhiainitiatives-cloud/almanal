@@ -94,7 +94,6 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
       ]),
       { key: "total_transferred", label: "إجمالي المحوّل" },
       { key: "remaining", label: "المتبقي" },
-      { key: "total_confirmed", label: "إجمالي المسدد" },
     ],
     [],
   );
@@ -109,7 +108,6 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
           total_transferred: r.totalTransferred,
           total_due: r.annualDue,
           remaining: r.remaining,
-          total_confirmed: r.totalConfirmed,
         };
         for (const m of QURRA_MONTHS) {
           const cell: QurraCell | undefined = r.cells[m.month];
@@ -265,7 +263,7 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
                     {m.label}
                   </th>
                 ))}
-                <th colSpan={3} className="border border-border/50 bg-secondary/20 p-2 text-center font-black">
+                <th colSpan={2} className="border border-border/50 bg-secondary/20 p-2 text-center font-black">
                   الإجماليات
                 </th>
               </tr>
@@ -281,7 +279,6 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
                 ))}
                 <th className="min-w-24 border border-border/50 bg-secondary/10 p-2">المحوّل</th>
                 <th className="min-w-24 border border-border/50 bg-secondary/10 p-2">المتبقي</th>
-                <th className="min-w-24 border border-border/50 bg-secondary/10 p-2">المسدد</th>
               </tr>
             </thead>
             <tbody>
@@ -348,9 +345,6 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
                   >
                     {money(r.remaining)}
                   </td>
-                  <td className="border border-border/50 bg-secondary/5 p-2 font-black text-emerald-700">
-                    {money(r.totalConfirmed)}
-                  </td>
                 </tr>
               ))}
               <tr className="bg-primary/10 font-black">
@@ -368,7 +362,6 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
                 })}
                 <td className="border border-border/50 p-2">{money(totals.transferred)}</td>
                 <td className="border border-border/50 p-2">{money(totals.remaining)}</td>
-                <td className="border border-border/50 p-2">{money(totals.confirmed)}</td>
               </tr>
             </tbody>
           </table>
