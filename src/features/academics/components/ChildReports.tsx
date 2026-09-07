@@ -39,10 +39,28 @@ export function ChildReports() {
   const [viewer, setViewer] = useState<MediaItem | null>(null);
 
 
+  const queryClient = useQueryClient();
+
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["parent-academic-report", childId, reportType],
     queryFn: () => loadBoard({ data: { childId, reportType } }),
   });
+
+  // Live sync: any change a teacher makes to an evaluation or its evidence
+  // refreshes the stepper and helper text without a page reload.
+  useEffect(() => {
+    const channel = supabase.channel(`parent-report-live:${Math.random().toString(36).slice(2)}`);
+    for (const table of ["lesson_assessments", "assessment_evidences"] as const) {
+      channel.on("postgres_changes", { event: "*", schema: "public", table }, () => {
+        queryClient.invalidateQueries({ queryKey: ["parent-academic-report"] });
+      });
+    }
+    channel.subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
 
   if (isLoading) {
     return (
