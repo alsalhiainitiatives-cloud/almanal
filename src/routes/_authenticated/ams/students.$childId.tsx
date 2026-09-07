@@ -130,6 +130,14 @@ function StudentFilePage() {
               حذف الصورة
             </Button>
           )}
+          <Button
+            variant="outline"
+            className="rounded-2xl text-xs font-bold"
+            onClick={() => setEditing(true)}
+          >
+            <Pencil className="size-3.5" />
+            تعديل البيانات
+          </Button>
           <Button variant="soft" className="rounded-2xl text-xs font-bold" onClick={() => void onDownloadPdf()}>
             <Download className="size-3.5" />
             تنزيل PDF
@@ -144,6 +152,7 @@ function StudentFilePage() {
       <StudentProfileTabs childId={childId} file={data}>
         <StudentFileDocument data={data} photoSrc={photoSrc} />
       </StudentProfileTabs>
+      <StudentEditDialog childId={childId} open={editing} onOpenChange={setEditing} />
     </AmsShell>
   );
 }
