@@ -3,7 +3,7 @@
  * school-year months (columns). Every month holds three cells — the amount
  * transferred by Qurra, the amount due, and a confirmation tick.
  */
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { BadgeCheck, FileSpreadsheet, FileText, HandCoins, Loader2, Wand2, Wallet } from "lucide-react";
@@ -256,17 +256,11 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
                   الفصل / الرقم الأكاديمي
                 </th>
                 {QURRA_MONTHS.map((m) => (
-                  <>
-                    <th key={`t${m.month}`} className="min-w-24 border border-border/50 p-2">
-                      محوّل من قرة
-                    </th>
-                    <th key={`d${m.month}`} className="min-w-24 border border-border/50 p-2">
-                      المستحق
-                    </th>
-                    <th key={`c${m.month}`} className="min-w-16 border border-border/50 p-2">
-                      سُدد
-                    </th>
-                  </>
+                  <Fragment key={`h-${m.month}`}>
+                    <th className="min-w-24 border border-border/50 p-2">محوّل من قرة</th>
+                    <th className="min-w-24 border border-border/50 p-2">المستحق</th>
+                    <th className="min-w-16 border border-border/50 p-2">سُدد</th>
+                  </Fragment>
                 ))}
                 <th className="min-w-24 border border-border/50 bg-secondary/10 p-2">المحوّل</th>
                 <th className="min-w-24 border border-border/50 bg-secondary/10 p-2">المستحق</th>
@@ -292,8 +286,8 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
                       note: null,
                     };
                     return (
-                      <>
-                        <td key={`t${m.month}`} className="border border-border/50 p-1">
+                      <Fragment key={`${r.childId}-${m.month}`}>
+                        <td className="border border-border/50 p-1">
                           <AmountCell
                             value={cell.transferredAmount}
                             disabled={!canManage}
@@ -302,7 +296,7 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
                             }
                           />
                         </td>
-                        <td key={`d${m.month}`} className="border border-border/50 p-1">
+                        <td className="border border-border/50 p-1">
                           <AmountCell
                             value={cell.dueAmount}
                             disabled={!canManage}
@@ -310,7 +304,6 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
                           />
                         </td>
                         <td
-                          key={`c${m.month}`}
                           className={cn(
                             "border border-border/50 p-2 text-center",
                             cell.confirmed && "bg-emerald-500/10",
@@ -324,7 +317,7 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
                             }
                           />
                         </td>
-                      </>
+                      </Fragment>
                     );
                   })}
                   <td className="border border-border/50 bg-secondary/5 p-2 font-black text-foreground">
@@ -345,17 +338,11 @@ export function QurraBoard({ canManage }: { canManage: boolean }) {
                   const d = rows.reduce((s, r) => s + (r.cells[m.month]?.dueAmount ?? 0), 0);
                   const c = rows.filter((r) => r.cells[m.month]?.confirmed).length;
                   return (
-                    <>
-                      <td key={`tt${m.month}`} className="border border-border/50 p-2">
-                        {money(t)}
-                      </td>
-                      <td key={`td${m.month}`} className="border border-border/50 p-2">
-                        {money(d)}
-                      </td>
-                      <td key={`tc${m.month}`} className="border border-border/50 p-2 text-center">
-                        {c}
-                      </td>
-                    </>
+                    <Fragment key={`total-${m.month}`}>
+                      <td className="border border-border/50 p-2">{money(t)}</td>
+                      <td className="border border-border/50 p-2">{money(d)}</td>
+                      <td className="border border-border/50 p-2 text-center">{c}</td>
+                    </Fragment>
                   );
                 })}
                 <td className="border border-border/50 p-2">{money(totals.transferred)}</td>
