@@ -12,6 +12,7 @@ import {
   StudentFileDocument,
   studentFilePdfOptions,
 } from "@/features/ams/components/students/StudentFileDocument";
+import { StudentEditDialog } from "@/features/ams/components/students/StudentEditDialog";
 import { StudentProfileTabs } from "@/features/ams/components/students/StudentProfileTabs";
 import { buildStudentFileHtml, downloadStudentFilePdf } from "@/features/ams/student-file";
 import { uploadClassroomMedia, useClassroomMediaUrls } from "@/lib/classroom-media";
