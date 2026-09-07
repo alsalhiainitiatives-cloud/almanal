@@ -2,7 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { getQurraBoard, prefillQurraMonth, saveQurraCell } from "./qurra.server";
+import {
+  getQurraBoard,
+  prefillQurraAnnualDues,
+  saveQurraAnnualDue,
+  saveQurraCell,
+} from "./qurra.server";
 
 const uuid = z.string().uuid();
 const year = z.string().trim().min(4).max(40);
@@ -31,9 +36,23 @@ export const qurraCellSave = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => saveQurraCell(context.supabase, context.userId, data));
 
-export const qurraMonthPrefill = createServerFn({ method: "POST" })
+export const qurraAnnualDueSave = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ academicYear: year, month: z.number().int().min(1).max(12) }).parse(data),
+    z
+      .object({
+        childId: uuid,
+        academicYear: year,
+        totalDue: z.number().min(0).max(10_000_000),
+        note: z.string().max(500).nullish(),
+      })
+      .parse(data),
   )
-  .handler(async ({ data, context }) => prefillQurraMonth(context.supabase, context.userId, data));
+  .handler(async ({ data, context }) => saveQurraAnnualDue(context.supabase, context.userId, data));
+
+export const qurraAnnualPrefill = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ academicYear: year, months: z.number().int().min(1).max(12).nullish() }).parse(data),
+  )
+  .handler(async ({ data, context }) => prefillQurraAnnualDues(context.supabase, context.userId, data));
