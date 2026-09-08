@@ -494,7 +494,7 @@ export function AmsShell({
               {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
             </div>
             <div className="flex items-center gap-2">
-              <NotificationBell />
+              
               {activeModule.search && (
                 <Button
                   variant="outline"
