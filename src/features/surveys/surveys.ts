@@ -659,6 +659,7 @@ export async function notifySurveyAudience(survey: Survey): Promise<number> {
     .from("application_children")
     .select("stage_id, classroom_id, applications!inner (parent_id, status)")
     .eq("applications.status", "approved")
+    .is("withdrawn_at", null)
     .limit(500);
 
   const kind = survey.audience_kind ?? "all";

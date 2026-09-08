@@ -217,6 +217,7 @@ export async function getParentPlanBoard(supabase: Db, userId: string): Promise<
     )
     .eq("applications.parent_id", userId)
     .eq("applications.status", "approved")
+    .is("withdrawn_at", null)
     .order("name_ar")
     .limit(50);
 

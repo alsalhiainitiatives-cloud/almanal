@@ -165,6 +165,7 @@ export async function getTeacherHub(supabase: Db, userId: string, input: { class
       .select("id, name_ar, gender, birth_date, applications!inner (status)")
       .eq("classroom_id", selected)
       .eq("applications.status", "approved")
+    .is("withdrawn_at", null)
       .order("name_ar")
       .limit(200),
   ]);
@@ -214,6 +215,7 @@ export async function getParentJourney(supabase: Db, userId: string) {
     .select("id, name_ar, birth_date, photo_url, classroom_id, applications!inner (parent_id, status)")
     .eq("applications.parent_id", userId)
     .eq("applications.status", "approved")
+    .is("withdrawn_at", null)
     .order("name_ar")
     .limit(50);
 
