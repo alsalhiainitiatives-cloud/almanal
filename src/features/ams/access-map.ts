@@ -46,6 +46,7 @@ export const ACCESS_MAP: AccessModule[] = [
       { to: "/ams/students/guardians", label: "ربط أولياء الأمور" },
       { to: "/ams/students/data", label: "استيراد وتصدير البيانات" },
       { to: "/ams/students/promotions", label: "ترقية الطلاب" },
+      { to: "/ams/students/withdrawals", label: "انسحاب الطلاب والخريجون" },
     ],
   },
   {

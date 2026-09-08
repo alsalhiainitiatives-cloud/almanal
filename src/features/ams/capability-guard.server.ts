@@ -38,6 +38,7 @@ export const CAPABILITY_PERMISSIONS: Record<Capability, string[]> = {
     "guardians.link",
     "guardians.invite",
     "attendance.record",
+    "students.withdraw",
   ],
   waitlist: ["enrollment.manage", "applications.review"],
   qurra: ["applications.review", "enrollment.manage"],
@@ -45,7 +46,7 @@ export const CAPABILITY_PERMISSIONS: Record<Capability, string[]> = {
   confidential: ["applications.approve", "audit.view"],
   payments: ["payments.manage", "invoices.view"],
   reports: ["reports.view", "reports.financial", "academic_reports.view", "students.export"],
-  archive: ["settings.manage", "students.delete"],
+  archive: ["settings.manage", "students.delete", "students.withdraw_confirm"],
 };
 
 export async function rolesOfUser(supabase: Db, userId: string): Promise<AppRole[]> {

@@ -29,6 +29,8 @@ export const MODULE_PERMISSIONS: Record<string, string[]> = {
     "guardians.link",
     "guardians.invite",
     "classrooms.assign",
+    "students.withdraw",
+    "students.withdraw_confirm",
   ],
   "/ams/academics": [
     "curriculum.view",
@@ -69,6 +71,7 @@ export const LINK_PERMISSIONS: Record<string, string[]> = {
   "/ams/students/guardians": ["guardians.link", "guardians.invite"],
   "/ams/students/data": ["students.import", "students.export", "students.create", "students.edit"],
   "/ams/students/promotions": ["enrollment.manage", "students.edit"],
+  "/ams/students/withdrawals": ["students.withdraw", "students.withdraw_confirm", "students.view"],
 
   // Academics
   "/ams/academics": MODULE_PERMISSIONS["/ams/academics"]!,

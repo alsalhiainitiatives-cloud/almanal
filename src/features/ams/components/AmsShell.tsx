@@ -150,6 +150,13 @@ const STUDENTS_NAV: NavItem[] = [
     group: "إدارة البيانات",
   },
   {
+    to: "/ams/students/withdrawals",
+    label: "انسحاب الطلاب",
+    icon: LogOut,
+    exact: false,
+    group: "إدارة البيانات",
+  },
+  {
     to: "/ams/students/promotions",
     label: "نقل الطلاب بين المراحل",
     icon: UserRoundPlus,

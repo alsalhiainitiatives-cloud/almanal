@@ -55,6 +55,7 @@ import {
 import {
   addStudent,
   deleteStudentRecord,
+  findDuplicateStudents,
   importStudents,
   updateStudentRecord,
 } from "./student-registry.server";
@@ -431,6 +432,29 @@ export const amsStudentsImport = createServerFn({ method: "POST" })
     z.object({ academicYear, records: z.array(studentRecordSchema).min(1).max(400) }).parse(data),
   )
   .handler(async ({ data, context }) => importStudents(context.supabase, context.userId, data));
+
+export const amsStudentsDuplicateCheck = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        candidates: z
+          .array(
+            z.object({
+              index: z.number().int(),
+              name_ar: z.string().trim().max(160),
+              national_id: z.string().trim().max(30).nullish(),
+              birth_date: z.string().trim().max(20).nullish(),
+            }),
+          )
+          .min(1)
+          .max(400),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) =>
+    findDuplicateStudents(context.supabase, context.userId, data),
+  );
 
 export const amsStudentAdd = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
