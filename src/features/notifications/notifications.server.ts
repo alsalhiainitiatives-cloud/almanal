@@ -99,6 +99,7 @@ export async function classroomAudience(classroomId: string) {
       .select("name_ar, applications!inner (parent_id, status)")
       .eq("classroom_id", classroomId)
       .eq("applications.status", "approved")
+    .is("withdrawn_at", null)
       .limit(300),
   ]);
 

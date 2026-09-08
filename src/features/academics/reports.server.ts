@@ -400,6 +400,7 @@ export async function getParentReportBoard(
     )
     .eq("applications.parent_id", userId)
     .eq("applications.status", "approved")
+    .is("withdrawn_at", null)
     .order("name_ar")
     .limit(50);
 

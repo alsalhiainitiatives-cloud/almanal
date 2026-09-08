@@ -70,6 +70,7 @@ export async function listStudents(
     .from("application_children")
     .select(STUDENT_SELECT)
     .in("applications.status", [...STUDENT_STATUSES])
+    .is("withdrawn_at", null)
     .order("name_ar")
     .limit(600);
 
@@ -179,6 +180,7 @@ export async function listMyChildren(supabase: Db, userId: string) {
     .from("application_children")
     .select(STUDENT_SELECT)
     .in("applications.status", [...STUDENT_STATUSES])
+    .is("withdrawn_at", null)
     .eq("applications.parent_id", userId)
     .order("name_ar")
     .limit(50);

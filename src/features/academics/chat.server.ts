@@ -73,6 +73,7 @@ async function roomSeeds(
     .select("name_ar, classroom_id, applications!inner (parent_id, status)")
     .eq("applications.parent_id", userId)
     .eq("applications.status", "approved")
+    .is("withdrawn_at", null)
     .order("name_ar")
     .limit(50);
   return (data ?? [])

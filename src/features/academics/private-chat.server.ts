@@ -124,6 +124,7 @@ export async function listPrivateContacts(
       .select("id, name_ar, applications!inner (parent_id, status)")
       .eq("classroom_id", input.classroomId)
       .eq("applications.status", "approved")
+    .is("withdrawn_at", null)
       .limit(300);
     const byParent = new Map<string, { names: string[]; childIds: string[] }>();
     for (const row of (children ?? []) as unknown as {
