@@ -50,7 +50,6 @@ import {
 import { useAuth } from "@/features/auth/AuthProvider";
 import { PortalTrail } from "@/features/auth/components/PortalTrail";
 import { ROLE_COLORS, ROLE_LABELS } from "@/features/auth/rbac";
-import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { useNotificationCounters } from "@/features/notifications/useNotificationCounters";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { cn } from "@/lib/utils";
@@ -494,7 +493,7 @@ export function AmsShell({
               {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
             </div>
             <div className="flex items-center gap-2">
-              <NotificationBell />
+              
               {activeModule.search && (
                 <Button
                   variant="outline"
