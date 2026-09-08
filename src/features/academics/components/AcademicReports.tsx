@@ -290,48 +290,55 @@ export function AcademicReports() {
                 {subject.topics.map((topic) => (
                   <div key={topic.id} className="space-y-2">
                     <p className="text-xs font-black text-muted-foreground">{topic.nameAr}</p>
-                    <div className="overflow-hidden rounded-2xl border border-border/60">
-                      <table className="w-full text-right text-xs">
+                    <div className="overflow-x-auto rounded-2xl border border-border/60">
+                      <table className="w-full min-w-[760px] table-fixed text-right text-xs">
+                        <colgroup>
+                          <col className="w-[18%]" />
+                          <col className="w-[17%]" />
+                          <col className="w-[17%]" />
+                          <col className="w-[28%]" />
+                          <col className="w-[20%]" />
+                        </colgroup>
                         <thead className="bg-muted/60">
                           <tr>
-                            <th className="p-2 font-black">الدرس</th>
-                            <th className="p-2 font-black">{SCALE_LABELS.performance}</th>
-                            <th className="p-2 font-black">{SCALE_LABELS.growth}</th>
-                            <th className="p-2 font-black">ملاحظة المعلمة</th>
-                            <th className="p-2 font-black">الأدلة</th>
+                            <th className="break-words p-2 font-black">الدرس</th>
+                            <th className="break-words p-2 font-black">{SCALE_LABELS.performance}</th>
+                            <th className="break-words p-2 font-black">{SCALE_LABELS.growth}</th>
+                            <th className="break-words p-2 font-black">ملاحظة المعلمة</th>
+                            <th className="break-words p-2 font-black">الأدلة والشواهد</th>
                           </tr>
                         </thead>
                         <tbody>
                           {topic.lessons.map((lesson) => (
                             <tr key={lesson.id} className="border-t border-border/50 align-top">
-                              <td className="p-2 font-bold">{lesson.nameAr}</td>
-                              <td className="p-2">
+                              <td className="break-words p-2 font-bold">{lesson.nameAr}</td>
+                              <td className="min-w-0 p-2">
                                 <Cell
                                   scale="performance"
                                   level={lesson.cell?.performanceLevel ?? 0}
                                   colors={lesson.cell?.performanceColors ?? []}
                                 />
                               </td>
-                              <td className="p-2">
+                              <td className="min-w-0 p-2">
                                 <Cell
                                   scale="growth"
                                   level={lesson.cell?.growthLevel ?? 0}
                                   colors={lesson.cell?.growthColors ?? []}
                                 />
                               </td>
-                              <td className="p-2 text-[11px] font-bold text-muted-foreground">
+                              <td className="whitespace-normal break-words p-2 text-[11px] font-bold leading-5 text-muted-foreground">
                                 {lesson.cell?.note ?? "—"}
                               </td>
-                              <td className="p-2">
+                              <td className="min-w-0 p-2">
                                 {lesson.cell?.evidences.length ? (
-                                  <div className="flex flex-wrap gap-1.5">
+                                  <div className="flex min-w-0 flex-col gap-1.5">
                                     {lesson.cell.evidences.map((ev) => (
                                       <a
                                         key={ev.id}
                                         href={ev.url ?? "#"}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="inline-flex items-center gap-1 rounded-lg border border-border/60 p-1 text-[10px] font-bold hover:border-primary/50"
+                                        className="flex min-w-0 items-center gap-1 rounded-lg border border-border/60 p-1 text-[10px] font-bold hover:border-primary/50"
                                       >
                                         {ev.fileType === "image" && ev.url ? (
                                           <img
@@ -346,7 +353,7 @@ export function AcademicReports() {
                                         ) : (
                                           <FileText className="h-4 w-4" />
                                         )}
-                                        <span className="max-w-[90px] truncate">
+                                        <span className="min-w-0 break-words">
                                           {ev.fileName ?? "ملف"}
                                         </span>
                                       </a>
