@@ -1,6 +1,7 @@
 /**
- * "دليل التقييم" — a fixed helper button that explains the triangle states
- * and the month colour key, so a teacher never has to memorise the scale.
+ * "دليل التقييم" — a fixed helper button that explains the parent-facing
+ * progress-stepper states and the month colour key, so parents never have to
+ * memorise the scale.
  */
 import { BookOpen } from "lucide-react";
 import { useState } from "react";
@@ -16,11 +17,10 @@ import {
 import {
   MONTH_COLORS,
   SCALE_LABELS,
-  TRIANGLE_LABELS,
   type TriangleLevel,
   type TriangleScale,
 } from "../assessments";
-import { EvaluationTriangle } from "./EvaluationTriangle";
+import { ParentProgressStepper } from "./ParentProgressStepper";
 
 const LEVELS: TriangleLevel[] = [0, 1, 2, 3];
 const SCALES: TriangleScale[] = ["performance", "growth"];
@@ -44,24 +44,26 @@ export function EvaluationGuide() {
           <DialogHeader>
             <DialogTitle className="text-base font-black">دليل التقييم</DialogTitle>
             <DialogDescription className="text-xs font-bold">
-              كل ضغطة على المثلث تنقلك للمستوى التالي، ويُلوَّن الضلع بلون شهر تحقّق المستوى.
+              يعرض النظام تقدم طفلك في كل درس بشريط تقدم واضح: كل مستوى يمثل مرحلة جديدة من الإتقان أو النمو.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-5">
+          <div className="space-y-6">
             {SCALES.map((scale) => (
               <section key={scale} className="space-y-3">
                 <h4 className="text-sm font-black text-foreground">{SCALE_LABELS[scale]}</h4>
-                <div className="grid gap-2 sm:grid-cols-4">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {LEVELS.map((level) => (
                     <div
                       key={level}
-                      className="flex flex-col items-center gap-1.5 rounded-2xl border border-border/60 bg-background/60 p-3"
+                      className="flex flex-col items-center gap-2 rounded-2xl border border-border/60 bg-background/60 p-4 text-center"
                     >
-                      <EvaluationTriangle scale={scale} level={level} colors={[]} readOnly />
-                      <span className="text-[11px] font-black text-foreground">
-                        {TRIANGLE_LABELS[scale][level]}
-                      </span>
+                      <ParentProgressStepper
+                        scale={scale}
+                        level={level}
+                        colors={[]}
+                        monthColors={[]}
+                      />
                     </div>
                   ))}
                 </div>
