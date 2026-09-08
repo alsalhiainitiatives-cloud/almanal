@@ -6,7 +6,7 @@
  * automatically without UI changes.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, CheckCheck, Loader2, ShieldCheck, Square, UserCog } from "lucide-react";
+import { Check, CheckCheck, ChevronDown, ChevronUp, Loader2, ShieldCheck, Square, UserCog } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -46,6 +46,7 @@ export function PermissionsBoard() {
   const queryClient = useQueryClient();
   const [activeRole, setActiveRole] = useState<AppRole>("registration_officer");
   const [pending, setPending] = useState<string | null>(null);
+  const [controlsOpen, setControlsOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "permission-matrix"],
