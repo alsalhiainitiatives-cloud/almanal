@@ -110,11 +110,11 @@ function AcademicsHome() {
               <h2 className="text-sm font-black text-foreground">{card.label}</h2>
               {"ready" in card && card.ready ? (
                 <span className="rounded-full bg-mint/60 px-2 py-0.5 text-[10px] font-black text-foreground">
-                  جاهز
+                  {"\n"}
                 </span>
               ) : (
                 <span className="rounded-full bg-gold/25 px-2 py-0.5 text-[10px] font-black text-foreground">
-                  قريبًا
+                  {"\n"}
                 </span>
               )}
             </div>
