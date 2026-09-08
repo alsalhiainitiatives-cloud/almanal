@@ -22,7 +22,7 @@ import {
 } from "../assessments";
 import { EvaluationTriangle } from "./EvaluationTriangle";
 
-const LEVELS: TriangleLevel[] = [3, 2, 1, 0];
+const LEVELS: TriangleLevel[] = [0, 1, 2, 3];
 const SCALES: TriangleScale[] = ["performance", "growth"];
 
 export function TeacherEvaluationGuide() {
