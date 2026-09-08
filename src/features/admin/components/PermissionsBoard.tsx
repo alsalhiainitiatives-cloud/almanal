@@ -123,8 +123,8 @@ export function PermissionsBoard() {
 
   return (
     <div className="space-y-5">
-      {/* Sticky global controls */}
-      <div className="sticky top-2 z-20 space-y-4 rounded-[2rem] border border-border/60 bg-card/95 p-5 shadow-soft backdrop-blur">
+      {/* Global controls — collapsible so the matrix stays visible on any screen */}
+      <div className="space-y-4 rounded-[2rem] border border-border/60 bg-card/95 p-5 shadow-soft">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 text-base font-extrabold text-foreground">
             <ShieldCheck className="size-5 text-primary" />
@@ -139,15 +139,48 @@ export function PermissionsBoard() {
                 عرض فقط
               </span>
             )}
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full font-bold"
+              onClick={() => setControlsOpen((open) => !open)}
+              aria-expanded={controlsOpen}
+            >
+              {controlsOpen ? (
+                <>
+                  <ChevronUp className="size-4" /> طيّ اللوحة
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="size-4" /> عرض الأدوار والتحكم
+                </>
+              )}
+            </Button>
           </div>
         </div>
 
+        {/* Compact active-role bar — always visible */}
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3">
+          <UserCog className="size-4 shrink-0 text-primary" />
+          <p className="min-w-0 text-xs font-bold text-foreground">
+            أنت الآن تعدّل صلاحيات دور:{" "}
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold ${ROLE_COLORS[activeRole]}`}
+            >
+              {ROLE_LABELS[activeRole]}
+            </span>{" "}
+            — أي تعديل هنا يطبَّق على جميع المستخدمين الذين يحملون هذا الدور.
+          </p>
+        </div>
+
+        {controlsOpen && (
+        <div className="space-y-4">
         {/* Role picker — explicit cards so the active role is unmistakable */}
         <div className="space-y-3">
           <span className="flex items-center gap-1 text-xs font-bold text-muted-foreground">
             <UserCog className="size-4" /> اختر الدور الذي تريد تعديل صلاحياته:
           </span>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid max-h-72 gap-2 overflow-y-auto pe-1 sm:grid-cols-2 lg:max-h-none lg:grid-cols-4 lg:overflow-visible">
             {ALL_ROLES.map((role) => {
               const active = activeRole === role;
               const count = (grantedByRole.get(role) ?? new Set<string>()).size;
