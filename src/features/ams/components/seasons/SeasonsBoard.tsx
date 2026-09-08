@@ -14,6 +14,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/features/auth/AuthProvider";
 import {
   Dialog,
   DialogContent,
@@ -76,9 +77,11 @@ function emptyForm() {
 
 export function SeasonsBoard() {
   const queryClient = useQueryClient();
+  const { isAuthenticated, initializing } = useAuth();
   const { data, isLoading, error } = useQuery({
     queryKey: ["ams", "seasons"],
     queryFn: () => amsSeasons(),
+    enabled: isAuthenticated && !initializing,
   });
   const [form, setForm] = useState<ReturnType<typeof emptyForm> | null>(null);
   const [downloading, setDownloading] = useState(false);

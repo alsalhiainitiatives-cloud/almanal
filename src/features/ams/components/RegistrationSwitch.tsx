@@ -4,14 +4,17 @@ import { CalendarClock, DoorClosed, DoorOpen, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { amsSeasonStatus, amsSeasons } from "../seasons.functions";
 
 /** Prominent open/close registration control, pinned above the AMS sidebar nav. */
 export function RegistrationSwitch() {
   const queryClient = useQueryClient();
+  const { isAuthenticated, initializing } = useAuth();
   const { data, isLoading, error } = useQuery({
     queryKey: ["ams", "seasons"],
     queryFn: () => amsSeasons(),
+    enabled: isAuthenticated && !initializing,
     retry: false,
   });
 
