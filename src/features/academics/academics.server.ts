@@ -48,7 +48,8 @@ export async function listAccessibleClassrooms(
       const { data } = await supabase
         .from("application_children")
         .select("classroom_id, applications!inner(parent_id)")
-        .eq("applications.parent_id", userId);
+        .eq("applications.parent_id", userId)
+        .is("withdrawn_at", null);
       for (const row of (data ?? []) as { classroom_id: string | null }[]) {
         if (row.classroom_id) ids.add(row.classroom_id);
       }
@@ -329,6 +330,7 @@ export async function getAssignmentBoard(supabase: Db, userId: string): Promise<
       supabase
         .from("application_children")
         .select("id, classroom_id, applications!inner(status, archived_at)")
+        .is("withdrawn_at", null)
         .not("classroom_id", "is", null),
     ]);
 
