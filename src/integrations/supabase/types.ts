@@ -127,6 +127,7 @@ export type Database = {
           stage_id: string | null
           updated_at: string
           vaccination_status: string | null
+          withdrawn_at: string | null
         }
         Insert: {
           allergies?: string | null
@@ -153,6 +154,7 @@ export type Database = {
           stage_id?: string | null
           updated_at?: string
           vaccination_status?: string | null
+          withdrawn_at?: string | null
         }
         Update: {
           allergies?: string | null
@@ -179,6 +181,7 @@ export type Database = {
           stage_id?: string | null
           updated_at?: string
           vaccination_status?: string | null
+          withdrawn_at?: string | null
         }
         Relationships: [
           {
@@ -3014,6 +3017,119 @@ export type Database = {
             columns: ["classroom_id"]
             isOneToOne: false
             referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_withdrawals: {
+        Row: {
+          academic_year: string | null
+          application_id: string
+          certificate_issued_at: string | null
+          certificate_number: string | null
+          child_id: string
+          classroom_id: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          destination_school: string | null
+          effective_date: string | null
+          enrolled_from: string | null
+          finance_cleared: boolean
+          finance_note: string | null
+          finance_outstanding: number
+          id: string
+          kind: string
+          notes: string | null
+          reason: string
+          reason_note: string | null
+          requested_at: string
+          requested_by: string | null
+          stage_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year?: string | null
+          application_id: string
+          certificate_issued_at?: string | null
+          certificate_number?: string | null
+          child_id: string
+          classroom_id?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          destination_school?: string | null
+          effective_date?: string | null
+          enrolled_from?: string | null
+          finance_cleared?: boolean
+          finance_note?: string | null
+          finance_outstanding?: number
+          id?: string
+          kind?: string
+          notes?: string | null
+          reason?: string
+          reason_note?: string | null
+          requested_at?: string
+          requested_by?: string | null
+          stage_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string | null
+          application_id?: string
+          certificate_issued_at?: string | null
+          certificate_number?: string | null
+          child_id?: string
+          classroom_id?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          destination_school?: string | null
+          effective_date?: string | null
+          enrolled_from?: string | null
+          finance_cleared?: boolean
+          finance_note?: string | null
+          finance_outstanding?: number
+          id?: string
+          kind?: string
+          notes?: string | null
+          reason?: string
+          reason_note?: string | null
+          requested_at?: string
+          requested_by?: string | null
+          stage_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_withdrawals_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_withdrawals_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "application_children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_withdrawals_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_withdrawals_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
             referencedColumns: ["id"]
           },
         ]
