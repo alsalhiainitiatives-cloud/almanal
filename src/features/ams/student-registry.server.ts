@@ -112,6 +112,150 @@ export type ImportOutcome = {
   message?: string;
 };
 
+/* ------------------------------------------------------------------ */
+/* Duplicate protection                                                */
+/* ------------------------------------------------------------------ */
+
+const normalizeName = (value?: string | null) =>
+  String(value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .toLowerCase();
+
+const digitsOnly = (value?: string | null) => String(value ?? "").replace(/\D/g, "");
+
+type ExistingStudent = {
+  id: string;
+  name: string;
+  nameKey: string;
+  nationalId: string;
+  birthDate: string | null;
+  number: string | null;
+  status: string;
+  withdrawn: boolean;
+};
+
+/** Every student already stored in the system, indexed for duplicate matching. */
+async function existingStudents(supabase: Db): Promise<ExistingStudent[]> {
+  const { data } = await supabase
+    .from("application_children")
+    .select(
+      "id, name_ar, national_id, birth_date, withdrawn_at, applications!inner (status, student_number, application_number)",
+    )
+    .limit(5000);
+
+  return ((data ?? []) as unknown as {
+    id: string;
+    name_ar: string;
+    national_id: string | null;
+    birth_date: string | null;
+    withdrawn_at: string | null;
+    applications: {
+      status: string;
+      student_number: string | null;
+      application_number: string | null;
+    };
+  }[])
+    .filter((row) => row.applications.status !== "rejected")
+    .map((row) => ({
+      id: row.id,
+      name: row.name_ar,
+      nameKey: normalizeName(row.name_ar),
+      nationalId: digitsOnly(row.national_id),
+      birthDate: row.birth_date,
+      number: row.applications.student_number ?? row.applications.application_number,
+      status: row.applications.status,
+      withdrawn: Boolean(row.withdrawn_at),
+    }));
+}
+
+export type DuplicateHit = {
+  index: number;
+  name: string;
+  matchedBy: "national_id" | "name_birth";
+  existingName: string;
+  existingNumber: string | null;
+  withdrawn: boolean;
+  reason: string;
+};
+
+type Candidate = {
+  index: number;
+  name_ar: string;
+  national_id?: string | null;
+  birth_date?: string | null;
+};
+
+function matchCandidate(candidate: Candidate, existing: ExistingStudent[]) {
+  const nid = digitsOnly(candidate.national_id);
+  if (nid.length >= 8) {
+    const hit = existing.find((e) => e.nationalId && e.nationalId === nid);
+    if (hit) return { hit, matchedBy: "national_id" as const };
+  }
+  const nameKey = normalizeName(candidate.name_ar);
+  if (nameKey && candidate.birth_date) {
+    const hit = existing.find((e) => e.nameKey === nameKey && e.birthDate === candidate.birth_date);
+    if (hit) return { hit, matchedBy: "name_birth" as const };
+  }
+  return null;
+}
+
+const duplicateMessage = (matchedBy: "national_id" | "name_birth", hit: ExistingStudent) =>
+  matchedBy === "national_id"
+    ? `مسجّل مسبقًا بنفس رقم الهوية (${hit.name}${hit.number ? ` — ${hit.number}` : ""})${hit.withdrawn ? " — ضمن المنسحبين" : ""}`
+    : `مسجّل مسبقًا بنفس الاسم وتاريخ الميلاد (${hit.name}${hit.number ? ` — ${hit.number}` : ""})${hit.withdrawn ? " — ضمن المنسحبين" : ""}`;
+
+/** Pre-import check: which sheet rows already exist in the system. */
+export async function findDuplicateStudents(
+  supabase: Db,
+  userId: string,
+  input: { candidates: Candidate[] },
+) {
+  await guard(supabase, userId, "view");
+  const existing = await existingStudents(supabase);
+  const hits: DuplicateHit[] = [];
+  const seen = new Map<string, Candidate>();
+
+  for (const candidate of input.candidates) {
+    // Duplicates inside the uploaded file itself.
+    const selfKey =
+      digitsOnly(candidate.national_id).length >= 8
+        ? `n:${digitsOnly(candidate.national_id)}`
+        : `b:${normalizeName(candidate.name_ar)}|${candidate.birth_date ?? ""}`;
+    const twin = seen.get(selfKey);
+    if (twin) {
+      hits.push({
+        index: candidate.index,
+        name: candidate.name_ar,
+        matchedBy: digitsOnly(candidate.national_id).length >= 8 ? "national_id" : "name_birth",
+        existingName: twin.name_ar,
+        existingNumber: null,
+        withdrawn: false,
+        reason: `مكرر داخل الملف نفسه (الصف ${twin.index})`,
+      });
+      continue;
+    }
+    seen.set(selfKey, candidate);
+
+    const match = matchCandidate(candidate, existing);
+    if (match)
+      hits.push({
+        index: candidate.index,
+        name: candidate.name_ar,
+        matchedBy: match.matchedBy,
+        existingName: match.hit.name,
+        existingNumber: match.hit.number,
+        withdrawn: match.hit.withdrawn,
+        reason: duplicateMessage(match.matchedBy, match.hit),
+      });
+  }
+
+  return { duplicates: hits };
+}
+
 export async function importStudents(
   supabase: Db,
   userId: string,
@@ -129,8 +273,25 @@ export async function importStudents(
     .limit(1)
     .maybeSingle();
 
+  const existing = await existingStudents(supabase);
   const results: ImportOutcome[] = [];
+  let skipped = 0;
+
   for (const record of input.records) {
+    const duplicate = matchCandidate(
+      { index: 0, name_ar: record.name_ar, national_id: record.national_id, birth_date: record.birth_date },
+      existing,
+    );
+    if (duplicate) {
+      skipped += 1;
+      results.push({
+        name: record.name_ar,
+        ok: false,
+        message: duplicateMessage(duplicate.matchedBy, duplicate.hit),
+      });
+      continue;
+    }
+
     try {
       const created = await createStudent(
         supabase,
@@ -140,6 +301,17 @@ export async function importStudents(
         season?.id ?? null,
       );
       results.push({ name: record.name_ar, ok: true, number: created.number });
+      // Keep the in-memory index fresh so the same file can't insert twins.
+      existing.push({
+        id: created.childId ?? created.applicationId,
+        name: record.name_ar,
+        nameKey: normalizeName(record.name_ar),
+        nationalId: digitsOnly(record.national_id),
+        birthDate: record.birth_date,
+        number: created.number,
+        status: "approved",
+        withdrawn: false,
+      });
     } catch (error) {
       results.push({
         name: record.name_ar,
@@ -150,7 +322,7 @@ export async function importStudents(
   }
 
   const imported = results.filter((r) => r.ok).length;
-  return { imported, failed: results.length - imported, results };
+  return { imported, failed: results.length - imported, skipped, results };
 }
 
 /** Adds a single student manually from the data sheet. */
@@ -160,6 +332,20 @@ export async function addStudent(
   input: { academicYear: string; record: StudentRecord },
 ) {
   await guard(supabase, userId, "seats");
+
+  const existing = await existingStudents(supabase);
+  const duplicate = matchCandidate(
+    {
+      index: 0,
+      name_ar: input.record.name_ar,
+      national_id: input.record.national_id,
+      birth_date: input.record.birth_date,
+    },
+    existing,
+  );
+  if (duplicate)
+    throw new Error(`لا يمكن الإضافة: ${duplicateMessage(duplicate.matchedBy, duplicate.hit)}`);
+
   const { data: season } = await supabase
     .from("admission_seasons")
     .select("id")
