@@ -76,9 +76,11 @@ function emptyForm() {
 
 export function SeasonsBoard() {
   const queryClient = useQueryClient();
+  const { isAuthenticated, initializing } = useAuth();
   const { data, isLoading, error } = useQuery({
     queryKey: ["ams", "seasons"],
     queryFn: () => amsSeasons(),
+    enabled: isAuthenticated && !initializing,
   });
   const [form, setForm] = useState<ReturnType<typeof emptyForm> | null>(null);
   const [downloading, setDownloading] = useState(false);

@@ -30,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QURRA_STATUS_LABELS } from "@/features/admissions/eligibility";
 import { listStages } from "@/features/admissions/catalog.functions";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { amsSeasons } from "@/features/ams/seasons.functions";
 import {
   amsAssignOfficer,
@@ -130,7 +131,12 @@ function QueuePage() {
   });
   const { data: staff } = useQuery({ queryKey: ["ams", "staff"], queryFn: () => amsStaff() });
   const { data: stages } = useQuery({ queryKey: ["stages", "list"], queryFn: () => listStages() });
-  const { data: seasonsData } = useQuery({ queryKey: ["ams", "seasons"], queryFn: () => amsSeasons() });
+  const { isAuthenticated, initializing } = useAuth();
+  const { data: seasonsData } = useQuery({
+    queryKey: ["ams", "seasons"],
+    queryFn: () => amsSeasons(),
+    enabled: isAuthenticated && !initializing,
+  });
 
   const togglePin = useServerFn(amsTogglePin);
   const assign = useServerFn(amsAssignOfficer);
