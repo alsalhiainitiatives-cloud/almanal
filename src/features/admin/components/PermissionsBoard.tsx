@@ -223,18 +223,6 @@ export function PermissionsBoard() {
             })}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3">
-            <UserCog className="size-4 text-primary" />
-            <p className="text-xs font-bold text-foreground">
-              أنت الآن تعدّل صلاحيات دور:{" "}
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold ${ROLE_COLORS[activeRole]}`}
-              >
-                {ROLE_LABELS[activeRole]}
-              </span>{" "}
-              — أي تعديل هنا يطبَّق على جميع المستخدمين الذين يحملون هذا الدور.
-            </p>
-          </div>
         </div>
 
         {canManage && (
@@ -266,6 +254,8 @@ export function PermissionsBoard() {
               إلغاء تحديد الكل
             </Button>
           </div>
+        )}
+        </div>
         )}
       </div>
 
