@@ -67,7 +67,7 @@ import {
   assessmentsEnsureCell,
   assessmentsSave,
 } from "../assessments.functions";
-import { EvaluationGuide } from "./EvaluationGuide";
+import { TeacherEvaluationGuide } from "./TeacherEvaluationGuide";
 import { EvaluationTriangle } from "./EvaluationTriangle";
 
 
@@ -301,7 +301,7 @@ export function AssessmentsBoard() {
 
   return (
     <div className="space-y-5">
-      <EvaluationGuide />
+      <TeacherEvaluationGuide />
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-end gap-3 rounded-3xl border border-border/60 bg-card/80 p-4">
