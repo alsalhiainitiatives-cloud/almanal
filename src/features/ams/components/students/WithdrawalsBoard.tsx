@@ -36,6 +36,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
+import { useBrandLogoUrl } from "@/features/site-content/SiteContentProvider";
 import { amsStudents } from "@/features/ams/ams.functions";
 import {
   amsWithdrawalCancel,
@@ -95,6 +96,7 @@ type WithdrawalUpdateInput = {
 const field = "h-10 rounded-xl border border-border/60 bg-background px-3 text-sm";
 
 export function WithdrawalsBoard() {
+  const logoUrl = useBrandLogoUrl();
   const queryClient = useQueryClient();
   const confirm = useConfirm();
   const loadBoard = useServerFn(amsWithdrawals);
@@ -198,7 +200,7 @@ export function WithdrawalsBoard() {
   const certificate = useMutation({
     mutationFn: (id: string) => certificateFn({ data: id }),
     onSuccess: (data) => {
-      void printCertificate(data);
+      void printCertificate(data, logoUrl);
     },
     onError: (error: unknown) =>
       toast.error(error instanceof Error ? error.message : "تعذّر إصدار الشهادة"),
