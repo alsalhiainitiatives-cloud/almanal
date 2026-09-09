@@ -2,6 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
+  Award,
   Armchair,
   BarChart3,
   BookOpen,
@@ -131,6 +132,13 @@ const STUDENTS_NAV: NavItem[] = [
     to: "/ams/students/attendance",
     label: "الحضور والغياب",
     icon: CalendarCheck,
+    exact: false,
+    group: "شؤون الطلاب",
+  },
+  {
+    to: "/ams/students/certificates",
+    label: "شهادات الطلاب",
+    icon: Award,
     exact: false,
     group: "شؤون الطلاب",
   },
