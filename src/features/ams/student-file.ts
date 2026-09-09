@@ -362,6 +362,48 @@ export function buildStudentFileHtml(
       ],
     ])}
 
+    ${
+      data.withdrawal
+        ? sectionHtml(
+            data.withdrawal.kind === "graduation" ? "بيانات التخرّج" : "بيانات الانسحاب",
+            [
+              ["نوع الإجراء", WITHDRAWAL_KIND_LABELS[data.withdrawal.kind] ?? data.withdrawal.kind],
+              [
+                "حالة الإجراء",
+                WITHDRAWAL_STATUS_LABELS[data.withdrawal.status] ?? data.withdrawal.status,
+              ],
+              [
+                data.withdrawal.kind === "graduation" ? "تاريخ التخرّج" : "تاريخ الانسحاب",
+                formatFileDate(data.withdrawal.effectiveDate),
+              ],
+              ["تاريخ الالتحاق", formatFileDate(data.withdrawal.enrolledFrom)],
+              ["السبب", data.withdrawal.reason],
+              ["الجهة المنقول إليها", data.withdrawal.destinationSchool],
+              ["الوضع المالي", data.withdrawal.financeCleared ? "مُسوّى بالكامل" : "غير مُسوّى"],
+              ["رقم الشهادة", data.withdrawal.certificateNumber],
+            ],
+          )
+        : ""
+    }
+
+    ${
+      curriculumSummary(data.curriculum).length
+        ? `<section class="sec">
+            <h2>المواد والموضوعات التي دُرست</h2>
+            <div class="grid">${curriculumSummary(data.curriculum)
+              .map(
+                (s) => `<div class="f">
+                  <span class="fl">${esc(s.subject)}${s.topics.length ? ` — ${esc(s.topics.join(" · "))}` : ""}</span>
+                  <span class="fv">${esc(s.lessons.join(" · "))}</span>
+                </div>`,
+              )
+              .join("")}</div>
+          </section>`
+        : ""
+    }
+
+
+
     <div class="signs">
       ${["مسؤول التسجيل", "المشرفة التربوية", "مدير المدرسة"]
         .map(
