@@ -9,8 +9,6 @@ import { amsStudents } from "@/features/ams/ams.functions";
 import { useBrandLogoUrl } from "@/features/site-content/SiteContentProvider";
 
 type StudentList = Awaited<ReturnType<typeof amsStudents>>;
-type Student = StudentList["students"][number];
-
 const PRESETS = [
   {
     key: "excellence",
@@ -174,8 +172,8 @@ export function StudentCertificatesBoard() {
   const [studentId, setStudentId] = useState("");
   const [presetKey, setPresetKey] = useState<(typeof PRESETS)[number]["key"]>("excellence");
   const preset = PRESETS.find((item) => item.key === presetKey) ?? PRESETS[0];
-  const [title, setTitle] = useState(preset.title);
-  const [message, setMessage] = useState(preset.message);
+  const [title, setTitle] = useState<string>(preset.title);
+  const [message, setMessage] = useState<string>(preset.message);
 
   const studentsQuery = useQuery({
     queryKey: ["ams", "students", "certificates"],
