@@ -7,7 +7,10 @@ import { useBrandLogoUrl } from "@/features/site-content/SiteContentProvider";
 import {
   GENDER_LABELS,
   QURRA_LABELS,
+  WITHDRAWAL_KIND_LABELS,
+  WITHDRAWAL_STATUS_LABELS,
   ageBandLabel,
+  curriculumSummary,
   formatFileDate,
   studentIdentifier,
   vaccinationLabel,
