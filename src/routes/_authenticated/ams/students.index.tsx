@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Armchair,
+  Award,
   CalendarCheck,
   FileSpreadsheet,
   GraduationCap,
@@ -46,6 +47,12 @@ const CARDS = [
     label: "الحضور والغياب",
     icon: CalendarCheck,
     text: "تحضير يومي لكل فصل مع النسب الشهرية، ويظهر ملخّصه في تقويم الفصل.",
+  },
+  {
+    to: "/ams/students/certificates",
+    label: "شهادات الطلاب",
+    icon: Award,
+    text: "إصدار شهادات تشجيعية لنهاية العام بهوية المدرسة وبيانات الطالب الحقيقية.",
   },
   {
     to: "/ams/students/guardians",

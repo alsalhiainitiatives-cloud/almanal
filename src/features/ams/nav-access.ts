@@ -68,6 +68,7 @@ export const LINK_PERMISSIONS: Record<string, string[]> = {
   "/ams/students/registry": ["students.view"],
   "/ams/seats": ["classrooms.assign", "enrollment.manage", "students.view"],
   "/ams/students/attendance": ["attendance.view", "attendance.record", "attendance.export"],
+  "/ams/students/certificates": ["students.view"],
   "/ams/students/guardians": ["guardians.link", "guardians.invite"],
   "/ams/students/data": ["students.import", "students.export", "students.create", "students.edit"],
   "/ams/students/promotions": ["enrollment.manage", "students.edit"],
