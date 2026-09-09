@@ -167,11 +167,33 @@ export function certificateHtml(data: WithdrawalCertificate) {
   </div></body></html>`;
 }
 
-/** Opens the certificate in a new window and triggers the print dialog. */
-export function printCertificate(data: WithdrawalCertificate) {
-  const win = window.open("", "_blank", "noopener,width=900,height=1040");
-  if (!win) return false;
-  win.document.write(`${certificateHtml(data)}<script>window.onload=()=>window.print()<\/script>`);
-  win.document.close();
+/**
+ * Prints the certificate from a hidden A4 iframe — never needs a popup window,
+ * so browser popup blockers can't break printing.
+ */
+export async function printCertificate(data: WithdrawalCertificate) {
+  if (typeof document === "undefined") return false;
+  const frame = document.createElement("iframe");
+  frame.setAttribute("aria-hidden", "true");
+  frame.style.cssText =
+    "position:fixed;inset:0;width:210mm;height:297mm;opacity:0;pointer-events:none;border:0;";
+  document.body.appendChild(frame);
+
+  await new Promise<void>((resolve) => {
+    frame.addEventListener("load", () => resolve(), { once: true });
+    frame.srcdoc = certificateHtml(data);
+  });
+
+  const win = frame.contentWindow;
+  try {
+    await (win?.document as (Document & { fonts?: FontFaceSet }) | undefined)?.fonts?.ready;
+  } catch {
+    /* fonts API unavailable */
+  }
+  await new Promise((r) => setTimeout(r, 400));
+
+  win?.focus();
+  win?.print();
+  setTimeout(() => frame.remove(), 60_000);
   return true;
 }
