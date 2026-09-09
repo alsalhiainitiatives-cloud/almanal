@@ -9,6 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AppRole } from "@/features/auth/rbac";
 import type { Database } from "@/integrations/supabase/types";
 import type { StudentFileData } from "./student-file";
+import { WITHDRAWAL_REASONS } from "./withdrawals";
 import { ensureCapability } from "./capability-guard.server";
 import type { Capability } from "./roles";
 
@@ -375,6 +376,21 @@ async function buildStudentFile(supabase: Db, row: ChildRow): Promise<StudentFil
       price: Number(s.price_at_selection),
     })),
     invoice: invoice.data ?? null,
+    withdrawal: withdrawal.data
+      ? {
+          kind: withdrawal.data.kind,
+          status: withdrawal.data.status,
+          reason:
+            WITHDRAWAL_REASONS[withdrawal.data.reason as keyof typeof WITHDRAWAL_REASONS] ??
+            withdrawal.data.reason,
+          destinationSchool: withdrawal.data.destination_school,
+          enrolledFrom: withdrawal.data.enrolled_from,
+          effectiveDate: withdrawal.data.effective_date,
+          financeCleared: withdrawal.data.finance_cleared,
+          certificateNumber: withdrawal.data.certificate_number,
+        }
+      : null,
+    curriculum,
   };
 }
 
