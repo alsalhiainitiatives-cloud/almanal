@@ -198,7 +198,7 @@ export function WithdrawalsBoard() {
   const certificate = useMutation({
     mutationFn: (id: string) => certificateFn({ data: id }),
     onSuccess: (data) => {
-      if (!printCertificate(data)) toast.error("اسمح بالنوافذ المنبثقة لطباعة الشهادة.");
+      void printCertificate(data);
     },
     onError: (error: unknown) =>
       toast.error(error instanceof Error ? error.message : "تعذّر إصدار الشهادة"),
