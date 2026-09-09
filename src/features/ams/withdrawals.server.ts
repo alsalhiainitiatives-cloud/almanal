@@ -218,7 +218,7 @@ export async function updateWithdrawal(
     .maybeSingle();
   if (!record) throw new Error("طلب الانسحاب غير موجود.");
 
-  const patch: Record<string, unknown> = {};
+  const patch: Database["public"]["Tables"]["student_withdrawals"]["Update"] = {};
   if (input.reason !== undefined) patch.reason = input.reason;
   if (input.reasonNote !== undefined) patch.reason_note = input.reasonNote;
   if (input.destinationSchool !== undefined) patch.destination_school = input.destinationSchool;
