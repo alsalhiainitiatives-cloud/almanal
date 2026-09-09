@@ -254,10 +254,36 @@ async function admissionPhotoUrl(supabase: Db, applicationId: string, childId: s
   return signed?.signedUrl ?? null;
 }
 
+/** Subjects / topics / lessons of the classroom, marking the ones assessed. */
+async function studentCurriculum(supabase: Db, classroomId: string | null, childId: string) {
+  if (!classroomId) return [];
+  const [subjects, assessments] = await Promise.all([
+    supabase
+      .from("subjects")
+      .select("id, name_ar, topics ( id, name_ar, lessons ( id, name_ar ) )")
+      .eq("classroom_id", classroomId)
+      .order("sort_order"),
+    supabase.from("lesson_assessments").select("lesson_id").eq("child_id", childId),
+  ]);
+  const assessed = new Set((assessments.data ?? []).map((a) => a.lesson_id));
+  type SubjectRow = {
+    name_ar: string;
+    topics: { name_ar: string; lessons: { id: string; name_ar: string }[] | null }[] | null;
+  };
+  return ((subjects.data ?? []) as unknown as SubjectRow[]).map((s) => ({
+    subject: s.name_ar,
+    topics: (s.topics ?? []).map((t) => ({
+      topic: t.name_ar,
+      lessons: (t.lessons ?? []).map((l) => ({ name: l.name_ar, studied: assessed.has(l.id) })),
+    })),
+  }));
+}
+
 async function buildStudentFile(supabase: Db, row: ChildRow): Promise<StudentFileData> {
   const app = row.applications as unknown as AppJoin;
 
-  const [stage, classroom, parent, qurra, services, invoice] = await Promise.all([
+  const [stage, classroom, parent, qurra, services, invoice, withdrawal, curriculum] = await Promise.all([
+
     row.stage_id
       ? supabase
           .from("stages")
@@ -283,7 +309,19 @@ async function buildStudentFile(supabase: Db, row: ChildRow): Promise<StudentFil
       .select("status, grand_total, paid_total, plan_type, installments_count")
       .eq("application_id", app.id)
       .maybeSingle(),
+    supabase
+      .from("student_withdrawals")
+      .select(
+        "kind, status, reason, destination_school, enrolled_from, effective_date, finance_cleared, certificate_number, created_at",
+      )
+      .eq("child_id", row.id)
+      .neq("status", "cancelled")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    studentCurriculum(supabase, row.classroom_id, row.id),
   ]);
+
 
   const draftParent = parentFromDraft(app.draft_data);
   const photoSignedUrl = row.photo_url ? null : await admissionPhotoUrl(supabase, app.id, row.id);

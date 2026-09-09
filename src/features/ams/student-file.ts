@@ -73,7 +73,45 @@ export type StudentFileData = {
     plan_type: string | null;
     installments_count: number | null;
   } | null;
+  /** Set once a withdrawal / graduation file exists for the student. */
+  withdrawal?: {
+    kind: string;
+    status: string;
+    reason: string | null;
+    destinationSchool: string | null;
+    enrolledFrom: string | null;
+    effectiveDate: string | null;
+    financeCleared: boolean | null;
+    certificateNumber: string | null;
+  } | null;
+  /** Subjects / topics / lessons taken by the student (studied = assessed). */
+  curriculum?: {
+    subject: string;
+    topics: { topic: string; lessons: { name: string; studied: boolean }[] }[];
+  }[];
 };
+
+export const WITHDRAWAL_KIND_LABELS: Record<string, string> = {
+  withdrawal: "انسحاب",
+  graduation: "تخرّج",
+};
+
+export const WITHDRAWAL_STATUS_LABELS: Record<string, string> = {
+  pending: "قيد الإجراء",
+  confirmed: "مؤكد",
+  cancelled: "ملغى",
+};
+
+/** Flat "subject: lesson · lesson" summary lines for the studied curriculum. */
+export function curriculumSummary(curriculum: StudentFileData["curriculum"]) {
+  return (curriculum ?? [])
+    .map((s) => {
+      const lessons = s.topics.flatMap((t) => t.lessons.filter((l) => l.studied).map((l) => l.name));
+      const topics = s.topics.filter((t) => t.lessons.some((l) => l.studied)).map((t) => t.topic);
+      return { subject: s.subject, topics, lessons };
+    })
+    .filter((s) => s.lessons.length);
+}
 
 export const GENDER_LABELS: Record<string, string> = { male: "ذكر", female: "أنثى" };
 
@@ -323,6 +361,48 @@ export function buildStudentFileHtml(
         invoice ? `${money(invoice.paid_total)} / ${money(invoice.grand_total)} ريال` : "لم تُصدر فاتورة",
       ],
     ])}
+
+    ${
+      data.withdrawal
+        ? sectionHtml(
+            data.withdrawal.kind === "graduation" ? "بيانات التخرّج" : "بيانات الانسحاب",
+            [
+              ["نوع الإجراء", WITHDRAWAL_KIND_LABELS[data.withdrawal.kind] ?? data.withdrawal.kind],
+              [
+                "حالة الإجراء",
+                WITHDRAWAL_STATUS_LABELS[data.withdrawal.status] ?? data.withdrawal.status,
+              ],
+              [
+                data.withdrawal.kind === "graduation" ? "تاريخ التخرّج" : "تاريخ الانسحاب",
+                formatFileDate(data.withdrawal.effectiveDate),
+              ],
+              ["تاريخ الالتحاق", formatFileDate(data.withdrawal.enrolledFrom)],
+              ["السبب", data.withdrawal.reason],
+              ["الجهة المنقول إليها", data.withdrawal.destinationSchool],
+              ["الوضع المالي", data.withdrawal.financeCleared ? "مُسوّى بالكامل" : "غير مُسوّى"],
+              ["رقم الشهادة", data.withdrawal.certificateNumber],
+            ],
+          )
+        : ""
+    }
+
+    ${
+      curriculumSummary(data.curriculum).length
+        ? `<section class="sec">
+            <h2>المواد والموضوعات التي دُرست</h2>
+            <div class="grid">${curriculumSummary(data.curriculum)
+              .map(
+                (s) => `<div class="f">
+                  <span class="fl">${esc(s.subject)}${s.topics.length ? ` — ${esc(s.topics.join(" · "))}` : ""}</span>
+                  <span class="fv">${esc(s.lessons.join(" · "))}</span>
+                </div>`,
+              )
+              .join("")}</div>
+          </section>`
+        : ""
+    }
+
+
 
     <div class="signs">
       ${["مسؤول التسجيل", "المشرفة التربوية", "مدير المدرسة"]
