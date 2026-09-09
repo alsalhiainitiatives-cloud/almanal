@@ -20,9 +20,9 @@ const CSS = `
   .page-header{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:18px;border-bottom:1px solid #ddced4;padding-bottom:10px}
   .brand{font-size:16px;font-weight:900;color:#7A1F3D}.brand small{display:block;margin-top:3px;font-size:9px;color:#87757c;font-weight:700}
   .document-id{text-align:left;font-size:9px;line-height:1.8;color:#806d74}.document-id b{display:block;color:#7A1F3D;font-size:11px}
-  .page-title{position:relative;margin:18mm 0 10mm;text-align:center}.page-title span{display:inline-block;color:#C9A227;font-size:10px;font-weight:900}.page-title h2{margin:4px 0 0;color:#7A1F3D;font-size:24px}.page-title p{margin:5px 0 0;color:#77666c;font-size:10px}
+  .page-title{position:relative;margin:14mm 0 8mm;text-align:center}.page-title span{display:inline-block;color:#C9A227;font-size:10px;font-weight:900}.page-title h2{margin:4px 0 0;color:#7A1F3D;font-size:24px}.page-title p{margin:5px 0 0;color:#77666c;font-size:10px}
   .cover{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding-top:34mm}
-  .seal{display:grid;width:42mm;height:42mm;place-items:center;border:2px solid #C9A227;border-radius:50%;box-shadow:inset 0 0 0 4px #fff,inset 0 0 0 6px #7A1F3D;color:#7A1F3D;font-size:22px;font-weight:900}
+  .seal{display:grid;width:42mm;height:42mm;place-items:center;border:2px solid #C9A227;border-radius:50%;box-shadow:inset 0 0 0 4px #fff,inset 0 0 0 6px #7A1F3D;color:#7A1F3D;font-size:22px;font-weight:900;overflow:hidden}.seal img{width:78%;height:78%;object-fit:contain}
   .cover h1{margin:15mm 0 3mm;color:#7A1F3D;font-size:29px}.cover .student{font-size:26px;font-weight:900;color:#30272a}.cover .subtitle{margin-top:4mm;color:#7c696f;font-size:12px}
   .cover-meta{margin-top:18mm;display:grid;width:100%;grid-template-columns:repeat(3,1fr);gap:8px}.cover-meta div{border-top:2px solid #C9A227;padding-top:8px;font-size:10px;color:#7c696f}.cover-meta b{display:block;margin-top:3px;color:#30272a;font-size:12px}
   table{position:relative;width:100%;border-collapse:collapse;font-size:12px}.info-table tr:nth-child(odd){background:#fbf7f8}.info-table td{padding:11px 12px;border-bottom:1px solid #eadfe3}.info-table td.k{width:32%;color:#806e74;font-weight:700}.info-table td.v{font-weight:900;color:#30272a}
@@ -36,7 +36,7 @@ const CSS = `
   @media print{body{padding:0;background:#fff}.page{margin:0;box-shadow:none;width:210mm;height:297mm;min-height:297mm}}
 `;
 
-export function certificateHtml(data: WithdrawalCertificate) {
+export function certificateHtml(data: WithdrawalCertificate, logoUrl?: string | null) {
   const { record, student, attendance, finance, curriculum } = data;
   const kind = WITHDRAWAL_KINDS[record.kind as keyof typeof WITHDRAWAL_KINDS] ?? record.kind;
   const reason = WITHDRAWAL_REASONS[record.reason as keyof typeof WITHDRAWAL_REASONS] ?? record.reason;
@@ -101,7 +101,7 @@ export function certificateHtml(data: WithdrawalCertificate) {
   const documentId = esc(record.certificate_number ?? "غير مُصدَرة");
   const header = (page: number, title: string, description: string) => `<div class="watermark">روضة ومدارس المنال</div>
     <header class="page-header"><div class="brand">روضة ومدارس المنال<small>عنيزة — المملكة العربية السعودية</small></div><div class="document-id"><b>${documentId}</b>تاريخ الإصدار: ${esc(issuedAt)}</div></header>
-    <div class="page-title"><span>وثيقة رسمية</span><h2>${title}</h2><p>${description}</p></div><div class="page-number">${page} / 5</div>`;
+    <div class="page-title"><span>وثيقة رسمية</span><h2>${title}</h2><p>${description}</p></div><div class="page-number">الصفحة ${page} من 5</div>`;
 
   return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8" />
   <title>شهادة ${esc(kind)} — ${esc(student.name_ar)}</title>
@@ -109,18 +109,18 @@ export function certificateHtml(data: WithdrawalCertificate) {
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet" />
   <style>${CSS}</style></head><body>
   <section class="page cover">
-    <div class="watermark">روضة ومدارس المنال</div><div class="seal">المنال</div>
+    <div class="watermark">روضة ومدارس المنال</div><div class="seal">${logoUrl ? `<img src="${esc(logoUrl)}" alt="شعار روضة ومدارس المنال" />` : "المنال"}</div>
     <h1>وثيقة ${esc(kind)} وبيان مدة الالتحاق</h1><div class="student">${esc(student.name_ar)}</div>
     <div class="subtitle">وثيقة مدرسية رسمية تشمل بيانات الطالب ومدة الالتحاق والحضور والمواد المدروسة</div>
     <div class="cover-meta"><div>رقم الوثيقة<b>${documentId}</b></div><div>العام الدراسي<b>${esc(student.academicYear)}</b></div><div>تاريخ الإصدار<b>${esc(issuedAt)}</b></div></div>
-    <div class="page-number">1 / 5</div>
+    <div class="page-number">الصفحة 1 من 5</div>
   </section>
 
   <section class="page">${header(2, `بيانات ${esc(pronoun)}`, "البيانات الشخصية والدراسية وبيانات ولي الأمر")}${rows(info)}</section>
 
   <section class="page">${header(3, "مدة الالتحاق والحضور", "تفاصيل الإجراء وملخص انتظام الطالب خلال فترة التحاقه")}
     ${rows(enrolment)}
-    <div class="grid" style="margin-top:18mm"><div class="stat"><b>${attendance.total}</b><span>أيام مرصودة</span></div><div class="stat"><b>${attendance.present}</b><span>حضور</span></div><div class="stat"><b>${attendance.absent}</b><span>غياب</span></div><div class="stat"><b>${attendance.late + attendance.excused}</b><span>تأخير / بعذر</span></div></div>
+    <div class="grid" style="margin-top:10mm"><div class="stat"><b>${attendance.total}</b><span>أيام مرصودة</span></div><div class="stat"><b>${attendance.present}</b><span>حضور</span></div><div class="stat"><b>${attendance.absent}</b><span>غياب</span></div><div class="stat"><b>${attendance.late + attendance.excused}</b><span>تأخير / بعذر</span></div></div>
     <div class="finance"><b>الوضع المالي:</b> ${record.finance_cleared ? "تمت تسوية الالتزامات المالية بالكامل." : `يوجد مبلغ متبقٍ قدره ${esc(money(finance.outstanding))}.`}</div>
   </section>
 
@@ -155,7 +155,7 @@ export function certificateHtml(data: WithdrawalCertificate) {
  * Prints the certificate from a hidden A4 iframe — never needs a popup window,
  * so browser popup blockers can't break printing.
  */
-export async function printCertificate(data: WithdrawalCertificate) {
+export async function printCertificate(data: WithdrawalCertificate, logoUrl?: string | null) {
   if (typeof document === "undefined") return false;
   const frame = document.createElement("iframe");
   frame.setAttribute("aria-hidden", "true");
@@ -165,7 +165,7 @@ export async function printCertificate(data: WithdrawalCertificate) {
 
   await new Promise<void>((resolve) => {
     frame.addEventListener("load", () => resolve(), { once: true });
-    frame.srcdoc = certificateHtml(data);
+    frame.srcdoc = certificateHtml(data, logoUrl);
   });
 
   const win = frame.contentWindow;
