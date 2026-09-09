@@ -150,6 +150,41 @@ export function StudentFileDocument({
         />
       </Section>
 
+      {data.withdrawal && (
+        <Section title={data.withdrawal.kind === "graduation" ? "بيانات التخرّج" : "بيانات الانسحاب"}>
+          <Field
+            label="نوع الإجراء"
+            value={WITHDRAWAL_KIND_LABELS[data.withdrawal.kind] ?? data.withdrawal.kind}
+          />
+          <Field
+            label="حالة الإجراء"
+            value={WITHDRAWAL_STATUS_LABELS[data.withdrawal.status] ?? data.withdrawal.status}
+          />
+          <Field
+            label={data.withdrawal.kind === "graduation" ? "تاريخ التخرّج" : "تاريخ الانسحاب"}
+            value={formatFileDate(data.withdrawal.effectiveDate)}
+          />
+          <Field label="تاريخ الالتحاق" value={formatFileDate(data.withdrawal.enrolledFrom)} />
+          <Field label="السبب" value={data.withdrawal.reason} />
+          <Field label="الجهة المنقول إليها" value={data.withdrawal.destinationSchool} />
+          <Field label="الوضع المالي" value={data.withdrawal.financeCleared ? "مُسوّى بالكامل" : "غير مُسوّى"} />
+          <Field label="رقم الشهادة" value={data.withdrawal.certificateNumber} />
+        </Section>
+      )}
+
+      {studied.length > 0 && (
+        <Section title="المواد والموضوعات التي دُرست">
+          {studied.map((s) => (
+            <Field
+              key={s.subject}
+              label={s.topics.length ? `${s.subject} — ${s.topics.join(" · ")}` : s.subject}
+              value={s.lessons.join(" · ")}
+            />
+          ))}
+        </Section>
+      )}
+
+
       <footer className="grid gap-6 border-t border-border/60 pt-6 sm:grid-cols-3">
         {["مسؤول التسجيل", "المشرفة التربوية", "مدير المدرسة"].map((role) => (
           <div key={role} className="text-center">
