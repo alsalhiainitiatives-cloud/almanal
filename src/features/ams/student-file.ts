@@ -73,7 +73,45 @@ export type StudentFileData = {
     plan_type: string | null;
     installments_count: number | null;
   } | null;
+  /** Set once a withdrawal / graduation file exists for the student. */
+  withdrawal?: {
+    kind: string;
+    status: string;
+    reason: string | null;
+    destinationSchool: string | null;
+    enrolledFrom: string | null;
+    effectiveDate: string | null;
+    financeCleared: boolean | null;
+    certificateNumber: string | null;
+  } | null;
+  /** Subjects / topics / lessons taken by the student (studied = assessed). */
+  curriculum?: {
+    subject: string;
+    topics: { topic: string; lessons: { name: string; studied: boolean }[] }[];
+  }[];
 };
+
+export const WITHDRAWAL_KIND_LABELS: Record<string, string> = {
+  withdrawal: "انسحاب",
+  graduation: "تخرّج",
+};
+
+export const WITHDRAWAL_STATUS_LABELS: Record<string, string> = {
+  pending: "قيد الإجراء",
+  confirmed: "مؤكد",
+  cancelled: "ملغى",
+};
+
+/** Flat "subject: lesson · lesson" summary lines for the studied curriculum. */
+export function curriculumSummary(curriculum: StudentFileData["curriculum"]) {
+  return (curriculum ?? [])
+    .map((s) => {
+      const lessons = s.topics.flatMap((t) => t.lessons.filter((l) => l.studied).map((l) => l.name));
+      const topics = s.topics.filter((t) => t.lessons.some((l) => l.studied)).map((t) => t.topic);
+      return { subject: s.subject, topics, lessons };
+    })
+    .filter((s) => s.lessons.length);
+}
 
 export const GENDER_LABELS: Record<string, string> = { male: "ذكر", female: "أنثى" };
 
