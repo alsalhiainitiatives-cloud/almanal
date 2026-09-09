@@ -75,6 +75,7 @@ import { Route as AuthenticatedAmsSystemUsersRouteImport } from './routes/_authe
 import { Route as AuthenticatedAmsSystemRegistrationRouteImport } from './routes/_authenticated/ams/system.registration'
 import { Route as AuthenticatedAmsSystemPermissionsRouteImport } from './routes/_authenticated/ams/system.permissions'
 import { Route as AuthenticatedAmsSystemAuditRouteImport } from './routes/_authenticated/ams/system.audit'
+import { Route as AuthenticatedAmsStudentsWithdrawalsRouteImport } from './routes/_authenticated/ams/students.withdrawals'
 import { Route as AuthenticatedAmsStudentsRegistryRouteImport } from './routes/_authenticated/ams/students.registry'
 import { Route as AuthenticatedAmsStudentsPromotionsRouteImport } from './routes/_authenticated/ams/students.promotions'
 import { Route as AuthenticatedAmsStudentsGuardiansRouteImport } from './routes/_authenticated/ams/students.guardians'
@@ -453,6 +454,12 @@ const AuthenticatedAmsSystemAuditRoute =
     path: '/ams/system/audit',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAmsStudentsWithdrawalsRoute =
+  AuthenticatedAmsStudentsWithdrawalsRouteImport.update({
+    id: '/ams/students/withdrawals',
+    path: '/ams/students/withdrawals',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAmsStudentsRegistryRoute =
   AuthenticatedAmsStudentsRegistryRouteImport.update({
     id: '/ams/students/registry',
@@ -658,6 +665,7 @@ export interface FileRoutesByFullPath {
   '/ams/students/guardians': typeof AuthenticatedAmsStudentsGuardiansRoute
   '/ams/students/promotions': typeof AuthenticatedAmsStudentsPromotionsRoute
   '/ams/students/registry': typeof AuthenticatedAmsStudentsRegistryRoute
+  '/ams/students/withdrawals': typeof AuthenticatedAmsStudentsWithdrawalsRoute
   '/ams/system/audit': typeof AuthenticatedAmsSystemAuditRoute
   '/ams/system/permissions': typeof AuthenticatedAmsSystemPermissionsRoute
   '/ams/system/registration': typeof AuthenticatedAmsSystemRegistrationRoute
@@ -747,6 +755,7 @@ export interface FileRoutesByTo {
   '/ams/students/guardians': typeof AuthenticatedAmsStudentsGuardiansRoute
   '/ams/students/promotions': typeof AuthenticatedAmsStudentsPromotionsRoute
   '/ams/students/registry': typeof AuthenticatedAmsStudentsRegistryRoute
+  '/ams/students/withdrawals': typeof AuthenticatedAmsStudentsWithdrawalsRoute
   '/ams/system/audit': typeof AuthenticatedAmsSystemAuditRoute
   '/ams/system/permissions': typeof AuthenticatedAmsSystemPermissionsRoute
   '/ams/system/registration': typeof AuthenticatedAmsSystemRegistrationRoute
@@ -838,6 +847,7 @@ export interface FileRoutesById {
   '/_authenticated/ams/students/guardians': typeof AuthenticatedAmsStudentsGuardiansRoute
   '/_authenticated/ams/students/promotions': typeof AuthenticatedAmsStudentsPromotionsRoute
   '/_authenticated/ams/students/registry': typeof AuthenticatedAmsStudentsRegistryRoute
+  '/_authenticated/ams/students/withdrawals': typeof AuthenticatedAmsStudentsWithdrawalsRoute
   '/_authenticated/ams/system/audit': typeof AuthenticatedAmsSystemAuditRoute
   '/_authenticated/ams/system/permissions': typeof AuthenticatedAmsSystemPermissionsRoute
   '/_authenticated/ams/system/registration': typeof AuthenticatedAmsSystemRegistrationRoute
@@ -929,6 +939,7 @@ export interface FileRouteTypes {
     | '/ams/students/guardians'
     | '/ams/students/promotions'
     | '/ams/students/registry'
+    | '/ams/students/withdrawals'
     | '/ams/system/audit'
     | '/ams/system/permissions'
     | '/ams/system/registration'
@@ -1018,6 +1029,7 @@ export interface FileRouteTypes {
     | '/ams/students/guardians'
     | '/ams/students/promotions'
     | '/ams/students/registry'
+    | '/ams/students/withdrawals'
     | '/ams/system/audit'
     | '/ams/system/permissions'
     | '/ams/system/registration'
@@ -1108,6 +1120,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ams/students/guardians'
     | '/_authenticated/ams/students/promotions'
     | '/_authenticated/ams/students/registry'
+    | '/_authenticated/ams/students/withdrawals'
     | '/_authenticated/ams/system/audit'
     | '/_authenticated/ams/system/permissions'
     | '/_authenticated/ams/system/registration'
@@ -1619,6 +1632,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAmsSystemAuditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ams/students/withdrawals': {
+      id: '/_authenticated/ams/students/withdrawals'
+      path: '/ams/students/withdrawals'
+      fullPath: '/ams/students/withdrawals'
+      preLoaderRoute: typeof AuthenticatedAmsStudentsWithdrawalsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ams/students/registry': {
       id: '/_authenticated/ams/students/registry'
       path: '/ams/students/registry'
@@ -1826,6 +1846,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAmsStudentsGuardiansRoute: typeof AuthenticatedAmsStudentsGuardiansRoute
   AuthenticatedAmsStudentsPromotionsRoute: typeof AuthenticatedAmsStudentsPromotionsRoute
   AuthenticatedAmsStudentsRegistryRoute: typeof AuthenticatedAmsStudentsRegistryRoute
+  AuthenticatedAmsStudentsWithdrawalsRoute: typeof AuthenticatedAmsStudentsWithdrawalsRoute
   AuthenticatedAmsSystemAuditRoute: typeof AuthenticatedAmsSystemAuditRoute
   AuthenticatedAmsSystemPermissionsRoute: typeof AuthenticatedAmsSystemPermissionsRoute
   AuthenticatedAmsSystemRegistrationRoute: typeof AuthenticatedAmsSystemRegistrationRoute
@@ -1901,6 +1922,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAmsStudentsPromotionsRoute:
     AuthenticatedAmsStudentsPromotionsRoute,
   AuthenticatedAmsStudentsRegistryRoute: AuthenticatedAmsStudentsRegistryRoute,
+  AuthenticatedAmsStudentsWithdrawalsRoute:
+    AuthenticatedAmsStudentsWithdrawalsRoute,
   AuthenticatedAmsSystemAuditRoute: AuthenticatedAmsSystemAuditRoute,
   AuthenticatedAmsSystemPermissionsRoute:
     AuthenticatedAmsSystemPermissionsRoute,

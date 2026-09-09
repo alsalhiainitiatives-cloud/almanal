@@ -5,6 +5,7 @@ import {
   FileSpreadsheet,
   GraduationCap,
   Link2,
+  LogOut,
   UserRoundPlus,
 } from "lucide-react";
 
@@ -57,6 +58,12 @@ const CARDS = [
     label: "استيراد وتصدير الطلاب",
     icon: FileSpreadsheet,
     text: "نموذج إكسل جاهز، استيراد الطلاب السابقين بمراجعة مسبقة، إضافة وتعديل وحذف، وتصدير إكسل / CSV / PDF.",
+  },
+  {
+    to: "/ams/students/withdrawals",
+    label: "انسحاب الطلاب والخريجون",
+    icon: LogOut,
+    text: "طلبات الانسحاب والتخرّج، تسوية المستحقات المالية، وشهادة مدة الالتحاق والمواد المدروسة.",
   },
   {
     to: "/ams/students/promotions",

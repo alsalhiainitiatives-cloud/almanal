@@ -37,6 +37,7 @@ import {
   amsStudentDelete,
   amsStudentUpdate,
   amsStudents,
+  amsStudentsDuplicateCheck,
   amsStudentsImport,
 } from "@/features/ams/ams.functions";
 import { EmptyState, SkeletonRows } from "@/features/ams/components/atoms";
@@ -184,6 +185,7 @@ export function StudentDataBoard() {
 
   const load = useServerFn(amsStudents);
   const runImport = useServerFn(amsStudentsImport);
+  const checkDuplicates = useServerFn(amsStudentsDuplicateCheck);
   const addOne = useServerFn(amsStudentAdd);
   const updateOne = useServerFn(amsStudentUpdate);
   const deleteOne = useServerFn(amsStudentDelete);
@@ -215,7 +217,11 @@ export function StudentDataBoard() {
   const [preview, setPreview] = useState<ValidatedRow[] | null>(null);
   const [fileName, setFileName] = useState("");
 
-  const validRows = (preview ?? []).filter((r) => r.record);
+  const [duplicates, setDuplicates] = useState<Record<number, string>>({});
+
+  // Duplicates are blocked from import: same national ID, or same name + birth date.
+  const validRows = (preview ?? []).filter((r) => r.record && !duplicates[r.index]);
+  const dupRows = (preview ?? []).filter((r) => r.record && duplicates[r.index]);
   const badRows = (preview ?? []).filter((r) => !r.record);
 
   async function onPickFile(file: File) {
@@ -226,6 +232,24 @@ export function StudentDataBoard() {
       const rows = raw.map((r, i) => validateRow(r, i + 1, stages, classrooms));
       setPreview(rows);
       setFileName(file.name);
+      setDuplicates({});
+
+      const candidates = rows
+        .filter((r) => r.record)
+        .map((r) => ({
+          index: r.index,
+          name_ar: r.record!.name_ar,
+          national_id: r.record!.national_id ?? null,
+          birth_date: r.record!.birth_date,
+        }));
+      if (candidates.length) {
+        const { duplicates: hits } = await checkDuplicates({ data: { candidates } });
+        const map: Record<number, string> = {};
+        for (const hit of hits) map[hit.index] = hit.reason;
+        setDuplicates(map);
+        if (hits.length)
+          toast.warning(`${hits.length} طالب/طالبة مسجّل مسبقًا — سيتم استثناؤهم من الاستيراد.`);
+      }
       toast.success(`تمت قراءة ${rows.length} صفًا — راجع البيانات قبل الاعتماد.`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "تعذّر قراءة الملف.");
@@ -243,6 +267,7 @@ export function StudentDataBoard() {
       invalidate();
       setPreview(null);
       setFileName("");
+      setDuplicates({});
       toast.success(`تم استيراد ${result.imported} طالب/طالبة${result.failed ? ` — تعذّر ${result.failed}` : ""}`);
       if (result.failed) {
         result.results
@@ -431,6 +456,9 @@ export function StudentDataBoard() {
               <span className="rounded-xl bg-destructive/10 px-3 py-1.5 text-destructive">
                 تحتاج تصحيح: {badRows.length}
               </span>
+              <span className="rounded-xl bg-amber-500/10 px-3 py-1.5 text-amber-700">
+                مسجّل مسبقًا: {dupRows.length}
+              </span>
             </div>
             <Button
               type="button"
@@ -470,12 +498,23 @@ export function StudentDataBoard() {
                     key={row.index}
                     className={cn(
                       "border-t border-border/50",
-                      row.record ? "hover:bg-muted/25" : "bg-destructive/5",
+                      row.record
+                        ? duplicates[row.index]
+                          ? "bg-amber-500/5"
+                          : "hover:bg-muted/25"
+                        : "bg-destructive/5",
                     )}
                   >
                     <td className="px-3 py-2 font-bold">{row.index}</td>
                     <td className="px-3 py-2">
-                      {row.record ? (
+                      {row.record && duplicates[row.index] ? (
+                        <span className="inline-flex items-start gap-1 rounded-lg bg-amber-500/10 px-2 py-1 font-black text-amber-700">
+                          <TriangleAlert className="mt-0.5 size-3.5" />
+                          <span className="max-w-[220px] leading-relaxed">
+                            {duplicates[row.index]}
+                          </span>
+                        </span>
+                      ) : row.record ? (
                         <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/10 px-2 py-1 font-black text-emerald-700">
                           <CheckCircle2 className="size-3.5" /> جاهز
                         </span>
