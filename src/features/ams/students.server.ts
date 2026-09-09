@@ -309,7 +309,19 @@ async function buildStudentFile(supabase: Db, row: ChildRow): Promise<StudentFil
       .select("status, grand_total, paid_total, plan_type, installments_count")
       .eq("application_id", app.id)
       .maybeSingle(),
+    supabase
+      .from("student_withdrawals")
+      .select(
+        "kind, status, reason, destination_school, enrolled_from, effective_date, finance_cleared, certificate_number, created_at",
+      )
+      .eq("child_id", row.id)
+      .neq("status", "cancelled")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    studentCurriculum(supabase, row.classroom_id, row.id),
   ]);
+
 
   const draftParent = parentFromDraft(app.draft_data);
   const photoSignedUrl = row.photo_url ? null : await admissionPhotoUrl(supabase, app.id, row.id);
