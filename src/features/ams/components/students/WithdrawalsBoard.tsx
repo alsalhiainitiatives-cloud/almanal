@@ -69,6 +69,29 @@ const FILTERS = [
   { key: "all", label: "الكل" },
 ] as const;
 
+type WithdrawalCreateInput = {
+  childId: string;
+  kind: WithdrawalKind;
+  reason: string;
+  reasonNote?: string | null;
+  destinationSchool?: string | null;
+  effectiveDate?: string | null;
+  financeNote?: string | null;
+  notes?: string | null;
+};
+
+type WithdrawalUpdateInput = {
+  id: string;
+  reason?: string;
+  reasonNote?: string | null;
+  destinationSchool?: string | null;
+  effectiveDate?: string | null;
+  financeCleared?: boolean;
+  financeNote?: string | null;
+  notes?: string | null;
+  refreshFinance?: boolean;
+};
+
 const field = "h-10 rounded-xl border border-border/60 bg-background px-3 text-sm";
 
 export function WithdrawalsBoard() {
@@ -122,7 +145,7 @@ export function WithdrawalsBoard() {
   });
 
   const create = useMutation({
-    mutationFn: (input: Parameters<typeof createFn>[0]["data"]) => createFn({ data: input }),
+    mutationFn: (input: WithdrawalCreateInput) => createFn({ data: input }),
     onSuccess: () => {
       toast.success("تم تسجيل طلب الانسحاب");
       setOpenNew(false);
@@ -133,7 +156,7 @@ export function WithdrawalsBoard() {
   });
 
   const update = useMutation({
-    mutationFn: (input: Parameters<typeof updateFn>[0]["data"]) => updateFn({ data: input }),
+    mutationFn: (input: WithdrawalUpdateInput) => updateFn({ data: input }),
     onSuccess: () => {
       toast.success("تم تحديث الطلب");
       setEditing(null);
