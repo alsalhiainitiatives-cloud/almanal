@@ -9,36 +9,31 @@ import { WITHDRAWAL_KINDS, WITHDRAWAL_REASONS, durationLabel, formatDate, money 
 const esc = (v: unknown) => String(v ?? "—").replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
 
 const CSS = `
+  @page{size:A4 portrait;margin:0}
   *{box-sizing:border-box}
-  body{font-family:"Cairo","Segoe UI",sans-serif;margin:0;padding:26px;color:#2b2b2b;background:#f6f2f4;direction:rtl}
-  .sheet{max-width:820px;margin:auto;background:#fff;border:2px solid #7A1F3D;border-radius:20px;padding:30px;position:relative;overflow:hidden}
-  .watermark{position:absolute;inset:0;display:grid;place-items:center;font-size:84px;font-weight:900;color:rgba(122,31,61,.05);transform:rotate(-18deg);pointer-events:none;letter-spacing:4px}
-  header{display:flex;align-items:flex-start;gap:16px;border-bottom:2px dashed #e0cdd5;padding-bottom:16px}
-  h1{font-size:20px;margin:0;color:#7A1F3D}
-  h2{font-size:12px;margin:6px 0 0;color:#666;font-weight:600}
-  .badge{margin-inline-start:auto;background:#7A1F3D;color:#fff;border-radius:999px;padding:10px 16px;font-size:12px;font-weight:800;text-align:center}
-  .badge small{display:block;font-size:10px;font-weight:700;opacity:.85;margin-top:3px}
-  .section-title{margin:22px 0 8px;font-size:12px;font-weight:900;color:#7A1F3D;border-inline-start:4px solid #C9A227;padding-inline-start:8px}
-  table{width:100%;border-collapse:collapse;font-size:12.5px}
-  td{padding:8px 6px;border-bottom:1px solid #efe6ea;vertical-align:top}
-  td.k{color:#777;width:26%}
-  td.v{font-weight:800}
-  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:6px}
-  .stat{border:1px solid #f0dbe3;background:#fdf4f7;border-radius:14px;padding:12px;text-align:center}
-  .stat b{display:block;font-size:18px;color:#7A1F3D}
-  .stat span{font-size:10.5px;color:#7a6b71;font-weight:700}
-  .subject{border:1px solid #f0dbe3;border-radius:14px;padding:12px;margin-top:10px}
-  .subject h3{margin:0 0 6px;font-size:12.5px;color:#7A1F3D}
-  .topic{font-size:11.5px;color:#4b4b4b;line-height:1.9}
-  .topic b{color:#2b2b2b}
-  .chip{display:inline-block;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:800;margin-inline-end:4px}
-  .done{background:#e6f5ee;color:#1F8A5B}
-  .todo{background:#f3eef0;color:#8a7a80}
-  .statement{margin-top:18px;background:#fdf9f4;border:1px solid #eadfcd;border-radius:16px;padding:16px;font-size:13px;line-height:2.1}
-  .sign{margin-top:28px;display:flex;justify-content:space-between;gap:12px}
-  .box{border:2px dashed #cbb3bd;border-radius:16px;padding:16px 18px;font-size:11px;color:#8a7a80;font-weight:800;text-align:center;min-width:200px}
-  .note{margin-top:14px;font-size:10.5px;color:#8a7a80;line-height:1.9}
-  @media print{body{padding:0;background:#fff}.sheet{border:none;border-radius:0}}
+  body{font-family:"Cairo","Segoe UI",sans-serif;margin:0;padding:18px;color:#30272a;background:#e8e8ea;direction:rtl}
+  .page{width:210mm;min-height:297mm;margin:0 auto 18px;background:#fff;position:relative;overflow:hidden;padding:25mm 20mm 22mm;break-after:page;page-break-after:always;box-shadow:0 8px 28px rgba(35,22,27,.12)}
+  .page:last-child{break-after:auto;page-break-after:auto}
+  .page::before{content:"";position:absolute;inset:9mm;border:1px solid #d9c5cd;pointer-events:none}
+  .page::after{content:"";position:absolute;top:9mm;right:9mm;width:45mm;height:4px;background:#7A1F3D;box-shadow:-45mm 0 0 #C9A227;pointer-events:none}
+  .watermark{position:absolute;inset:0;display:grid;place-items:center;font-size:66px;font-weight:900;color:rgba(122,31,61,.035);transform:rotate(-24deg);pointer-events:none}
+  .page-header{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:18px;border-bottom:1px solid #ddced4;padding-bottom:10px}
+  .brand{font-size:16px;font-weight:900;color:#7A1F3D}.brand small{display:block;margin-top:3px;font-size:9px;color:#87757c;font-weight:700}
+  .document-id{text-align:left;font-size:9px;line-height:1.8;color:#806d74}.document-id b{display:block;color:#7A1F3D;font-size:11px}
+  .page-title{position:relative;margin:18mm 0 10mm;text-align:center}.page-title span{display:inline-block;color:#C9A227;font-size:10px;font-weight:900}.page-title h2{margin:4px 0 0;color:#7A1F3D;font-size:24px}.page-title p{margin:5px 0 0;color:#77666c;font-size:10px}
+  .cover{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding-top:34mm}
+  .seal{display:grid;width:42mm;height:42mm;place-items:center;border:2px solid #C9A227;border-radius:50%;box-shadow:inset 0 0 0 4px #fff,inset 0 0 0 6px #7A1F3D;color:#7A1F3D;font-size:22px;font-weight:900}
+  .cover h1{margin:15mm 0 3mm;color:#7A1F3D;font-size:29px}.cover .student{font-size:26px;font-weight:900;color:#30272a}.cover .subtitle{margin-top:4mm;color:#7c696f;font-size:12px}
+  .cover-meta{margin-top:18mm;display:grid;width:100%;grid-template-columns:repeat(3,1fr);gap:8px}.cover-meta div{border-top:2px solid #C9A227;padding-top:8px;font-size:10px;color:#7c696f}.cover-meta b{display:block;margin-top:3px;color:#30272a;font-size:12px}
+  table{position:relative;width:100%;border-collapse:collapse;font-size:12px}.info-table tr:nth-child(odd){background:#fbf7f8}.info-table td{padding:11px 12px;border-bottom:1px solid #eadfe3}.info-table td.k{width:32%;color:#806e74;font-weight:700}.info-table td.v{font-weight:900;color:#30272a}
+  .grid{position:relative;display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.stat{border:1px solid #e2d4d9;border-top:4px solid #7A1F3D;padding:18px;text-align:center;background:#fcf9fa}.stat b{display:block;font-size:26px;color:#7A1F3D}.stat span{font-size:10px;color:#79676e;font-weight:800}
+  .finance{position:relative;margin-top:18px;border:1px solid #ead9c0;border-right:5px solid #C9A227;background:#fffbf4;padding:16px;font-size:12px;line-height:2}.finance b{color:#7A1F3D}
+  .subject{position:relative;border:1px solid #e2d4d9;padding:14px;margin-top:12px;break-inside:avoid}.subject h3{margin:0 0 8px;padding-bottom:7px;border-bottom:1px solid #eadfe3;font-size:13px;color:#7A1F3D}.topic{font-size:11px;color:#524449;line-height:2}.topic b{color:#30272a}.chip{display:inline-block;border-radius:4px;padding:2px 7px;font-size:9px;font-weight:800;margin:2px}.done{background:#e7f4ed;color:#176942}.todo{background:#f0edef;color:#8a7a80}
+  .statement{position:relative;margin-top:16mm;border:1px solid #dfced5;border-right:6px solid #7A1F3D;padding:22px;font-size:14px;line-height:2.5;text-align:justify;background:#fdfafb}.statement b{color:#7A1F3D}
+  .sign{position:relative;margin-top:28mm;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.box{padding:12px 8px 8px;border-top:1px solid #9f8d94;font-size:10px;color:#746269;font-weight:800;text-align:center}
+  .note{position:relative;margin-top:18mm;border-top:1px solid #e2d6da;padding-top:12px;font-size:9px;color:#8a787e;line-height:2}
+  .page-number{position:absolute;bottom:13mm;left:0;right:0;text-align:center;color:#9a878e;font-size:8px;font-weight:700}
+  @media print{body{padding:0;background:#fff}.page{margin:0;box-shadow:none;width:210mm;height:297mm;min-height:297mm}}
 `;
 
 export function certificateHtml(data: WithdrawalCertificate) {
@@ -72,7 +67,7 @@ export function certificateHtml(data: WithdrawalCertificate) {
   ];
 
   const rows = (list: [string, string][]) =>
-    `<table>${list.map(([k, v]) => `<tr><td class="k">${k}</td><td class="v">${v}</td></tr>`).join("")}</table>`;
+    `<table class="info-table">${list.map(([k, v]) => `<tr><td class="k">${k}</td><td class="v">${v}</td></tr>`).join("")}</table>`;
 
   const curriculumHtml = curriculum.length
     ? curriculum
@@ -102,40 +97,38 @@ export function certificateHtml(data: WithdrawalCertificate) {
 
   const pronoun = student.gender === "female" ? "الطالبة" : "الطالب";
 
+  const issuedAt = formatDate(record.certificate_issued_at ?? new Date().toISOString());
+  const documentId = esc(record.certificate_number ?? "غير مُصدَرة");
+  const header = (page: number, title: string, description: string) => `<div class="watermark">روضة ومدارس المنال</div>
+    <header class="page-header"><div class="brand">روضة ومدارس المنال<small>عنيزة — المملكة العربية السعودية</small></div><div class="document-id"><b>${documentId}</b>تاريخ الإصدار: ${esc(issuedAt)}</div></header>
+    <div class="page-title"><span>وثيقة رسمية</span><h2>${title}</h2><p>${description}</p></div><div class="page-number">${page} / 5</div>`;
+
   return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8" />
   <title>شهادة ${esc(kind)} — ${esc(student.name_ar)}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet" />
   <style>${CSS}</style></head><body>
-  <div class="sheet">
-    <div class="watermark">روضة ومدارس المنال</div>
-    <header>
-      <div>
-        <h1>روضة ومدارس المنال — عنيزة</h1>
-        <h2>شهادة ${esc(kind)} وبيان مدة الالتحاق والمواد المدروسة</h2>
-      </div>
-      <div class="badge">${esc(record.certificate_number ?? "غير مُصدَرة")}<small>${esc(
-        formatDate(record.certificate_issued_at ?? new Date().toISOString()),
-      )}</small></div>
-    </header>
+  <section class="page cover">
+    <div class="watermark">روضة ومدارس المنال</div><div class="seal">المنال</div>
+    <h1>وثيقة ${esc(kind)} وبيان مدة الالتحاق</h1><div class="student">${esc(student.name_ar)}</div>
+    <div class="subtitle">وثيقة مدرسية رسمية تشمل بيانات الطالب ومدة الالتحاق والحضور والمواد المدروسة</div>
+    <div class="cover-meta"><div>رقم الوثيقة<b>${documentId}</b></div><div>العام الدراسي<b>${esc(student.academicYear)}</b></div><div>تاريخ الإصدار<b>${esc(issuedAt)}</b></div></div>
+    <div class="page-number">1 / 5</div>
+  </section>
 
-    <div class="section-title">بيانات ${esc(pronoun)}</div>
-    ${rows(info)}
+  <section class="page">${header(2, `بيانات ${esc(pronoun)}`, "البيانات الشخصية والدراسية وبيانات ولي الأمر")}${rows(info)}</section>
 
-    <div class="section-title">مدة الالتحاق وبيانات الإجراء</div>
+  <section class="page">${header(3, "مدة الالتحاق والحضور", "تفاصيل الإجراء وملخص انتظام الطالب خلال فترة التحاقه")}
     ${rows(enrolment)}
+    <div class="grid" style="margin-top:18mm"><div class="stat"><b>${attendance.total}</b><span>أيام مرصودة</span></div><div class="stat"><b>${attendance.present}</b><span>حضور</span></div><div class="stat"><b>${attendance.absent}</b><span>غياب</span></div><div class="stat"><b>${attendance.late + attendance.excused}</b><span>تأخير / بعذر</span></div></div>
+    <div class="finance"><b>الوضع المالي:</b> ${record.finance_cleared ? "تمت تسوية الالتزامات المالية بالكامل." : `يوجد مبلغ متبقٍ قدره ${esc(money(finance.outstanding))}.`}</div>
+  </section>
 
-    <div class="section-title">ملخص الحضور</div>
-    <div class="grid">
-      <div class="stat"><b>${attendance.total}</b><span>أيام مرصودة</span></div>
-      <div class="stat"><b>${attendance.present}</b><span>حضور</span></div>
-      <div class="stat"><b>${attendance.absent}</b><span>غياب</span></div>
-      <div class="stat"><b>${attendance.late + attendance.excused}</b><span>تأخير / بعذر</span></div>
-    </div>
+  <section class="page">${header(4, "المواد والموضوعات المدروسة", "ملخص المنهج والدروس المرصودة خلال فترة الالتحاق")}${curriculumHtml}
+    <div class="note">الدروس المميزة باللون الأخضر هي الدروس التي رُصد لها تقييم فعلي للطالب/ة خلال فترة الالتحاق.</div>
+  </section>
 
-    <div class="section-title">المواد والموضوعات التي دُرست</div>
-    ${curriculumHtml}
-
+  <section class="page">${header(5, "الإفادة والاعتماد", "الصيغة الرسمية للوثيقة ومساحات التوقيع والختم")}
     <div class="statement">
       تشهد إدارة روضة ومدارس المنال بأن ${esc(pronoun)} <b>${esc(student.name_ar)}</b>
       كان/ت منتظمًا/ة بالمرحلة <b>${esc(student.stage)}</b>${
@@ -153,18 +146,9 @@ export function certificateHtml(data: WithdrawalCertificate) {
       }
       وقد أُعطيت له/ا هذه الشهادة بناءً على طلبه/ا دون أي مسؤولية على المنشأة.
     </div>
-
-    <div class="sign">
-      <div class="box">مدير/ة المنشأة<br /><br />الاسم والتوقيع</div>
-      <div class="box">شؤون الطلاب<br /><br />الاسم والتوقيع</div>
-      <div class="box">الختم الرسمي</div>
-    </div>
-
-    <div class="note">
-      • المواد الملوّنة بالأخضر هي الدروس التي رُصد لها تقييم فعلي ${esc(pronoun)} خلال فترة التحاقه/ا.<br />
-      • هذه الشهادة صادرة إلكترونيًا من نظام إدارة روضة ومدارس المنال ولا تُعد صحيحة دون الختم الرسمي.
-    </div>
-  </div></body></html>`;
+    <div class="sign"><div class="box">مدير/ة المنشأة<br />الاسم والتوقيع</div><div class="box">شؤون الطلاب<br />الاسم والتوقيع</div><div class="box">الختم الرسمي</div></div>
+    <div class="note">هذه الوثيقة صادرة إلكترونيًا من نظام إدارة روضة ومدارس المنال، ولا تُعد صحيحة دون التوقيع والختم الرسمي.</div>
+  </section></body></html>`;
 }
 
 /**
