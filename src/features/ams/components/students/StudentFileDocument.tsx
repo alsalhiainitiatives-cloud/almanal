@@ -69,6 +69,7 @@ export function StudentFileDocument({
   const logoUrl = useBrandLogoUrl();
   const { student, application, parent, stage, classroom, qurra, services, invoice } = data;
   const identifier = studentIdentifier(application, formatApplicationCode(application.applicationNumber));
+  const studied = curriculumSummary(data.curriculum);
 
   return (
     <article className="print-sheet space-y-5 rounded-3xl border border-border/60 bg-card p-6 shadow-sm" dir="rtl">
