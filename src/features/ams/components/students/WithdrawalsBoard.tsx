@@ -121,9 +121,6 @@ export function WithdrawalsBoard() {
     enabled: openNew,
   });
 
-  const mutate = <T,>(fn: (input: T) => Promise<unknown>, success: string) =>
-    useMutationLike(fn, success, refresh);
-
   const create = useMutation({
     mutationFn: (input: Parameters<typeof createFn>[0]["data"]) => createFn({ data: input }),
     onSuccess: () => {
@@ -412,11 +409,6 @@ export function WithdrawalsBoard() {
       />
     </div>
   );
-}
-
-/** tiny helper so the mutate factory above stays type-safe without extra hooks */
-function useMutationLike<T>(fn: (input: T) => Promise<unknown>, _success: string, _after: () => void) {
-  return fn;
 }
 
 function Cell({ label, children }: { label: string; children: React.ReactNode }) {
