@@ -83,9 +83,9 @@ export function encouragementCertificateHtml(data: EncouragementCertificateData)
     h1{position:relative;margin:1mm 0 0;color:#7a1f3d;font-size:31px;line-height:1.25;font-weight:900}
     .rule{position:relative;width:44mm;height:3px;margin:4mm 0;background:linear-gradient(90deg,transparent,#d8ad42,transparent)}
     .lead{position:relative;margin:0;font-size:13px;font-weight:700;color:#79666d}
-    .name{position:relative;max-width:220mm;margin:3mm 0 2mm;color:#16877c;font-size:30px;line-height:1.25;font-weight:900}
-    .meta{position:relative;display:flex;gap:4mm;align-items:center;justify-content:center;color:#7a1f3d;font-size:11px;font-weight:800}.meta span{padding:2mm 5mm;border-radius:999px;background:#f8edf1;border:1px solid #ead2db}
-    .message{position:relative;max-width:205mm;margin:5mm auto 0;color:#4c3c42;font-size:13px;line-height:2;font-weight:700}
+    .name{position:relative;width:100%;max-width:220mm;margin:3mm 0 2mm;color:#16877c;font-size:clamp(22px,3vw,30px);line-height:1.35;font-weight:900;overflow-wrap:anywhere}
+    .meta{position:relative;display:flex;max-width:210mm;gap:4mm;align-items:center;justify-content:center;flex-wrap:wrap;color:#7a1f3d;font-size:11px;font-weight:800}.meta span{max-width:96mm;padding:2mm 5mm;border-radius:999px;background:#f8edf1;border:1px solid #ead2db;overflow-wrap:anywhere}
+    .message{position:relative;max-width:205mm;margin:5mm auto 0;color:#4c3c42;font-size:clamp(11px,1.4vw,13px);line-height:1.9;font-weight:700;overflow-wrap:anywhere}
     .signatures{position:relative;margin-top:auto;width:78%;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12mm;font-size:10px;color:#745f67;font-weight:800}.line{padding-top:9mm;border-bottom:1px solid #9e858e;padding-bottom:2mm}
     .year{position:relative;margin-top:4mm;color:#98858c;font-size:9px;font-weight:700}
     @media print{body{background:#fff}.certificate{break-after:page}}
@@ -138,7 +138,7 @@ function CertificatePreview({ data }: { data: EncouragementCertificateData }) {
 
       <div className="relative z-10 flex h-full flex-col items-center">
         {data.logoUrl ? (
-          <img src={data.logoUrl} alt="شعار روضة ومدارس المنال" className="size-[14%] object-contain" />
+          <img src={data.logoUrl} alt="الشعار الرسمي لروضة ومدارس المنال" className="size-[14%] object-contain" />
         ) : (
           <div className="grid size-[14%] place-items-center rounded-full border-2 border-accent text-xs font-black text-primary">
             المنال
@@ -149,10 +149,10 @@ function CertificatePreview({ data }: { data: EncouragementCertificateData }) {
         <h2 className="mt-1 text-[clamp(18px,3vw,38px)] font-black text-primary">{data.title}</h2>
         <div className="my-[1.5%] h-0.5 w-28 bg-accent" />
         <p className="text-[clamp(7px,.9vw,12px)] font-bold text-muted-foreground">إلى الطفل/ة المتميّز/ة</p>
-        <p className="mt-[1%] max-w-[78%] text-[clamp(18px,3vw,40px)] font-black text-secondary">{data.studentName || "اسم الطالب/ة"}</p>
-        <div className="mt-[1%] flex gap-2 text-[clamp(6px,.8vw,10px)] font-extrabold text-primary">
-          <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1">{data.stageName}</span>
-          <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1">{data.classroomName}</span>
+        <p className="mt-[1%] max-w-[78%] break-words text-[clamp(16px,3vw,40px)] leading-tight font-black text-secondary">{data.studentName || "اسم الطالب/ة"}</p>
+        <div className="mt-[1%] flex max-w-[78%] flex-wrap justify-center gap-2 text-[clamp(6px,.8vw,10px)] font-extrabold text-primary">
+          <span className="max-w-full break-words rounded-full border border-primary/20 bg-primary/5 px-3 py-1">{data.stageName}</span>
+          <span className="max-w-full break-words rounded-full border border-primary/20 bg-primary/5 px-3 py-1">{data.classroomName}</span>
         </div>
         <p className="mt-[2%] max-w-[72%] text-[clamp(7px,1vw,13px)] font-bold leading-relaxed text-foreground">{data.message}</p>
         <div className="mt-auto grid w-[72%] grid-cols-3 gap-6 text-[clamp(6px,.7vw,9px)] font-bold text-muted-foreground">
@@ -209,6 +209,11 @@ export function StudentCertificatesBoard() {
     setMessage(next.message);
   };
 
+  const printSelectedCertificate = () => {
+    if (!selected || !title.trim() || !message.trim()) return;
+    void printHtml(encouragementCertificateHtml(certificateData));
+  };
+
   if (studentsQuery.isLoading) {
     return <div className="grid min-h-72 place-items-center rounded-lg border border-border bg-card"><Loader2 className="size-7 animate-spin text-primary" /></div>;
   }
@@ -253,15 +258,20 @@ export function StudentCertificatesBoard() {
         </label>
         <label className="space-y-1.5 text-xs font-black text-foreground"><span>عنوان الشهادة</span><Input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={70} /></label>
         <label className="space-y-1.5 text-xs font-black text-foreground"><span>العبارة التشجيعية</span><Textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={320} rows={5} /></label>
-        <Button className="w-full" disabled={!selected || !title.trim() || !message.trim()} onClick={() => void printHtml(encouragementCertificateHtml(certificateData))}>
+        <Button className="w-full" disabled={!selected || !title.trim() || !message.trim()} onClick={printSelectedCertificate}>
           <Printer className="size-4" /> طباعة الشهادة
         </Button>
       </section>
 
       <section className="min-w-0">
-        <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div><h2 className="text-base font-black text-foreground">المعاينة النهائية</h2><p className="text-xs text-muted-foreground">تُطبع الشهادة أفقياً على ورق A4.</p></div>
-          <span className="rounded-full bg-secondary/10 px-3 py-1 text-xs font-black text-secondary">{students.length} طالب/ة</span>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-secondary/10 px-3 py-1 text-xs font-black text-secondary">{students.length} طالب/ة</span>
+            <Button size="sm" disabled={!selected || !title.trim() || !message.trim()} onClick={printSelectedCertificate}>
+              <Printer className="size-4" /> طباعة مباشرة
+            </Button>
+          </div>
         </div>
         <CertificatePreview data={certificateData} />
       </section>
