@@ -409,6 +409,8 @@ export async function getAssignmentBoard(supabase: Db, userId: string): Promise<
 async function syncClassroomTeacherNames(classroomIds: string[]) {
   const ids = [...new Set(classroomIds)].filter(Boolean);
   if (!ids.length) return;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
 
   const { data: links } = await supabaseAdmin
     .from("teacher_classrooms")
