@@ -146,7 +146,7 @@ export function certificateHtml(data: WithdrawalCertificate, logoUrl?: string | 
       }
       وقد أُعطيت له/ا هذه الشهادة بناءً على طلبه/ا دون أي مسؤولية على المنشأة.
     </div>
-    <div class="sign"><div class="box">مدير/ة المنشأة<br />الاسم والتوقيع</div><div class="box">شؤون الطلاب<br />الاسم والتوقيع</div><div class="box">الختم الرسمي</div></div>
+    <div class="sign"><div class="box">مديرة الروضة / المدرسة<br />الاسم والتوقيع</div><div class="box">شؤون الطلاب<br />الاسم والتوقيع</div><div class="box">الختم الرسمي</div></div>
     <div class="note">هذه الوثيقة صادرة إلكترونيًا من نظام إدارة روضة ومدارس المنال، ولا تُعد صحيحة دون التوقيع والختم الرسمي.</div>
   </section></body></html>`;
 }

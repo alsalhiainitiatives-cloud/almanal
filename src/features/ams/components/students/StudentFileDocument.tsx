@@ -190,7 +190,7 @@ export function StudentFileDocument({
 
 
       <footer className="grid gap-6 border-t border-border/60 pt-6 sm:grid-cols-3">
-        {["مسؤول التسجيل", "المشرفة التربوية", "مدير المدرسة"].map((role) => (
+        {["مسؤول التسجيل", "المشرفة التربوية", "مديرة الروضة / المدرسة"].map((role) => (
           <div key={role} className="text-center">
             <p className="text-[11px] font-black text-foreground">{role}</p>
             <div className="mx-auto mt-8 w-4/5 border-t border-dashed border-foreground/40" />

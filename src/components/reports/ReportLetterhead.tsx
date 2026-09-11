@@ -75,7 +75,7 @@ export function ReportLetterhead({
 }
 
 export function ReportSignatures({ roles }: { roles?: string[] }) {
-  const list = roles ?? ["المعلمة المسؤولة", "المشرفة التربوية", "مدير المدرسة"];
+  const list = roles ?? ["المعلمة المسؤولة", "المشرفة التربوية", "مديرة الروضة / المدرسة"];
   return (
     <footer dir="rtl" className="print-avoid-break grid gap-6 border-t border-border/60 pt-6 sm:grid-cols-3">
       {list.map((role) => (
