@@ -404,14 +404,18 @@ export function ClassroomDialog({
 
         <MediaSection draft={draft} set={set} />
 
+        <AssignedTeachersSection
+          classroomId={draft.id ?? null}
+          teacherName={draft.teacher_name}
+          onNamesChange={(primary) => set("teacher_name", primary)}
+        />
+
         <div className="mt-5 rounded-3xl border border-border/60 p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-extrabold text-foreground">المعلمة الأساسية</p>
-          </div>
+          <p className="text-xs font-extrabold text-foreground">بيانات المعلمة الأساسية للموقع العام</p>
+          <p className="mt-1 text-[11px] font-bold text-muted-foreground">
+            الاسم يُؤخذ تلقائيًا من إسناد المعلمات، وهذه الحقول للصفة والمؤهل فقط.
+          </p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <Row title="اسم المعلمة">
-              <input value={draft.teacher_name} onChange={(e) => set("teacher_name", e.target.value)} className={field} />
-            </Row>
             <Row title="الصفة">
               <input value={draft.teacher_title} onChange={(e) => set("teacher_title", e.target.value)} className={field} />
             </Row>
