@@ -567,7 +567,12 @@ export function ClassroomDialog({
 
         <div className="mt-5 rounded-3xl border border-border/60 p-4">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-extrabold text-foreground">معلمات إضافيات ومؤهلاتهن</p>
+            <p className="text-xs font-extrabold text-foreground">
+              مؤهلات وصور المعلمات المشاركات
+              <span className="ms-2 text-[10px] font-bold text-muted-foreground">
+                (الأسماء تُزامن من إسناد المعلمات)
+              </span>
+            </p>
             <button
               type="button"
               onClick={() => set("teachers", [...draft.teachers, { name: "", title: "", qualification: "", experience: "" }])}
