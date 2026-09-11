@@ -400,6 +400,61 @@ export async function getAssignmentBoard(supabase: Db, userId: string): Promise<
   return { stages, teachers, classrooms: rooms };
 }
 
+/**
+ * Mirror the real teacher assignments onto `classrooms.teacher_name` (and the
+ * extra-teachers JSON) so Student Affairs classroom settings and the public
+ * website always show the same names as the Academic Tracking assignment board.
+ * Assignments are the single source of truth; no duplicate manual entry.
+ */
+async function syncClassroomTeacherNames(classroomIds: string[]) {
+  const ids = [...new Set(classroomIds)].filter(Boolean);
+  if (!ids.length) return;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+
+  const { data: links } = await supabaseAdmin
+    .from("teacher_classrooms")
+    .select("teacher_id, classroom_id, created_at")
+    .in("classroom_id", ids)
+    .order("created_at", { ascending: true });
+
+  const teacherIds = [...new Set((links ?? []).map((l) => l.teacher_id))];
+  const { data: profiles } = teacherIds.length
+    ? await supabaseAdmin.from("profiles").select("id, full_name, email").in("id", teacherIds)
+    : { data: [] as { id: string; full_name: string; email: string | null }[] };
+  const nameById = new Map(
+    (profiles ?? []).map((p) => [p.id, (p.full_name || "").trim() || p.email || "معلمة"]),
+  );
+
+  const { data: rooms } = await supabaseAdmin
+    .from("classrooms")
+    .select("id, teachers")
+    .in("id", ids);
+
+  for (const id of ids) {
+    const names = (links ?? [])
+      .filter((l) => l.classroom_id === id)
+      .map((l) => nameById.get(l.teacher_id))
+      .filter((n): n is string => !!n);
+
+    const existing = Array.isArray(rooms?.find((r) => r.id === id)?.teachers)
+      ? ((rooms?.find((r) => r.id === id)?.teachers ?? []) as { name?: string }[])
+      : [];
+    const metaByName = new Map(existing.map((t) => [(t.name ?? "").trim(), t]));
+
+    const extras = names.slice(1).map((name) => ({
+      title: "معلمة الفصل",
+      ...(metaByName.get(name) ?? {}),
+      name,
+    }));
+
+    await supabaseAdmin
+      .from("classrooms")
+      .update({ teacher_name: names[0] ?? null, teachers: extras })
+      .eq("id", id);
+  }
+}
+
 /** Replace the full teacher list of one classroom. */
 export async function setClassroomTeachers(
   supabase: Db,
@@ -426,6 +481,7 @@ export async function setClassroomTeachers(
     );
     if (error) throw new Error(error.message);
   }
+  await syncClassroomTeacherNames([classroomId]);
   return { ok: true, count: unique.length };
 }
 
@@ -438,6 +494,11 @@ export async function setTeacherClassrooms(
 ) {
   await assertSuperAdmin(supabase, userId);
   const unique = [...new Set(classroomIds)];
+
+  const { data: previous } = await supabase
+    .from("teacher_classrooms")
+    .select("classroom_id")
+    .eq("teacher_id", teacherId);
 
   const { error: delError } = await supabase
     .from("teacher_classrooms")
@@ -455,6 +516,10 @@ export async function setTeacherClassrooms(
     );
     if (error) throw new Error(error.message);
   }
+  await syncClassroomTeacherNames([
+    ...unique,
+    ...((previous ?? []).map((r) => r.classroom_id) as string[]),
+  ]);
   return { ok: true, count: unique.length };
 }
 

@@ -101,7 +101,7 @@ export function encouragementCertificateHtml(data: EncouragementCertificateData)
     <div class="name">${esc(data.studentName)}</div>
     <div class="meta"><span>${esc(data.stageName)}</span><span>${esc(data.classroomName)}</span></div>
     <p class="message">${esc(data.message)}</p>
-    <div class="signatures"><div class="line">المعلمة</div><div class="line">قائدة المدرسة</div><div class="line">الختم الرسمي</div></div>
+    <div class="signatures"><div class="line">المعلمة</div><div class="line">مديرة الروضة / المدرسة</div><div class="line">الختم الرسمي</div></div>
     <div class="year">العام الدراسي ${esc(data.academicYear)}</div>
   </main></body></html>`;
 }
@@ -156,7 +156,7 @@ function CertificatePreview({ data }: { data: EncouragementCertificateData }) {
         </div>
         <p className="mt-[2%] max-w-[72%] text-[clamp(7px,1vw,13px)] font-bold leading-relaxed text-foreground">{data.message}</p>
         <div className="mt-auto grid w-[72%] grid-cols-3 gap-6 text-[clamp(6px,.7vw,9px)] font-bold text-muted-foreground">
-          {['المعلمة', 'قائدة المدرسة', 'الختم الرسمي'].map((label) => <span key={label} className="border-b border-muted-foreground/50 pb-1">{label}</span>)}
+          {['المعلمة', 'مديرة الروضة / المدرسة', 'الختم الرسمي'].map((label) => <span key={label} className="border-b border-muted-foreground/50 pb-1">{label}</span>)}
         </div>
         <p className="mt-[1.5%] text-[clamp(6px,.7vw,9px)] font-bold text-muted-foreground">العام الدراسي {data.academicYear}</p>
       </div>

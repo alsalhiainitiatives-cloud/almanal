@@ -405,7 +405,7 @@ export function buildStudentFileHtml(
 
 
     <div class="signs">
-      ${["مسؤول التسجيل", "المشرفة التربوية", "مدير المدرسة"]
+      ${["مسؤول التسجيل", "المشرفة التربوية", "مديرة الروضة / المدرسة"]
         .map(
           (role) => `<div class="sign">
             <p>${esc(role)}</p>

@@ -1,7 +1,12 @@
-import { useRef, useState } from "react";
-import { FileText, ImagePlus, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Check, FileText, ImagePlus, Loader2, Plus, Trash2, Upload, UsersRound, X } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  academicsAssignmentBoard,
+  academicsSetClassroomTeachers,
+} from "@/features/academics/academics.functions";
 import { uploadClassroomMedia, useClassroomMediaUrls } from "@/lib/classroom-media";
 
 export type ClassroomTeacher = {
@@ -308,6 +313,138 @@ function TeacherMedia({
   );
 }
 
+/**
+ * Teacher assignment for this classroom, driven by the same source of truth as
+ * the Academic Tracking "إسناد المعلمات" board (`teacher_classrooms`). Saving an
+ * assignment here mirrors the names onto the classroom record automatically, so
+ * both screens always agree and nothing is typed twice.
+ */
+function AssignedTeachersSection({
+  classroomId,
+  teacherName,
+  onNamesChange,
+}: {
+  classroomId: string | null;
+  teacherName: string;
+  onNamesChange: (primaryName: string) => void;
+}) {
+  const queryClient = useQueryClient();
+  const boardQuery = useQuery({
+    queryKey: ["academics", "assignments"],
+    queryFn: () => academicsAssignmentBoard(),
+  });
+
+  const teachers = boardQuery.data?.teachers ?? [];
+  const room = boardQuery.data?.classrooms.find((r) => r.id === classroomId);
+  const assignedIds = room?.teacherIds ?? [];
+  const nameById = new Map(teachers.map((t) => [t.id, t.fullName]));
+  const assignedNames = assignedIds
+    .map((id) => nameById.get(id))
+    .filter((n): n is string => !!n);
+
+  useEffect(() => {
+    if (!classroomId || !room) return;
+    const primary = assignedNames[0] ?? "";
+    if (primary !== teacherName) onNamesChange(primary);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classroomId, assignedNames.join("|")]);
+
+  const saveMutation = useMutation({
+    mutationFn: (teacherIds: string[]) =>
+      academicsSetClassroomTeachers({ data: { classroomId: classroomId!, teacherIds } }),
+    onSuccess: () => {
+      toast.success("تم تحديث إسناد المعلمات");
+      void queryClient.invalidateQueries({ queryKey: ["academics"] });
+      void queryClient.invalidateQueries({ queryKey: ["ams"] });
+    },
+    onError: (error: Error) =>
+      toast.error(error.message === "forbidden" ? "هذا الإجراء متاح للمديرة ومدير النظام فقط" : error.message),
+  });
+
+  function toggle(teacherId: string) {
+    if (!classroomId) return;
+    const next = assignedIds.includes(teacherId)
+      ? assignedIds.filter((id) => id !== teacherId)
+      : [...assignedIds, teacherId];
+    saveMutation.mutate(next);
+  }
+
+  return (
+    <div className="mt-5 rounded-3xl border border-border/60 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="flex items-center gap-2 text-xs font-extrabold text-foreground">
+          <UsersRound className="size-4 text-primary" />
+          المعلمات المسندة للفصل
+        </p>
+        {saveMutation.isPending || boardQuery.isFetching ? (
+          <Loader2 className="size-4 animate-spin text-primary" />
+        ) : null}
+      </div>
+      <p className="mt-1 text-[11px] font-bold text-muted-foreground">
+        مصدر البيانات واحد: «إسناد المعلمات» في التتبع الأكاديمي. أي تعديل هنا يظهر هناك فورًا، والعكس.
+      </p>
+
+      {!classroomId ? (
+        <p className="mt-3 rounded-2xl border border-dashed border-border/70 px-3 py-4 text-[11px] font-bold text-muted-foreground">
+          احفظ الفصل أولًا ثم يمكنك إسناد المعلمات له.
+        </p>
+      ) : boardQuery.isError ? (
+        <p className="mt-3 rounded-2xl border border-dashed border-border/70 px-3 py-4 text-[11px] font-bold text-muted-foreground">
+          الإسناد الحالي: {teacherName || "لا توجد معلمة مسندة"} — تعديل الإسناد متاح للمديرة ومدير النظام.
+        </p>
+      ) : teachers.length === 0 ? (
+        <p className="mt-3 rounded-2xl border border-dashed border-border/70 px-3 py-4 text-[11px] font-bold text-muted-foreground">
+          لا توجد معلمات في النظام بعد. تُمنح صلاحية «معلمة» من إدارة المستخدمين.
+        </p>
+      ) : (
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {teachers.map((teacher) => {
+            const assigned = assignedIds.includes(teacher.id);
+            return (
+              <button
+                key={teacher.id}
+                type="button"
+                disabled={saveMutation.isPending}
+                onClick={() => toggle(teacher.id)}
+                className={`flex items-center gap-2.5 rounded-2xl border p-2.5 text-start transition ${
+                  assigned ? "border-primary/50 bg-primary/10" : "border-border/60 hover:border-primary/40"
+                }`}
+              >
+                <span
+                  className={`grid size-8 shrink-0 place-items-center rounded-xl text-[11px] font-black ${
+                    assigned ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {assigned ? <Check className="size-4" /> : teacher.fullName.charAt(0)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[11px] font-black text-foreground">
+                    {teacher.fullName}
+                  </span>
+                  <span className="block truncate text-[10px] text-muted-foreground">
+                    {teacher.classroomIds.length
+                      ? `مُسندة إلى ${teacher.classroomIds.length} فصل`
+                      : "غير مُسندة لأي فصل"}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {assignedNames.length ? (
+        <p className="mt-3 text-[11px] font-bold text-muted-foreground">
+          المعلمة الأساسية: <span className="text-foreground">{assignedNames[0]}</span>
+          {assignedNames.length > 1 ? ` · معلمات مشاركات: ${assignedNames.slice(1).join("، ")}` : ""}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+
+
 export function ClassroomDialog({
   initial,
   stages,
@@ -404,14 +541,18 @@ export function ClassroomDialog({
 
         <MediaSection draft={draft} set={set} />
 
+        <AssignedTeachersSection
+          classroomId={draft.id ?? null}
+          teacherName={draft.teacher_name}
+          onNamesChange={(primary) => set("teacher_name", primary)}
+        />
+
         <div className="mt-5 rounded-3xl border border-border/60 p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-extrabold text-foreground">المعلمة الأساسية</p>
-          </div>
+          <p className="text-xs font-extrabold text-foreground">بيانات المعلمة الأساسية للموقع العام</p>
+          <p className="mt-1 text-[11px] font-bold text-muted-foreground">
+            الاسم يُؤخذ تلقائيًا من إسناد المعلمات، وهذه الحقول للصفة والمؤهل فقط.
+          </p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <Row title="اسم المعلمة">
-              <input value={draft.teacher_name} onChange={(e) => set("teacher_name", e.target.value)} className={field} />
-            </Row>
             <Row title="الصفة">
               <input value={draft.teacher_title} onChange={(e) => set("teacher_title", e.target.value)} className={field} />
             </Row>
@@ -426,7 +567,12 @@ export function ClassroomDialog({
 
         <div className="mt-5 rounded-3xl border border-border/60 p-4">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-extrabold text-foreground">معلمات إضافيات ومؤهلاتهن</p>
+            <p className="text-xs font-extrabold text-foreground">
+              مؤهلات وصور المعلمات المشاركات
+              <span className="ms-2 text-[10px] font-bold text-muted-foreground">
+                (الأسماء تُزامن من إسناد المعلمات)
+              </span>
+            </p>
             <button
               type="button"
               onClick={() => set("teachers", [...draft.teachers, { name: "", title: "", qualification: "", experience: "" }])}
