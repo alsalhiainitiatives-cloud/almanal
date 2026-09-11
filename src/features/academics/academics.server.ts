@@ -493,6 +493,11 @@ export async function setTeacherClassrooms(
   await assertSuperAdmin(supabase, userId);
   const unique = [...new Set(classroomIds)];
 
+  const { data: previous } = await supabase
+    .from("teacher_classrooms")
+    .select("classroom_id")
+    .eq("teacher_id", teacherId);
+
   const { error: delError } = await supabase
     .from("teacher_classrooms")
     .delete()
@@ -509,6 +514,10 @@ export async function setTeacherClassrooms(
     );
     if (error) throw new Error(error.message);
   }
+  await syncClassroomTeacherNames([
+    ...unique,
+    ...((previous ?? []).map((r) => r.classroom_id) as string[]),
+  ]);
   return { ok: true, count: unique.length };
 }
 
