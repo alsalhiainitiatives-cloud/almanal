@@ -53,7 +53,7 @@ export function NewsCards({ limit }: { limit?: number }) {
               ) : (
                 <img
                   src={image}
-                  alt={item.title}
+                  alt={`${item.title} — مدارس وروضة المنال`}
                   width={1000}
                   height={800}
                   loading="lazy"

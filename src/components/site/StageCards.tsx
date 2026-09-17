@@ -33,7 +33,7 @@ export function StageCards({ withDetails = false }: { withDetails?: boolean }) {
           <div className="relative h-full min-h-[26rem] overflow-hidden">
             <img
               src={stageImages[stage.slug]}
-              alt={stage.title}
+              alt={`${stage.title} — مدارس وروضة المنال بعنيزة`}
               width={900}
               height={1400}
               loading="lazy"

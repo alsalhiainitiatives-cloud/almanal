@@ -51,7 +51,7 @@ export function ProgramPage({ program }: { program: Program }) {
             <div className="relative overflow-hidden blob-shape-alt shadow-card">
               <img
                 src={heroImage}
-                alt={program.title}
+                alt={`${program.title} في مدارس وروضة المنال بعنيزة`}
                 className="aspect-4/3 size-full object-cover"
                 loading="lazy"
               />

@@ -257,7 +257,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   },
   hero: {
     badge: school.organization,
-    headline: "مدارس وروضة المنال",
+    headline: "مدارس وروضة المنال في عنيزة",
     highlight: "حيث تكبر الطفولة بأمان ومحبة وتعليم راقٍ",
     description:
       "في عنيزة، نمنح أطفالنا بيئة تعليمية مستوحاة من قيمنا الإسلامية ومعايير الطفولة المبكرة العالمية — من الحضانة إلى المرحلة الابتدائية.",

@@ -90,6 +90,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
+    // Site-wide defaults only. Page-specific title/description/canonical/og
+    // live in each leaf route's head() via @/lib/seo (pageHead).
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
@@ -100,13 +102,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:locale", content: "ar_SA" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:title", content: "مدارس وروضة المنال | عنيزة" },
-      { name: "twitter:title", content: "مدارس وروضة المنال | عنيزة" },
-      { name: "description", content: "Al Manal Kindergarten & Schools presents a modern, elegant public website showcasing its educational offerings." },
-      { property: "og:description", content: "Al Manal Kindergarten & Schools presents a modern, elegant public website showcasing its educational offerings." },
-      { name: "twitter:description", content: "Al Manal Kindergarten & Schools presents a modern, elegant public website showcasing its educational offerings." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9a35d52b-6ac9-4625-9997-491b0adedfbf/id-preview-d41aaa29--fbcf5a5e-e0a1-4084-acb2-bbb33771ee1a.lovable.app-1785747144598.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9a35d52b-6ac9-4625-9997-491b0adedfbf/id-preview-d41aaa29--fbcf5a5e-e0a1-4084-acb2-bbb33771ee1a.lovable.app-1785747144598.png" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -120,28 +115,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
     ],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "School",
-          name: school.name,
-          description: school.description,
-          parentOrganization: { "@type": "Organization", name: school.organization },
-          telephone: school.phoneIntl,
-          email: school.email,
-          address: {
-            "@type": "PostalAddress",
-            streetAddress: `${school.address.line1}, ${school.address.district}`,
-            addressLocality: "عنيزة",
-            postalCode: "56417",
-            addressCountry: "SA",
-          },
-          openingHours: "Su-Th 07:00-12:30",
-        }),
-      },
-    ],
+    // Organization/WebSite JSON-LD lives on the homepage route (single
+    // authoritative graph with stable @id values), not on the root, so it is
+    // never duplicated on every page.
   }),
   shellComponent: RootShell,
   component: RootComponent,

@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { school } from "@/data/site";
+import { pageHead, siteGraphScript } from "@/lib/seo";
+
+
 import { AboutIntro } from "@/components/site/AboutIntro";
 import { ContactBlock } from "@/components/site/ContactBlock";
 import { MarqueeBand } from "@/components/site/Decor";
@@ -14,22 +18,15 @@ import { Testimonials } from "@/components/site/Testimonials";
 import { ValueCards } from "@/components/site/ValueCards";
 import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 
-const title = "مدارس وروضة المنال | روضة ومدرسة ابتدائية في عنيزة";
-const description =
-  "مدارس وروضة المنال في عنيزة: حضانة، برنامج مونتيسوري، ومرحلة ابتدائية ببيئة آمنة وقيم إسلامية وتعليم حديث. تعرّف على المراحل والأنشطة وتواصل معنا.";
-
 export const Route = createFileRoute("/")({
   head: () => ({
-    meta: [
-      { title },
-      { name: "description", content: description },
-      { property: "og:title", content: title },
-      { property: "og:description", content: description },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "/" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [{ rel: "canonical", href: "/" }],
+    ...pageHead({
+      path: "/",
+      title: "مدارس وروضة المنال | روضة ومدرسة ابتدائية في عنيزة",
+      description:
+        "روضة ومدارس المنال في عنيزة تقدم تعليمًا نوعيًا للطفولة المبكرة والمرحلة الابتدائية في بيئة آمنة ومحبة، مع برنامج مونتيسوري وأنشطة تعليمية متوازنة وشراكة فعالة مع الأسرة.",
+    }),
+    scripts: [siteGraphScript(school)],
   }),
   component: Index,
 });

@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+
+import { breadcrumbScript, pageHead } from "@/lib/seo";
 import { PlayCircle } from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
@@ -8,22 +10,21 @@ import { PageHero } from "@/components/site/PageHero";
 import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 import { useSiteMedia } from "@/features/site-content/media";
 
-const title = "معرض الصور | مدارس وروضة المنال";
-const description =
-  "لقطات من الحياة اليومية في مدارس وروضة المنال: فصول المونتيسوري، القراءة، الفنون، العلوم، الرياضة، ومبنى المدرسة.";
 
 export const Route = createFileRoute("/gallery")({
   head: () => ({
-    meta: [
-      { title },
-      { name: "description", content: description },
-      { property: "og:title", content: title },
-      { property: "og:description", content: description },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "/gallery" },
-      { name: "twitter:card", content: "summary_large_image" },
+    ...pageHead({
+      path: "/gallery",
+      title: "معرض الصور | مدارس وروضة المنال",
+      description:
+        "لقطات من الحياة اليومية في مدارس وروضة المنال: فصول المونتيسوري، القراءة، الفنون، العلوم، الرياضة، ومبنى المدرسة في عنيزة.",
+    }),
+    scripts: [
+      breadcrumbScript([
+        { name: "الرئيسية", path: "/" },
+        { name: "معرض الصور", path: "/gallery" },
+      ]),
     ],
-    links: [{ rel: "canonical", href: "/gallery" }],
   }),
   component: GalleryPage,
 });

@@ -7,23 +7,21 @@ import { Reveal } from "@/components/site/Reveal";
 import { SectionShell } from "@/components/site/SectionShell";
 import { faqs } from "@/data/site";
 import { useSiteContent } from "@/features/site-content/SiteContentProvider";
-
-const title = "الأسئلة الشائعة | مدارس وروضة المنال";
-const description =
-  "إجابات عن أكثر أسئلة أولياء الأمور: أعمار القبول، أوقات الدراسة، برنامج المونتيسوري، السلامة، الأنشطة، والتسجيل.";
+import { breadcrumbScript, pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/faq")({
   head: () => ({
-    meta: [
-      { title },
-      { name: "description", content: description },
-      { property: "og:title", content: title },
-      { property: "og:description", content: description },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "/faq" },
-    ],
-    links: [{ rel: "canonical", href: "/faq" }],
+    ...pageHead({
+      path: "/faq",
+      title: "الأسئلة الشائعة | مدارس وروضة المنال",
+      description:
+        "إجابات عن أكثر أسئلة أولياء الأمور: أعمار القبول، أوقات الدراسة، برنامج المونتيسوري، السلامة، الأنشطة، والتسجيل.",
+    }),
     scripts: [
+      breadcrumbScript([
+        { name: "الرئيسية", path: "/" },
+        { name: "الأسئلة الشائعة", path: "/faq" },
+      ]),
       {
         type: "application/ld+json",
         children: JSON.stringify({
