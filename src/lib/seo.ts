@@ -78,7 +78,7 @@ export function breadcrumbScript(items: { name: string; path: string }[]) {
  */
 export function siteGraphScript(org: {
   name: string;
-  alternateName: string;
+  shortName: string;
   description: string;
   organization: string;
   phoneIntl: string;
@@ -95,7 +95,7 @@ export function siteGraphScript(org: {
           "@id": `${SITE_URL}/#website`,
           url: `${SITE_URL}/`,
           name: org.name,
-          alternateName: org.alternateName,
+          alternateName: org.shortName,
           inLanguage: "ar-SA",
           publisher: { "@id": `${SITE_URL}/#organization` },
         },
@@ -103,7 +103,7 @@ export function siteGraphScript(org: {
           "@type": "EducationalOrganization",
           "@id": `${SITE_URL}/#organization`,
           name: org.name,
-          alternateName: org.alternateName,
+          alternateName: org.shortName,
           description: org.description,
           url: `${SITE_URL}/`,
           logo: LOGO_URL,
