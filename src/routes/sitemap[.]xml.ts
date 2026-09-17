@@ -13,7 +13,7 @@ const PUBLIC_PATHS = [
   "/",
   "/about",
   "/admissions",
-  "/stages",
+  
   "/kindergarten",
   "/primary",
   "/school-life",
