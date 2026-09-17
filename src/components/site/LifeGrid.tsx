@@ -43,7 +43,7 @@ export function LifeGrid({
             ) : (
               <img
                 src={src}
-                alt={item.description || item.title}
+                alt={item.description || `${item.title} في مدارس وروضة المنال`}
                 width={1200}
                 height={900}
                 loading="lazy"

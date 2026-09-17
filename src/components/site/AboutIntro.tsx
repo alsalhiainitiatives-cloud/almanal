@@ -103,7 +103,7 @@ export function AboutIntro({
             {src ? (
               <motion.img
                 src={src}
-                alt={title}
+                alt={`${title} — مدارس وروضة المنال بعنيزة`}
                 width={1400}
                 height={1600}
                 loading="lazy"
