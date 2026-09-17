@@ -27,6 +27,10 @@ export function FaqAccordion({ limit }: { limit?: number }) {
               <span className="leading-snug">{item.q}</span>
             </span>
           </AccordionTrigger>
+          {/* The accordion panel only mounts while open, so the same answer text
+              is also rendered (visually hidden) to keep it in the initial HTML
+              for crawlers. Wording is identical — nothing is added or changed. */}
+          <p className="sr-only">{item.a}</p>
           <AccordionContent className="pb-6 ps-13 text-sm leading-relaxed text-muted-foreground">
             <span aria-hidden className="mb-4 block h-px w-full gradient-gold-hairline opacity-70" />
             {item.a}
