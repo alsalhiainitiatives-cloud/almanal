@@ -43,9 +43,10 @@ export function Hero() {
           {hero.badge}
         </motion.span>
 
+        {/* Single H1, rendered once as real text: the words are animated in
+            place so crawlers read the headline exactly one time. */}
         <h1 className="mt-6 max-w-3xl text-4xl leading-[1.1] font-black text-primary-foreground sm:text-5xl lg:text-[4.4rem]">
-          <span className="sr-only">{hero.headline}</span>
-          <span aria-hidden className="flex flex-wrap gap-x-4">
+          <span className="flex flex-wrap gap-x-4">
             {words.map((word, i) => (
               <motion.span
                 key={`${word}-${i}`}

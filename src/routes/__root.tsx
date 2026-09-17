@@ -115,28 +115,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
     ],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "School",
-          name: school.name,
-          description: school.description,
-          parentOrganization: { "@type": "Organization", name: school.organization },
-          telephone: school.phoneIntl,
-          email: school.email,
-          address: {
-            "@type": "PostalAddress",
-            streetAddress: `${school.address.line1}, ${school.address.district}`,
-            addressLocality: "عنيزة",
-            postalCode: "56417",
-            addressCountry: "SA",
-          },
-          openingHours: "Su-Th 07:00-12:30",
-        }),
-      },
-    ],
+    // Organization/WebSite JSON-LD lives on the homepage route (single
+    // authoritative graph with stable @id values), not on the root, so it is
+    // never duplicated on every page.
   }),
   shellComponent: RootShell,
   component: RootComponent,

@@ -26,8 +26,17 @@ export function Counter({
 
   return (
     <span ref={ref} className="tabular-nums">
-      {display.toLocaleString("ar-EG")}
-      {suffix}
+      {/* Progressive enhancement: the final configured value is always present
+          in the server-rendered HTML for crawlers and assistive tech, while the
+          visible number keeps animating from 0 for normal users. */}
+      <span className="sr-only">
+        {value.toLocaleString("ar-EG")}
+        {suffix}
+      </span>
+      <span aria-hidden>
+        {display.toLocaleString("ar-EG")}
+        {suffix}
+      </span>
     </span>
   );
 }
