@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { breadcrumbScript, pageHead } from "@/lib/seo";
+
 import { AboutIntro } from "@/components/site/AboutIntro";
 import { PageHero } from "@/components/site/PageHero";
 import { SectionShell } from "@/components/site/SectionShell";
@@ -10,21 +12,21 @@ import { siteIcon } from "@/features/site-content/icons";
 import { staggerItem, StaggerGroup } from "@/components/site/Reveal";
 import { motion } from "motion/react";
 
-const title = "عن المنال | مدارس وروضة المنال بعنيزة";
-const description =
-  "تعرّف على مدارس وروضة المنال، مشروع تربوي تابع للجمعية الأهلية الصالحية بعنيزة: الرسالة والرؤية والقيم والكادر التعليمي.";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
-    meta: [
-      { title },
-      { name: "description", content: description },
-      { property: "og:title", content: title },
-      { property: "og:description", content: description },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "/about" },
+    ...pageHead({
+      path: "/about",
+      title: "عن مدارس وروضة المنال | رؤيتنا ورسالتنا في التعليم",
+      description:
+        "تعرّف على مدارس وروضة المنال، مشروع تربوي تابع للجمعية الأهلية الصالحية بعنيزة: القصة والرسالة والركائز والقيم التي نربي عليها أطفال عنيزة.",
+    }),
+    scripts: [
+      breadcrumbScript([
+        { name: "الرئيسية", path: "/" },
+        { name: "عن المنال", path: "/about" },
+      ]),
     ],
-    links: [{ rel: "canonical", href: "/about" }],
   }),
   component: AboutPage,
 });

@@ -1,5 +1,6 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { breadcrumbScript, pageHead } from "@/lib/seo";
 import { CalendarCheck, FileCheck2, ShieldCheck, Sparkles } from "lucide-react";
 
 import { PageHero } from "@/components/site/PageHero";
@@ -15,9 +16,6 @@ import {
 import { SeasonBanner } from "@/features/admissions/components/SeasonBanner";
 import { listStages } from "@/features/admissions/catalog.functions";
 
-const title = "المراحل التعليمية والتسجيل | مدارس وروضة المنال";
-const description =
-  "تعرّف على المراحل التعليمية في مدارس وروضة المنال بعنيزة — صغار المنال، مونتيسوري، والابتدائي — واطّلع على المقاعد المتاحة وابدأ التسجيل خطوة بخطوة.";
 
 const stagesQuery = queryOptions({
   queryKey: ["admissions", "stages"],
@@ -27,14 +25,18 @@ const stagesQuery = queryOptions({
 export const Route = createFileRoute("/admissions/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(stagesQuery),
   head: () => ({
-    meta: [
-      { title },
-      { name: "description", content: description },
-      { property: "og:title", content: title },
-      { property: "og:description", content: description },
-      { property: "og:type", content: "website" },
+    ...pageHead({
+      path: "/admissions",
+      title: "التسجيل والمراحل التعليمية | مدارس وروضة المنال في عنيزة",
+      description:
+        "المراحل التعليمية في مدارس وروضة المنال بعنيزة — صغار المنال، مونتيسوري، والابتدائي — مع المقاعد المتاحة وخطوات التسجيل الإلكتروني.",
+    }),
+    scripts: [
+      breadcrumbScript([
+        { name: "الرئيسية", path: "/" },
+        { name: "المراحل والتسجيل", path: "/admissions" },
+      ]),
     ],
-    links: [{ rel: "canonical", href: "/admissions" }],
   }),
   errorComponent: () => (
     <div className="section-y text-center">

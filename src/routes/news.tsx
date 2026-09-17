@@ -1,25 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { breadcrumbScript, pageHead } from "@/lib/seo";
+
 import { NewsCards } from "@/components/site/NewsCards";
 import { PageHero } from "@/components/site/PageHero";
 import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 
-const title = "الأخبار والفعاليات | مدارس وروضة المنال";
-const description =
-  "آخر أخبار وفعاليات مدارس وروضة المنال بعنيزة: اليوم المفتوح، برامج التدريب، الأنشطة الطلابية، وحفلات التكريم.";
 
 export const Route = createFileRoute("/news")({
   head: () => ({
-    meta: [
-      { title },
-      { name: "description", content: description },
-      { property: "og:title", content: title },
-      { property: "og:description", content: description },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "/news" },
-      { name: "twitter:card", content: "summary_large_image" },
+    ...pageHead({
+      path: "/news",
+      title: "أخبار وفعاليات مدارس وروضة المنال",
+      description:
+        "آخر أخبار وفعاليات مدارس وروضة المنال بعنيزة: اليوم المفتوح، برامج التدريب، الأنشطة الطلابية، وحفلات التكريم.",
+    }),
+    scripts: [
+      breadcrumbScript([
+        { name: "الرئيسية", path: "/" },
+        { name: "الأخبار", path: "/news" },
+      ]),
     ],
-    links: [{ rel: "canonical", href: "/news" }],
   }),
   component: NewsPage,
 });

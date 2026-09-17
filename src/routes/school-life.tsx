@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+
+import { breadcrumbScript, pageHead } from "@/lib/seo";
 import { Clock } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -8,22 +10,21 @@ import { SectionShell } from "@/components/site/SectionShell";
 import { staggerItem, StaggerGroup } from "@/components/site/Reveal";
 import { useSiteContent } from "@/features/site-content/SiteContentProvider";
 
-const title = "الحياة المدرسية | مدارس وروضة المنال";
-const description =
-  "يوم دراسي متوازن في المنال: حلقة الصباح، القراءة، الفنون، العلوم، الرياضة، والأنشطة الإثرائية في بيئة آمنة وسعيدة.";
 
 export const Route = createFileRoute("/school-life")({
   head: () => ({
-    meta: [
-      { title },
-      { name: "description", content: description },
-      { property: "og:title", content: title },
-      { property: "og:description", content: description },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "/school-life" },
-      { name: "twitter:card", content: "summary_large_image" },
+    ...pageHead({
+      path: "/school-life",
+      title: "الحياة المدرسية | يوم طفلك في مدارس وروضة المنال",
+      description:
+        "يوم دراسي متوازن في المنال: حلقة الصباح، القراءة، الفنون، العلوم، الرياضة، والأنشطة الإثرائية في بيئة آمنة وسعيدة.",
+    }),
+    scripts: [
+      breadcrumbScript([
+        { name: "الرئيسية", path: "/" },
+        { name: "الحياة المدرسية", path: "/school-life" },
+      ]),
     ],
-    links: [{ rel: "canonical", href: "/school-life" }],
   }),
   component: SchoolLifePage,
 });
