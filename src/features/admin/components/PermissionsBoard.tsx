@@ -442,7 +442,7 @@ export function PermissionsBoard() {
 
                           <div className="grid gap-2 sm:grid-cols-2">
                             {sub.permissions.map((permission) => {
-                              const id = `${activeRole}:${permission.code}`;
+                              const id = `${activeCustomRole?.id ?? activeRole}:${permission.code}`;
                               return (
                                 <label
                                   key={permission.code}
@@ -451,16 +451,12 @@ export function PermissionsBoard() {
                                   <Checkbox
                                     checked={granted.has(permission.code)}
                                     disabled={!canManage || busy}
-                                    aria-label={`${ROLE_LABELS[activeRole]} — ${permission.labelAr}`}
-                                    onCheckedChange={(value) => {
-                                      setPending(id);
-                                      single.mutate({
-                                        role: activeRole,
-                                        permissionKey: permission.code,
-                                        granted: value === true,
-                                      });
-                                    }}
+                                    aria-label={`${activeLabel} — ${permission.labelAr}`}
+                                    onCheckedChange={(value) =>
+                                      toggleSingle(permission.code, value === true, id)
+                                    }
                                   />
+
                                   <span className="min-w-0">
                                     <span className="block text-xs font-bold text-foreground">
                                       {permission.labelAr}
