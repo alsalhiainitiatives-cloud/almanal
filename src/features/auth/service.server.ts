@@ -136,6 +136,26 @@ export async function buildSecurityContext(supabase: Db, userId: string): Promis
     permissions = [...new Set((permRows ?? []).map((p) => p.permission_key))];
   }
 
+  // Permissions coming from admin-defined custom roles (active ones only).
+  const { data: customRows } = await (supabase as any)
+    .from("user_custom_roles")
+    .select("custom_role_id, custom_roles!inner(is_active)")
+    .eq("user_id", userId)
+    .eq("custom_roles.is_active", true);
+  const customRoleIds = ((customRows ?? []) as Array<{ custom_role_id: string }>).map(
+    (row) => row.custom_role_id,
+  );
+  if (customRoleIds.length) {
+    const { data: customPerms } = await (supabase as any)
+      .from("custom_role_permissions")
+      .select("permission_key")
+      .in("custom_role_id", customRoleIds);
+    for (const row of (customPerms ?? []) as Array<{ permission_key: string }>) {
+      if (!permissions.includes(row.permission_key)) permissions.push(row.permission_key);
+    }
+  }
+
+
   // Per-user overrides win over the role defaults.
   const { data: overrideRows } = await (supabase as any)
     .from("user_permissions")
@@ -225,14 +245,17 @@ export async function assertAdmin(supabase: Db, userId: string) {
 }
 
 export async function listUsersWithRoles(supabase: Db) {
-  const [{ data: profiles }, { data: roles }] = await Promise.all([
+  const [{ data: profiles }, { data: roles }, { data: customRoles }] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, full_name, email, phone, avatar_url, last_login_at, created_at")
       .order("created_at", { ascending: false })
       .limit(200),
     supabase.from("user_roles").select("user_id, role"),
+    (supabase as any).from("user_custom_roles").select("user_id, custom_role_id"),
   ]);
+
+  const customRoleRows = (customRoles ?? []) as Array<{ user_id: string; custom_role_id: string }>;
 
   return (profiles ?? []).map((p) => ({
     id: p.id,
@@ -245,8 +268,12 @@ export async function listUsersWithRoles(supabase: Db) {
     roles: (roles ?? [])
       .filter((r) => r.user_id === p.id)
       .map((r) => r.role as AppRole),
+    customRoleIds: customRoleRows
+      .filter((r) => r.user_id === p.id)
+      .map((r) => r.custom_role_id),
   }));
 }
+
 
 export async function replaceUserRoles(
   supabase: Db,
