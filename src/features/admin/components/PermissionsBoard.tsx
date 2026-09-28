@@ -303,7 +303,15 @@ export function PermissionsBoard() {
             })}
           </div>
 
+          <CustomRolesPanel
+            roles={customRoles}
+            activeCustomId={activeCustomRole ? activeCustomRole.id : null}
+            onSelect={(id) => setActiveCustomId(id)}
+            canManage={canManage}
+            assignmentCounts={assignmentCounts}
+          />
         </div>
+
 
         {canManage && (
           <div className="flex flex-wrap gap-2">
