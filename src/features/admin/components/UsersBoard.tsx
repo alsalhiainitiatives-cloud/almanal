@@ -24,6 +24,11 @@ import {
   getRolePermissionMatrix,
 } from "@/features/auth/admin.functions";
 import {
+  adminSetUserCustomRoles,
+  getCustomRoleMatrix,
+} from "@/features/auth/custom-roles.functions";
+
+import {
   ALL_ROLES,
   P,
   PERMISSION_CATEGORY_LABELS,
@@ -62,8 +67,20 @@ export function UsersBoard() {
     return map;
   }, [overrides]);
 
+  const { data: customRolesData } = useQuery({
+    queryKey: ["admin", "custom-roles"],
+    queryFn: () => getCustomRoleMatrix(),
+    enabled: hasPermission(P.usersView),
+  });
+
+  const customRoleById = useMemo(
+    () => new Map((customRolesData?.roles ?? []).map((role) => [role.id, role])),
+    [customRolesData?.roles],
+  );
+
   const users = data ?? [];
   const allSelected = users.length > 0 && selected.length === users.length;
+
 
   if (!loadingContext && !hasPermission(P.usersView)) {
     return <NoAccess />;
@@ -166,7 +183,7 @@ export function UsersBoard() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex flex-wrap gap-1.5">
-                          {user.roles.length === 0 && (
+                          {user.roles.length === 0 && (user.customRoleIds ?? []).length === 0 && (
                             <span className="text-xs text-muted-foreground">بدون دور</span>
                           )}
                           {user.roles.map((role) => (
@@ -177,8 +194,21 @@ export function UsersBoard() {
                               {ROLE_LABELS[role]}
                             </span>
                           ))}
+                          {(user.customRoleIds ?? []).map((id) => {
+                            const custom = customRoleById.get(id);
+                            if (!custom) return null;
+                            return (
+                              <span
+                                key={id}
+                                className={`rounded-full px-3 py-1 text-[11px] font-bold ${custom.color}`}
+                              >
+                                {custom.nameAr}
+                              </span>
+                            );
+                          })}
                         </div>
                       </td>
+
                       <td className="px-5 py-4 text-xs font-bold text-muted-foreground">
                         {overrideCount.get(user.id)
                           ? `${overrideCount.get(user.id)} استثناء`
@@ -382,17 +412,31 @@ function BulkPermissionDialog({
 function RoleDialog({ user, onClose }: { user: AdminUser | null; onClose: () => void }) {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<AppRole[]>([]);
+  const [selectedCustom, setSelectedCustom] = useState<string[]>([]);
   const [initializedFor, setInitializedFor] = useState<string | null>(null);
+
+  const { data: customData } = useQuery({
+    queryKey: ["admin", "custom-roles"],
+    queryFn: () => getCustomRoleMatrix(),
+  });
+  const customRoles = (customData?.roles ?? []).filter((role) => role.isActive);
 
   if (user && initializedFor !== user.id) {
     setInitializedFor(user.id);
     setSelected(user.roles);
+    setSelectedCustom(user.customRoleIds ?? []);
   }
 
   const mutation = useMutation({
-    mutationFn: (roles: AppRole[]) => adminSetUserRoles({ data: { userId: user!.id, roles } }),
+    mutationFn: async () => {
+      await adminSetUserRoles({ data: { userId: user!.id, roles: selected } });
+      await adminSetUserCustomRoles({
+        data: { userId: user!.id, customRoleIds: selectedCustom },
+      });
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "custom-roles"] });
       toast.success("تم تحديث الأدوار");
       onClose();
     },
@@ -444,10 +488,48 @@ function RoleDialog({ user, onClose }: { user: AdminUser | null; onClose: () => 
           })}
         </div>
 
+        {customRoles.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-xs font-bold text-muted-foreground">
+              الأدوار المخصصة (تُنشأ وتُحدَّد صلاحياتها من مصفوفة الصلاحيات)
+            </p>
+            {customRoles.map((role) => {
+              const checked = selectedCustom.includes(role.id);
+              return (
+                <label
+                  key={role.id}
+                  className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-colors ${
+                    checked
+                      ? "border-primary/50 bg-primary/5"
+                      : "border-border/60 hover:bg-accent/50"
+                  }`}
+                >
+                  <Checkbox
+                    checked={checked}
+                    onCheckedChange={(value) =>
+                      setSelectedCustom((prev) =>
+                        value === true ? [...prev, role.id] : prev.filter((id) => id !== role.id),
+                      )
+                    }
+                    className="mt-0.5"
+                  />
+                  <span>
+                    <span className="block text-sm font-bold text-foreground">{role.nameAr}</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                      {role.descriptionAr || `${role.permissionKeys.length} صلاحية ممنوحة`}
+                    </span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+
         <Button
-          onClick={() => mutation.mutate(selected)}
+          onClick={() => mutation.mutate()}
           disabled={mutation.isPending || selected.length === 0}
           className="w-full rounded-2xl py-3 font-bold"
+
         >
           {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
           حفظ الأدوار
@@ -456,6 +538,7 @@ function RoleDialog({ user, onClose }: { user: AdminUser | null; onClose: () => 
     </Dialog>
   );
 }
+
 
 export function NoAccess() {
   return (

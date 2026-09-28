@@ -26,6 +26,10 @@ import {
   getRolePermissionMatrix,
 } from "@/features/auth/admin.functions";
 import {
+  adminSetCustomRolePermissions,
+  getCustomRoleMatrix,
+} from "@/features/auth/custom-roles.functions";
+import {
   actionLabel,
   buildPermissionTree,
   type MatrixModule,
@@ -38,6 +42,7 @@ import {
   ROLE_LABELS,
   type AppRole,
 } from "@/features/auth/rbac";
+import { CustomRolesPanel } from "./CustomRolesPanel";
 import { NoAccess } from "./UsersBoard";
 
 export function PermissionsBoard() {
@@ -45,14 +50,33 @@ export function PermissionsBoard() {
   const canManage = hasPermission(P.permissionsManage) || hasPermission(P.rolesManage);
   const queryClient = useQueryClient();
   const [activeRole, setActiveRole] = useState<AppRole>("registration_officer");
+  const [activeCustomId, setActiveCustomId] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const [controlsOpen, setControlsOpen] = useState(false);
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "permission-matrix"],
     queryFn: () => getRolePermissionMatrix(),
     enabled: hasPermission(P.usersView),
   });
+
+  const { data: customData } = useQuery({
+    queryKey: ["admin", "custom-roles"],
+    queryFn: () => getCustomRoleMatrix(),
+    enabled: hasPermission(P.usersView),
+  });
+
+  const customRoles = customData?.roles ?? [];
+  const activeCustomRole = customRoles.find((role) => role.id === activeCustomId) ?? null;
+
+  const assignmentCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const row of customData?.assignments ?? []) {
+      map.set(row.customRoleId, (map.get(row.customRoleId) ?? 0) + 1);
+    }
+    return map;
+  }, [customData?.assignments]);
 
   const tree: MatrixModule[] = useMemo(
     () => buildPermissionTree(data?.permissions ?? []),
@@ -69,11 +93,32 @@ export function PermissionsBoard() {
     return map;
   }, [data?.rolePermissions]);
 
-  const granted = grantedByRole.get(activeRole) ?? new Set<string>();
+  const granted = activeCustomRole
+    ? new Set(activeCustomRole.permissionKeys)
+    : grantedByRole.get(activeRole) ?? new Set<string>();
+  const activeLabel = activeCustomRole ? activeCustomRole.nameAr : ROLE_LABELS[activeRole];
+  const activeColor = activeCustomRole ? activeCustomRole.color : ROLE_COLORS[activeRole];
   const allCodes = useMemo(() => tree.flatMap((m) => m.codes), [tree]);
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ["admin", "permission-matrix"] });
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["admin", "permission-matrix"] });
+    await queryClient.invalidateQueries({ queryKey: ["admin", "custom-roles"] });
+  };
+
+  /** Custom roles are saved as a full permission set, built-in roles per key. */
+  const saveCustom = useMutation({
+    mutationFn: (input: { customRoleId: string; permissionKeys: string[]; message: string }) =>
+      adminSetCustomRolePermissions({
+        data: { customRoleId: input.customRoleId, permissionKeys: input.permissionKeys },
+      }),
+    onSuccess: async (_r, input) => {
+      await invalidate();
+      toast.success(input.message);
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "تعذّر تحديث صلاحيات الدور المخصص."),
+    onSettled: () => setPending(null),
+  });
 
   const single = useMutation({
     mutationFn: (input: { role: AppRole; permissionKey: string; granted: boolean }) =>
@@ -103,6 +148,22 @@ export function PermissionsBoard() {
     onSettled: () => setPending(null),
   });
 
+  const toggleSingle = (permissionKey: string, nextGranted: boolean, token: string) => {
+    setPending(token);
+    if (activeCustomRole) {
+      const next = new Set(activeCustomRole.permissionKeys);
+      if (nextGranted) next.add(permissionKey);
+      else next.delete(permissionKey);
+      saveCustom.mutate({
+        customRoleId: activeCustomRole.id,
+        permissionKeys: [...next],
+        message: nextGranted ? "تم منح الصلاحية" : "تم سحب الصلاحية",
+      });
+      return;
+    }
+    single.mutate({ role: activeRole, permissionKey, granted: nextGranted });
+  };
+
   const applyBulk = (codes: string[], nextGranted: boolean, token: string) => {
     const targets = nextGranted
       ? codes.filter((code) => !granted.has(code))
@@ -112,6 +173,21 @@ export function PermissionsBoard() {
       return;
     }
     setPending(token);
+    if (activeCustomRole) {
+      const next = new Set(activeCustomRole.permissionKeys);
+      for (const code of targets) {
+        if (nextGranted) next.add(code);
+        else next.delete(code);
+      }
+      saveCustom.mutate({
+        customRoleId: activeCustomRole.id,
+        permissionKeys: [...next],
+        message: nextGranted
+          ? `تم منح ${targets.length} صلاحية`
+          : `تم سحب ${targets.length} صلاحية`,
+      });
+      return;
+    }
     bulk.mutate({ role: activeRole, permissionKeys: targets, granted: nextGranted });
   };
 
@@ -119,7 +195,8 @@ export function PermissionsBoard() {
     return <NoAccess />;
   }
 
-  const busy = bulk.isPending || single.isPending;
+  const busy = bulk.isPending || single.isPending || saveCustom.isPending;
+
 
   return (
     <div className="space-y-5">
@@ -164,13 +241,12 @@ export function PermissionsBoard() {
           <UserCog className="size-4 shrink-0 text-primary" />
           <p className="min-w-0 text-xs font-bold text-foreground">
             أنت الآن تعدّل صلاحيات دور:{" "}
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold ${ROLE_COLORS[activeRole]}`}
-            >
-              {ROLE_LABELS[activeRole]}
+            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold ${activeColor}`}>
+              {activeLabel}
             </span>{" "}
             — أي تعديل هنا يطبَّق على جميع المستخدمين الذين يحملون هذا الدور.
           </p>
+
         </div>
 
         {controlsOpen && (
@@ -182,14 +258,18 @@ export function PermissionsBoard() {
           </span>
           <div className="grid max-h-72 gap-2 overflow-y-auto pe-1 sm:grid-cols-2 lg:max-h-none lg:grid-cols-4 lg:overflow-visible">
             {ALL_ROLES.map((role) => {
-              const active = activeRole === role;
+              const active = activeRole === role && !activeCustomRole;
               const count = (grantedByRole.get(role) ?? new Set<string>()).size;
               return (
                 <button
                   key={role}
                   type="button"
-                  onClick={() => setActiveRole(role)}
+                  onClick={() => {
+                    setActiveCustomId(null);
+                    setActiveRole(role);
+                  }}
                   aria-pressed={active}
+
                   className={`flex items-start gap-2 rounded-2xl border p-3 text-start transition ${
                     active
                       ? "border-primary bg-primary/10 shadow-soft ring-2 ring-primary/40"
@@ -223,7 +303,15 @@ export function PermissionsBoard() {
             })}
           </div>
 
+          <CustomRolesPanel
+            roles={customRoles}
+            activeCustomId={activeCustomRole ? activeCustomRole.id : null}
+            onSelect={(id) => setActiveCustomId(id)}
+            canManage={canManage}
+            assignmentCounts={assignmentCounts}
+          />
         </div>
+
 
         {canManage && (
           <div className="flex flex-wrap gap-2">
@@ -354,7 +442,7 @@ export function PermissionsBoard() {
 
                           <div className="grid gap-2 sm:grid-cols-2">
                             {sub.permissions.map((permission) => {
-                              const id = `${activeRole}:${permission.code}`;
+                              const id = `${activeCustomRole?.id ?? activeRole}:${permission.code}`;
                               return (
                                 <label
                                   key={permission.code}
@@ -363,16 +451,12 @@ export function PermissionsBoard() {
                                   <Checkbox
                                     checked={granted.has(permission.code)}
                                     disabled={!canManage || busy}
-                                    aria-label={`${ROLE_LABELS[activeRole]} — ${permission.labelAr}`}
-                                    onCheckedChange={(value) => {
-                                      setPending(id);
-                                      single.mutate({
-                                        role: activeRole,
-                                        permissionKey: permission.code,
-                                        granted: value === true,
-                                      });
-                                    }}
+                                    aria-label={`${activeLabel} — ${permission.labelAr}`}
+                                    onCheckedChange={(value) =>
+                                      toggleSingle(permission.code, value === true, id)
+                                    }
                                   />
+
                                   <span className="min-w-0">
                                     <span className="block text-xs font-bold text-foreground">
                                       {permission.labelAr}
