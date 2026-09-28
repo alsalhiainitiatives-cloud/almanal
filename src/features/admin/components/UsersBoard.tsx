@@ -24,6 +24,11 @@ import {
   getRolePermissionMatrix,
 } from "@/features/auth/admin.functions";
 import {
+  adminSetUserCustomRoles,
+  getCustomRoleMatrix,
+} from "@/features/auth/custom-roles.functions";
+
+import {
   ALL_ROLES,
   P,
   PERMISSION_CATEGORY_LABELS,
