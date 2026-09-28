@@ -61,6 +61,23 @@ export function PermissionsBoard() {
     enabled: hasPermission(P.usersView),
   });
 
+  const { data: customData } = useQuery({
+    queryKey: ["admin", "custom-roles"],
+    queryFn: () => getCustomRoleMatrix(),
+    enabled: hasPermission(P.usersView),
+  });
+
+  const customRoles = customData?.roles ?? [];
+  const activeCustomRole = customRoles.find((role) => role.id === activeCustomId) ?? null;
+
+  const assignmentCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const row of customData?.assignments ?? []) {
+      map.set(row.customRoleId, (map.get(row.customRoleId) ?? 0) + 1);
+    }
+    return map;
+  }, [customData?.assignments]);
+
   const tree: MatrixModule[] = useMemo(
     () => buildPermissionTree(data?.permissions ?? []),
     [data?.permissions],
@@ -76,11 +93,32 @@ export function PermissionsBoard() {
     return map;
   }, [data?.rolePermissions]);
 
-  const granted = grantedByRole.get(activeRole) ?? new Set<string>();
+  const granted = activeCustomRole
+    ? new Set(activeCustomRole.permissionKeys)
+    : grantedByRole.get(activeRole) ?? new Set<string>();
+  const activeLabel = activeCustomRole ? activeCustomRole.nameAr : ROLE_LABELS[activeRole];
+  const activeColor = activeCustomRole ? activeCustomRole.color : ROLE_COLORS[activeRole];
   const allCodes = useMemo(() => tree.flatMap((m) => m.codes), [tree]);
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ["admin", "permission-matrix"] });
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["admin", "permission-matrix"] });
+    await queryClient.invalidateQueries({ queryKey: ["admin", "custom-roles"] });
+  };
+
+  /** Custom roles are saved as a full permission set, built-in roles per key. */
+  const saveCustom = useMutation({
+    mutationFn: (input: { customRoleId: string; permissionKeys: string[]; message: string }) =>
+      adminSetCustomRolePermissions({
+        data: { customRoleId: input.customRoleId, permissionKeys: input.permissionKeys },
+      }),
+    onSuccess: async (_r, input) => {
+      await invalidate();
+      toast.success(input.message);
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "تعذّر تحديث صلاحيات الدور المخصص."),
+    onSettled: () => setPending(null),
+  });
 
   const single = useMutation({
     mutationFn: (input: { role: AppRole; permissionKey: string; granted: boolean }) =>
@@ -110,6 +148,22 @@ export function PermissionsBoard() {
     onSettled: () => setPending(null),
   });
 
+  const toggleSingle = (permissionKey: string, nextGranted: boolean, token: string) => {
+    setPending(token);
+    if (activeCustomRole) {
+      const next = new Set(activeCustomRole.permissionKeys);
+      if (nextGranted) next.add(permissionKey);
+      else next.delete(permissionKey);
+      saveCustom.mutate({
+        customRoleId: activeCustomRole.id,
+        permissionKeys: [...next],
+        message: nextGranted ? "تم منح الصلاحية" : "تم سحب الصلاحية",
+      });
+      return;
+    }
+    single.mutate({ role: activeRole, permissionKey, granted: nextGranted });
+  };
+
   const applyBulk = (codes: string[], nextGranted: boolean, token: string) => {
     const targets = nextGranted
       ? codes.filter((code) => !granted.has(code))
@@ -119,6 +173,21 @@ export function PermissionsBoard() {
       return;
     }
     setPending(token);
+    if (activeCustomRole) {
+      const next = new Set(activeCustomRole.permissionKeys);
+      for (const code of targets) {
+        if (nextGranted) next.add(code);
+        else next.delete(code);
+      }
+      saveCustom.mutate({
+        customRoleId: activeCustomRole.id,
+        permissionKeys: [...next],
+        message: nextGranted
+          ? `تم منح ${targets.length} صلاحية`
+          : `تم سحب ${targets.length} صلاحية`,
+      });
+      return;
+    }
     bulk.mutate({ role: activeRole, permissionKeys: targets, granted: nextGranted });
   };
 
@@ -126,7 +195,8 @@ export function PermissionsBoard() {
     return <NoAccess />;
   }
 
-  const busy = bulk.isPending || single.isPending;
+  const busy = bulk.isPending || single.isPending || saveCustom.isPending;
+
 
   return (
     <div className="space-y-5">
