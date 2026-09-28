@@ -26,6 +26,10 @@ import {
   getRolePermissionMatrix,
 } from "@/features/auth/admin.functions";
 import {
+  adminSetCustomRolePermissions,
+  getCustomRoleMatrix,
+} from "@/features/auth/custom-roles.functions";
+import {
   actionLabel,
   buildPermissionTree,
   type MatrixModule,
@@ -38,6 +42,7 @@ import {
   ROLE_LABELS,
   type AppRole,
 } from "@/features/auth/rbac";
+import { CustomRolesPanel } from "./CustomRolesPanel";
 import { NoAccess } from "./UsersBoard";
 
 export function PermissionsBoard() {
@@ -45,8 +50,10 @@ export function PermissionsBoard() {
   const canManage = hasPermission(P.permissionsManage) || hasPermission(P.rolesManage);
   const queryClient = useQueryClient();
   const [activeRole, setActiveRole] = useState<AppRole>("registration_officer");
+  const [activeCustomId, setActiveCustomId] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const [controlsOpen, setControlsOpen] = useState(false);
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "permission-matrix"],
