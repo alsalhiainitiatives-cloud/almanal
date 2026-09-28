@@ -171,7 +171,7 @@ export function UsersBoard() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex flex-wrap gap-1.5">
-                          {user.roles.length === 0 && (
+                          {user.roles.length === 0 && (user.customRoleIds ?? []).length === 0 && (
                             <span className="text-xs text-muted-foreground">بدون دور</span>
                           )}
                           {user.roles.map((role) => (
@@ -182,8 +182,21 @@ export function UsersBoard() {
                               {ROLE_LABELS[role]}
                             </span>
                           ))}
+                          {(user.customRoleIds ?? []).map((id) => {
+                            const custom = customRoleById.get(id);
+                            if (!custom) return null;
+                            return (
+                              <span
+                                key={id}
+                                className={`rounded-full px-3 py-1 text-[11px] font-bold ${custom.color}`}
+                              >
+                                {custom.nameAr}
+                              </span>
+                            );
+                          })}
                         </div>
                       </td>
+
                       <td className="px-5 py-4 text-xs font-bold text-muted-foreground">
                         {overrideCount.get(user.id)
                           ? `${overrideCount.get(user.id)} استثناء`
