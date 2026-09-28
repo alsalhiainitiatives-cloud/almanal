@@ -241,13 +241,12 @@ export function PermissionsBoard() {
           <UserCog className="size-4 shrink-0 text-primary" />
           <p className="min-w-0 text-xs font-bold text-foreground">
             أنت الآن تعدّل صلاحيات دور:{" "}
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold ${ROLE_COLORS[activeRole]}`}
-            >
-              {ROLE_LABELS[activeRole]}
+            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold ${activeColor}`}>
+              {activeLabel}
             </span>{" "}
             — أي تعديل هنا يطبَّق على جميع المستخدمين الذين يحملون هذا الدور.
           </p>
+
         </div>
 
         {controlsOpen && (
