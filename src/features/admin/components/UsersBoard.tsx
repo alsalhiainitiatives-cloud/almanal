@@ -67,8 +67,20 @@ export function UsersBoard() {
     return map;
   }, [overrides]);
 
+  const { data: customRolesData } = useQuery({
+    queryKey: ["admin", "custom-roles"],
+    queryFn: () => getCustomRoleMatrix(),
+    enabled: hasPermission(P.usersView),
+  });
+
+  const customRoleById = useMemo(
+    () => new Map((customRolesData?.roles ?? []).map((role) => [role.id, role])),
+    [customRolesData?.roles],
+  );
+
   const users = data ?? [];
   const allSelected = users.length > 0 && selected.length === users.length;
+
 
   if (!loadingContext && !hasPermission(P.usersView)) {
     return <NoAccess />;
