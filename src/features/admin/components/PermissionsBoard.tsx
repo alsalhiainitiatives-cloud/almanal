@@ -258,14 +258,18 @@ export function PermissionsBoard() {
           </span>
           <div className="grid max-h-72 gap-2 overflow-y-auto pe-1 sm:grid-cols-2 lg:max-h-none lg:grid-cols-4 lg:overflow-visible">
             {ALL_ROLES.map((role) => {
-              const active = activeRole === role;
+              const active = activeRole === role && !activeCustomRole;
               const count = (grantedByRole.get(role) ?? new Set<string>()).size;
               return (
                 <button
                   key={role}
                   type="button"
-                  onClick={() => setActiveRole(role)}
+                  onClick={() => {
+                    setActiveCustomId(null);
+                    setActiveRole(role);
+                  }}
                   aria-pressed={active}
+
                   className={`flex items-start gap-2 rounded-2xl border p-3 text-start transition ${
                     active
                       ? "border-primary bg-primary/10 shadow-soft ring-2 ring-primary/40"
