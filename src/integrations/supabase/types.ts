@@ -1026,6 +1026,78 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_role_permissions: {
+        Row: {
+          created_at: string
+          custom_role_id: string
+          id: string
+          permission_key: string
+        }
+        Insert: {
+          created_at?: string
+          custom_role_id: string
+          id?: string
+          permission_key: string
+        }
+        Update: {
+          created_at?: string
+          custom_role_id?: string
+          id?: string
+          permission_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_role_permissions_custom_role_id_fkey"
+            columns: ["custom_role_id"]
+            isOneToOne: false
+            referencedRelation: "custom_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_role_permissions_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
+      custom_roles: {
+        Row: {
+          color: string
+          created_at: string
+          created_by: string | null
+          description_ar: string
+          id: string
+          is_active: boolean
+          name_ar: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          description_ar?: string
+          id?: string
+          is_active?: boolean
+          name_ar: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          description_ar?: string
+          id?: string
+          is_active?: boolean
+          name_ar?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       discount_rules: {
         Row: {
           condition: string
@@ -3578,6 +3650,38 @@ export type Database = {
           },
         ]
       }
+      user_custom_roles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          custom_role_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          custom_role_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          custom_role_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_custom_roles_custom_role_id_fkey"
+            columns: ["custom_role_id"]
+            isOneToOne: false
+            referencedRelation: "custom_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_permissions: {
         Row: {
           created_at: string
@@ -3843,6 +3947,11 @@ export type Database = {
         }
         Returns: number
       }
+      admin_delete_custom_role: { Args: { _id: string }; Returns: boolean }
+      admin_set_custom_role_permissions: {
+        Args: { _custom_role_id: string; _permission_keys: string[] }
+        Returns: number
+      }
       admin_set_role_permission: {
         Args: {
           _granted: boolean
@@ -3859,12 +3968,27 @@ export type Database = {
         }
         Returns: number
       }
+      admin_set_user_custom_roles: {
+        Args: { _custom_role_ids: string[]; _user_id: string }
+        Returns: boolean
+      }
       admin_set_user_roles: {
         Args: {
           _roles: Database["public"]["Enums"]["app_role"][]
           _user_id: string
         }
         Returns: boolean
+      }
+      admin_upsert_custom_role: {
+        Args: {
+          _color: string
+          _description_ar: string
+          _id: string
+          _is_active: boolean
+          _name_ar: string
+          _slug: string
+        }
+        Returns: string
       }
       assessment_classroom_id: {
         Args: { _assessment_id: string }
