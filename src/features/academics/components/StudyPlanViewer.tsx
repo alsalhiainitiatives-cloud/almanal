@@ -43,7 +43,11 @@ export function StudyPlanViewer() {
   const plans = useMemo(() => {
     if (!activeChild) return [];
     return (board.data?.plans ?? []).filter(
-      (plan) => plan.classroomId === activeChild.classroomId && timeframeOf(plan) === timeframe,
+      (plan) =>
+        plan.classroomId === activeChild.classroomId &&
+        // خطة الفصل العامة تُعرض للجميع، والخطة الفردية لصاحبها فقط.
+        (plan.childId === null || plan.childId === activeChild.childId) &&
+        timeframeOf(plan) === timeframe,
     );
   }, [board.data?.plans, activeChild, timeframe]);
 
