@@ -45,15 +45,24 @@ import { academicsClassrooms, academicsCurriculum } from "../academics.functions
 import { chatSendMessage } from "../chat.functions";
 import { exportPlanImage, exportPlanPdf, planImageAttachment } from "../plan-export";
 import {
+  PLAN_SCOPE_LABELS,
   PLAN_TYPE_LABELS,
   SCHOOL_DAYS,
   defaultRange,
   formatPlanRange,
+  planScopeBadge,
   planTitle,
+  type PlanScope,
   type PlanType,
   type StudyPlan,
 } from "../plans";
-import { plansDelete, plansForClassroom, plansSave, plansSetPublished } from "../plans.functions";
+import {
+  plansClassroomChildren,
+  plansDelete,
+  plansForClassroom,
+  plansSave,
+  plansSetPublished,
+} from "../plans.functions";
 import { StudyPlanGrid } from "./StudyPlanGrid";
 
 type DraftItem = {
@@ -209,6 +218,7 @@ export function StudyPlanBuilder() {
   const loadClassrooms = useServerFn(academicsClassrooms);
   const loadCurriculum = useServerFn(academicsCurriculum);
   const loadPlans = useServerFn(plansForClassroom);
+  const loadChildren = useServerFn(plansClassroomChildren);
   const saveFn = useServerFn(plansSave);
   const deleteFn = useServerFn(plansDelete);
   const publishFn = useServerFn(plansSetPublished);
