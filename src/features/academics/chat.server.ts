@@ -390,8 +390,32 @@ export async function sendChatMessage(supabase: Db, userId: string, input: SendM
   return { id: data?.id ?? null };
 }
 
+/**
+ * Switches "parents may post in the group chat" for one classroom.
+ * Teachers of the classroom and school administration only.
+ */
+export async function setClassroomParentPosting(
+  supabase: Db,
+  userId: string,
+  input: { classroomId: string; allowed: boolean },
+) {
+  const { data: allowed } = await supabase.rpc("can_write_classroom_curriculum", {
+    _user_id: userId,
+    _classroom_id: input.classroomId,
+  });
+  if (allowed !== true) throw new Error("لا تملك صلاحية تعديل إعدادات هذا الفصل.");
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin
+    .from("classrooms")
+    .update({ allow_parent_messages: input.allowed })
+    .eq("id", input.classroomId);
+  if (error) throw new Error("تعذّر تحديث إعداد الشات الجماعي.");
+  return { ok: true };
+}
 
 /** Removes a message: authors soft-delete their own, staff hard-delete for moderation. */
+
 export async function deleteChatMessage(supabase: Db, userId: string, id: string) {
   const roles = await rolesOf(supabase, userId);
   const staff = roles.some((r) => STAFF_ROLES.includes(r));
