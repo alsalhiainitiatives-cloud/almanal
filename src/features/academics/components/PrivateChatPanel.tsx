@@ -87,7 +87,13 @@ export function PrivateChatPanel({
   const sendFn = useServerFn(privateSendMessage);
   const deleteFn = useServerFn(privateDeleteMessage);
 
-  const [peer, setPeer] = useState<{ peerId: string; chatId: string | null } | null>(null);
+  const [peer, setPeer] = useState<{
+    key: string;
+    peerId: string | null;
+    childId: string | null;
+    chatId: string | null;
+  } | null>(null);
+
   const [text, setText] = useState("");
   const [pending, setPending] = useState<
     { path: string; kind: "image" | "video" | "file"; name: string } | null
@@ -114,13 +120,19 @@ export function PrivateChatPanel({
   });
 
   const thread = useQuery({
-    queryKey: ["private-chat-thread", classroomId, peer?.peerId, peer?.chatId],
+    queryKey: ["private-chat-thread", classroomId, peer?.key, peer?.chatId],
     queryFn: () =>
       loadThread({
-        data: { classroomId, peerId: peer?.peerId ?? null, chatId: peer?.chatId ?? null },
+        data: {
+          classroomId,
+          peerId: peer?.peerId ?? null,
+          childId: peer?.childId ?? null,
+          chatId: peer?.chatId ?? null,
+        },
       }),
     enabled: Boolean(peer),
   });
+
 
   const chatId = thread.data?.chatId ?? null;
   const messages = thread.data?.messages ?? [];
