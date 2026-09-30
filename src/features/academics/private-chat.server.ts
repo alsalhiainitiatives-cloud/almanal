@@ -326,15 +326,21 @@ export async function openPrivateThread(
       : [],
   );
 
+  // Guardians appear everywhere under their child's name.
+  const { childNamesByParent } = await import("./chat.server");
+  const childNames = await childNamesByParent(input.classroomId);
+  const peerChildName = chat.parent_id === peerId ? (childNames.get(peerId) ?? null) : null;
+
   return {
     chatId: chat.id,
     peerId,
-    peerName: profile?.full_name?.trim() || "عضو",
+    peerName: peerChildName ?? profile?.full_name?.trim() ?? "عضو",
     peerAvatarUrl: resolveAvatar(profile?.avatar_url ?? null, signed),
     readOnly: role === "staff",
-    messages: await loadMessages(supabase, userId, chat.id),
+    messages: await loadMessages(supabase, userId, chat.id, childNames),
   };
 }
+
 
 export type SendPrivateInput = {
   chatId: string;
