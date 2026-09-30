@@ -225,6 +225,8 @@ export function StudyPlanBuilder() {
   const sendChat = useServerFn(chatSendMessage);
 
   const [classroomId, setClassroomId] = useState<string | null>(null);
+  const [scope, setScope] = useState<PlanScope>("classroom");
+  const [listFilter, setListFilter] = useState<"all" | "classroom" | "child">("all");
   const [draft, setDraft] = useState<Draft>(() => emptyDraft());
   const [openSubjects, setOpenSubjects] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState<string | null>(null);
