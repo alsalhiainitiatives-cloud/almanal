@@ -776,6 +776,44 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_message_templates: {
+        Row: {
+          body: string
+          classroom_id: string | null
+          created_at: string
+          created_by: string
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          classroom_id?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          classroom_id?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_message_templates_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classroom_locks: {
         Row: {
           acquired_at: string
@@ -2131,30 +2169,40 @@ export type Database = {
       }
       private_chats: {
         Row: {
+          child_id: string | null
           class_id: string
           created_at: string
           id: string
-          parent_id: string
+          parent_id: string | null
           teacher_id: string
           updated_at: string
         }
         Insert: {
+          child_id?: string | null
           class_id: string
           created_at?: string
           id?: string
-          parent_id: string
+          parent_id?: string | null
           teacher_id: string
           updated_at?: string
         }
         Update: {
+          child_id?: string | null
           class_id?: string
           created_at?: string
           id?: string
-          parent_id?: string
+          parent_id?: string | null
           teacher_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "private_chats_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "application_children"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "private_chats_class_id_fkey"
             columns: ["class_id"]
