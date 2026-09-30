@@ -496,7 +496,7 @@ export function PrivateChatPanel({
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
-                      if (chatId && !readOnly && (text.trim() || pending)) send.mutate();
+                      if (chatId && !readOnly && (text.trim() || pending)) send.mutate(undefined);
                     }
                   }}
                   rows={1}
@@ -508,7 +508,7 @@ export function PrivateChatPanel({
                   type="button"
                   size="icon"
                   disabled={readOnly || !chatId || send.isPending || (!text.trim() && !pending)}
-                  onClick={() => send.mutate()}
+                  onClick={() => send.mutate(undefined)}
                   aria-label="إرسال"
                 >
                   {send.isPending ? (

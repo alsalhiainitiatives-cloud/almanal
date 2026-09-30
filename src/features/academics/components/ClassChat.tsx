@@ -606,7 +606,7 @@ export function ClassChat() {
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !e.shiftKey) {
                             e.preventDefault();
-                            if (body.trim() || pending.length) send.mutate();
+                            if (body.trim() || pending.length) send.mutate(undefined);
                           }
                         }}
                         rows={1}
@@ -617,7 +617,7 @@ export function ClassChat() {
                         type="button"
                         size="icon"
                         disabled={send.isPending || (!body.trim() && !pending.length)}
-                        onClick={() => send.mutate()}
+                        onClick={() => send.mutate(undefined)}
                         aria-label="إرسال"
                       >
                         {send.isPending ? (
