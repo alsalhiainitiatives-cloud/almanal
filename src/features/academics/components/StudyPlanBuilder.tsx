@@ -261,6 +261,25 @@ export function StudyPlanBuilder() {
     enabled: Boolean(classroomId),
   });
 
+  const childrenQuery = useQuery({
+    queryKey: ["study-plan-children", classroomId],
+    queryFn: () => loadChildren({ data: { classroomId: classroomId! } }),
+    enabled: Boolean(classroomId),
+  });
+  const children = childrenQuery.data ?? [];
+
+  const activeChild = useMemo(
+    () => children.find((c) => c.id === draft.childId) ?? null,
+    [children, draft.childId],
+  );
+
+  const visiblePlans = useMemo(() => {
+    const rows = plans.data ?? [];
+    if (listFilter === "classroom") return rows.filter((p) => !p.childId);
+    if (listFilter === "child") return rows.filter((p) => Boolean(p.childId));
+    return rows;
+  }, [plans.data, listFilter]);
+
   const save = useMutation({
     mutationFn: async () =>
       saveFn({
