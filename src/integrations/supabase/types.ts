@@ -873,6 +873,7 @@ export type Database = {
       }
       classrooms: {
         Row: {
+          allow_parent_messages: boolean
           capacity: number
           chat_enabled: boolean
           color_hex: string
@@ -903,6 +904,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_parent_messages?: boolean
           capacity?: number
           chat_enabled?: boolean
           color_hex?: string
@@ -933,6 +935,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_parent_messages?: boolean
           capacity?: number
           chat_enabled?: boolean
           color_hex?: string
@@ -4037,6 +4040,10 @@ export type Database = {
           child_names: string[]
           linked: number
         }[]
+      }
+      classroom_allows_parent_messages: {
+        Args: { _classroom_id: string }
+        Returns: boolean
       }
       classroom_enrolled_children: {
         Args: { _classroom_id: string }
