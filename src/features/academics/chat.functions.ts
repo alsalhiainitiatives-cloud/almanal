@@ -45,3 +45,14 @@ export const chatDeleteMessage = createServerFn({ method: "POST" })
     const { deleteChatMessage } = await import("./chat.server");
     return deleteChatMessage(context.supabase, context.userId, data.id);
   });
+
+export const chatSetParentPosting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ classroomId: z.string().uuid(), allowed: z.boolean() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { setClassroomParentPosting } = await import("./chat.server");
+    return setClassroomParentPosting(context.supabase, context.userId, data);
+  });
+
