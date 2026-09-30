@@ -243,7 +243,9 @@ async function loadMessages(
     id: r.id,
     chatId: r.chat_id,
     senderId: r.sender_id,
-    senderName: profileById.get(r.sender_id)?.full_name ?? null,
+    senderName:
+      childNameByParent?.get(r.sender_id) ?? profileById.get(r.sender_id)?.full_name ?? null,
+
     senderAvatarUrl: resolveAvatar(profileById.get(r.sender_id)?.avatar_url ?? null, signed),
     text: r.deleted_at ? "" : r.text,
     attachmentUrl: r.deleted_at
