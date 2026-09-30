@@ -380,7 +380,9 @@ export async function ensureAssessment(
   userId: string,
   input: { childId: string; lessonId: string; classroomId: string },
 ) {
+  await assertLessonInScope(supabase, userId, input.lessonId, input.classroomId);
   const { data: existing } = await supabase
+
     .from("lesson_assessments")
     .select("id")
     .eq("child_id", input.childId)
