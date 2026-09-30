@@ -398,7 +398,7 @@ export async function sendPrivateMessage(supabase: Db, userId: string, input: Se
       userIds: [recipient],
       kind: "chat_message",
       title: "رسالة خاصة جديدة",
-      body: `${profile?.full_name ?? "أحد أعضاء الفصل"}: ${text ? text.slice(0, 120) : "مرفق جديد"}`,
+      body: `${senderLabel ?? "أحد أعضاء الفصل"}: ${text ? text.slice(0, 120) : "مرفق جديد"}`,
       link: chat.teacher_id === recipient ? "/ams/academics/chat" : "/class-chat",
       severity: "info",
     });
