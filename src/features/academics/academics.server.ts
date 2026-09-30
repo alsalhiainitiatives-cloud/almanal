@@ -486,7 +486,7 @@ export async function setClassroomTeachers(
     );
     if (error) throw new Error(error.message);
   }
-  await syncClassroomTeacherNames([classroomId]);
+  await syncClassroomTeacherNames(supabase, [classroomId]);
   return { ok: true, count: unique.length };
 }
 
@@ -521,7 +521,7 @@ export async function setTeacherClassrooms(
     );
     if (error) throw new Error(error.message);
   }
-  await syncClassroomTeacherNames([
+  await syncClassroomTeacherNames(supabase, [
     ...unique,
     ...((previous ?? []).map((r) => r.classroom_id) as string[]),
   ]);
