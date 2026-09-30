@@ -18,7 +18,9 @@ import {
   type AcademicsSettings,
   type MonthColor,
 } from "../settings";
+import { chatSetParentPosting } from "../chat.functions";
 import { canManageStorage } from "../maintenance";
+
 import {
   academicsSaveMonthColors,
   academicsSetChatClassroom,
