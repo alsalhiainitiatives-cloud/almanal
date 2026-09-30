@@ -337,8 +337,16 @@ export function PrivateChatPanel({
                 className="size-9"
                 fallbackClassName="text-xs"
               />
-              <p className="truncate text-sm font-bold">{thread.data?.peerName ?? "…"}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold">{thread.data?.peerName ?? "…"}</p>
+                {thread.data?.awaitingGuardian ? (
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    لم يُربط ولي الأمر بعد — ستظهر له الرسائل فور الربط أو تسجيل الدخول.
+                  </p>
+                ) : null}
+              </div>
             </div>
+
 
             <ScrollArea className="flex-1">
               <div ref={feedRef} className="flex flex-col gap-3 p-4">
