@@ -295,6 +295,16 @@ export type TeacherRow = {
   email: string | null;
   phone: string | null;
   classroomIds: string[];
+  /** Subject-level assignments (subject teacher, not homeroom teacher). */
+  subjectIds: string[];
+};
+
+export type AssignmentSubject = {
+  id: string;
+  classroomId: string;
+  nameAr: string;
+  colorHex: string;
+  teacherIds: string[];
 };
 
 export type AssignmentClassroom = {
@@ -306,6 +316,7 @@ export type AssignmentClassroom = {
   capacity: number;
   enrolledCount: number;
   teacherIds: string[];
+  subjects: AssignmentSubject[];
 };
 
 export type AssignmentBoard = {
@@ -313,6 +324,7 @@ export type AssignmentBoard = {
   teachers: TeacherRow[];
   classrooms: AssignmentClassroom[];
 };
+
 
 export async function getAssignmentBoard(supabase: Db, userId: string): Promise<AssignmentBoard> {
   await assertSuperAdmin(supabase, userId);
