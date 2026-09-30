@@ -180,13 +180,23 @@ export function UsersBoard() {
               ...ALL_ROLES.map(
                 (role) => [role, `${ROLE_LABELS[role]} (${roleCounts.get(role) ?? 0})`] as const,
               ),
+              ...(customRolesData?.roles ?? [])
+                .filter((role) => role.isActive)
+                .map(
+                  (role) =>
+                    [
+                      `custom:${role.id}`,
+                      `${role.nameAr} (${roleCounts.get(`custom:${role.id}`) ?? 0})`,
+                    ] as const,
+                ),
               ["none", `بدون دور (${roleCounts.get("none") ?? 0})`],
             ] as Array<[string, string]>
           ).map(([value, label]) => (
             <button
               key={value}
               type="button"
-              onClick={() => setRoleFilter(value as "all" | "none" | AppRole)}
+              onClick={() => setRoleFilter(value)}
+
               className={`rounded-full px-3.5 py-1.5 text-[11px] font-bold transition-colors ${
                 roleFilter === value
                   ? "bg-primary text-primary-foreground"
