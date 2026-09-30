@@ -40,6 +40,8 @@ import {
   privateSendMessage,
   privateThread,
 } from "../private-chat.functions";
+import { MessageTemplates } from "./MessageTemplates";
+
 
 function KindIcon({ kind }: { kind: string }) {
   if (kind === "image") return <ImageIcon className="size-4" />;
