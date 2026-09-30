@@ -41,11 +41,6 @@ async function isStaff(supabase: Db, userId: string) {
   return roles.some((r) => r !== "parent");
 }
 
-async function admin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin as unknown as Db;
-}
-
 /* ------------------------------------------------------------------ */
 /* Settings                                                            */
 /* ------------------------------------------------------------------ */
@@ -119,7 +114,7 @@ export async function deleteService(supabase: Db, userId: string, id: string) {
 /** Notifies every parent with an overdue (or soon-due) installment. */
 export async function notifyOverdue(supabase: Db, userId: string) {
   await guardFinance(supabase, userId);
-  const db = await admin();
+  const db = supabase;
   const { data: settings } = await db
     .from("payment_plan_settings")
     .select("late_after_days")
@@ -436,7 +431,7 @@ export async function createOrUpdateInvoice(
     input.installments,
   );
 
-  const db = await admin();
+  const db = supabase;
   const { data: existing } = await db
     .from("invoices")
     .select("id, paid_total, status")
@@ -913,7 +908,7 @@ export async function recordReceipt(
   if (error) throw new Error("تعذّر حفظ الإيصال.");
 
   if (input.installmentId) {
-    const db = await admin();
+    const db = supabase;
     await db.from("installments").update({ status: "pending_review" }).eq("id", input.installmentId);
   }
 
@@ -946,7 +941,7 @@ export async function reviewReceipt(
   input: { id: string; approve: boolean; note?: string | null },
 ) {
   await guardFinance(supabase, userId);
-  const db = await admin();
+  const db = supabase;
   const { data: receipt } = await db
     .from("payment_receipts")
     .select("*, invoices(id, parent_id, application_id, grand_total, paid_total)")
@@ -998,7 +993,7 @@ export async function setInstallmentStatus(
   input: { id: string; status: "due" | "paid" | "waived" | "cancelled"; note?: string | null },
 ) {
   await guardFinance(supabase, userId);
-  const db = await admin();
+  const db = supabase;
   const { data: row } = await db.from("installments").select("*").eq("id", input.id).maybeSingle();
   if (!row) throw new Error("الدفعة غير موجودة.");
 
@@ -1022,7 +1017,7 @@ export async function remindInstallment(
   input: { installmentId: string },
 ) {
   await guardFinance(supabase, userId);
-  const db = await admin();
+  const db = supabase;
   const { data: row } = await db
     .from("installments")
     .select("*, invoices(parent_id, application_id)")
@@ -1222,7 +1217,7 @@ export async function createClaim(
   const year = input.academicYear.trim();
   if (year.length < 4) throw new Error("أدخل العام الدراسي للمطالبة.");
 
-  const db = await admin();
+  const db = supabase;
   const { data: existing } = await db
     .from("invoices")
     .select("id")
@@ -1308,7 +1303,7 @@ export async function createClaim(
 /** Cancels an unpaid claim (invoice) and its schedule. */
 export async function cancelClaim(supabase: Db, userId: string, invoiceId: string) {
   await guardFinance(supabase, userId);
-  const db = await admin();
+  const db = supabase;
   const { data: invoice } = await db
     .from("invoices")
     .select("id, paid_total")

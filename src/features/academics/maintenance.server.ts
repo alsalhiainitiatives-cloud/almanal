@@ -111,15 +111,14 @@ export async function runEvidenceCleanup(
   const rows = data ?? [];
   if (!rows.length) return { deleted: 0, storageRemoved: 0 };
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const paths = rows.map((r) => r.file_path).filter((p): p is string => Boolean(p));
   for (let i = 0; i < paths.length; i += 100) {
-    await supabaseAdmin.storage.from(ASSESSMENT_BUCKET).remove(paths.slice(i, i + 100));
+    await supabase.storage.from(ASSESSMENT_BUCKET).remove(paths.slice(i, i + 100));
   }
 
   const ids = rows.map((r) => r.id);
   for (let i = 0; i < ids.length; i += 200) {
-    const { error: delError } = await supabaseAdmin
+    const { error: delError } = await supabase
       .from("assessment_evidences")
       .delete()
       .in("id", ids.slice(i, i + 200));
@@ -199,9 +198,8 @@ export async function runChatWipe(
     return { messages: 0, storageRemoved: 0, scopeLabel: target.label };
   }
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await supabase
     .from("classroom_messages")
     .select("id, attachments")
     .in("classroom_id", target.classroomIds)
@@ -218,12 +216,12 @@ export async function runChatWipe(
   }
 
   for (let i = 0; i < paths.length; i += 100) {
-    await supabaseAdmin.storage.from(CHAT_BUCKET).remove(paths.slice(i, i + 100));
+    await supabase.storage.from(CHAT_BUCKET).remove(paths.slice(i, i + 100));
   }
 
   const ids = rows.map((r) => r.id);
   for (let i = 0; i < ids.length; i += 200) {
-    const { error: delError } = await supabaseAdmin
+    const { error: delError } = await supabase
       .from("classroom_messages")
       .delete()
       .in("id", ids.slice(i, i + 200));
@@ -244,8 +242,7 @@ export async function previewPrivateWipe(
     return { chats: 0, messages: 0, attachments: 0, scopeLabel: target.label };
   }
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: chats } = await supabaseAdmin
+  const { data: chats } = await supabase
     .from("private_chats")
     .select("id")
     .in("class_id", target.classroomIds)
@@ -254,7 +251,7 @@ export async function previewPrivateWipe(
   const chatIds = (chats ?? []).map((c) => c.id);
   if (!chatIds.length) return { chats: 0, messages: 0, attachments: 0, scopeLabel: target.label };
 
-  const { data: messages } = await supabaseAdmin
+  const { data: messages } = await supabase
     .from("private_messages")
     .select("id, attachment_url")
     .in("chat_id", chatIds)
@@ -280,8 +277,7 @@ export async function runPrivateWipe(
     return { chats: 0, messages: 0, storageRemoved: 0, scopeLabel: target.label };
   }
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: chats, error } = await supabaseAdmin
+  const { data: chats, error } = await supabase
     .from("private_chats")
     .select("id")
     .in("class_id", target.classroomIds)
@@ -293,7 +289,7 @@ export async function runPrivateWipe(
     return { chats: 0, messages: 0, storageRemoved: 0, scopeLabel: target.label };
   }
 
-  const { data: messages } = await supabaseAdmin
+  const { data: messages } = await supabase
     .from("private_messages")
     .select("id, attachment_url")
     .in("chat_id", chatIds)
@@ -305,11 +301,11 @@ export async function runPrivateWipe(
     .filter((p): p is string => Boolean(p) && !/^https?:\/\//i.test(p ?? ""));
 
   for (let i = 0; i < paths.length; i += 100) {
-    await supabaseAdmin.storage.from(CHAT_BUCKET).remove(paths.slice(i, i + 100));
+    await supabase.storage.from(CHAT_BUCKET).remove(paths.slice(i, i + 100));
   }
 
   for (let i = 0; i < chatIds.length; i += 200) {
-    const { error: delError } = await supabaseAdmin
+    const { error: delError } = await supabase
       .from("private_chats")
       .delete()
       .in("id", chatIds.slice(i, i + 200));
