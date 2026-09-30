@@ -597,6 +597,8 @@ export function ClassChat() {
                       </Button>
                     </div>
                   </div>
+                  )}
+
                 </div>
               )}
             </>
