@@ -51,7 +51,9 @@ export type PrivateMessage = {
 };
 
 export type PrivateThread = {
-  chatId: string;
+  /** Null when staff open a child with no conversation started yet. */
+  chatId: string | null;
+
   peerId: string | null;
   peerName: string;
   peerAvatarUrl: string | null;

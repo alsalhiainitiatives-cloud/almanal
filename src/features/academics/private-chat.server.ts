@@ -133,8 +133,9 @@ export async function listPrivateContacts(
       // A chat created by the teacher before the guardian was linked is keyed by the child.
       chatId: chatRows.find((c) => c.teacher_id === id)?.id ?? null,
     }));
-  } else if (role === "teacher") {
-    // Every child of the classroom, so the teacher can start a conversation herself.
+  } else {
+    // Teachers and school staff both see every child of the classroom, so a
+    // conversation can be started (teachers) or reviewed (staff) by child name.
     const { data: children } = await supabaseAdmin
       .from("application_children")
       .select("id, name_ar, applications!inner (parent_id, status)")
@@ -177,23 +178,8 @@ export async function listPrivateContacts(
         chatId,
       };
     });
-  } else {
-    // Staff moderation: only conversations that already exist.
-    const childIds = [...new Set(chatRows.map((c) => c.child_id).filter((v): v is string => Boolean(v)))];
-    const { data: childRows } = childIds.length
-      ? await supabaseAdmin.from("application_children").select("id, name_ar").in("id", childIds)
-      : { data: [] as { id: string; name_ar: string }[] };
-    const childName = new Map((childRows ?? []).map((c) => [c.id, c.name_ar]));
-    peers = chatRows.map((c) => ({
-      key: c.id,
-      peerId: c.teacher_id,
-      childId: c.child_id ?? null,
-      subtitle: c.child_id ? `عن الطفل: ${childName.get(c.child_id) ?? "—"}` : "محادثة خاصة",
-      childIds: c.child_id ? [c.child_id] : [],
-      displayName: null,
-      chatId: c.id,
-    }));
   }
+
 
   const peerIds = [...new Set(peers.map((p) => p.peerId).filter((v): v is string => Boolean(v)))];
   const { data: profiles } = peerIds.length
@@ -314,10 +300,33 @@ export async function openPrivateThread(
   let childName: string | null = null;
 
   if (!chatId) {
-    if (role === "staff") throw new Error("الإدارة تطّلع على المحادثات القائمة فقط.");
+    if (role === "staff") {
+      // Staff review conversations read-only: show an empty thread until one starts.
+      const { data: named } = childId
+        ? await supabaseAdmin
+            .from("application_children")
+            .select("name_ar, applications!inner (parent_id)")
+            .eq("id", childId)
+            .maybeSingle()
+        : { data: null };
+      const staffRow = named as unknown as {
+        name_ar: string;
+        applications: { parent_id: string | null } | null;
+      } | null;
+      return {
+        chatId: null,
+        peerId: staffRow?.applications?.parent_id ?? null,
+        peerName: staffRow?.name_ar ?? "عضو",
+        peerAvatarUrl: null,
+        awaitingGuardian: false,
+        readOnly: true,
+        messages: [],
+      };
+    }
 
     if (role === "teacher") {
       if (!childId) throw new Error("يرجى اختيار الطفل المراد محادثة ولي أمره.");
+
 
       // The child must belong to this classroom; its guardian may not exist yet.
       const { data: child } = await supabaseAdmin
