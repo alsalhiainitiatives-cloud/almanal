@@ -330,8 +330,14 @@ export async function getAssignmentBoard(supabase: Db, userId: string): Promise<
   await assertSuperAdmin(supabase, userId);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const [{ data: roleRows }, { data: classrooms }, { data: links }, { data: children }] =
-    await Promise.all([
+  const [
+    { data: roleRows },
+    { data: classrooms },
+    { data: links },
+    { data: children },
+    { data: subjectRows },
+    { data: subjectLinks },
+  ] = await Promise.all([
       supabaseAdmin.from("user_roles").select("user_id").eq("role", "teacher"),
       supabase
         .from("classrooms")
@@ -344,7 +350,14 @@ export async function getAssignmentBoard(supabase: Db, userId: string): Promise<
         .select("id, classroom_id, applications!inner(status, archived_at)")
         .is("withdrawn_at", null)
         .not("classroom_id", "is", null),
+      supabase
+        .from("subjects")
+        .select("id, classroom_id, name_ar, color_hex, sort_order")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true }),
+      supabase.from("teacher_subjects").select("teacher_id, subject_id"),
     ]);
+
 
   const teacherIds = [...new Set((roleRows ?? []).map((r) => r.user_id))];
   const { data: profiles } = teacherIds.length
