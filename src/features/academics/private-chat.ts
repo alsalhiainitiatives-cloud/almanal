@@ -10,11 +10,15 @@ export const PRIVATE_CHAT_FOLDER = "private";
 export type PrivateAttachmentKind = "image" | "video" | "file";
 
 export type PrivateContact = {
-  /** The other side of the conversation (teacher id for parents, parent id for teachers). */
-  peerId: string;
+  /** Stable identity of the row: the child for teachers, the teacher for parents. */
+  key: string;
+  /** The other side of the conversation — null when the child has no guardian account yet. */
+  peerId: string | null;
+  /** The child this conversation is about (teacher view). */
+  childId: string | null;
   name: string;
   avatarUrl: string | null;
-  /** "معلمة الفصل" or "والد أحمد / والدة سارة". */
+  /** "معلمة الفصل" or "ولي الأمر: …" / "لم يُربط ولي الأمر بعد". */
   subtitle: string | null;
   /** Children linking this contact to the classroom (teacher view). */
   childIds: string[];
@@ -22,6 +26,7 @@ export type PrivateContact = {
   lastMessageAt: string | null;
   lastPreview: string | null;
 };
+
 
 export type PrivateContactList = {
   role: "staff" | "teacher" | "parent";
