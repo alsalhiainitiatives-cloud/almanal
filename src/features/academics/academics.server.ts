@@ -350,12 +350,13 @@ export async function getAssignmentBoard(supabase: Db, userId: string): Promise<
         .select("id, classroom_id, applications!inner(status, archived_at)")
         .is("withdrawn_at", null)
         .not("classroom_id", "is", null),
-      supabase
+      supabaseAdmin
         .from("subjects")
         .select("id, classroom_id, name_ar, color_hex, sort_order")
         .eq("is_active", true)
         .order("sort_order", { ascending: true }),
-      supabase.from("teacher_subjects").select("teacher_id, subject_id"),
+      supabaseAdmin.from("teacher_subjects").select("teacher_id, subject_id"),
+
     ]);
 
 
