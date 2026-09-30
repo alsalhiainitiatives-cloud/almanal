@@ -47,7 +47,9 @@ import {
 } from "../chat";
 import { uploadChatAttachment } from "../chat-upload";
 import { chatBoard, chatDeleteMessage, chatSendMessage, chatSetParentPosting } from "../chat.functions";
+import { MessageTemplates } from "./MessageTemplates";
 import { PrivateChatPanel } from "./PrivateChatPanel";
+
 
 /** Readable text colour on top of a classroom colour. */
 function onColor(hex: string) {
