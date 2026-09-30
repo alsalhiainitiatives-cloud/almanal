@@ -352,11 +352,30 @@ export function UsersBoard() {
                             <UserCog className="size-4" />
                             الأدوار
                           </Button>
+                          {canDeleteUsers && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setDeleting(user)}
+                              className="rounded-xl border-destructive/40 font-bold text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="size-4" />
+                              حذف
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
                   );
                 })}
+                {users.length === 0 && (
+                  <tr className="border-t border-border/60">
+                    <td colSpan={6} className="px-5 py-10 text-center text-sm font-bold text-muted-foreground">
+                      لا يوجد مستخدمون مطابقون للبحث أو الفلتر الحالي.
+                    </td>
+                  </tr>
+                )}
+
               </tbody>
             </table>
           </div>
@@ -364,6 +383,7 @@ export function UsersBoard() {
       </section>
 
       <RoleDialog user={editing} onClose={() => setEditing(null)} />
+      <DeleteUserDialog user={deleting} onClose={() => setDeleting(null)} />
       <BulkPermissionDialog
         open={bulkOpen}
         userIds={selected}
