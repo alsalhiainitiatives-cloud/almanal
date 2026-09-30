@@ -46,6 +46,8 @@ export type ChatRoom = {
   /** Child name for the parent view ("أحمد — الفصل الأصفر"). */
   childName: string | null;
   teacherNames: string[];
+  /** When false, only teachers and administration may post in the group chat. */
+  allowParentMessages: boolean;
 };
 
 export type ChatBoard = {
@@ -53,7 +55,12 @@ export type ChatBoard = {
   rooms: ChatRoom[];
   activeRoomId: string | null;
   messages: ChatMessage[];
+  /** May the caller post in the active room's group chat? */
+  canPost: boolean;
+  /** May the caller switch the "parents may post" setting of the active room? */
+  canManagePosting: boolean;
 };
+
 
 export const CHAT_ROLE_LABELS: Record<string, string> = {
   staff: "الإدارة",
