@@ -253,12 +253,16 @@ export async function getChatBoard(
   );
   const signed = await signPaths([...paths, ...avatarPaths]);
 
+  // Parents are identified by their child's name, never by their own name.
+  const childNames = await childNamesByParent(activeRoomId);
+
   const messages: ChatMessage[] = ordered.map((r) => ({
     id: r.id,
     classroomId: r.classroom_id,
     parentMessageId: r.parent_message_id,
     senderId: r.sender_id,
-    senderName: r.sender_name,
+    senderName:
+      r.sender_role === "parent" ? (childNames.get(r.sender_id) ?? r.sender_name) : r.sender_name,
     senderAvatarUrl: (() => {
       const raw = avatarById.get(r.sender_id) ?? null;
       if (!raw) return null;
@@ -277,7 +281,8 @@ export async function getChatBoard(
     mine: r.sender_id === userId,
   }));
 
-  return { role, rooms, activeRoomId, messages };
+  return { role, rooms, activeRoomId, messages, canPost, canManagePosting };
+
 }
 
 export type SendMessageInput = {
