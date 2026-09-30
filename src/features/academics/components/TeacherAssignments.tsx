@@ -61,11 +61,6 @@ export function TeacherAssignments() {
     [teachers],
   );
 
-  const subjectById = useMemo(
-    () => new Map(classrooms.flatMap((room) => room.subjects.map((s) => [s.id, s] as const))),
-    [classrooms],
-  );
-
   const filteredTeachers = useMemo(() => {
     const term = teacherSearch.trim();
     if (!term) return teachers;
@@ -196,12 +191,16 @@ export function TeacherAssignments() {
               </p>
             )}
             {filteredTeachers.map((teacher) => {
-              const assigned = selectedClassroom?.teacherIds.includes(teacher.id) ?? false;
+              const assigned =
+                mode === "subject"
+                  ? (selectedSubject?.teacherIds.includes(teacher.id) ?? false)
+                  : (selectedClassroom?.teacherIds.includes(teacher.id) ?? false);
+              const target = mode === "subject" ? selectedSubject : selectedClassroom;
               return (
                 <button
                   key={teacher.id}
                   type="button"
-                  disabled={!selectedClassroom || saveMutation.isPending}
+                  disabled={!target || busy}
                   onClick={() => toggle(teacher.id)}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-2xl border p-3 text-start transition",
@@ -224,13 +223,16 @@ export function TeacherAssignments() {
                     </span>
                     <span className="block truncate text-[11px] text-muted-foreground">
                       {teacher.classroomIds.length
-                        ? `مُسندة إلى ${teacher.classroomIds.length} فصل`
+                        ? `معلمة فصل · ${teacher.classroomIds.length} فصل`
                         : "غير مُسندة لأي فصل"}
+                      {teacher.subjectIds.length > 0 &&
+                        ` · معلمة مادة · ${teacher.subjectIds.length} مادة`}
                     </span>
                   </span>
                 </button>
               );
             })}
+
           </div>
         </section>
 
@@ -247,8 +249,11 @@ export function TeacherAssignments() {
             الفصول النشطة ({classrooms.length})
           </h3>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            اختر فصلًا ثم اضغط أسماء المعلمات على اليمين لإسنادهن أو فك الإسناد.
+            {mode === "classroom"
+              ? "اختر فصلًا ثم اضغط أسماء المعلمات على اليمين لإسنادهن أو فك الإسناد."
+              : "اختر الفصل ثم المادة بالأسفل، ثم اضغط أسماء المعلمات لإسنادهن للمادة."}
           </p>
+
 
           <div className="mt-3 space-y-2">
             {classrooms.map((room) => {
@@ -257,7 +262,11 @@ export function TeacherAssignments() {
                 <button
                   key={room.id}
                   type="button"
-                  onClick={() => setActiveClassroom(room.id)}
+                  onClick={() => {
+                    setActiveClassroom(room.id);
+                    setActiveSubject("");
+                  }}
+
                   className={cn(
                     "w-full rounded-2xl border p-3 text-start transition",
                     active
@@ -291,7 +300,7 @@ export function TeacherAssignments() {
                           className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary"
                         >
                           {teacherName.get(id) ?? "معلمة"}
-                          {active && (
+                          {active && mode === "classroom" && (
                             <X
                               className="size-3 cursor-pointer"
                               onClick={(event) => {
@@ -308,8 +317,81 @@ export function TeacherAssignments() {
               );
             })}
           </div>
+
+          {mode === "subject" && (
+            <div className="mt-4 border-t border-border/50 pt-4">
+              <h4 className="flex items-center gap-2 text-xs font-black text-foreground">
+                <BookOpen className="size-4 text-primary" />
+                مواد {selectedClassroom?.nameAr ?? "الفصل"} ({classroomSubjects.length})
+              </h4>
+              {classroomSubjects.length === 0 ? (
+                <p className="mt-2 rounded-2xl border border-dashed border-border/70 px-4 py-6 text-center text-[11px] font-bold text-muted-foreground">
+                  لا توجد مواد لهذا الفصل بعد. تُضاف المواد من تبويب «المنهج».
+                </p>
+              ) : (
+                <div className="mt-2 space-y-2">
+                  {classroomSubjects.map((subject) => {
+                    const active = selectedSubject?.id === subject.id;
+                    return (
+                      <button
+                        key={subject.id}
+                        type="button"
+                        onClick={() => setActiveSubject(subject.id)}
+                        className={cn(
+                          "w-full rounded-2xl border p-3 text-start transition",
+                          active
+                            ? "border-primary/60 bg-primary/10 shadow-sm"
+                            : "border-border/60 bg-background/60 hover:border-primary/40",
+                        )}
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <span
+                            className="size-3.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: subject.colorHex }}
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-xs font-black text-foreground">
+                              {subject.nameAr}
+                            </span>
+                            <span className="block text-[11px] text-muted-foreground">
+                              {subject.teacherIds.length
+                                ? `${subject.teacherIds.length} معلمة مادة`
+                                : "لا توجد معلمة مادة"}
+                            </span>
+                          </span>
+                        </span>
+
+                        {subject.teacherIds.length > 0 && (
+                          <span className="mt-2 flex flex-wrap gap-1.5">
+                            {subject.teacherIds.map((id) => (
+                              <span
+                                key={id}
+                                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary"
+                              >
+                                {teacherName.get(id) ?? "معلمة"}
+                                {active && (
+                                  <X
+                                    className="size-3 cursor-pointer"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      toggle(id);
+                                    }}
+                                  />
+                                )}
+                              </span>
+                            ))}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </section>
       </div>
+
 
       {/* Summary */}
       <section className="overflow-hidden rounded-[2rem] border border-border/60 bg-card/80 shadow-sm">
@@ -317,10 +399,10 @@ export function TeacherAssignments() {
           <div>
             <h3 className="text-sm font-black text-foreground">ملخص الإسناد</h3>
             <p className="text-[11px] text-muted-foreground">
-              الفصل · المعلمات المسندة · عدد الأطفال المسجلين
+              الفصل · معلمات الفصل · معلمات المواد · عدد الأطفال المسجلين
             </p>
           </div>
-          {saveMutation.isPending && <Loader2 className="size-4 animate-spin text-primary" />}
+          {busy && <Loader2 className="size-4 animate-spin text-primary" />}
         </header>
         <div className="overflow-x-auto">
           <Table>
@@ -328,7 +410,8 @@ export function TeacherAssignments() {
               <TableRow>
                 <TableHead className="text-start text-[11px] font-black">الفصل</TableHead>
                 <TableHead className="text-start text-[11px] font-black">المرحلة</TableHead>
-                <TableHead className="text-start text-[11px] font-black">المعلمات المسندة</TableHead>
+                <TableHead className="text-start text-[11px] font-black">معلمات الفصل</TableHead>
+                <TableHead className="text-start text-[11px] font-black">معلمات المواد</TableHead>
                 <TableHead className="text-start text-[11px] font-black">الأطفال</TableHead>
                 <TableHead className="text-start text-[11px] font-black">السعة</TableHead>
               </TableRow>
@@ -343,10 +426,24 @@ export function TeacherAssignments() {
                       ? room.teacherIds.map((id) => teacherName.get(id) ?? "معلمة").join(" · ")
                       : "—"}
                   </TableCell>
+                  <TableCell className="text-xs font-bold">
+                    {room.subjects.some((s) => s.teacherIds.length)
+                      ? room.subjects
+                          .filter((s) => s.teacherIds.length)
+                          .map(
+                            (s) =>
+                              `${s.nameAr}: ${s.teacherIds
+                                .map((id) => teacherName.get(id) ?? "معلمة")
+                                .join(" و")}`,
+                          )
+                          .join(" · ")
+                      : "—"}
+                  </TableCell>
                   <TableCell className="text-xs font-black">{room.enrolledCount}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{room.capacity}</TableCell>
                 </TableRow>
               ))}
+
             </TableBody>
           </Table>
         </div>

@@ -66,11 +66,24 @@ export async function getAssessmentBoard(
       .order("sort_order");
     classrooms = (data ?? []) as never;
   } else {
-    const { data: links } = await supabase
-      .from("teacher_classrooms")
-      .select("classroom_id")
-      .eq("teacher_id", userId);
-    const ids = [...new Set((links ?? []).map((l) => l.classroom_id).filter(Boolean))];
+    // A teacher reaches her homeroom classrooms plus the classrooms of the
+    // subjects she is assigned to as a subject teacher.
+    const [{ data: links }, { data: subjectLinks }] = await Promise.all([
+      supabase.from("teacher_classrooms").select("classroom_id").eq("teacher_id", userId),
+      supabase
+        .from("teacher_subjects")
+        .select("subjects(classroom_id)")
+        .eq("teacher_id", userId),
+    ]);
+    const subjectClassroomIds = (
+      (subjectLinks ?? []) as unknown as { subjects: { classroom_id: string } | null }[]
+    ).map((row) => row.subjects?.classroom_id);
+    const ids = [
+      ...new Set(
+        [...(links ?? []).map((l) => l.classroom_id), ...subjectClassroomIds].filter(Boolean),
+      ),
+    ] as string[];
+
     if (ids.length) {
       const { data } = await supabase
         .from("classrooms")
