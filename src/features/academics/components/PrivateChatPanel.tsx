@@ -205,7 +205,7 @@ export function PrivateChatPanel({
 
   const unreadFor = (contact: PrivateContact) => {
     if (!contact.chatId || !contact.lastMessageAt) return false;
-    if (peer?.peerId === contact.peerId) return false;
+    if (peer?.key === contact.key) return false;
     const at = seen[contact.chatId];
     return !at || contact.lastMessageAt > at;
   };
@@ -224,20 +224,31 @@ export function PrivateChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatId, messages.length]);
 
-  // "شات فردي" jumps straight into the guardian of a chosen child, else the first contact.
+  // "شات فردي" jumps straight into the chosen child, else the first contact.
   useEffect(() => {
     if (peer || !list.length) return;
     if (initialChildId) {
       const match = list.find((c) => (c.childIds ?? []).includes(initialChildId));
       if (match) {
-        setPeer({ peerId: match.peerId, chatId: match.chatId });
+        setPeer({
+          key: match.key,
+          peerId: match.peerId,
+          childId: match.childId,
+          chatId: match.chatId,
+        });
         return;
       }
     }
     if (!autoSelectFirst) return;
     const first = list[0]!;
-    setPeer({ peerId: first.peerId, chatId: first.chatId });
+    setPeer({
+      key: first.key,
+      peerId: first.peerId,
+      childId: first.childId,
+      chatId: first.chatId,
+    });
   }, [autoSelectFirst, initialChildId, peer, list]);
+
 
   return (
     <div
