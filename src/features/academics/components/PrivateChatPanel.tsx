@@ -162,16 +162,17 @@ export function PrivateChatPanel({
   }, [chatId, classroomId, queryClient]);
 
   const send = useMutation({
-    mutationFn: () =>
+    mutationFn: (override?: string) =>
       sendFn({
         data: {
           chatId: chatId!,
-          text,
-          attachmentUrl: pending?.path ?? null,
-          attachmentType: pending?.kind ?? null,
-          attachmentName: pending?.name ?? null,
+          text: override ?? text,
+          attachmentUrl: override ? null : (pending?.path ?? null),
+          attachmentType: override ? null : (pending?.kind ?? null),
+          attachmentName: override ? null : (pending?.name ?? null),
         },
       }),
+
     onSuccess: () => {
       setText("");
       setPending(null);
