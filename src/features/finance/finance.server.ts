@@ -460,17 +460,8 @@ export async function createOrUpdateInvoice(
     qurra_covered: quote.qurraCovered,
   };
 
-  let invoiceId = existing?.id ?? null;
-  if (invoiceId) {
-    await db.from("invoices").update(payload).eq("id", invoiceId);
-    await db.from("invoice_items").delete().eq("invoice_id", invoiceId);
-    await db.from("installments").delete().eq("invoice_id", invoiceId);
-  } else {
-    const { data: created, error } = await db.from("invoices").insert(payload).select("id").single();
-    if (error || !created) throw new Error("تعذّر إنشاء الفاتورة.");
-    invoiceId = created.id;
-  }
-
+  // Items, schedule and payment status are written in one checked database
+  // step (apply_invoice_plan) so parents need no elevated server key.
   const items = [
     { kind: "admission", label_ar: "رسوم القبول والتسجيل", amount: quote.admissionFee, qurra_covered: false },
     {
@@ -491,36 +482,33 @@ export async function createOrUpdateInvoice(
     items.push({ kind: "service", label_ar: svc.name, amount: svc.price, qurra_covered: false });
   }
 
-  await db.from("invoice_items").insert(items.map((i) => ({ ...i, invoice_id: invoiceId! })));
-  if (zeroDue) {
-    // No amount is due (full Qurra coverage and no paid services): settle immediately.
-    await db.from("installments").insert({
-      invoice_id: invoiceId!,
-      seq: 1,
-      amount: 0,
-      paid_amount: 0,
-      due_date: schedule[0]?.dueDate ?? new Date().toISOString().slice(0, 10),
-      status: "waived",
-      note: "لا يوجد مبلغ مستحق — مغطى بالكامل",
-      paid_at: new Date().toISOString(),
-    });
-  } else {
-    await db.from("installments").insert(
-      schedule.map((row) => ({
-        invoice_id: invoiceId!,
-        seq: row.seq,
-        amount: row.amount,
-        due_date: row.dueDate,
-      })),
-    );
-  }
+  const installmentRows = zeroDue
+    ? [
+        {
+          seq: 1,
+          amount: 0,
+          paid_amount: 0,
+          due_date: schedule[0]?.dueDate ?? new Date().toISOString().slice(0, 10),
+          status: "waived",
+          note: "لا يوجد مبلغ مستحق — مغطى بالكامل",
+          paid_at: new Date().toISOString(),
+        },
+      ]
+    : schedule.map((row) => ({ seq: row.seq, amount: row.amount, due_date: row.dueDate }));
 
-  await db.from("invoices").update({ paid_total: 0 }).eq("id", invoiceId!);
-  await syncPaymentStatus(db, input.applicationId, {
-    grandTotal: quote.payableTotal,
-    paid: 0,
-    qurraCovered: quote.qurraCovered,
+  const grand = quote.payableTotal;
+  const paymentStatus =
+    grand <= 0 ? (quote.qurraCovered ? "waived" : "paid") : "unpaid";
+
+  const { data: savedId, error: saveError } = await db.rpc("apply_invoice_plan", {
+    _application_id: input.applicationId,
+    _invoice: payload as never,
+    _items: items as never,
+    _installments: installmentRows as never,
+    _payment_status: paymentStatus,
   });
+  if (saveError || !savedId) throw new Error("تعذّر إنشاء الفاتورة.");
+  const invoiceId = savedId as string;
 
   await notify(supabase, {
     roles: ["accountant", "admin"],
@@ -908,8 +896,7 @@ export async function recordReceipt(
   if (error) throw new Error("تعذّر حفظ الإيصال.");
 
   if (input.installmentId) {
-    const db = supabase;
-    await db.from("installments").update({ status: "pending_review" }).eq("id", input.installmentId);
+    await supabase.rpc("mark_installment_pending_review", { _installment_id: input.installmentId });
   }
 
   await notify(supabase, {
