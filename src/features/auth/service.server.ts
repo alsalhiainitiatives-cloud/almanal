@@ -281,80 +281,31 @@ export async function listUsersWithRoles(supabase: Db) {
  * account that still owns admission applications (data would be orphaned).
  */
 export async function deleteUserAccount(
-  _supabase: Db,
+  supabase: Db,
   actorId: string,
   userId: string,
   confirm: string,
 ) {
   if (actorId === userId) throw new Error("لا يمكنك حذف حسابك الشخصي.");
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-  const { data: target } = await supabaseAdmin
-    .from("profiles")
-    .select("id, full_name, email")
-    .eq("id", userId)
-    .maybeSingle();
-  if (!target) throw new Error("الحساب غير موجود.");
-
-  const typed = confirm.trim().toLowerCase();
-  const expected = [target.full_name, target.email]
-    .filter((v): v is string => Boolean(v))
-    .map((v) => v.trim().toLowerCase());
-  if (!expected.includes(typed)) {
-    throw new Error("نص التأكيد غير مطابق — اكتب اسم الحساب أو بريده الإلكتروني بدقة.");
-  }
-
-  const { data: targetRoles } = await supabaseAdmin
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
-  const roles = (targetRoles ?? []).map((r) => r.role as AppRole);
-
-
-  if (roles.includes("admin")) {
-    const { count } = await supabaseAdmin
-      .from("user_roles")
-      .select("user_id", { count: "exact", head: true })
-      .eq("role", "admin");
-    if ((count ?? 0) <= 1) throw new Error("لا يمكن حذف آخر حساب لمدير النظام.");
-  }
-
-  const { count: applicationsCount } = await supabaseAdmin
-    .from("applications")
-    .select("id", { count: "exact", head: true })
-    .eq("parent_id", userId);
-  if ((applicationsCount ?? 0) > 0) {
-    throw new Error(
-      `لا يمكن حذف الحساب لارتباطه بـ ${applicationsCount} طلب التحاق. انقل الطلبات لولي أمر آخر أو احذفها أولًا.`,
-    );
-  }
-
-  // Clean the access rows first so no orphan grants remain if auth deletion fails.
-  await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
-  await (supabaseAdmin as any).from("user_custom_roles").delete().eq("user_id", userId);
-  await (supabaseAdmin as any).from("user_permissions").delete().eq("user_id", userId);
-  await supabaseAdmin.from("user_sessions").delete().eq("user_id", userId);
-  await supabaseAdmin.from("teacher_classrooms").delete().eq("teacher_id", userId);
-  await (supabaseAdmin as any).from("teacher_subjects").delete().eq("teacher_id", userId);
-
-  const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-  if (authError && !/not found/i.test(authError.message)) {
-    throw new Error("تعذّر حذف الحساب من نظام الدخول — حاول مرة أخرى.");
-  }
-
-  await supabaseAdmin.from("profiles").delete().eq("id", userId);
+  // SECURITY DEFINER function re-checks admin + all safety rules in the database.
+  const { data, error } = await (supabase as any).rpc("admin_delete_user_account", {
+    _user_id: userId,
+    _confirm: confirm,
+  });
+  if (error) throw new Error(error.message || "تعذّر حذف الحساب — حاول مرة أخرى.");
+  const target = (data ?? {}) as { fullName?: string | null; email?: string | null; roles?: string[] };
 
   await recordAudit({
     userId: actorId,
     action: "users.delete",
     entity: "profiles",
     entityId: userId,
-    metadata: { email: target?.email ?? null, fullName: target?.full_name ?? null, roles },
+    metadata: { email: target.email ?? null, fullName: target.fullName ?? null, roles: target.roles ?? [] },
     meta: getRequestMeta(),
   });
 
-  return { ok: true as const, fullName: target?.full_name ?? "المستخدم" };
+  return { ok: true as const, fullName: target.fullName ?? "المستخدم" };
 }
 
 export async function replaceUserRoles(
