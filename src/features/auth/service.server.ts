@@ -280,7 +280,12 @@ export async function listUsersWithRoles(supabase: Db) {
  * Refuses to delete the caller's own account, the last remaining admin, or an
  * account that still owns admission applications (data would be orphaned).
  */
-export async function deleteUserAccount(_supabase: Db, actorId: string, userId: string) {
+export async function deleteUserAccount(
+  _supabase: Db,
+  actorId: string,
+  userId: string,
+  confirm: string,
+) {
   if (actorId === userId) throw new Error("لا يمكنك حذف حسابك الشخصي.");
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -290,12 +295,22 @@ export async function deleteUserAccount(_supabase: Db, actorId: string, userId: 
     .select("id, full_name, email")
     .eq("id", userId)
     .maybeSingle();
+  if (!target) throw new Error("الحساب غير موجود.");
+
+  const typed = confirm.trim().toLowerCase();
+  const expected = [target.full_name, target.email]
+    .filter((v): v is string => Boolean(v))
+    .map((v) => v.trim().toLowerCase());
+  if (!expected.includes(typed)) {
+    throw new Error("نص التأكيد غير مطابق — اكتب اسم الحساب أو بريده الإلكتروني بدقة.");
+  }
 
   const { data: targetRoles } = await supabaseAdmin
     .from("user_roles")
     .select("role")
     .eq("user_id", userId);
   const roles = (targetRoles ?? []).map((r) => r.role as AppRole);
+
 
   if (roles.includes("admin")) {
     const { count } = await supabaseAdmin

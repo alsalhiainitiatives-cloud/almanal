@@ -57,7 +57,7 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => deleteUserSchema.parse(data))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    return deleteUserAccount(context.supabase, context.userId, data.userId);
+    return deleteUserAccount(context.supabase, context.userId, data.userId, data.confirm);
   });
 
 
