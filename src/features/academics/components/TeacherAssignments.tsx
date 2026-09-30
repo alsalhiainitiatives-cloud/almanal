@@ -196,12 +196,16 @@ export function TeacherAssignments() {
               </p>
             )}
             {filteredTeachers.map((teacher) => {
-              const assigned = selectedClassroom?.teacherIds.includes(teacher.id) ?? false;
+              const assigned =
+                mode === "subject"
+                  ? (selectedSubject?.teacherIds.includes(teacher.id) ?? false)
+                  : (selectedClassroom?.teacherIds.includes(teacher.id) ?? false);
+              const target = mode === "subject" ? selectedSubject : selectedClassroom;
               return (
                 <button
                   key={teacher.id}
                   type="button"
-                  disabled={!selectedClassroom || saveMutation.isPending}
+                  disabled={!target || busy}
                   onClick={() => toggle(teacher.id)}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-2xl border p-3 text-start transition",
@@ -224,13 +228,16 @@ export function TeacherAssignments() {
                     </span>
                     <span className="block truncate text-[11px] text-muted-foreground">
                       {teacher.classroomIds.length
-                        ? `مُسندة إلى ${teacher.classroomIds.length} فصل`
+                        ? `معلمة فصل · ${teacher.classroomIds.length} فصل`
                         : "غير مُسندة لأي فصل"}
+                      {teacher.subjectIds.length > 0 &&
+                        ` · معلمة مادة · ${teacher.subjectIds.length} مادة`}
                     </span>
                   </span>
                 </button>
               );
             })}
+
           </div>
         </section>
 
