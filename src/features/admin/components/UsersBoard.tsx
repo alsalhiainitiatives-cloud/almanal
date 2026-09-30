@@ -397,6 +397,107 @@ export function UsersBoard() {
   );
 }
 
+function DeleteUserDialog({ user, onClose }: { user: AdminUser | null; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [confirm, setConfirm] = useState("");
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [initializedFor, setInitializedFor] = useState<string | null>(null);
+
+  if (user && initializedFor !== user.id) {
+    setInitializedFor(user.id);
+    setConfirm("");
+    setAcknowledged(false);
+  }
+
+  const expected = (user?.email ?? user?.fullName ?? "").trim();
+  const matches = confirm.trim().toLowerCase() === expected.toLowerCase() && expected.length > 0;
+
+  const mutation = useMutation({
+    mutationFn: () => adminDeleteUser({ data: { userId: user!.id, confirm: confirm.trim() } }),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "user-permission-overrides"] });
+      toast.success(`تم حذف حساب ${result.fullName} نهائيًا`);
+      onClose();
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "تعذّر حذف الحساب."),
+  });
+
+  return (
+    <Dialog open={Boolean(user)} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto rounded-[2rem] sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-start text-lg font-extrabold text-destructive">
+            <AlertTriangle className="size-5" />
+            حذف حساب {user?.fullName} نهائيًا
+          </DialogTitle>
+          <DialogDescription className="text-start text-sm">
+            إجراء لا يمكن التراجع عنه.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="rounded-2xl border-2 border-destructive/30 bg-destructive/5 p-4">
+          <p className="text-xs font-bold leading-relaxed text-muted-foreground">
+            سيتم حذف الحساب من نظام الدخول مع جميع أدواره وصلاحياته وجلساته وإسناداته للفصول
+            والمواد. لن يستطيع صاحب الحساب الدخول بعد ذلك، ولا يمكن استرجاع الحساب.
+            <br />
+            الحسابات المرتبطة بطلبات التحاق لا يمكن حذفها حفاظًا على سجلات الطلبة.
+          </p>
+        </div>
+
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-border/60 p-4 text-start">
+          <Checkbox
+            checked={acknowledged}
+            onCheckedChange={(value) => setAcknowledged(value === true)}
+            className="mt-0.5"
+          />
+          <span className="text-xs font-bold leading-relaxed text-foreground">
+            أفهم أن الحذف نهائي ولا يمكن استرجاع الحساب أو بياناته.
+          </span>
+        </label>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="delete-user-confirm">
+            اكتب «{expected}» للتأكيد
+          </Label>
+          <Input
+            id="delete-user-confirm"
+            value={confirm}
+            dir="ltr"
+            placeholder={expected}
+            onChange={(e) => setConfirm(e.target.value)}
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            className="flex-1 rounded-2xl font-bold"
+            onClick={onClose}
+            disabled={mutation.isPending}
+          >
+            إلغاء
+          </Button>
+          <Button
+            variant="destructive"
+            className="flex-1 rounded-2xl font-bold"
+            disabled={!matches || !acknowledged || mutation.isPending}
+            onClick={() => mutation.mutate()}
+          >
+            {mutation.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Trash2 className="size-4" />
+            )}
+            حذف الحساب نهائيًا
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function BulkPermissionDialog({
   open,
   userIds,
