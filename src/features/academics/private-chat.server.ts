@@ -300,10 +300,33 @@ export async function openPrivateThread(
   let childName: string | null = null;
 
   if (!chatId) {
-    if (role === "staff") throw new Error("الإدارة تطّلع على المحادثات القائمة فقط.");
+    if (role === "staff") {
+      // Staff review conversations read-only: show an empty thread until one starts.
+      const { data: named } = childId
+        ? await supabaseAdmin
+            .from("application_children")
+            .select("name_ar, applications!inner (parent_id)")
+            .eq("id", childId)
+            .maybeSingle()
+        : { data: null };
+      const staffRow = named as unknown as {
+        name_ar: string;
+        applications: { parent_id: string | null } | null;
+      } | null;
+      return {
+        chatId: null,
+        peerId: staffRow?.applications?.parent_id ?? null,
+        peerName: staffRow?.name_ar ?? "عضو",
+        peerAvatarUrl: null,
+        awaitingGuardian: false,
+        readOnly: true,
+        messages: [],
+      };
+    }
 
     if (role === "teacher") {
       if (!childId) throw new Error("يرجى اختيار الطفل المراد محادثة ولي أمره.");
+
 
       // The child must belong to this classroom; its guardian may not exist yet.
       const { data: child } = await supabaseAdmin
