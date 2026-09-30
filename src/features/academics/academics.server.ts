@@ -295,6 +295,16 @@ export type TeacherRow = {
   email: string | null;
   phone: string | null;
   classroomIds: string[];
+  /** Subject-level assignments (subject teacher, not homeroom teacher). */
+  subjectIds: string[];
+};
+
+export type AssignmentSubject = {
+  id: string;
+  classroomId: string;
+  nameAr: string;
+  colorHex: string;
+  teacherIds: string[];
 };
 
 export type AssignmentClassroom = {
@@ -306,6 +316,7 @@ export type AssignmentClassroom = {
   capacity: number;
   enrolledCount: number;
   teacherIds: string[];
+  subjects: AssignmentSubject[];
 };
 
 export type AssignmentBoard = {
@@ -314,12 +325,19 @@ export type AssignmentBoard = {
   classrooms: AssignmentClassroom[];
 };
 
+
 export async function getAssignmentBoard(supabase: Db, userId: string): Promise<AssignmentBoard> {
   await assertSuperAdmin(supabase, userId);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const [{ data: roleRows }, { data: classrooms }, { data: links }, { data: children }] =
-    await Promise.all([
+  const [
+    { data: roleRows },
+    { data: classrooms },
+    { data: links },
+    { data: children },
+    { data: subjectRows },
+    { data: subjectLinks },
+  ] = await Promise.all([
       supabaseAdmin.from("user_roles").select("user_id").eq("role", "teacher"),
       supabase
         .from("classrooms")
@@ -332,7 +350,14 @@ export async function getAssignmentBoard(supabase: Db, userId: string): Promise<
         .select("id, classroom_id, applications!inner(status, archived_at)")
         .is("withdrawn_at", null)
         .not("classroom_id", "is", null),
+      supabase
+        .from("subjects")
+        .select("id, classroom_id, name_ar, color_hex, sort_order")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true }),
+      supabase.from("teacher_subjects").select("teacher_id, subject_id"),
     ]);
+
 
   const teacherIds = [...new Set((roleRows ?? []).map((r) => r.user_id))];
   const { data: profiles } = teacherIds.length
@@ -364,6 +389,35 @@ export async function getAssignmentBoard(supabase: Db, userId: string): Promise<
     enrolled.set(row.classroom_id, (enrolled.get(row.classroom_id) ?? 0) + 1);
   }
 
+  const subjectTeacherRows = (subjectLinks ?? []) as { teacher_id: string; subject_id: string }[];
+  const teachersBySubject = new Map<string, string[]>();
+  const subjectsByTeacher = new Map<string, string[]>();
+  for (const row of subjectTeacherRows) {
+    teachersBySubject.set(row.subject_id, [
+      ...(teachersBySubject.get(row.subject_id) ?? []),
+      row.teacher_id,
+    ]);
+    subjectsByTeacher.set(row.teacher_id, [
+      ...(subjectsByTeacher.get(row.teacher_id) ?? []),
+      row.subject_id,
+    ]);
+  }
+
+  const allSubjects = (
+    (subjectRows ?? []) as unknown as {
+      id: string;
+      classroom_id: string;
+      name_ar: string;
+      color_hex: string;
+    }[]
+  ).map((row) => ({
+    id: row.id,
+    classroomId: row.classroom_id,
+    nameAr: row.name_ar,
+    colorHex: row.color_hex,
+    teacherIds: teachersBySubject.get(row.id) ?? [],
+  }));
+
   const rooms = (
     (classrooms ?? []) as unknown as {
       id: string;
@@ -382,6 +436,7 @@ export async function getAssignmentBoard(supabase: Db, userId: string): Promise<
     capacity: row.capacity,
     enrolledCount: enrolled.get(row.id) ?? 0,
     teacherIds: byClassroom.get(row.id) ?? [],
+    subjects: allSubjects.filter((s) => s.classroomId === row.id),
   }));
 
   const stages = [...new Map(rooms.map((r) => [r.stageId, r.stageNameAr])).entries()].map(
@@ -394,7 +449,9 @@ export async function getAssignmentBoard(supabase: Db, userId: string): Promise<
     email: row.email,
     phone: row.phone,
     classroomIds: byTeacher.get(row.id) ?? [],
+    subjectIds: subjectsByTeacher.get(row.id) ?? [],
   }));
+
   teachers.sort((a, b) => a.fullName.localeCompare(b.fullName, "ar"));
 
   return { stages, teachers, classrooms: rooms };
@@ -522,6 +579,73 @@ export async function setTeacherClassrooms(
   ]);
   return { ok: true, count: unique.length };
 }
+
+/**
+ * Replace the full teacher list of one subject (subject teachers).
+ *
+ * Subject assignments are deliberately independent from classroom
+ * assignments: a subject teacher reaches only her own subject's classroom and
+ * never becomes the classroom's homeroom teacher, so `classrooms.teacher_name`
+ * is left untouched.
+ */
+export async function setSubjectTeachers(
+  supabase: Db,
+  userId: string,
+  subjectId: string,
+  teacherIds: string[],
+) {
+  await assertSuperAdmin(supabase, userId);
+  const unique = [...new Set(teacherIds)];
+
+  const { error: delError } = await supabase
+    .from("teacher_subjects")
+    .delete()
+    .eq("subject_id", subjectId);
+  if (delError) throw new Error(delError.message);
+
+  if (unique.length) {
+    const { error } = await supabase.from("teacher_subjects").insert(
+      unique.map((teacherId) => ({
+        teacher_id: teacherId,
+        subject_id: subjectId,
+        created_by: userId,
+      })),
+    );
+    if (error) throw new Error(error.message);
+  }
+  return { ok: true, count: unique.length };
+}
+
+/** Replace the full subject list of one teacher. */
+export async function setTeacherSubjects(
+  supabase: Db,
+  userId: string,
+  teacherId: string,
+  subjectIds: string[],
+) {
+  await assertSuperAdmin(supabase, userId);
+  const unique = [...new Set(subjectIds)];
+
+  const { error: delError } = await supabase
+    .from("teacher_subjects")
+    .delete()
+    .eq("teacher_id", teacherId);
+  if (delError) throw new Error(delError.message);
+
+  if (unique.length) {
+    const { error } = await supabase.from("teacher_subjects").insert(
+      unique.map((subjectId) => ({
+        teacher_id: teacherId,
+        subject_id: subjectId,
+        created_by: userId,
+      })),
+    );
+    if (error) throw new Error(error.message);
+  }
+  return { ok: true, count: unique.length };
+}
+
+
 
 /* ---------------------------------------------------------------------- */
 /* Copy curriculum between classrooms                                      */

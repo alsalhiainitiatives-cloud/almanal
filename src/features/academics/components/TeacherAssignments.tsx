@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeftRight,
+  BookOpen,
   Check,
   GraduationCap,
   Loader2,
@@ -26,12 +27,22 @@ import { cn } from "@/lib/utils";
 import {
   academicsAssignmentBoard,
   academicsSetClassroomTeachers,
+  academicsSetSubjectTeachers,
 } from "../academics.functions";
+
+type Mode = "classroom" | "subject";
+
+const MODE_LABELS: Record<Mode, string> = {
+  classroom: "إسناد الفصول (معلمة فصل)",
+  subject: "إسناد المواد (معلمة مادة)",
+};
 
 export function TeacherAssignments() {
   const queryClient = useQueryClient();
   const [teacherSearch, setTeacherSearch] = useState("");
   const [activeClassroom, setActiveClassroom] = useState<string>("");
+  const [mode, setMode] = useState<Mode>("classroom");
+  const [activeSubject, setActiveSubject] = useState<string>("");
 
   const boardQuery = useQuery({
     queryKey: ["academics", "assignments"],
@@ -41,10 +52,18 @@ export function TeacherAssignments() {
   const teachers = boardQuery.data?.teachers ?? [];
   const classrooms = boardQuery.data?.classrooms ?? [];
   const selectedClassroom = classrooms.find((room) => room.id === activeClassroom) ?? classrooms[0];
+  const classroomSubjects = selectedClassroom?.subjects ?? [];
+  const selectedSubject =
+    classroomSubjects.find((subject) => subject.id === activeSubject) ?? classroomSubjects[0];
 
   const teacherName = useMemo(
     () => new Map(teachers.map((t) => [t.id, t.fullName])),
     [teachers],
+  );
+
+  const subjectById = useMemo(
+    () => new Map(classrooms.flatMap((room) => room.subjects.map((s) => [s.id, s] as const))),
+    [classrooms],
   );
 
   const filteredTeachers = useMemo(() => {
@@ -67,7 +86,29 @@ export function TeacherAssignments() {
       toast.error(error.message === "forbidden" ? "هذا الإجراء متاح للمدير العام فقط" : error.message),
   });
 
+  const subjectMutation = useMutation({
+    mutationFn: (input: { subjectId: string; teacherIds: string[] }) =>
+      academicsSetSubjectTeachers({ data: input }),
+    onSuccess: () => {
+      toast.success("تم تحديث إسناد المادة");
+      void queryClient.invalidateQueries({ queryKey: ["academics", "assignments"] });
+    },
+    onError: (error: Error) =>
+      toast.error(error.message === "forbidden" ? "هذا الإجراء متاح للمدير العام فقط" : error.message),
+  });
+
+  const busy = saveMutation.isPending || subjectMutation.isPending;
+
   function toggle(teacherId: string) {
+    if (mode === "subject") {
+      if (!selectedSubject) return;
+      const current = selectedSubject.teacherIds;
+      const next = current.includes(teacherId)
+        ? current.filter((id) => id !== teacherId)
+        : [...current, teacherId];
+      subjectMutation.mutate({ subjectId: selectedSubject.id, teacherIds: next });
+      return;
+    }
     if (!selectedClassroom) return;
     const current = selectedClassroom.teacherIds;
     const next = current.includes(teacherId)
@@ -75,6 +116,7 @@ export function TeacherAssignments() {
       : [...current, teacherId];
     saveMutation.mutate({ classroomId: selectedClassroom.id, teacherIds: next });
   }
+
 
   if (boardQuery.isLoading) {
     return (
@@ -97,7 +139,37 @@ export function TeacherAssignments() {
 
   return (
     <div className="space-y-5">
+      {/* Assignment mode */}
+      <section className="rounded-[2rem] border border-border/60 bg-card/80 p-4 shadow-sm">
+        <Label className="text-[11px] font-black text-muted-foreground">نوع الإسناد</Label>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {(["classroom", "subject"] as Mode[]).map((value) => (
+            <Button
+              key={value}
+              type="button"
+              variant={mode === value ? "default" : "outline"}
+              size="sm"
+              className="rounded-2xl text-xs font-black"
+              onClick={() => setMode(value)}
+            >
+              {value === "classroom" ? (
+                <GraduationCap className="me-1.5 size-4" />
+              ) : (
+                <BookOpen className="me-1.5 size-4" />
+              )}
+              {MODE_LABELS[value]}
+            </Button>
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          {mode === "classroom"
+            ? "معلمة الفصل مسؤولة عن الفصل بالكامل: المنهج والتقييم والمتابعة."
+            : "معلمة المادة مسؤولة عن مادتها فقط داخل الفصل، دون أن تكون معلمة الفصل."}
+        </p>
+      </section>
+
       <div className="grid gap-4 lg:grid-cols-[1fr_auto_1fr]">
+
         {/* Teachers */}
         <section className="rounded-[2rem] border border-border/60 bg-card/80 p-5 shadow-sm">
           <header className="flex items-center justify-between gap-3">

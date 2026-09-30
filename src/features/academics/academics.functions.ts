@@ -111,6 +111,32 @@ export const academicsSetTeacherClassrooms = createServerFn({ method: "POST" })
     return setTeacherClassrooms(context.supabase, context.userId, data.teacherId, data.classroomIds);
   });
 
+export const academicsSetSubjectTeachers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({ subjectId: z.string().uuid(), teacherIds: z.array(z.string().uuid()).max(20) })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { setSubjectTeachers } = await import("./academics.server");
+    return setSubjectTeachers(context.supabase, context.userId, data.subjectId, data.teacherIds);
+  });
+
+export const academicsSetTeacherSubjects = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({ teacherId: z.string().uuid(), subjectIds: z.array(z.string().uuid()).max(80) })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { setTeacherSubjects } = await import("./academics.server");
+    return setTeacherSubjects(context.supabase, context.userId, data.teacherId, data.subjectIds);
+  });
+
+
+
 export const academicsCopyCurriculum = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
