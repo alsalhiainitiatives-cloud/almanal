@@ -40,6 +40,9 @@ export type StudyPlan = {
   classroomId: string;
   classroomName: string | null;
   stageName: string | null;
+  /** null = خطة عامة للفصل، وإلا فهي خطة فردية لهذا الطفل. */
+  childId: string | null;
+  childName: string | null;
   planType: PlanType;
   titleAr: string | null;
   notes: string | null;
