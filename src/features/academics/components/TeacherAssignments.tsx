@@ -404,10 +404,10 @@ export function TeacherAssignments() {
           <div>
             <h3 className="text-sm font-black text-foreground">ملخص الإسناد</h3>
             <p className="text-[11px] text-muted-foreground">
-              الفصل · المعلمات المسندة · عدد الأطفال المسجلين
+              الفصل · معلمات الفصل · معلمات المواد · عدد الأطفال المسجلين
             </p>
           </div>
-          {saveMutation.isPending && <Loader2 className="size-4 animate-spin text-primary" />}
+          {busy && <Loader2 className="size-4 animate-spin text-primary" />}
         </header>
         <div className="overflow-x-auto">
           <Table>
@@ -415,7 +415,8 @@ export function TeacherAssignments() {
               <TableRow>
                 <TableHead className="text-start text-[11px] font-black">الفصل</TableHead>
                 <TableHead className="text-start text-[11px] font-black">المرحلة</TableHead>
-                <TableHead className="text-start text-[11px] font-black">المعلمات المسندة</TableHead>
+                <TableHead className="text-start text-[11px] font-black">معلمات الفصل</TableHead>
+                <TableHead className="text-start text-[11px] font-black">معلمات المواد</TableHead>
                 <TableHead className="text-start text-[11px] font-black">الأطفال</TableHead>
                 <TableHead className="text-start text-[11px] font-black">السعة</TableHead>
               </TableRow>
@@ -430,10 +431,24 @@ export function TeacherAssignments() {
                       ? room.teacherIds.map((id) => teacherName.get(id) ?? "معلمة").join(" · ")
                       : "—"}
                   </TableCell>
+                  <TableCell className="text-xs font-bold">
+                    {room.subjects.some((s) => s.teacherIds.length)
+                      ? room.subjects
+                          .filter((s) => s.teacherIds.length)
+                          .map(
+                            (s) =>
+                              `${s.nameAr}: ${s.teacherIds
+                                .map((id) => teacherName.get(id) ?? "معلمة")
+                                .join(" و")}`,
+                          )
+                          .join(" · ")
+                      : "—"}
+                  </TableCell>
                   <TableCell className="text-xs font-black">{room.enrolledCount}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{room.capacity}</TableCell>
                 </TableRow>
               ))}
+
             </TableBody>
           </Table>
         </div>
