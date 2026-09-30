@@ -504,7 +504,29 @@ export function ClassChat() {
                     </div>
                   </ScrollArea>
 
+                  {board.data?.canPost === false ? (
+                  <div className="space-y-2 border-t border-border/60 bg-muted/40 p-4 text-center">
+                    <p className="flex items-center justify-center gap-2 text-xs font-bold text-muted-foreground">
+                      <Lock className="size-4" />
+                      إرسال الرسائل في الشات الجماعي مقتصر على المعلمات
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      يمكنك متابعة رسائل الفصل، وللتواصل المباشر استخدم الرسائل الخاصة مع المعلمة.
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        setTab("private");
+                        setAutoPeer(true);
+                      }}
+                    >
+                      <UserRound className="me-1 size-4" /> مراسلة المعلمة
+                    </Button>
+                  </div>
+                  ) : (
                   <div className="border-t border-border/60 bg-background p-3">
+
                     {replyTo ? (
                       <div className="mb-2 flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-xs">
                         <CornerDownLeft className="size-3" />
