@@ -751,10 +751,11 @@ function RoleDialog({ user, onClose }: { user: AdminUser | null; onClose: () => 
 
         <Button
           onClick={() => mutation.mutate()}
-          disabled={mutation.isPending || selected.length === 0}
+          disabled={mutation.isPending || (selected.length === 0 && selectedCustom.length === 0)}
           className="w-full rounded-2xl py-3 font-bold"
 
         >
+
           {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
           حفظ الأدوار
         </Button>
