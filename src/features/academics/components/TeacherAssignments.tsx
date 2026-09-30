@@ -139,7 +139,37 @@ export function TeacherAssignments() {
 
   return (
     <div className="space-y-5">
+      {/* Assignment mode */}
+      <section className="rounded-[2rem] border border-border/60 bg-card/80 p-4 shadow-sm">
+        <Label className="text-[11px] font-black text-muted-foreground">نوع الإسناد</Label>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {(["classroom", "subject"] as Mode[]).map((value) => (
+            <Button
+              key={value}
+              type="button"
+              variant={mode === value ? "default" : "outline"}
+              size="sm"
+              className="rounded-2xl text-xs font-black"
+              onClick={() => setMode(value)}
+            >
+              {value === "classroom" ? (
+                <GraduationCap className="me-1.5 size-4" />
+              ) : (
+                <BookOpen className="me-1.5 size-4" />
+              )}
+              {MODE_LABELS[value]}
+            </Button>
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          {mode === "classroom"
+            ? "معلمة الفصل مسؤولة عن الفصل بالكامل: المنهج والتقييم والمتابعة."
+            : "معلمة المادة مسؤولة عن مادتها فقط داخل الفصل، دون أن تكون معلمة الفصل."}
+        </p>
+      </section>
+
       <div className="grid gap-4 lg:grid-cols-[1fr_auto_1fr]">
+
         {/* Teachers */}
         <section className="rounded-[2rem] border border-border/60 bg-card/80 p-5 shadow-sm">
           <header className="flex items-center justify-between gap-3">
