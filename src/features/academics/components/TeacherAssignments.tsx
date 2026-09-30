@@ -254,8 +254,11 @@ export function TeacherAssignments() {
             الفصول النشطة ({classrooms.length})
           </h3>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            اختر فصلًا ثم اضغط أسماء المعلمات على اليمين لإسنادهن أو فك الإسناد.
+            {mode === "classroom"
+              ? "اختر فصلًا ثم اضغط أسماء المعلمات على اليمين لإسنادهن أو فك الإسناد."
+              : "اختر الفصل ثم المادة بالأسفل، ثم اضغط أسماء المعلمات لإسنادهن للمادة."}
           </p>
+
 
           <div className="mt-3 space-y-2">
             {classrooms.map((room) => {
