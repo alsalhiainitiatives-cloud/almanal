@@ -789,14 +789,35 @@ export function StudyPlanBuilder() {
             </Card>
 
             <Card className="p-4">
-              <p className="mb-3 text-xs font-black text-muted-foreground">خطط هذا الفصل</p>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-black text-muted-foreground">خطط هذا الفصل</p>
+                <div className="flex items-center gap-1 rounded-xl bg-muted/60 p-1">
+                  {(
+                    [
+                      ["all", "الكل"],
+                      ["classroom", "خطط الفصل"],
+                      ["child", "خطط فردية"],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <Button
+                      key={value}
+                      size="sm"
+                      variant={listFilter === value ? "default" : "ghost"}
+                      className="h-7 px-2 text-[11px]"
+                      onClick={() => setListFilter(value)}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
               {plans.isLoading ? (
                 <Loader2 className="size-4 animate-spin text-muted-foreground" />
-              ) : !plans.data?.length ? (
+              ) : !visiblePlans.length ? (
                 <p className="text-xs text-muted-foreground">لا توجد خطط محفوظة بعد.</p>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {plans.data.map((plan) => (
+                  {visiblePlans.map((plan) => (
                     <div
                       key={plan.id}
                       className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 p-2"
