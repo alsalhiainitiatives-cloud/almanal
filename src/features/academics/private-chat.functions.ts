@@ -18,6 +18,7 @@ export const privateThread = createServerFn({ method: "POST" })
       .object({
         classroomId: z.string().uuid(),
         peerId: z.string().uuid().nullable().optional(),
+        childId: z.string().uuid().nullable().optional(),
         chatId: z.string().uuid().nullable().optional(),
       })
       .parse(data),
@@ -26,6 +27,7 @@ export const privateThread = createServerFn({ method: "POST" })
     const { openPrivateThread } = await import("./private-chat.server");
     return openPrivateThread(context.supabase, context.userId, data);
   });
+
 
 export const privateSendMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

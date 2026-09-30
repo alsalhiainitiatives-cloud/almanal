@@ -81,7 +81,7 @@ export async function listPrivateContacts(
   // Existing chats of this classroom that involve the caller (staff sees all).
   const { data: chats } = await supabase
     .from("private_chats")
-    .select("id, teacher_id, parent_id, updated_at")
+    .select("id, teacher_id, parent_id, child_id, updated_at")
     .eq("class_id", input.classroomId)
     .order("updated_at", { ascending: false })
     .limit(300);
@@ -106,13 +106,17 @@ export async function listPrivateContacts(
     });
   }
 
-  let peers: {
-    peerId: string;
+  type Peer = {
+    key: string;
+    peerId: string | null;
+    childId: string | null;
     subtitle: string | null;
     childIds: string[];
-    /** Children's names — shown instead of the guardian's own name. */
+    /** Child's name — shown instead of the guardian's own name. */
     displayName: string | null;
-  }[] = [];
+    chatId: string | null;
+  };
+  let peers: Peer[] = [];
 
   if (role === "parent") {
     const { data: links } = await supabaseAdmin
@@ -120,50 +124,78 @@ export async function listPrivateContacts(
       .select("teacher_id")
       .eq("classroom_id", input.classroomId);
     peers = [...new Set((links ?? []).map((l) => l.teacher_id).filter(Boolean))].map((id) => ({
+      key: id as string,
       peerId: id as string,
+      childId: null,
       subtitle: "معلمة الفصل",
       childIds: [],
       displayName: null,
+      // A chat created by the teacher before the guardian was linked is keyed by the child.
+      chatId: chatRows.find((c) => c.teacher_id === id)?.id ?? null,
     }));
   } else if (role === "teacher") {
+    // Every child of the classroom, so the teacher can start a conversation herself.
     const { data: children } = await supabaseAdmin
       .from("application_children")
       .select("id, name_ar, applications!inner (parent_id, status)")
       .eq("classroom_id", input.classroomId)
       .eq("applications.status", "approved")
-    .is("withdrawn_at", null)
-      .limit(300);
-    const byParent = new Map<string, { names: string[]; childIds: string[] }>();
-    for (const row of (children ?? []) as unknown as {
+      .is("withdrawn_at", null)
+      .order("name_ar", { ascending: true })
+      .limit(400);
+
+    const rows = (children ?? []) as unknown as {
       id: string;
       name_ar: string;
       applications: { parent_id: string | null } | null;
-    }[]) {
-      const parentId = row.applications?.parent_id;
-      if (!parentId) continue;
-      const entry = byParent.get(parentId) ?? { names: [], childIds: [] };
-      entry.names.push(row.name_ar);
-      entry.childIds.push(row.id);
-      byParent.set(parentId, entry);
-    }
-    peers = [...byParent.entries()].map(([peerId, entry]) => ({
-      peerId,
-      subtitle: null,
-      childIds: entry.childIds,
-      displayName: entry.names.slice(0, 2).join(" و") || null,
-    }));
+    }[];
+
+    const guardianIds = [
+      ...new Set(rows.map((r) => r.applications?.parent_id).filter((v): v is string => Boolean(v))),
+    ];
+    const { data: guardianProfiles } = guardianIds.length
+      ? await supabaseAdmin.from("profiles").select("id, full_name").in("id", guardianIds)
+      : { data: [] as { id: string; full_name: string }[] };
+    const guardianName = new Map((guardianProfiles ?? []).map((p) => [p.id, p.full_name]));
+
+    peers = rows.map((row) => {
+      const parentId = row.applications?.parent_id ?? null;
+      const chatId =
+        chatRows.find((c) => c.child_id === row.id)?.id ??
+        (parentId
+          ? (chatRows.find((c) => !c.child_id && c.parent_id === parentId)?.id ?? null)
+          : null);
+      return {
+        key: row.id,
+        peerId: parentId,
+        childId: row.id,
+        subtitle: parentId
+          ? `ولي الأمر: ${guardianName.get(parentId)?.trim() || "ولي الأمر"}`
+          : "لم يُربط ولي الأمر بعد — الرسائل ستظهر له فور الربط",
+        childIds: [row.id],
+        displayName: row.name_ar,
+        chatId,
+      };
+    });
   } else {
     // Staff moderation: only conversations that already exist.
+    const childIds = [...new Set(chatRows.map((c) => c.child_id).filter((v): v is string => Boolean(v)))];
+    const { data: childRows } = childIds.length
+      ? await supabaseAdmin.from("application_children").select("id, name_ar").in("id", childIds)
+      : { data: [] as { id: string; name_ar: string }[] };
+    const childName = new Map((childRows ?? []).map((c) => [c.id, c.name_ar]));
     peers = chatRows.map((c) => ({
+      key: c.id,
       peerId: c.teacher_id,
-      subtitle: "محادثة خاصة",
-      childIds: [],
+      childId: c.child_id ?? null,
+      subtitle: c.child_id ? `عن الطفل: ${childName.get(c.child_id) ?? "—"}` : "محادثة خاصة",
+      childIds: c.child_id ? [c.child_id] : [],
       displayName: null,
+      chatId: c.id,
     }));
   }
 
-
-  const peerIds = [...new Set(peers.map((p) => p.peerId))];
+  const peerIds = [...new Set(peers.map((p) => p.peerId).filter((v): v is string => Boolean(v)))];
   const { data: profiles } = peerIds.length
     ? await supabaseAdmin.from("profiles").select("id, full_name, avatar_url").in("id", peerIds)
     : { data: [] as { id: string; full_name: string; avatar_url: string | null }[] };
@@ -174,36 +206,33 @@ export async function listPrivateContacts(
       .filter((v): v is string => Boolean(v) && !/^(https?:|data:)/i.test(v!)),
   );
 
-  const chatByPeer = new Map<string, string>();
-  for (const c of chatRows) {
-    if (role === "parent" && c.parent_id === userId) chatByPeer.set(c.teacher_id, c.id);
-    else if (role === "teacher" && c.teacher_id === userId) chatByPeer.set(c.parent_id, c.id);
-    else if (role === "staff") chatByPeer.set(c.teacher_id, c.id);
-  }
-
   const contacts: PrivateContact[] = peers.map((p) => {
-    const chatId = chatByPeer.get(p.peerId) ?? null;
-    const last = chatId ? lastByChat.get(chatId) : null;
-    const profile = profileById.get(p.peerId);
-    const guardianName = profile?.full_name?.trim() || "ولي الأمر";
+    const last = p.chatId ? lastByChat.get(p.chatId) : null;
+    const profile = p.peerId ? profileById.get(p.peerId) : null;
     return {
+      key: p.key,
       peerId: p.peerId,
+      childId: p.childId,
       // Guardians are always presented by their child's name.
       name: p.displayName ?? (profile?.full_name?.trim() || "عضو"),
       avatarUrl: resolveAvatar(profile?.avatar_url ?? null, signed),
-      subtitle: p.displayName ? `ولي الأمر: ${guardianName}` : p.subtitle,
+      subtitle: p.subtitle,
       childIds: p.childIds,
-      chatId,
+      chatId: p.chatId,
       lastMessageAt: last?.at ?? null,
       lastPreview: last?.preview ?? null,
     };
   });
 
-
-  contacts.sort((a, b) => (b.lastMessageAt ?? "").localeCompare(a.lastMessageAt ?? ""));
+  contacts.sort((a, b) => {
+    const at = (b.lastMessageAt ?? "").localeCompare(a.lastMessageAt ?? "");
+    if (at !== 0) return at;
+    return a.name.localeCompare(b.name, "ar");
+  });
 
   return { role, readOnly: role === "staff", contacts };
 }
+
 
 async function loadMessages(
   supabase: Db,
@@ -263,63 +292,159 @@ async function loadMessages(
   }));
 }
 
-/** Opens (creating on first use) the private thread between the caller and one peer. */
+/** Opens (creating on first use) the private thread about one child / with one peer. */
 export async function openPrivateThread(
   supabase: Db,
   userId: string,
-  input: { classroomId: string; peerId?: string | null; chatId?: string | null },
+  input: {
+    classroomId: string;
+    peerId?: string | null;
+    childId?: string | null;
+    chatId?: string | null;
+  },
 ): Promise<PrivateThread> {
   const role = await roleOf(supabase, userId);
   await assertClassroomAccess(supabase, userId, input.classroomId);
 
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
   let chatId = input.chatId ?? null;
   let peerId = input.peerId ?? null;
+  let childId = input.childId ?? null;
+  let childName: string | null = null;
 
   if (!chatId) {
-    if (!peerId) throw new Error("يرجى اختيار الشخص المراد محادثته.");
     if (role === "staff") throw new Error("الإدارة تطّلع على المحادثات القائمة فقط.");
 
-    const teacherId = role === "teacher" ? userId : peerId;
-    const parentId = role === "teacher" ? peerId : userId;
+    if (role === "teacher") {
+      if (!childId) throw new Error("يرجى اختيار الطفل المراد محادثة ولي أمره.");
 
-    const { data: existing } = await supabase
-      .from("private_chats")
-      .select("id")
-      .eq("class_id", input.classroomId)
-      .eq("teacher_id", teacherId)
-      .eq("parent_id", parentId)
-      .maybeSingle();
-
-    if (existing?.id) {
-      chatId = existing.id;
-    } else {
-      const { data: created, error } = await supabase
-        .from("private_chats")
-        .insert({ class_id: input.classroomId, teacher_id: teacherId, parent_id: parentId })
-        .select("id")
+      // The child must belong to this classroom; its guardian may not exist yet.
+      const { data: child } = await supabaseAdmin
+        .from("application_children")
+        .select("id, name_ar, classroom_id, applications!inner (parent_id)")
+        .eq("id", childId)
         .maybeSingle();
-      if (error || !created?.id) {
-        throw new Error("تعذّر بدء المحادثة الخاصة — تأكد من ارتباطك بهذا الفصل.");
+      const row = child as unknown as {
+        id: string;
+        name_ar: string;
+        classroom_id: string | null;
+        applications: { parent_id: string | null } | null;
+      } | null;
+      if (!row || row.classroom_id !== input.classroomId) {
+        throw new Error("هذا الطفل غير مسجّل في هذا الفصل.");
       }
-      chatId = created.id;
+      childName = row.name_ar;
+      peerId = row.applications?.parent_id ?? null;
+
+      const { data: byChild } = await supabase
+        .from("private_chats")
+        .select("id")
+        .eq("class_id", input.classroomId)
+        .eq("teacher_id", userId)
+        .eq("child_id", childId)
+        .maybeSingle();
+
+      if (byChild?.id) {
+        chatId = byChild.id;
+      } else {
+        // Adopt a legacy conversation opened with the guardian before children were keyed.
+        const legacy = peerId
+          ? await supabase
+              .from("private_chats")
+              .select("id")
+              .eq("class_id", input.classroomId)
+              .eq("teacher_id", userId)
+              .eq("parent_id", peerId)
+              .is("child_id", null)
+              .maybeSingle()
+          : { data: null };
+
+        if (legacy.data?.id) {
+          chatId = legacy.data.id;
+          await supabase.from("private_chats").update({ child_id: childId }).eq("id", chatId);
+        } else {
+          const { data: created, error } = await supabase
+            .from("private_chats")
+            .insert({
+              class_id: input.classroomId,
+              teacher_id: userId,
+              parent_id: peerId,
+              child_id: childId,
+            })
+            .select("id")
+            .maybeSingle();
+          if (error || !created?.id) {
+            throw new Error("تعذّر بدء المحادثة الخاصة — تأكدي من إسنادك لهذا الفصل.");
+          }
+          chatId = created.id;
+        }
+      }
+    } else {
+      if (!peerId) throw new Error("يرجى اختيار الشخص المراد محادثته.");
+
+      // A conversation the teacher may already have started about one of my children.
+      const { data: mine } = await supabase
+        .from("private_chats")
+        .select("id, parent_id")
+        .eq("class_id", input.classroomId)
+        .eq("teacher_id", peerId)
+        .order("updated_at", { ascending: false })
+        .limit(1);
+
+      if (mine?.[0]?.id) {
+        chatId = mine[0].id;
+      } else {
+        const { data: created, error } = await supabase
+          .from("private_chats")
+          .insert({ class_id: input.classroomId, teacher_id: peerId, parent_id: userId })
+          .select("id")
+          .maybeSingle();
+        if (error || !created?.id) {
+          throw new Error("تعذّر بدء المحادثة الخاصة — تأكد من ارتباطك بهذا الفصل.");
+        }
+        chatId = created.id;
+      }
     }
   }
 
   const { data: chat } = await supabase
     .from("private_chats")
-    .select("id, teacher_id, parent_id")
+    .select("id, teacher_id, parent_id, child_id")
     .eq("id", chatId)
     .maybeSingle();
   if (!chat) throw new Error("المحادثة غير متاحة.");
 
+  childId = chat.child_id ?? childId;
+
+  // A guardian linked after the conversation started becomes its owner now.
+  if (!chat.parent_id && chat.child_id) {
+    const { data: link } = await supabaseAdmin
+      .from("application_children")
+      .select("name_ar, applications!inner (parent_id)")
+      .eq("id", chat.child_id)
+      .maybeSingle();
+    const linked = link as unknown as {
+      name_ar: string;
+      applications: { parent_id: string | null } | null;
+    } | null;
+    childName = childName ?? linked?.name_ar ?? null;
+    const guardianId = linked?.applications?.parent_id ?? null;
+    if (guardianId) {
+      await supabaseAdmin.from("private_chats").update({ parent_id: guardianId }).eq("id", chat.id);
+      if (chat.teacher_id === userId) peerId = guardianId;
+    }
+  }
+
   if (!peerId) peerId = chat.teacher_id === userId ? chat.parent_id : chat.teacher_id;
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: profile } = await supabaseAdmin
-    .from("profiles")
-    .select("full_name, avatar_url")
-    .eq("id", peerId)
-    .maybeSingle();
+  const { data: profile } = peerId
+    ? await supabaseAdmin
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("id", peerId)
+        .maybeSingle()
+    : { data: null };
   const signed = await signPaths(
     profile?.avatar_url && !/^(https?:|data:)/i.test(profile.avatar_url)
       ? [profile.avatar_url]
@@ -329,17 +454,30 @@ export async function openPrivateThread(
   // Guardians appear everywhere under their child's name.
   const { childNamesByParent } = await import("./chat.server");
   const childNames = await childNamesByParent(input.classroomId);
-  const peerChildName = chat.parent_id === peerId ? (childNames.get(peerId) ?? null) : null;
+  if (!childName && chat.child_id) {
+    const { data: named } = await supabaseAdmin
+      .from("application_children")
+      .select("name_ar")
+      .eq("id", chat.child_id)
+      .maybeSingle();
+    childName = named?.name_ar ?? null;
+  }
+  const peerChildName =
+    chat.teacher_id === userId
+      ? (childName ?? (peerId ? (childNames.get(peerId) ?? null) : null))
+      : null;
 
   return {
     chatId: chat.id,
     peerId,
     peerName: peerChildName ?? profile?.full_name?.trim() ?? "عضو",
     peerAvatarUrl: resolveAvatar(profile?.avatar_url ?? null, signed),
+    awaitingGuardian: chat.teacher_id === userId && !chat.parent_id,
     readOnly: role === "staff",
     messages: await loadMessages(supabase, userId, chat.id, childNames),
   };
 }
+
 
 
 export type SendPrivateInput = {
@@ -357,12 +495,23 @@ export async function sendPrivateMessage(supabase: Db, userId: string, input: Se
 
   const { data: chat } = await supabase
     .from("private_chats")
-    .select("id, class_id, teacher_id, parent_id")
+    .select("id, class_id, teacher_id, parent_id, child_id")
     .eq("id", input.chatId)
     .maybeSingle();
   if (!chat) throw new Error("المحادثة غير متاحة.");
-  if (chat.teacher_id !== userId && chat.parent_id !== userId) {
-    throw new Error("لا يمكنك المشاركة في هذه المحادثة.");
+
+  let guardianId = chat.parent_id;
+  if (chat.teacher_id !== userId && guardianId !== userId) {
+    // A guardian linked to the child after the teacher started the conversation.
+    const { data: isParent } = chat.child_id
+      ? await supabase.rpc("is_child_parent", { _user_id: userId, _child_id: chat.child_id })
+      : { data: false };
+    if (isParent !== true) throw new Error("لا يمكنك المشاركة في هذه المحادثة.");
+    guardianId = userId;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (!chat.parent_id) {
+      await supabaseAdmin.from("private_chats").update({ parent_id: userId }).eq("id", chat.id);
+    }
   }
 
   const { error } = await supabase.from("private_messages").insert({
@@ -380,6 +529,7 @@ export async function sendPrivateMessage(supabase: Db, userId: string, input: Se
     .update({ updated_at: new Date().toISOString() })
     .eq("id", chat.id);
 
+
   try {
     const { notify } = await import("@/features/notifications/notifications.server");
     const { data: profile } = await supabase
@@ -389,19 +539,23 @@ export async function sendPrivateMessage(supabase: Db, userId: string, input: Se
       .maybeSingle();
     const { childNamesByParent } = await import("./chat.server");
     const senderLabel =
-      chat.parent_id === userId
+      guardianId === userId
         ? ((await childNamesByParent(chat.class_id)).get(userId) ?? profile?.full_name ?? null)
         : (profile?.full_name ?? null);
-    const recipient = chat.teacher_id === userId ? chat.parent_id : chat.teacher_id;
+    const recipient = chat.teacher_id === userId ? guardianId : chat.teacher_id;
 
-    await notify(supabase, {
-      userIds: [recipient],
-      kind: "chat_message",
-      title: "رسالة خاصة جديدة",
-      body: `${senderLabel ?? "أحد أعضاء الفصل"}: ${text ? text.slice(0, 120) : "مرفق جديد"}`,
-      link: chat.teacher_id === recipient ? "/ams/academics/chat" : "/class-chat",
-      severity: "info",
-    });
+    // No guardian linked yet: the message waits in the conversation until there is one.
+    if (recipient) {
+      await notify(supabase, {
+        userIds: [recipient],
+        kind: "chat_message",
+        title: "رسالة خاصة جديدة",
+        body: `${senderLabel ?? "أحد أعضاء الفصل"}: ${text ? text.slice(0, 120) : "مرفق جديد"}`,
+        link: chat.teacher_id === recipient ? "/ams/academics/chat" : "/class-chat",
+        severity: "info",
+      });
+    }
+
   } catch (notifyError) {
     console.error("private chat notify failed", notifyError);
   }

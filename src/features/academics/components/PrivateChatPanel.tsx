@@ -40,6 +40,8 @@ import {
   privateSendMessage,
   privateThread,
 } from "../private-chat.functions";
+import { MessageTemplates } from "./MessageTemplates";
+
 
 function KindIcon({ kind }: { kind: string }) {
   if (kind === "image") return <ImageIcon className="size-4" />;
@@ -87,7 +89,13 @@ export function PrivateChatPanel({
   const sendFn = useServerFn(privateSendMessage);
   const deleteFn = useServerFn(privateDeleteMessage);
 
-  const [peer, setPeer] = useState<{ peerId: string; chatId: string | null } | null>(null);
+  const [peer, setPeer] = useState<{
+    key: string;
+    peerId: string | null;
+    childId: string | null;
+    chatId: string | null;
+  } | null>(null);
+
   const [text, setText] = useState("");
   const [pending, setPending] = useState<
     { path: string; kind: "image" | "video" | "file"; name: string } | null
@@ -114,13 +122,19 @@ export function PrivateChatPanel({
   });
 
   const thread = useQuery({
-    queryKey: ["private-chat-thread", classroomId, peer?.peerId, peer?.chatId],
+    queryKey: ["private-chat-thread", classroomId, peer?.key, peer?.chatId],
     queryFn: () =>
       loadThread({
-        data: { classroomId, peerId: peer?.peerId ?? null, chatId: peer?.chatId ?? null },
+        data: {
+          classroomId,
+          peerId: peer?.peerId ?? null,
+          childId: peer?.childId ?? null,
+          chatId: peer?.chatId ?? null,
+        },
       }),
     enabled: Boolean(peer),
   });
+
 
   const chatId = thread.data?.chatId ?? null;
   const messages = thread.data?.messages ?? [];
@@ -150,16 +164,17 @@ export function PrivateChatPanel({
   }, [chatId, classroomId, queryClient]);
 
   const send = useMutation({
-    mutationFn: () =>
+    mutationFn: (override?: string) =>
       sendFn({
         data: {
           chatId: chatId!,
-          text,
-          attachmentUrl: pending?.path ?? null,
-          attachmentType: pending?.kind ?? null,
-          attachmentName: pending?.name ?? null,
+          text: override ?? text,
+          attachmentUrl: override ? null : (pending?.path ?? null),
+          attachmentType: override ? null : (pending?.kind ?? null),
+          attachmentName: override ? null : (pending?.name ?? null),
         },
       }),
+
     onSuccess: () => {
       setText("");
       setPending(null);
@@ -193,7 +208,7 @@ export function PrivateChatPanel({
 
   const unreadFor = (contact: PrivateContact) => {
     if (!contact.chatId || !contact.lastMessageAt) return false;
-    if (peer?.peerId === contact.peerId) return false;
+    if (peer?.key === contact.key) return false;
     const at = seen[contact.chatId];
     return !at || contact.lastMessageAt > at;
   };
@@ -212,20 +227,31 @@ export function PrivateChatPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatId, messages.length]);
 
-  // "شات فردي" jumps straight into the guardian of a chosen child, else the first contact.
+  // "شات فردي" jumps straight into the chosen child, else the first contact.
   useEffect(() => {
     if (peer || !list.length) return;
     if (initialChildId) {
       const match = list.find((c) => (c.childIds ?? []).includes(initialChildId));
       if (match) {
-        setPeer({ peerId: match.peerId, chatId: match.chatId });
+        setPeer({
+          key: match.key,
+          peerId: match.peerId,
+          childId: match.childId,
+          chatId: match.chatId,
+        });
         return;
       }
     }
     if (!autoSelectFirst) return;
     const first = list[0]!;
-    setPeer({ peerId: first.peerId, chatId: first.chatId });
+    setPeer({
+      key: first.key,
+      peerId: first.peerId,
+      childId: first.childId,
+      chatId: first.chatId,
+    });
   }, [autoSelectFirst, initialChildId, peer, list]);
+
 
   return (
     <div
@@ -250,16 +276,24 @@ export function PrivateChatPanel({
           <div className="flex flex-col gap-1">
             {list.map((contact: PrivateContact) => (
               <button
-                key={contact.peerId}
+                key={contact.key}
                 type="button"
-                onClick={() => setPeer({ peerId: contact.peerId, chatId: contact.chatId })}
+                onClick={() =>
+                  setPeer({
+                    key: contact.key,
+                    peerId: contact.peerId,
+                    childId: contact.childId,
+                    chatId: contact.chatId,
+                  })
+                }
                 className={cn(
                   "flex items-center gap-2 rounded-xl border p-2 text-start transition",
-                  peer?.peerId === contact.peerId
+                  peer?.key === contact.key
                     ? "border-primary/50 bg-primary/10"
                     : "border-transparent hover:bg-muted/60",
                 )}
               >
+
                 <UserAvatar
                   name={contact.name}
                   src={contact.avatarUrl}
@@ -306,8 +340,16 @@ export function PrivateChatPanel({
                 className="size-9"
                 fallbackClassName="text-xs"
               />
-              <p className="truncate text-sm font-bold">{thread.data?.peerName ?? "…"}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold">{thread.data?.peerName ?? "…"}</p>
+                {thread.data?.awaitingGuardian ? (
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    لم يُربط ولي الأمر بعد — ستظهر له الرسائل فور الربط أو تسجيل الدخول.
+                  </p>
+                ) : null}
+              </div>
             </div>
+
 
             <ScrollArea className="flex-1">
               <div ref={feedRef} className="flex flex-col gap-3 p-4">
@@ -441,13 +483,20 @@ export function PrivateChatPanel({
                 >
                   <Smile className="size-4" />
                 </Button>
+                <MessageTemplates
+                  classroomId={classroomId}
+                  disabled={readOnly || !chatId}
+                  onInsert={(body) => setText((prev) => (prev ? `${prev}\n${body}` : body))}
+                  onSend={(body) => send.mutate(body)}
+                />
+
                 <Textarea
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
-                      if (chatId && !readOnly && (text.trim() || pending)) send.mutate();
+                      if (chatId && !readOnly && (text.trim() || pending)) send.mutate(undefined);
                     }
                   }}
                   rows={1}
@@ -459,7 +508,7 @@ export function PrivateChatPanel({
                   type="button"
                   size="icon"
                   disabled={readOnly || !chatId || send.isPending || (!text.trim() && !pending)}
-                  onClick={() => send.mutate()}
+                  onClick={() => send.mutate(undefined)}
                   aria-label="إرسال"
                 >
                   {send.isPending ? (

@@ -47,7 +47,9 @@ import {
 } from "../chat";
 import { uploadChatAttachment } from "../chat-upload";
 import { chatBoard, chatDeleteMessage, chatSendMessage, chatSetParentPosting } from "../chat.functions";
+import { MessageTemplates } from "./MessageTemplates";
 import { PrivateChatPanel } from "./PrivateChatPanel";
+
 
 /** Readable text colour on top of a classroom colour. */
 function onColor(hex: string) {
@@ -188,15 +190,16 @@ export function ClassChat() {
   }, [messages.length, activeRoomId, tab]);
 
   const send = useMutation({
-    mutationFn: async () =>
+    mutationFn: async (override?: string) =>
       sendFn({
         data: {
           classroomId: activeRoomId!,
-          body,
-          parentMessageId: replyTo?.id ?? null,
-          attachments: pending,
+          body: override ?? body,
+          parentMessageId: override ? null : (replyTo?.id ?? null),
+          attachments: override ? [] : pending,
         },
       }),
+
     onSuccess: () => {
       setBody("");
       setPending([]);
@@ -591,13 +594,19 @@ export function ClassChat() {
                           <Paperclip className="size-4" />
                         )}
                       </Button>
+                      <MessageTemplates
+                        classroomId={activeRoomId}
+                        onInsert={(text) => setBody((prev) => (prev ? `${prev}\n${text}` : text))}
+                        onSend={(text) => send.mutate(text)}
+                      />
+
                       <Textarea
                         value={body}
                         onChange={(e) => setBody(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !e.shiftKey) {
                             e.preventDefault();
-                            if (body.trim() || pending.length) send.mutate();
+                            if (body.trim() || pending.length) send.mutate(undefined);
                           }
                         }}
                         rows={1}
@@ -608,7 +617,7 @@ export function ClassChat() {
                         type="button"
                         size="icon"
                         disabled={send.isPending || (!body.trim() && !pending.length)}
-                        onClick={() => send.mutate()}
+                        onClick={() => send.mutate(undefined)}
                         aria-label="إرسال"
                       >
                         {send.isPending ? (
