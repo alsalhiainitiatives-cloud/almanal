@@ -80,6 +80,23 @@ export function AcademicsSettingsPanel() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "تعذّر التحديث"),
   });
 
+  const postingMutation = useMutation({
+    mutationFn: (input: { classroomId: string; allowed: boolean }) =>
+      setParentPosting({ data: input }),
+    onSuccess: (_r, input) => {
+      toast.success(
+        input.allowed
+          ? "تم السماح لأولياء الأمور بالإرسال"
+          : "الشات الجماعي أصبح مقتصرًا على المعلمات",
+      );
+      invalidate();
+      void queryClient.invalidateQueries({ queryKey: ["class-chat"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "تعذّر التحديث"),
+  });
+
+
+
   if (isLoading || !data) {
     return (
       <div className="grid place-items-center rounded-3xl border border-border/60 bg-card p-16">
