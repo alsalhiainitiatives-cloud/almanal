@@ -185,17 +185,20 @@ export async function listPrivateContacts(
     const chatId = chatByPeer.get(p.peerId) ?? null;
     const last = chatId ? lastByChat.get(chatId) : null;
     const profile = profileById.get(p.peerId);
+    const guardianName = profile?.full_name?.trim() || "ولي الأمر";
     return {
       peerId: p.peerId,
-      name: profile?.full_name?.trim() || "عضو",
+      // Guardians are always presented by their child's name.
+      name: p.displayName ?? (profile?.full_name?.trim() || "عضو"),
       avatarUrl: resolveAvatar(profile?.avatar_url ?? null, signed),
-      subtitle: p.subtitle,
+      subtitle: p.displayName ? `ولي الأمر: ${guardianName}` : p.subtitle,
       childIds: p.childIds,
       chatId,
       lastMessageAt: last?.at ?? null,
       lastPreview: last?.preview ?? null,
     };
   });
+
 
   contacts.sort((a, b) => (b.lastMessageAt ?? "").localeCompare(a.lastMessageAt ?? ""));
 
