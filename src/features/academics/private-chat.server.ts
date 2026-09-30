@@ -387,7 +387,13 @@ export async function sendPrivateMessage(supabase: Db, userId: string, input: Se
       .select("full_name")
       .eq("id", userId)
       .maybeSingle();
+    const { childNamesByParent } = await import("./chat.server");
+    const senderLabel =
+      chat.parent_id === userId
+        ? ((await childNamesByParent(chat.class_id)).get(userId) ?? profile?.full_name ?? null)
+        : (profile?.full_name ?? null);
     const recipient = chat.teacher_id === userId ? chat.parent_id : chat.teacher_id;
+
     await notify(supabase, {
       userIds: [recipient],
       kind: "chat_message",
