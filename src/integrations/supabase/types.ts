@@ -3622,6 +3622,38 @@ export type Database = {
           },
         ]
       }
+      teacher_subjects: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          subject_id: string
+          teacher_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          subject_id: string
+          teacher_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          subject_id?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_subjects_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       topics: {
         Row: {
           created_at: string
@@ -4099,6 +4131,10 @@ export type Database = {
         Returns: boolean
       }
       is_school_staff: { Args: { _user_id: string }; Returns: boolean }
+      is_subject_teacher: {
+        Args: { _classroom_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_teacher: { Args: { _user_id: string }; Returns: boolean }
       is_teacher_of_child: {
         Args: { _child_id: string; _user_id: string }
