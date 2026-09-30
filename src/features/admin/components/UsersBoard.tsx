@@ -102,8 +102,11 @@ export function UsersBoard() {
   const roleCounts = useMemo(() => {
     const map = new Map<string, number>();
     for (const user of allUsers) {
-      if (user.roles.length === 0) map.set("none", (map.get("none") ?? 0) + 1);
+      const customIds = user.customRoleIds ?? [];
+      if (user.roles.length === 0 && customIds.length === 0)
+        map.set("none", (map.get("none") ?? 0) + 1);
       for (const role of user.roles) map.set(role, (map.get(role) ?? 0) + 1);
+      for (const id of customIds) map.set(`custom:${id}`, (map.get(`custom:${id}`) ?? 0) + 1);
     }
     return map;
   }, [allUsers]);
@@ -111,18 +114,22 @@ export function UsersBoard() {
   const users = useMemo(() => {
     const term = search.trim().toLowerCase();
     return allUsers.filter((user) => {
+      const customIds = user.customRoleIds ?? [];
       const matchesRole =
         roleFilter === "all"
           ? true
           : roleFilter === "none"
-            ? user.roles.length === 0
-            : user.roles.includes(roleFilter);
+            ? user.roles.length === 0 && customIds.length === 0
+            : roleFilter.startsWith("custom:")
+              ? customIds.includes(roleFilter.slice("custom:".length))
+              : user.roles.includes(roleFilter as AppRole);
       if (!matchesRole) return false;
       if (!term) return true;
       return [user.fullName, user.email, user.phone]
         .filter((v): v is string => Boolean(v))
         .some((value) => value.toLowerCase().includes(term));
     });
+
   }, [allUsers, roleFilter, search]);
 
   const allSelected = users.length > 0 && users.every((u) => selected.includes(u.id));
