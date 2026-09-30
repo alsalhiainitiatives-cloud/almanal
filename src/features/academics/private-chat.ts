@@ -52,12 +52,15 @@ export type PrivateMessage = {
 
 export type PrivateThread = {
   chatId: string;
-  peerId: string;
+  peerId: string | null;
   peerName: string;
   peerAvatarUrl: string | null;
+  /** True when the child's guardian has not been linked yet. */
+  awaitingGuardian: boolean;
   readOnly: boolean;
   messages: PrivateMessage[];
 };
+
 
 export const PRIVATE_LIMITS_MB: Record<PrivateAttachmentKind, number> = {
   image: 8,
