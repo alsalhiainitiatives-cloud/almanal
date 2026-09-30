@@ -348,11 +348,34 @@ export function AssessmentsBoard() {
       </div>
 
 
+      {board.subjectScoped && board.scopeSubjectNames.length ? (
+        <div className="rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-xs font-bold text-primary">
+          أنت معلمة مادة في هذا الفصل — يمكنك رصد تقييمات:{" "}
+          {board.scopeSubjectNames.join(" · ")} فقط. وتظهر تقييماتك مع بقية المواد في التقرير
+          النهائي لولي الأمر ومعلمات الفصل.
+        </div>
+      ) : null}
+
+      {board.emptySubjects.length ? (
+        <div className="rounded-2xl border border-dashed border-amber-400/70 bg-amber-50/60 px-4 py-3 text-xs font-bold text-amber-800">
+          هذه المواد لا تحتوي دروسًا بعد فلا يمكن رصد تقييماتها:{" "}
+          {board.emptySubjects.map((s) => s.nameAr).join(" · ")} — أضيفي الدروس من «إدارة المنهج»
+          لتظهر هنا.
+        </div>
+      ) : null}
+
       {!board.classrooms.length ? (
         <EmptyState text="لا توجد فصول مسندة إليك حتى الآن — يرجى مراجعة إدارة المدرسة." />
       ) : !board.lessons.length ? (
-        <EmptyState text="لا توجد دروس في منهج هذا الفصل — أضيفي المواد والمحاور والدروس من «إدارة المنهج» أولًا." />
+        <EmptyState
+          text={
+            board.subjectScoped
+              ? "لا توجد دروس في المواد المسندة إليك في هذا الفصل — أضيفي الدروس من «إدارة المنهج» أولًا."
+              : "لا توجد دروس في منهج هذا الفصل — أضيفي المواد والمحاور والدروس من «إدارة المنهج» أولًا."
+          }
+        />
       ) : !board.children.length ? (
+
         <EmptyState text="لا يوجد أطفال مسجّلون في هذا الفصل حتى الآن." />
       ) : focusChild ? (
         <div className="space-y-5">
