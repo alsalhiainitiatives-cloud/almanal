@@ -305,7 +305,7 @@ export function TeacherAssignments() {
                           className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary"
                         >
                           {teacherName.get(id) ?? "معلمة"}
-                          {active && (
+                          {active && mode === "classroom" && (
                             <X
                               className="size-3 cursor-pointer"
                               onClick={(event) => {
