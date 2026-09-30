@@ -81,7 +81,7 @@ export async function listPrivateContacts(
   // Existing chats of this classroom that involve the caller (staff sees all).
   const { data: chats } = await supabase
     .from("private_chats")
-    .select("id, teacher_id, parent_id, updated_at")
+    .select("id, teacher_id, parent_id, child_id, updated_at")
     .eq("class_id", input.classroomId)
     .order("updated_at", { ascending: false })
     .limit(300);
@@ -106,13 +106,17 @@ export async function listPrivateContacts(
     });
   }
 
-  let peers: {
-    peerId: string;
+  type Peer = {
+    key: string;
+    peerId: string | null;
+    childId: string | null;
     subtitle: string | null;
     childIds: string[];
-    /** Children's names — shown instead of the guardian's own name. */
+    /** Child's name — shown instead of the guardian's own name. */
     displayName: string | null;
-  }[] = [];
+    chatId: string | null;
+  };
+  let peers: Peer[] = [];
 
   if (role === "parent") {
     const { data: links } = await supabaseAdmin
@@ -120,50 +124,78 @@ export async function listPrivateContacts(
       .select("teacher_id")
       .eq("classroom_id", input.classroomId);
     peers = [...new Set((links ?? []).map((l) => l.teacher_id).filter(Boolean))].map((id) => ({
+      key: id as string,
       peerId: id as string,
+      childId: null,
       subtitle: "معلمة الفصل",
       childIds: [],
       displayName: null,
+      // A chat created by the teacher before the guardian was linked is keyed by the child.
+      chatId: chatRows.find((c) => c.teacher_id === id)?.id ?? null,
     }));
   } else if (role === "teacher") {
+    // Every child of the classroom, so the teacher can start a conversation herself.
     const { data: children } = await supabaseAdmin
       .from("application_children")
       .select("id, name_ar, applications!inner (parent_id, status)")
       .eq("classroom_id", input.classroomId)
       .eq("applications.status", "approved")
-    .is("withdrawn_at", null)
-      .limit(300);
-    const byParent = new Map<string, { names: string[]; childIds: string[] }>();
-    for (const row of (children ?? []) as unknown as {
+      .is("withdrawn_at", null)
+      .order("name_ar", { ascending: true })
+      .limit(400);
+
+    const rows = (children ?? []) as unknown as {
       id: string;
       name_ar: string;
       applications: { parent_id: string | null } | null;
-    }[]) {
-      const parentId = row.applications?.parent_id;
-      if (!parentId) continue;
-      const entry = byParent.get(parentId) ?? { names: [], childIds: [] };
-      entry.names.push(row.name_ar);
-      entry.childIds.push(row.id);
-      byParent.set(parentId, entry);
-    }
-    peers = [...byParent.entries()].map(([peerId, entry]) => ({
-      peerId,
-      subtitle: null,
-      childIds: entry.childIds,
-      displayName: entry.names.slice(0, 2).join(" و") || null,
-    }));
+    }[];
+
+    const guardianIds = [
+      ...new Set(rows.map((r) => r.applications?.parent_id).filter((v): v is string => Boolean(v))),
+    ];
+    const { data: guardianProfiles } = guardianIds.length
+      ? await supabaseAdmin.from("profiles").select("id, full_name").in("id", guardianIds)
+      : { data: [] as { id: string; full_name: string }[] };
+    const guardianName = new Map((guardianProfiles ?? []).map((p) => [p.id, p.full_name]));
+
+    peers = rows.map((row) => {
+      const parentId = row.applications?.parent_id ?? null;
+      const chatId =
+        chatRows.find((c) => c.child_id === row.id)?.id ??
+        (parentId
+          ? (chatRows.find((c) => !c.child_id && c.parent_id === parentId)?.id ?? null)
+          : null);
+      return {
+        key: row.id,
+        peerId: parentId,
+        childId: row.id,
+        subtitle: parentId
+          ? `ولي الأمر: ${guardianName.get(parentId)?.trim() || "ولي الأمر"}`
+          : "لم يُربط ولي الأمر بعد — الرسائل ستظهر له فور الربط",
+        childIds: [row.id],
+        displayName: row.name_ar,
+        chatId,
+      };
+    });
   } else {
     // Staff moderation: only conversations that already exist.
+    const childIds = [...new Set(chatRows.map((c) => c.child_id).filter((v): v is string => Boolean(v)))];
+    const { data: childRows } = childIds.length
+      ? await supabaseAdmin.from("application_children").select("id, name_ar").in("id", childIds)
+      : { data: [] as { id: string; name_ar: string }[] };
+    const childName = new Map((childRows ?? []).map((c) => [c.id, c.name_ar]));
     peers = chatRows.map((c) => ({
+      key: c.id,
       peerId: c.teacher_id,
-      subtitle: "محادثة خاصة",
-      childIds: [],
+      childId: c.child_id ?? null,
+      subtitle: c.child_id ? `عن الطفل: ${childName.get(c.child_id) ?? "—"}` : "محادثة خاصة",
+      childIds: c.child_id ? [c.child_id] : [],
       displayName: null,
+      chatId: c.id,
     }));
   }
 
-
-  const peerIds = [...new Set(peers.map((p) => p.peerId))];
+  const peerIds = [...new Set(peers.map((p) => p.peerId).filter((v): v is string => Boolean(v)))];
   const { data: profiles } = peerIds.length
     ? await supabaseAdmin.from("profiles").select("id, full_name, avatar_url").in("id", peerIds)
     : { data: [] as { id: string; full_name: string; avatar_url: string | null }[] };
@@ -174,36 +206,33 @@ export async function listPrivateContacts(
       .filter((v): v is string => Boolean(v) && !/^(https?:|data:)/i.test(v!)),
   );
 
-  const chatByPeer = new Map<string, string>();
-  for (const c of chatRows) {
-    if (role === "parent" && c.parent_id === userId) chatByPeer.set(c.teacher_id, c.id);
-    else if (role === "teacher" && c.teacher_id === userId) chatByPeer.set(c.parent_id, c.id);
-    else if (role === "staff") chatByPeer.set(c.teacher_id, c.id);
-  }
-
   const contacts: PrivateContact[] = peers.map((p) => {
-    const chatId = chatByPeer.get(p.peerId) ?? null;
-    const last = chatId ? lastByChat.get(chatId) : null;
-    const profile = profileById.get(p.peerId);
-    const guardianName = profile?.full_name?.trim() || "ولي الأمر";
+    const last = p.chatId ? lastByChat.get(p.chatId) : null;
+    const profile = p.peerId ? profileById.get(p.peerId) : null;
     return {
+      key: p.key,
       peerId: p.peerId,
+      childId: p.childId,
       // Guardians are always presented by their child's name.
       name: p.displayName ?? (profile?.full_name?.trim() || "عضو"),
       avatarUrl: resolveAvatar(profile?.avatar_url ?? null, signed),
-      subtitle: p.displayName ? `ولي الأمر: ${guardianName}` : p.subtitle,
+      subtitle: p.subtitle,
       childIds: p.childIds,
-      chatId,
+      chatId: p.chatId,
       lastMessageAt: last?.at ?? null,
       lastPreview: last?.preview ?? null,
     };
   });
 
-
-  contacts.sort((a, b) => (b.lastMessageAt ?? "").localeCompare(a.lastMessageAt ?? ""));
+  contacts.sort((a, b) => {
+    const at = (b.lastMessageAt ?? "").localeCompare(a.lastMessageAt ?? "");
+    if (at !== 0) return at;
+    return a.name.localeCompare(b.name, "ar");
+  });
 
   return { role, readOnly: role === "staff", contacts };
 }
+
 
 async function loadMessages(
   supabase: Db,
