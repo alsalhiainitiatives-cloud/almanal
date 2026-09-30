@@ -209,7 +209,10 @@ async function loadMessages(
   supabase: Db,
   userId: string,
   chatId: string,
+  /** Guardian id → child name, so a guardian's messages carry the child's name. */
+  childNameByParent?: Map<string, string>,
 ): Promise<PrivateMessage[]> {
+
   const { data: rows } = await supabase
     .from("private_messages")
     .select(
