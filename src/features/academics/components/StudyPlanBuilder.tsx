@@ -828,6 +828,9 @@ export function StudyPlanBuilder() {
                           {formatPlanRange(plan)} · {plan.items.length} درس
                         </p>
                       </div>
+                      <Badge variant={plan.childId ? "default" : "outline"} className="text-[11px]">
+                        {planScopeBadge(plan)}
+                      </Badge>
                       <Badge variant={plan.published ? "default" : "secondary"}>
                         {plan.published ? "منشورة" : "مسودة"}
                       </Badge>
