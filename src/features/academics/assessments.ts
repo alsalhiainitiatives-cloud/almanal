@@ -159,4 +159,11 @@ export type AssessmentBoard = {
   lessons: AssessmentLesson[];
   children: AssessmentChild[];
   cells: AssessmentCell[];
+  /** True when the signed-in teacher only evaluates her own assigned subjects. */
+  subjectScoped: boolean;
+  /** Names of the subjects the signed-in user may evaluate in this classroom. */
+  scopeSubjectNames: string[];
+  /** Subjects visible to the user that still have no lessons to evaluate. */
+  emptySubjects: { nameAr: string; colorHex: string }[];
 };
+
