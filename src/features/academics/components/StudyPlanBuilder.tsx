@@ -585,7 +585,12 @@ export function StudyPlanBuilder() {
         </label>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={() => save.mutate()} disabled={save.isPending || !classroomId}>
+          <Button
+            onClick={() => save.mutate()}
+            disabled={
+              save.isPending || !classroomId || (scope === "child" && !draft.childId)
+            }
+          >
             {save.isPending ? <Loader2 className="me-1 size-4 animate-spin" /> : <Save className="me-1 size-4" />}
             حفظ الخطة
           </Button>
