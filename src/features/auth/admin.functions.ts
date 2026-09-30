@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   bulkRolePermissionSchema,
   bulkUserPermissionSchema,
+  deleteUserSchema,
   rolePermissionSchema,
   roleAssignmentSchema,
 } from "./admin-schemas";
@@ -11,6 +12,7 @@ import {
   assertAdmin,
   bulkSetRolePermissions,
   bulkSetUserPermissions,
+  deleteUserAccount,
   listAuditEntries,
   listRolePermissionMatrix,
   listUserPermissionOverrides,
@@ -18,6 +20,7 @@ import {
   replaceUserRoles,
   setRolePermission,
 } from "./service.server";
+
 
 export const adminBulkSetRolePermissions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -48,6 +51,15 @@ export const adminSetUserRoles = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     return replaceUserRoles(context.supabase, context.userId, data.userId, data.roles);
   });
+
+export const adminDeleteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => deleteUserSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    return deleteUserAccount(context.supabase, context.userId, data.userId, data.confirm);
+  });
+
 
 export const adminListAuditLogs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

@@ -20,6 +20,15 @@ export const roleAssignmentSchema = z.object({
 
 export type RoleAssignmentInput = z.infer<typeof roleAssignmentSchema>;
 
+export const deleteUserSchema = z.object({
+  userId: z.string().uuid(),
+  /** The admin must retype the account's name or email to confirm. */
+  confirm: z.string().min(1, "يجب كتابة نص التأكيد"),
+});
+
+export type DeleteUserInput = z.infer<typeof deleteUserSchema>;
+
+
 export const rolePermissionSchema = z.object({
   role: z.enum([
     "parent",

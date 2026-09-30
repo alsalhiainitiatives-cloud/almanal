@@ -1,10 +1,21 @@
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { GraduationCap, KeyRound, Loader2, ShieldAlert, UserCog } from "lucide-react";
+import {
+  AlertTriangle,
+  GraduationCap,
+  KeyRound,
+  Loader2,
+  Search,
+  ShieldAlert,
+  Trash2,
+  UserCog,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -14,15 +25,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
 import { useAuth } from "@/features/auth/AuthProvider";
 
 import {
   adminBulkSetUserPermissions,
+  adminDeleteUser,
   adminListUsers,
   adminListUserPermissionOverrides,
   adminSetUserRoles,
   getRolePermissionMatrix,
 } from "@/features/auth/admin.functions";
+
 import {
   adminSetUserCustomRoles,
   getCustomRoleMatrix,
@@ -42,12 +56,17 @@ import {
 type AdminUser = Awaited<ReturnType<typeof adminListUsers>>[number];
 
 export function UsersBoard() {
-  const { hasPermission, loadingContext } = useAuth();
+  const { hasPermission, loadingContext, roles: myRoles } = useAuth();
   const canManageRoles = hasPermission(P.rolesManage);
   const canManagePermissions = hasPermission(P.permissionsManage) || canManageRoles;
+  const canDeleteUsers = (myRoles as string[]).includes("admin");
   const [editing, setEditing] = useState<AdminUser | null>(null);
+  const [deleting, setDeleting] = useState<AdminUser | null>(null);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"all" | "none" | AppRole>("all");
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkOpen, setBulkOpen] = useState(false);
+
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin", "users"],
@@ -78,8 +97,36 @@ export function UsersBoard() {
     [customRolesData?.roles],
   );
 
-  const users = data ?? [];
-  const allSelected = users.length > 0 && selected.length === users.length;
+  const allUsers = data ?? [];
+
+  const roleCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const user of allUsers) {
+      if (user.roles.length === 0) map.set("none", (map.get("none") ?? 0) + 1);
+      for (const role of user.roles) map.set(role, (map.get(role) ?? 0) + 1);
+    }
+    return map;
+  }, [allUsers]);
+
+  const users = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return allUsers.filter((user) => {
+      const matchesRole =
+        roleFilter === "all"
+          ? true
+          : roleFilter === "none"
+            ? user.roles.length === 0
+            : user.roles.includes(roleFilter);
+      if (!matchesRole) return false;
+      if (!term) return true;
+      return [user.fullName, user.email, user.phone]
+        .filter((v): v is string => Boolean(v))
+        .some((value) => value.toLowerCase().includes(term));
+    });
+  }, [allUsers, roleFilter, search]);
+
+  const allSelected = users.length > 0 && users.every((u) => selected.includes(u.id));
+
 
 
   if (!loadingContext && !hasPermission(P.usersView)) {
@@ -88,6 +135,62 @@ export function UsersBoard() {
 
   return (
     <div className="space-y-5">
+      <div className="space-y-3 rounded-[1.5rem] border border-border/60 bg-card/80 px-5 py-4 shadow-soft">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative min-w-[240px] flex-1">
+            <Search className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="ابحث بالاسم أو البريد الإلكتروني أو الجوال…"
+              className="ps-9"
+              aria-label="بحث في المستخدمين"
+            />
+          </div>
+          <p className="text-xs font-bold text-muted-foreground">
+            {users.length} من {allUsers.length} مستخدم
+          </p>
+          {(search || roleFilter !== "all") && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="rounded-xl font-bold"
+              onClick={() => {
+                setSearch("");
+                setRoleFilter("all");
+              }}
+            >
+              إظهار الكل
+            </Button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              ["all", `الكل (${allUsers.length})`],
+              ...ALL_ROLES.map(
+                (role) => [role, `${ROLE_LABELS[role]} (${roleCounts.get(role) ?? 0})`] as const,
+              ),
+              ["none", `بدون دور (${roleCounts.get("none") ?? 0})`],
+            ] as Array<[string, string]>
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setRoleFilter(value as "all" | "none" | AppRole)}
+              className={`rounded-full px-3.5 py-1.5 text-[11px] font-bold transition-colors ${
+                roleFilter === value
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-accent"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+
       {canManagePermissions && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-border/60 bg-card/80 px-5 py-4 shadow-soft">
           <p className="text-sm font-bold text-foreground">
@@ -249,11 +352,30 @@ export function UsersBoard() {
                             <UserCog className="size-4" />
                             الأدوار
                           </Button>
+                          {canDeleteUsers && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setDeleting(user)}
+                              className="rounded-xl border-destructive/40 font-bold text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="size-4" />
+                              حذف
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
                   );
                 })}
+                {users.length === 0 && (
+                  <tr className="border-t border-border/60">
+                    <td colSpan={6} className="px-5 py-10 text-center text-sm font-bold text-muted-foreground">
+                      لا يوجد مستخدمون مطابقون للبحث أو الفلتر الحالي.
+                    </td>
+                  </tr>
+                )}
+
               </tbody>
             </table>
           </div>
@@ -261,6 +383,7 @@ export function UsersBoard() {
       </section>
 
       <RoleDialog user={editing} onClose={() => setEditing(null)} />
+      <DeleteUserDialog user={deleting} onClose={() => setDeleting(null)} />
       <BulkPermissionDialog
         open={bulkOpen}
         userIds={selected}
@@ -271,6 +394,107 @@ export function UsersBoard() {
         }}
       />
     </div>
+  );
+}
+
+function DeleteUserDialog({ user, onClose }: { user: AdminUser | null; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [confirm, setConfirm] = useState("");
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [initializedFor, setInitializedFor] = useState<string | null>(null);
+
+  if (user && initializedFor !== user.id) {
+    setInitializedFor(user.id);
+    setConfirm("");
+    setAcknowledged(false);
+  }
+
+  const expected = (user?.email ?? user?.fullName ?? "").trim();
+  const matches = confirm.trim().toLowerCase() === expected.toLowerCase() && expected.length > 0;
+
+  const mutation = useMutation({
+    mutationFn: () => adminDeleteUser({ data: { userId: user!.id, confirm: confirm.trim() } }),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "user-permission-overrides"] });
+      toast.success(`تم حذف حساب ${result.fullName} نهائيًا`);
+      onClose();
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "تعذّر حذف الحساب."),
+  });
+
+  return (
+    <Dialog open={Boolean(user)} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto rounded-[2rem] sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-start text-lg font-extrabold text-destructive">
+            <AlertTriangle className="size-5" />
+            حذف حساب {user?.fullName} نهائيًا
+          </DialogTitle>
+          <DialogDescription className="text-start text-sm">
+            إجراء لا يمكن التراجع عنه.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="rounded-2xl border-2 border-destructive/30 bg-destructive/5 p-4">
+          <p className="text-xs font-bold leading-relaxed text-muted-foreground">
+            سيتم حذف الحساب من نظام الدخول مع جميع أدواره وصلاحياته وجلساته وإسناداته للفصول
+            والمواد. لن يستطيع صاحب الحساب الدخول بعد ذلك، ولا يمكن استرجاع الحساب.
+            <br />
+            الحسابات المرتبطة بطلبات التحاق لا يمكن حذفها حفاظًا على سجلات الطلبة.
+          </p>
+        </div>
+
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-border/60 p-4 text-start">
+          <Checkbox
+            checked={acknowledged}
+            onCheckedChange={(value) => setAcknowledged(value === true)}
+            className="mt-0.5"
+          />
+          <span className="text-xs font-bold leading-relaxed text-foreground">
+            أفهم أن الحذف نهائي ولا يمكن استرجاع الحساب أو بياناته.
+          </span>
+        </label>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="delete-user-confirm">
+            اكتب «{expected}» للتأكيد
+          </Label>
+          <Input
+            id="delete-user-confirm"
+            value={confirm}
+            dir="ltr"
+            placeholder={expected}
+            onChange={(e) => setConfirm(e.target.value)}
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            className="flex-1 rounded-2xl font-bold"
+            onClick={onClose}
+            disabled={mutation.isPending}
+          >
+            إلغاء
+          </Button>
+          <Button
+            variant="destructive"
+            className="flex-1 rounded-2xl font-bold"
+            disabled={!matches || !acknowledged || mutation.isPending}
+            onClick={() => mutation.mutate()}
+          >
+            {mutation.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Trash2 className="size-4" />
+            )}
+            حذف الحساب نهائيًا
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
