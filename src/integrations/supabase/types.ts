@@ -3274,6 +3274,7 @@ export type Database = {
       }
       study_plans: {
         Row: {
+          child_id: string | null
           classroom_id: string
           created_at: string
           created_by: string | null
@@ -3287,6 +3288,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          child_id?: string | null
           classroom_id: string
           created_at?: string
           created_by?: string | null
@@ -3300,6 +3302,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          child_id?: string | null
           classroom_id?: string
           created_at?: string
           created_by?: string | null
@@ -3313,6 +3316,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "study_plans_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "application_children"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "study_plans_classroom_id_fkey"
             columns: ["classroom_id"]
@@ -4122,6 +4132,7 @@ export type Database = {
         Args: { _ip: string; _user_agent: string }
         Returns: number
       }
+      study_plan_child_id: { Args: { _plan_id: string }; Returns: string }
       study_plan_classroom_id: { Args: { _plan_id: string }; Returns: string }
       study_plan_published: { Args: { _plan_id: string }; Returns: boolean }
       subject_classroom_id: { Args: { _subject_id: string }; Returns: string }
