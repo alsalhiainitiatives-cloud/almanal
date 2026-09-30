@@ -46,7 +46,7 @@ import {
   type ChatRoom,
 } from "../chat";
 import { uploadChatAttachment } from "../chat-upload";
-import { chatBoard, chatDeleteMessage, chatSendMessage } from "../chat.functions";
+import { chatBoard, chatDeleteMessage, chatSendMessage, chatSetParentPosting } from "../chat.functions";
 import { PrivateChatPanel } from "./PrivateChatPanel";
 
 /** Readable text colour on top of a classroom colour. */
