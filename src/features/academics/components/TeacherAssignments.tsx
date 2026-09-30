@@ -267,7 +267,11 @@ export function TeacherAssignments() {
                 <button
                   key={room.id}
                   type="button"
-                  onClick={() => setActiveClassroom(room.id)}
+                  onClick={() => {
+                    setActiveClassroom(room.id);
+                    setActiveSubject("");
+                  }}
+
                   className={cn(
                     "w-full rounded-2xl border p-3 text-start transition",
                     active
