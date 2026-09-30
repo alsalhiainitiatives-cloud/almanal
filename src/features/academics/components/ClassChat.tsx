@@ -12,6 +12,8 @@ import {
   FileText,
   Image as ImageIcon,
   Loader2,
+  Lock,
+  LockOpen,
   MessagesSquare,
   Paperclip,
   Send,
@@ -21,6 +23,7 @@ import {
   Video,
   X,
 } from "lucide-react";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -43,7 +46,7 @@ import {
   type ChatRoom,
 } from "../chat";
 import { uploadChatAttachment } from "../chat-upload";
-import { chatBoard, chatDeleteMessage, chatSendMessage } from "../chat.functions";
+import { chatBoard, chatDeleteMessage, chatSendMessage, chatSetParentPosting } from "../chat.functions";
 import { PrivateChatPanel } from "./PrivateChatPanel";
 
 /** Readable text colour on top of a classroom colour. */
@@ -133,6 +136,8 @@ export function ClassChat() {
   const loadBoard = useServerFn(chatBoard);
   const sendFn = useServerFn(chatSendMessage);
   const deleteFn = useServerFn(chatDeleteMessage);
+  const setPostingFn = useServerFn(chatSetParentPosting);
+
   useClearNotificationKind(["chat_message"]);
 
   const [tab, setTab] = useState<"group" | "private">("group");
@@ -206,6 +211,23 @@ export function ClassChat() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["class-chat"] }),
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const posting = useMutation({
+    mutationFn: async (input: { classroomId: string; allowed: boolean }) =>
+      setPostingFn({ data: input }),
+    onSuccess: (_r, input) => {
+      toast.success(
+        input.allowed
+          ? "تم السماح لأولياء الأمور بالإرسال في الشات الجماعي"
+          : "الشات الجماعي أصبح مقتصرًا على المعلمات",
+      );
+      void queryClient.invalidateQueries({ queryKey: ["class-chat"] });
+      void queryClient.invalidateQueries({ queryKey: ["academics-settings"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
 
   async function onPickFiles(files: FileList | null) {
     if (!files?.length || !activeRoomId) return;
@@ -340,22 +362,52 @@ export function ClassChat() {
                 </div>
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
-                  <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-4 py-2">
                     <p className="text-xs text-muted-foreground">
-                      رسائل الفصل مرئية لجميع أعضاء الفصل
+                      {active.allowParentMessages
+                        ? "رسائل الفصل مرئية لجميع أعضاء الفصل"
+                        : "الشات الجماعي مقتصر على المعلمات وإدارة المدرسة"}
                     </p>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setTab("private");
-                        setAutoPeer(true);
-                      }}
-                    >
-                      <UserRound className="me-1 size-4" /> شات فردي
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {board.data?.canManagePosting ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={active.allowParentMessages ? "outline" : "secondary"}
+                          disabled={posting.isPending}
+                          onClick={() =>
+                            posting.mutate({
+                              classroomId: active.classroomId,
+                              allowed: !active.allowParentMessages,
+                            })
+                          }
+                        >
+                          {posting.isPending ? (
+                            <Loader2 className="me-1 size-4 animate-spin" />
+                          ) : active.allowParentMessages ? (
+                            <Lock className="me-1 size-4" />
+                          ) : (
+                            <LockOpen className="me-1 size-4" />
+                          )}
+                          {active.allowParentMessages
+                            ? "منع إرسال أولياء الأمور"
+                            : "السماح لأولياء الأمور بالإرسال"}
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setTab("private");
+                          setAutoPeer(true);
+                        }}
+                      >
+                        <UserRound className="me-1 size-4" /> شات فردي
+                      </Button>
+                    </div>
                   </div>
+
 
                   <ScrollArea className="min-h-0 flex-1">
                     <div ref={feedRef} className="flex flex-col gap-3 p-4">
@@ -452,7 +504,29 @@ export function ClassChat() {
                     </div>
                   </ScrollArea>
 
+                  {board.data?.canPost === false ? (
+                  <div className="space-y-2 border-t border-border/60 bg-muted/40 p-4 text-center">
+                    <p className="flex items-center justify-center gap-2 text-xs font-bold text-muted-foreground">
+                      <Lock className="size-4" />
+                      إرسال الرسائل في الشات الجماعي مقتصر على المعلمات
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      يمكنك متابعة رسائل الفصل، وللتواصل المباشر استخدم الرسائل الخاصة مع المعلمة.
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        setTab("private");
+                        setAutoPeer(true);
+                      }}
+                    >
+                      <UserRound className="me-1 size-4" /> مراسلة المعلمة
+                    </Button>
+                  </div>
+                  ) : (
                   <div className="border-t border-border/60 bg-background p-3">
+
                     {replyTo ? (
                       <div className="mb-2 flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-xs">
                         <CornerDownLeft className="size-3" />
@@ -545,6 +619,8 @@ export function ClassChat() {
                       </Button>
                     </div>
                   </div>
+                  )}
+
                 </div>
               )}
             </>

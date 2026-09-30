@@ -52,7 +52,10 @@ export type ChatClassroomSetting = {
   nameAr: string;
   stageNameAr: string;
   chatEnabled: boolean;
+  /** When false, only teachers and administration may post in the group chat. */
+  allowParentMessages: boolean;
 };
+
 
 export type AcademicsSettings = {
   canManage: boolean;

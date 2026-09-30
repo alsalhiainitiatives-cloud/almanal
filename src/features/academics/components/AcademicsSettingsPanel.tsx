@@ -18,7 +18,9 @@ import {
   type AcademicsSettings,
   type MonthColor,
 } from "../settings";
+import { chatSetParentPosting } from "../chat.functions";
 import { canManageStorage } from "../maintenance";
+
 import {
   academicsSaveMonthColors,
   academicsSetChatClassroom,
@@ -36,6 +38,8 @@ export function AcademicsSettingsPanel() {
   const saveColors = useServerFn(academicsSaveMonthColors);
   const setGlobal = useServerFn(academicsSetChatGlobal);
   const setClassroom = useServerFn(academicsSetChatClassroom);
+  const setParentPosting = useServerFn(chatSetParentPosting);
+
 
 
   const { data, isLoading } = useQuery({
@@ -79,6 +83,23 @@ export function AcademicsSettingsPanel() {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "تعذّر التحديث"),
   });
+
+  const postingMutation = useMutation({
+    mutationFn: (input: { classroomId: string; allowed: boolean }) =>
+      setParentPosting({ data: input }),
+    onSuccess: (_r, input) => {
+      toast.success(
+        input.allowed
+          ? "تم السماح لأولياء الأمور بالإرسال"
+          : "الشات الجماعي أصبح مقتصرًا على المعلمات",
+      );
+      invalidate();
+      void queryClient.invalidateQueries({ queryKey: ["class-chat"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "تعذّر التحديث"),
+  });
+
+
 
   if (isLoading || !data) {
     return (
@@ -198,19 +219,39 @@ export function AcademicsSettingsPanel() {
           {data.classrooms.map((c) => (
             <div
               key={c.id}
-              className="flex items-center justify-between rounded-2xl border border-border/60 bg-background/60 p-3"
+              className="space-y-3 rounded-2xl border border-border/60 bg-background/60 p-3"
             >
-              <div>
-                <p className="text-sm font-black text-foreground">{c.nameAr}</p>
-                <p className="text-[11px] font-bold text-muted-foreground">{c.stageNameAr}</p>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black text-foreground">{c.nameAr}</p>
+                  <p className="text-[11px] font-bold text-muted-foreground">{c.stageNameAr}</p>
+                </div>
+                <Switch
+                  checked={c.chatEnabled && data.chatEnabledGlobally}
+                  disabled={!data.chatEnabledGlobally || classroomMutation.isPending}
+                  onCheckedChange={(v) =>
+                    classroomMutation.mutate({ classroomId: c.id, enabled: v })
+                  }
+                />
               </div>
-              <Switch
-                checked={c.chatEnabled && data.chatEnabledGlobally}
-                disabled={!data.chatEnabledGlobally || classroomMutation.isPending}
-                onCheckedChange={(v) => classroomMutation.mutate({ classroomId: c.id, enabled: v })}
-              />
+              <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-2">
+                <p className="text-[11px] font-bold text-muted-foreground">
+                  السماح لأولياء الأمور بإرسال رسائل في الشات الجماعي
+                  <span className="block font-normal">
+                    عند الإيقاف يصبح الإرسال للمعلمات فقط، ويظل الشات الخاص متاحًا.
+                  </span>
+                </p>
+                <Switch
+                  checked={c.allowParentMessages}
+                  disabled={!data.chatEnabledGlobally || !c.chatEnabled || postingMutation.isPending}
+                  onCheckedChange={(v) =>
+                    postingMutation.mutate({ classroomId: c.id, allowed: v })
+                  }
+                />
+              </div>
             </div>
           ))}
+
           {!data.classrooms.length && (
             <p className="py-4 text-center text-xs font-bold text-muted-foreground">
               لا توجد فصول مفعّلة.

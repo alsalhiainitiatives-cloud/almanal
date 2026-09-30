@@ -106,7 +106,13 @@ export async function listPrivateContacts(
     });
   }
 
-  let peers: { peerId: string; subtitle: string | null; childIds: string[] }[] = [];
+  let peers: {
+    peerId: string;
+    subtitle: string | null;
+    childIds: string[];
+    /** Children's names — shown instead of the guardian's own name. */
+    displayName: string | null;
+  }[] = [];
 
   if (role === "parent") {
     const { data: links } = await supabaseAdmin
@@ -117,6 +123,7 @@ export async function listPrivateContacts(
       peerId: id as string,
       subtitle: "معلمة الفصل",
       childIds: [],
+      displayName: null,
     }));
   } else if (role === "teacher") {
     const { data: children } = await supabaseAdmin
@@ -141,13 +148,20 @@ export async function listPrivateContacts(
     }
     peers = [...byParent.entries()].map(([peerId, entry]) => ({
       peerId,
-      subtitle: `ولي أمر ${entry.names.slice(0, 2).join(" و")}`,
+      subtitle: null,
       childIds: entry.childIds,
+      displayName: entry.names.slice(0, 2).join(" و") || null,
     }));
   } else {
     // Staff moderation: only conversations that already exist.
-    peers = chatRows.map((c) => ({ peerId: c.teacher_id, subtitle: "محادثة خاصة", childIds: [] }));
+    peers = chatRows.map((c) => ({
+      peerId: c.teacher_id,
+      subtitle: "محادثة خاصة",
+      childIds: [],
+      displayName: null,
+    }));
   }
+
 
   const peerIds = [...new Set(peers.map((p) => p.peerId))];
   const { data: profiles } = peerIds.length
@@ -171,17 +185,20 @@ export async function listPrivateContacts(
     const chatId = chatByPeer.get(p.peerId) ?? null;
     const last = chatId ? lastByChat.get(chatId) : null;
     const profile = profileById.get(p.peerId);
+    const guardianName = profile?.full_name?.trim() || "ولي الأمر";
     return {
       peerId: p.peerId,
-      name: profile?.full_name?.trim() || "عضو",
+      // Guardians are always presented by their child's name.
+      name: p.displayName ?? (profile?.full_name?.trim() || "عضو"),
       avatarUrl: resolveAvatar(profile?.avatar_url ?? null, signed),
-      subtitle: p.subtitle,
+      subtitle: p.displayName ? `ولي الأمر: ${guardianName}` : p.subtitle,
       childIds: p.childIds,
       chatId,
       lastMessageAt: last?.at ?? null,
       lastPreview: last?.preview ?? null,
     };
   });
+
 
   contacts.sort((a, b) => (b.lastMessageAt ?? "").localeCompare(a.lastMessageAt ?? ""));
 
@@ -192,7 +209,10 @@ async function loadMessages(
   supabase: Db,
   userId: string,
   chatId: string,
+  /** Guardian id → child name, so a guardian's messages carry the child's name. */
+  childNameByParent?: Map<string, string>,
 ): Promise<PrivateMessage[]> {
+
   const { data: rows } = await supabase
     .from("private_messages")
     .select(
@@ -223,7 +243,9 @@ async function loadMessages(
     id: r.id,
     chatId: r.chat_id,
     senderId: r.sender_id,
-    senderName: profileById.get(r.sender_id)?.full_name ?? null,
+    senderName:
+      childNameByParent?.get(r.sender_id) ?? profileById.get(r.sender_id)?.full_name ?? null,
+
     senderAvatarUrl: resolveAvatar(profileById.get(r.sender_id)?.avatar_url ?? null, signed),
     text: r.deleted_at ? "" : r.text,
     attachmentUrl: r.deleted_at
@@ -304,15 +326,21 @@ export async function openPrivateThread(
       : [],
   );
 
+  // Guardians appear everywhere under their child's name.
+  const { childNamesByParent } = await import("./chat.server");
+  const childNames = await childNamesByParent(input.classroomId);
+  const peerChildName = chat.parent_id === peerId ? (childNames.get(peerId) ?? null) : null;
+
   return {
     chatId: chat.id,
     peerId,
-    peerName: profile?.full_name?.trim() || "عضو",
+    peerName: peerChildName ?? profile?.full_name?.trim() ?? "عضو",
     peerAvatarUrl: resolveAvatar(profile?.avatar_url ?? null, signed),
     readOnly: role === "staff",
-    messages: await loadMessages(supabase, userId, chat.id),
+    messages: await loadMessages(supabase, userId, chat.id, childNames),
   };
 }
+
 
 export type SendPrivateInput = {
   chatId: string;

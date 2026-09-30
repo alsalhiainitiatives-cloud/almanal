@@ -33,7 +33,9 @@ export async function getAcademicsSettings(supabase: Db, userId: string): Promis
     supabase.from("academics_settings").select("key, value"),
     supabase
       .from("classrooms")
-      .select("id, name_ar, chat_enabled, is_active, sort_order, stages (name_ar)")
+      .select(
+        "id, name_ar, chat_enabled, allow_parent_messages, is_active, sort_order, stages (name_ar)",
+      )
       .eq("is_active", true)
       .order("sort_order")
       .limit(200),
@@ -51,13 +53,16 @@ export async function getAcademicsSettings(supabase: Db, userId: string): Promis
       id: string;
       name_ar: string;
       chat_enabled: boolean | null;
+      allow_parent_messages: boolean | null;
       stages: { name_ar: string } | null;
     }[]).map((c) => ({
       id: c.id,
       nameAr: c.name_ar,
       stageNameAr: c.stages?.name_ar ?? "—",
       chatEnabled: c.chat_enabled !== false,
+      allowParentMessages: c.allow_parent_messages !== false,
     })),
+
   };
 }
 
