@@ -141,7 +141,11 @@ export async function getAssessmentBoard(
   if (childrenResult.error) throw new Error(childrenResult.error.message);
   const children = childrenResult.data;
 
-  const subjectRows = subjects ?? [];
+  const allClassroomSubjects = subjects ?? [];
+  const subjectRows = subjectScoped
+    ? allClassroomSubjects.filter((s) => mySubjectIds.has(s.id))
+    : allClassroomSubjects;
+
   const { data: topics } = subjectRows.length
     ? await supabase
         .from("topics")
