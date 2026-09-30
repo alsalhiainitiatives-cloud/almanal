@@ -305,11 +305,33 @@ export async function sendChatMessage(supabase: Db, userId: string, input: SendM
   const attachments = (input.attachments ?? []).slice(0, 6);
   if (!body && !attachments.length) throw new Error("لا يمكن إرسال رسالة فارغة.");
 
+  // Group chat can be restricted to teachers and administration per classroom.
+  if (senderRole === "parent") {
+    const { data: classroomFlag } = await supabase
+      .from("classrooms")
+      .select("allow_parent_messages")
+      .eq("id", input.classroomId)
+      .maybeSingle();
+    if (classroomFlag?.allow_parent_messages === false) {
+      throw new Error(
+        "إرسال الرسائل في الشات الجماعي مقتصر على المعلمات — يمكنك التواصل عبر الرسائل الخاصة.",
+      );
+    }
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name")
     .eq("id", userId)
     .maybeSingle();
+
+  // A parent appears under her child's name, never her own.
+  const displayName =
+    senderRole === "parent"
+      ? ((await childNamesByParent(input.classroomId)).get(userId) ??
+        profile?.full_name ??
+        null)
+      : (profile?.full_name ?? null);
 
   const { data, error } = await supabase
     .from("classroom_messages")
@@ -317,7 +339,7 @@ export async function sendChatMessage(supabase: Db, userId: string, input: SendM
       classroom_id: input.classroomId,
       parent_message_id: input.parentMessageId ?? null,
       sender_id: userId,
-      sender_name: profile?.full_name ?? null,
+      sender_name: displayName,
       sender_role: senderRole,
       body,
       attachments: attachments as never,
@@ -338,7 +360,8 @@ export async function sendChatMessage(supabase: Db, userId: string, input: SendM
       .eq("id", input.classroomId)
       .maybeSingle();
     const { parentIds, teacherIds } = await classroomAudience(input.classroomId);
-    const senderName = profile?.full_name ?? "أحد أعضاء الفصل";
+    const senderName = displayName ?? "أحد أعضاء الفصل";
+
     const preview = body ? body.slice(0, 120) : "مرفق جديد في المحادثة";
     const title = `رسالة جديدة في ${classroom?.name_ar ?? "محادثة الفصل"}`;
 
