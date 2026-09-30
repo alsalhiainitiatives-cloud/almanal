@@ -56,7 +56,21 @@ export async function getAssessmentBoard(
   const teacher = roles.includes("teacher");
   if (!staff && !teacher) throw new Error("هذا القسم متاح للمعلمات وإدارة المدرسة فقط.");
 
+  // Subjects the teacher is explicitly assigned to (subject teacher scope).
+  const { data: mySubjectLinks } = teacher
+    ? await supabase
+        .from("teacher_subjects")
+        .select("subject_id, subjects(classroom_id)")
+        .eq("teacher_id", userId)
+    : { data: [] as never[] };
+  const mySubjectRows = (mySubjectLinks ?? []) as unknown as {
+    subject_id: string;
+    subjects: { classroom_id: string } | null;
+  }[];
+  const mySubjectIds = new Set(mySubjectRows.map((r) => r.subject_id));
+
   let classrooms: { id: string; name_ar: string; stages: { name_ar: string } | null }[] = [];
+  let homeroomIds = new Set<string>();
   if (staff) {
     const { data } = await supabase
       .from("classrooms")
@@ -67,21 +81,13 @@ export async function getAssessmentBoard(
   } else {
     // A teacher reaches her homeroom classrooms plus the classrooms of the
     // subjects she is assigned to as a subject teacher.
-    const [{ data: links }, { data: subjectLinks }] = await Promise.all([
-      supabase.from("teacher_classrooms").select("classroom_id").eq("teacher_id", userId),
-      supabase
-        .from("teacher_subjects")
-        .select("subjects(classroom_id)")
-        .eq("teacher_id", userId),
-    ]);
-    const subjectClassroomIds = (
-      (subjectLinks ?? []) as unknown as { subjects: { classroom_id: string } | null }[]
-    ).map((row) => row.subjects?.classroom_id);
-    const ids = [
-      ...new Set(
-        [...(links ?? []).map((l) => l.classroom_id), ...subjectClassroomIds].filter(Boolean),
-      ),
-    ] as string[];
+    const { data: links } = await supabase
+      .from("teacher_classrooms")
+      .select("classroom_id")
+      .eq("teacher_id", userId);
+    homeroomIds = new Set((links ?? []).map((l) => l.classroom_id));
+    const subjectClassroomIds = mySubjectRows.map((row) => row.subjects?.classroom_id);
+    const ids = [...new Set([...homeroomIds, ...subjectClassroomIds].filter(Boolean))] as string[];
 
     if (ids.length) {
       const { data } = await supabase
@@ -105,6 +111,10 @@ export async function getAssessmentBoard(
       ? input.classroomId
       : (options[0]?.id ?? null);
 
+  // A pure subject teacher (not staff, not the homeroom teacher of this
+  // classroom) only evaluates the subjects assigned to her.
+  const subjectScoped = !staff && Boolean(selected) && !homeroomIds.has(selected!);
+
   const empty: AssessmentBoard = {
     canEdit: true,
     classrooms: options,
@@ -112,8 +122,12 @@ export async function getAssessmentBoard(
     lessons: [],
     children: [],
     cells: [],
+    subjectScoped,
+    scopeSubjectNames: [],
+    emptySubjects: [],
   };
   if (!selected) return empty;
+
 
   const [{ data: subjects }, childrenResult] = await Promise.all([
     supabase
@@ -127,7 +141,11 @@ export async function getAssessmentBoard(
   if (childrenResult.error) throw new Error(childrenResult.error.message);
   const children = childrenResult.data;
 
-  const subjectRows = subjects ?? [];
+  const allClassroomSubjects = subjects ?? [];
+  const subjectRows = subjectScoped
+    ? allClassroomSubjects.filter((s) => mySubjectIds.has(s.id))
+    : allClassroomSubjects;
+
   const { data: topics } = subjectRows.length
     ? await supabase
         .from("topics")
@@ -237,6 +255,13 @@ export async function getAssessmentBoard(
     })),
   }));
 
+  const lessonIds = new Set(lessons.map((l) => l.id));
+  const subjectsWithLessons = new Set(
+    (lessonRows ?? [])
+      .map((l) => topicById.get(l.topic_id)?.subject_id)
+      .filter(Boolean) as string[],
+  );
+
   return {
     canEdit: true,
     classrooms: options,
@@ -248,8 +273,14 @@ export async function getAssessmentBoard(
       gender: c.gender,
       studentNumber: c.student_number,
     })),
-    cells,
+    cells: cells.filter((c) => lessonIds.has(c.lessonId)),
+    subjectScoped,
+    scopeSubjectNames: subjectRows.map((s) => s.name_ar),
+    emptySubjects: subjectRows
+      .filter((s) => !subjectsWithLessons.has(s.id))
+      .map((s) => ({ nameAr: s.name_ar, colorHex: s.color_hex ?? "#7A1F3D" })),
   };
+
 }
 
 export type SaveAssessmentInput = {
@@ -263,8 +294,49 @@ export type SaveAssessmentInput = {
   note?: string | null;
 };
 
+/**
+ * A pure subject teacher may only evaluate lessons that belong to the subjects
+ * assigned to her; staff and the classroom's homeroom teacher may evaluate all.
+ */
+async function assertLessonInScope(
+  supabase: Db,
+  userId: string,
+  lessonId: string,
+  classroomId: string,
+) {
+  const roles = await rolesOf(supabase, userId);
+  if (roles.some((r) => STAFF_ROLES.includes(r))) return;
+
+  const { data: homeroom } = await supabase
+    .from("teacher_classrooms")
+    .select("id")
+    .eq("teacher_id", userId)
+    .eq("classroom_id", classroomId)
+    .maybeSingle();
+  if (homeroom?.id) return;
+
+  const { data: lesson } = await supabase
+    .from("lessons")
+    .select("topics(subject_id)")
+    .eq("id", lessonId)
+    .maybeSingle();
+  const subjectId = (lesson as unknown as { topics: { subject_id: string } | null } | null)?.topics
+    ?.subject_id;
+  if (!subjectId) throw new Error("لم يتم العثور على الدرس المطلوب.");
+
+  const { data: link } = await supabase
+    .from("teacher_subjects")
+    .select("id")
+    .eq("teacher_id", userId)
+    .eq("subject_id", subjectId)
+    .maybeSingle();
+  if (!link?.id) throw new Error("يمكنك رصد تقييمات المواد المسندة إليك في هذا الفصل فقط.");
+}
+
 /** Upserts one child × lesson evaluation cell. */
 export async function saveAssessment(supabase: Db, userId: string, input: SaveAssessmentInput) {
+  await assertLessonInScope(supabase, userId, input.lessonId, input.classroomId);
+
   const { data: existing } = await supabase
     .from("lesson_assessments")
     .select("id")
@@ -308,7 +380,9 @@ export async function ensureAssessment(
   userId: string,
   input: { childId: string; lessonId: string; classroomId: string },
 ) {
+  await assertLessonInScope(supabase, userId, input.lessonId, input.classroomId);
   const { data: existing } = await supabase
+
     .from("lesson_assessments")
     .select("id")
     .eq("child_id", input.childId)
