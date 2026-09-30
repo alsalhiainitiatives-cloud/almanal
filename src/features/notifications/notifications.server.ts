@@ -90,28 +90,20 @@ export async function markKindRead(supabase: Db, userId: string, kinds: string[]
 }
 
 /** Recipients of a classroom stream: assigned teachers + parents of enrolled kids. */
-export async function classroomAudience(classroomId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+export async function classroomAudience(supabase: Db, classroomId: string) {
   const [{ data: teachers }, { data: kids }] = await Promise.all([
-    supabaseAdmin.from("teacher_classrooms").select("teacher_id").eq("classroom_id", classroomId),
-    supabaseAdmin
-      .from("application_children")
-      .select("name_ar, applications!inner (parent_id, status)")
-      .eq("classroom_id", classroomId)
-      .eq("applications.status", "approved")
-    .is("withdrawn_at", null)
-      .limit(300),
+    supabase.rpc("classroom_teacher_ids", { _classroom_id: classroomId }),
+    supabase.rpc("classroom_roster", { _classroom_id: classroomId }),
   ]);
-
   const parentIds = [
     ...new Set(
-      ((kids ?? []) as unknown as { applications: { parent_id: string | null } | null }[])
-        .map((k) => k.applications?.parent_id)
+      ((kids ?? []) as { parent_id: string | null }[])
+        .map((k) => k.parent_id)
         .filter((id): id is string => Boolean(id)),
     ),
   ];
   const teacherIds = [
-    ...new Set((teachers ?? []).map((t) => t.teacher_id).filter((id): id is string => Boolean(id))),
+    ...new Set(((teachers ?? []) as unknown as string[]).filter((id): id is string => Boolean(id))),
   ];
   return { parentIds, teacherIds };
 }

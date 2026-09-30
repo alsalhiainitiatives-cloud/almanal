@@ -4087,6 +4087,16 @@ export type Database = {
         }
         Returns: string
       }
+      apply_invoice_plan: {
+        Args: {
+          _application_id: string
+          _installments: Json
+          _invoice: Json
+          _items: Json
+          _payment_status: string
+        }
+        Returns: string
+      }
       assessment_classroom_id: {
         Args: { _assessment_id: string }
         Returns: string
@@ -4111,6 +4121,15 @@ export type Database = {
       can_write_tracking: {
         Args: { _tracking_id: string; _user_id: string }
         Returns: boolean
+      }
+      child_brief: {
+        Args: { _child_id: string }
+        Returns: {
+          classroom_id: string
+          id: string
+          name_ar: string
+          parent_id: string
+        }[]
       }
       child_classroom_id: { Args: { _child_id: string }; Returns: string }
       claim_child_by_identifier: {
@@ -4139,6 +4158,19 @@ export type Database = {
           parent_id: string
           student_number: string
         }[]
+      }
+      classroom_roster: {
+        Args: { _classroom_id: string }
+        Returns: {
+          child_id: string
+          child_name: string
+          parent_id: string
+          parent_name: string
+        }[]
+      }
+      classroom_teacher_ids: {
+        Args: { _classroom_id: string }
+        Returns: string[]
       }
       dispatch_notification: {
         Args: {
@@ -4193,6 +4225,28 @@ export type Database = {
         Args: { _child_id: string; _user_id: string }
         Returns: boolean
       }
+      log_login_attempt: {
+        Args: {
+          _identifier: string
+          _ip: string
+          _success: boolean
+          _user_agent: string
+        }
+        Returns: undefined
+      }
+      login_rate_limited: {
+        Args: {
+          _identifier: string
+          _ip: string
+          _max: number
+          _window_minutes: number
+        }
+        Returns: boolean
+      }
+      mark_installment_pending_review: {
+        Args: { _installment_id: string }
+        Returns: boolean
+      }
       mark_notifications_read: { Args: { _ids: string[] }; Returns: number }
       my_permissions: {
         Args: never
@@ -4217,16 +4271,39 @@ export type Database = {
           status: string
         }[]
       }
+      profile_cards: {
+        Args: { _ids: string[] }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          id: string
+        }[]
+      }
       recount_classroom_seats: { Args: never; Returns: undefined }
       recount_stage_seats: { Args: never; Returns: undefined }
+      register_my_session: {
+        Args: {
+          _browser: string
+          _device: string
+          _ip: string
+          _remember: boolean
+          _user_agent: string
+        }
+        Returns: undefined
+      }
       release_classroom_lock: {
         Args: { _classroom_id: string }
         Returns: boolean
       }
       release_my_classroom_locks: { Args: never; Returns: number }
+      resolve_login_email: { Args: { _phone_tail: string }; Returns: string }
       revoke_my_other_sessions: {
         Args: { _ip: string; _user_agent: string }
         Returns: number
+      }
+      set_classroom_parent_posting: {
+        Args: { _allowed: boolean; _classroom_id: string }
+        Returns: boolean
       }
       study_plan_child_id: { Args: { _plan_id: string }; Returns: string }
       study_plan_classroom_id: { Args: { _plan_id: string }; Returns: string }
@@ -4239,6 +4316,10 @@ export type Database = {
       sync_classroom_teacher_names: {
         Args: { _ids: string[] }
         Returns: undefined
+      }
+      sync_private_chat_guardian: {
+        Args: { _chat_id: string }
+        Returns: string
       }
       topic_classroom_id: { Args: { _topic_id: string }; Returns: string }
       track_application_documents_public: {
@@ -4283,6 +4364,22 @@ export type Database = {
       withdraw_my_application: {
         Args: { _application_id: string }
         Returns: boolean
+      }
+      write_audit_log: {
+        Args: {
+          _action: string
+          _actor_email: string
+          _browser: string
+          _device: string
+          _entity: string
+          _entity_id: string
+          _ip: string
+          _metadata: Json
+          _success: boolean
+          _user_agent: string
+          _user_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

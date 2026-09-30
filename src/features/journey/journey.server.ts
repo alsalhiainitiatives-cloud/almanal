@@ -28,11 +28,6 @@ function isTeacher(roles: AppRole[]) {
   return roles.includes("teacher");
 }
 
-async function admin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin as unknown as Db;
-}
-
 export type EvidenceRow = {
   id: string;
   filePath: string;
@@ -66,10 +61,10 @@ export type PlanRow = {
   status: string;
 };
 
-async function signEvidence(paths: string[]): Promise<Record<string, string>> {
+async function signEvidence(supabase: Db, paths: string[]): Promise<Record<string, string>> {
   const unique = [...new Set(paths.filter(Boolean))];
   if (!unique.length) return {};
-  const db = await admin();
+  const db = supabase;
   const { data } = await db.storage.from(EVIDENCE_BUCKET).createSignedUrls(unique, 60 * 60 * 6);
   const map: Record<string, string> = {};
   for (const row of data ?? []) if (row.path && row.signedUrl) map[row.path] = row.signedUrl;
@@ -94,8 +89,8 @@ type RawSkill = {
   }[] | null;
 };
 
-async function mapSkills(rows: RawSkill[]): Promise<SkillRow[]> {
-  const urls = await signEvidence(rows.flatMap((r) => (r.skill_evidences ?? []).map((e) => e.file_path)));
+async function mapSkills(supabase: Db, rows: RawSkill[]): Promise<SkillRow[]> {
+  const urls = await signEvidence(supabase, rows.flatMap((r) => (r.skill_evidences ?? []).map((e) => e.file_path)));
   return rows.map((r) => ({
     id: r.id,
     childId: r.child_id,
@@ -204,7 +199,7 @@ export async function getTeacherHub(supabase: Db, userId: string, input: { class
       gender: c.gender,
       birthDate: c.birth_date,
     })),
-    skills: await mapSkills((skillRows ?? []) as unknown as RawSkill[]),
+    skills: await mapSkills(supabase, (skillRows ?? []) as unknown as RawSkill[]),
   };
 }
 
@@ -282,7 +277,7 @@ export async function getParentJourney(supabase: Db, userId: string) {
         status: p.status,
       }),
     ),
-    skills: await mapSkills((skillRows ?? []) as unknown as RawSkill[]),
+    skills: await mapSkills(supabase, (skillRows ?? []) as unknown as RawSkill[]),
   };
 }
 
@@ -368,7 +363,7 @@ export async function deleteSkill(supabase: Db, _userId: string, id: string) {
   if (error) throw new Error("تعذّر حذف رصد المهارة.");
   const paths = (files ?? []).map((f) => f.file_path);
   if (paths.length) {
-    const db = await admin();
+    const db = supabase;
     await db.storage.from(EVIDENCE_BUCKET).remove(paths);
   }
   return { ok: true };
@@ -400,7 +395,7 @@ export async function deleteEvidence(supabase: Db, _userId: string, id: string) 
   const { error } = await supabase.from("skill_evidences").delete().eq("id", id);
   if (error) throw new Error("تعذّر حذف الدليل الرقمي.");
   if (row?.file_path) {
-    const db = await admin();
+    const db = supabase;
     await db.storage.from(EVIDENCE_BUCKET).remove([row.file_path]);
   }
   return { ok: true };
@@ -416,7 +411,7 @@ async function guardAdmin(supabase: Db, userId: string) {
 /** Admin-side: teacher accounts, their classroom assignments, and all classrooms. */
 export async function listTeacherAssignments(supabase: Db, userId: string) {
   await guardAdmin(supabase, userId);
-  const db = await admin();
+  const db = supabase;
   const [{ data: teacherRoles }, { data: assignments }, { data: classrooms }] = await Promise.all([
     db.from("user_roles").select("user_id").eq("role", "teacher"),
     db.from("teacher_classrooms").select("id, teacher_id, classroom_id"),
@@ -444,7 +439,7 @@ export async function setTeacherClassrooms(
   input: { teacherId: string; classroomIds: string[] },
 ) {
   await guardAdmin(supabase, userId);
-  const db = await admin();
+  const db = supabase;
   await db.from("teacher_classrooms").delete().eq("teacher_id", input.teacherId);
   if (input.classroomIds.length) {
     const { error } = await db.from("teacher_classrooms").insert(

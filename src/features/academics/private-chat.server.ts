@@ -41,11 +41,10 @@ async function roleOf(supabase: Db, userId: string): Promise<PrivateContactList[
   return "parent";
 }
 
-async function signPaths(paths: string[]): Promise<Record<string, string>> {
+async function signPaths(supabase: Db, paths: string[]): Promise<Record<string, string>> {
   const unique = [...new Set(paths.filter(Boolean))];
   if (!unique.length) return {};
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin.storage
+  const { data } = await supabase.storage
     .from(CHAT_BUCKET)
     .createSignedUrls(unique, 60 * 60 * 6);
   const map: Record<string, string> = {};
@@ -76,7 +75,6 @@ export async function listPrivateContacts(
   const role = await roleOf(supabase, userId);
   await assertClassroomAccess(supabase, userId, input.classroomId);
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   // Existing chats of this classroom that involve the caller (staff sees all).
   const { data: chats } = await supabase
@@ -119,11 +117,10 @@ export async function listPrivateContacts(
   let peers: Peer[] = [];
 
   if (role === "parent") {
-    const { data: links } = await supabaseAdmin
-      .from("teacher_classrooms")
-      .select("teacher_id")
-      .eq("classroom_id", input.classroomId);
-    peers = [...new Set((links ?? []).map((l) => l.teacher_id).filter(Boolean))].map((id) => ({
+    const { data: links } = await supabase.rpc("classroom_teacher_ids", {
+      _classroom_id: input.classroomId,
+    });
+    peers = [...new Set(((links ?? []) as unknown as string[]).filter(Boolean))].map((id) => ({
       key: id as string,
       peerId: id as string,
       childId: null,
@@ -136,28 +133,24 @@ export async function listPrivateContacts(
   } else {
     // Teachers and school staff both see every child of the classroom, so a
     // conversation can be started (teachers) or reviewed (staff) by child name.
-    const { data: children } = await supabaseAdmin
-      .from("application_children")
-      .select("id, name_ar, applications!inner (parent_id, status)")
-      .eq("classroom_id", input.classroomId)
-      .eq("applications.status", "approved")
-      .is("withdrawn_at", null)
-      .order("name_ar", { ascending: true })
-      .limit(400);
-
-    const rows = (children ?? []) as unknown as {
-      id: string;
-      name_ar: string;
-      applications: { parent_id: string | null } | null;
-    }[];
-
-    const guardianIds = [
-      ...new Set(rows.map((r) => r.applications?.parent_id).filter((v): v is string => Boolean(v))),
-    ];
-    const { data: guardianProfiles } = guardianIds.length
-      ? await supabaseAdmin.from("profiles").select("id, full_name").in("id", guardianIds)
-      : { data: [] as { id: string; full_name: string }[] };
-    const guardianName = new Map((guardianProfiles ?? []).map((p) => [p.id, p.full_name]));
+    const { data: roster } = await supabase.rpc("classroom_roster", {
+      _classroom_id: input.classroomId,
+    });
+    const rows = ((roster ?? []) as {
+      child_id: string;
+      child_name: string;
+      parent_id: string | null;
+      parent_name: string | null;
+    }[]).map((r) => ({
+      id: r.child_id,
+      name_ar: r.child_name,
+      applications: { parent_id: r.parent_id },
+    }));
+    const guardianName = new Map(
+      ((roster ?? []) as { parent_id: string | null; parent_name: string | null }[])
+        .filter((r) => r.parent_id)
+        .map((r) => [r.parent_id as string, r.parent_name ?? ""]),
+    );
 
     peers = rows.map((row) => {
       const parentId = row.applications?.parent_id ?? null;
@@ -183,10 +176,10 @@ export async function listPrivateContacts(
 
   const peerIds = [...new Set(peers.map((p) => p.peerId).filter((v): v is string => Boolean(v)))];
   const { data: profiles } = peerIds.length
-    ? await supabaseAdmin.from("profiles").select("id, full_name, avatar_url").in("id", peerIds)
+    ? await supabase.rpc("profile_cards", { _ids: peerIds })
     : { data: [] as { id: string; full_name: string; avatar_url: string | null }[] };
   const profileById = new Map((profiles ?? []).map((p) => [p.id, p]));
-  const signed = await signPaths(
+  const signed = await signPaths(supabase, 
     (profiles ?? [])
       .map((p) => p.avatar_url)
       .filter((v): v is string => Boolean(v) && !/^(https?:|data:)/i.test(v!)),
@@ -238,11 +231,10 @@ async function loadMessages(
     .limit(200);
 
   const ordered = [...(rows ?? [])].reverse();
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const senderIds = [...new Set(ordered.map((r) => r.sender_id))];
   const { data: profiles } = senderIds.length
-    ? await supabaseAdmin.from("profiles").select("id, full_name, avatar_url").in("id", senderIds)
+    ? await supabase.rpc("profile_cards", { _ids: senderIds })
     : { data: [] as { id: string; full_name: string; avatar_url: string | null }[] };
   const profileById = new Map((profiles ?? []).map((p) => [p.id, p]));
 
@@ -252,7 +244,7 @@ async function loadMessages(
   const avatarPaths = (profiles ?? [])
     .map((p) => p.avatar_url)
     .filter((v): v is string => Boolean(v) && !/^(https?:|data:)/i.test(v!));
-  const signed = await signPaths([...attachmentPaths, ...avatarPaths]);
+  const signed = await signPaths(supabase, [...attachmentPaths, ...avatarPaths]);
 
   return ordered.map((r) => ({
     id: r.id,
@@ -292,7 +284,6 @@ export async function openPrivateThread(
   const role = await roleOf(supabase, userId);
   await assertClassroomAccess(supabase, userId, input.classroomId);
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   let chatId = input.chatId ?? null;
   let peerId = input.peerId ?? null;
@@ -303,16 +294,12 @@ export async function openPrivateThread(
     if (role === "staff") {
       // Staff review conversations read-only: show an empty thread until one starts.
       const { data: named } = childId
-        ? await supabaseAdmin
-            .from("application_children")
-            .select("name_ar, applications!inner (parent_id)")
-            .eq("id", childId)
-            .maybeSingle()
+        ? await supabase.rpc("child_brief", { _child_id: childId }).maybeSingle()
         : { data: null };
-      const staffRow = named as unknown as {
-        name_ar: string;
-        applications: { parent_id: string | null } | null;
-      } | null;
+      const brief = named as { name_ar: string; parent_id: string | null } | null;
+      const staffRow = brief
+        ? { name_ar: brief.name_ar, applications: { parent_id: brief.parent_id } }
+        : null;
       return {
         chatId: null,
         peerId: staffRow?.applications?.parent_id ?? null,
@@ -329,17 +316,14 @@ export async function openPrivateThread(
 
 
       // The child must belong to this classroom; its guardian may not exist yet.
-      const { data: child } = await supabaseAdmin
-        .from("application_children")
-        .select("id, name_ar, classroom_id, applications!inner (parent_id)")
-        .eq("id", childId)
-        .maybeSingle();
-      const row = child as unknown as {
+      const { data: child } = await supabase.rpc("child_brief", { _child_id: childId }).maybeSingle();
+      const brief = child as {
         id: string;
         name_ar: string;
         classroom_id: string | null;
-        applications: { parent_id: string | null } | null;
+        parent_id: string | null;
       } | null;
+      const row = brief ? { ...brief, applications: { parent_id: brief.parent_id } } : null;
       if (!row || row.classroom_id !== input.classroomId) {
         throw new Error("هذا الطفل غير مسجّل في هذا الفصل.");
       }
@@ -428,33 +412,20 @@ export async function openPrivateThread(
 
   // A guardian linked after the conversation started becomes its owner now.
   if (!chat.parent_id && chat.child_id) {
-    const { data: link } = await supabaseAdmin
-      .from("application_children")
-      .select("name_ar, applications!inner (parent_id)")
-      .eq("id", chat.child_id)
-      .maybeSingle();
-    const linked = link as unknown as {
-      name_ar: string;
-      applications: { parent_id: string | null } | null;
-    } | null;
+    const { data: link } = await supabase.rpc("child_brief", { _child_id: chat.child_id }).maybeSingle();
+    const linked = link as { name_ar: string } | null;
     childName = childName ?? linked?.name_ar ?? null;
-    const guardianId = linked?.applications?.parent_id ?? null;
-    if (guardianId) {
-      await supabaseAdmin.from("private_chats").update({ parent_id: guardianId }).eq("id", chat.id);
-      if (chat.teacher_id === userId) peerId = guardianId;
-    }
+    const { data: guardian } = await supabase.rpc("sync_private_chat_guardian", { _chat_id: chat.id });
+    const guardianId = (guardian as string | null) ?? null;
+    if (guardianId && chat.teacher_id === userId) peerId = guardianId;
   }
 
   if (!peerId) peerId = chat.teacher_id === userId ? chat.parent_id : chat.teacher_id;
 
   const { data: profile } = peerId
-    ? await supabaseAdmin
-        .from("profiles")
-        .select("full_name, avatar_url")
-        .eq("id", peerId)
-        .maybeSingle()
+    ? await supabase.rpc("profile_cards", { _ids: [peerId] }).maybeSingle()
     : { data: null };
-  const signed = await signPaths(
+  const signed = await signPaths(supabase, 
     profile?.avatar_url && !/^(https?:|data:)/i.test(profile.avatar_url)
       ? [profile.avatar_url]
       : [],
@@ -462,12 +433,10 @@ export async function openPrivateThread(
 
   // Guardians appear everywhere under their child's name.
   const { childNamesByParent } = await import("./chat.server");
-  const childNames = await childNamesByParent(input.classroomId);
+  const childNames = await childNamesByParent(supabase, input.classroomId);
   if (!childName && chat.child_id) {
-    const { data: named } = await supabaseAdmin
-      .from("application_children")
-      .select("name_ar")
-      .eq("id", chat.child_id)
+    const { data: named } = await supabase
+      .rpc("child_brief", { _child_id: chat.child_id })
       .maybeSingle();
     childName = named?.name_ar ?? null;
   }
@@ -517,9 +486,8 @@ export async function sendPrivateMessage(supabase: Db, userId: string, input: Se
       : { data: false };
     if (isParent !== true) throw new Error("لا يمكنك المشاركة في هذه المحادثة.");
     guardianId = userId;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    if (!chat.parent_id) {
-      await supabaseAdmin.from("private_chats").update({ parent_id: userId }).eq("id", chat.id);
+      if (!chat.parent_id) {
+      await supabase.rpc("sync_private_chat_guardian", { _chat_id: chat.id });
     }
   }
 
@@ -549,7 +517,7 @@ export async function sendPrivateMessage(supabase: Db, userId: string, input: Se
     const { childNamesByParent } = await import("./chat.server");
     const senderLabel =
       guardianId === userId
-        ? ((await childNamesByParent(chat.class_id)).get(userId) ?? profile?.full_name ?? null)
+        ? ((await childNamesByParent(supabase, chat.class_id)).get(userId) ?? profile?.full_name ?? null)
         : (profile?.full_name ?? null);
     const recipient = chat.teacher_id === userId ? guardianId : chat.teacher_id;
 

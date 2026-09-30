@@ -298,10 +298,8 @@ export async function getTeacherDetail(
     throw new Error("غير مصرح: هذه الصفحة لمدير النظام والإدارة فقط.");
   }
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
   const [{ data: profile }, { data: links }] = await Promise.all([
-    supabaseAdmin
+    supabase
       .from("profiles")
       .select("id, full_name, email, phone, last_login_at, created_at")
       .eq("id", teacherId)

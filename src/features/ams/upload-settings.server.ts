@@ -37,11 +37,6 @@ async function guardAdminOnly(supabase: Db, userId: string) {
   }
 }
 
-async function admin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin as unknown as Db;
-}
-
 export async function getUploadSettings(supabase: Db): Promise<UploadSettings> {
   const { data } = await supabase
     .from("site_content")
@@ -180,7 +175,7 @@ export async function purgeRegistrationData(
   }
   verifyToken(userId, input.token);
 
-  const db = await admin();
+  const db = supabase;
 
   // Best-effort storage cleanup before the rows disappear.
   const [{ data: docRows }, { data: receiptRows }] = await Promise.all([

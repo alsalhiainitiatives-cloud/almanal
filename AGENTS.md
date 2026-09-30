@@ -8,3 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+- Never use supabaseAdmin (service key) in app code; privileged steps go through SECURITY DEFINER RPCs called with the user's client — the key is absent on the live Cloudflare site.

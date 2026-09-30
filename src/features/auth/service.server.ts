@@ -91,6 +91,7 @@ export async function performSignIn(data: SignInInput): Promise<SignInResult> {
     userId: result.user.id,
     rememberMe: Boolean(data.rememberMe),
     meta,
+    accessToken: result.session.access_token,
   });
   await recordAudit({
     userId: result.user.id,

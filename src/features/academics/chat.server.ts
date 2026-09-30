@@ -32,11 +32,10 @@ async function rolesOf(supabase: Db, userId: string): Promise<AppRole[]> {
   return (data ?? []).map((r) => r.role as AppRole);
 }
 
-async function signPaths(paths: string[]): Promise<Record<string, string>> {
+async function signPaths(supabase: Db, paths: string[]): Promise<Record<string, string>> {
   const unique = [...new Set(paths.filter(Boolean))];
   if (!unique.length) return {};
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin.storage.from(CHAT_BUCKET).createSignedUrls(unique, 60 * 60 * 6);
+  const { data } = await supabase.storage.from(CHAT_BUCKET).createSignedUrls(unique, 60 * 60 * 6);
   const map: Record<string, string> = {};
   for (const row of data ?? []) if (row.path && row.signedUrl) map[row.path] = row.signedUrl;
   return map;
@@ -86,27 +85,19 @@ async function roomSeeds(
  * child's name everywhere in the chat, never by their own name.
  * Uses the service client because RLS hides other families' children.
  */
-export async function childNamesByParent(classroomId: string): Promise<Map<string, string>> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("application_children")
-    .select("name_ar, applications!inner (parent_id, status)")
-    .eq("classroom_id", classroomId)
-    .eq("applications.status", "approved")
-    .is("withdrawn_at", null)
-    .limit(500);
-
+export async function childNamesByParent(
+  supabase: Db,
+  classroomId: string,
+): Promise<Map<string, string>> {
+  const { data } = await supabase.rpc("classroom_roster", { _classroom_id: classroomId });
   const byParent = new Map<string, string[]>();
-  for (const row of (data ?? []) as unknown as {
-    name_ar: string;
-    applications: { parent_id: string | null } | null;
-  }[]) {
-    const parentId = row.applications?.parent_id;
-    if (!parentId || !row.name_ar) continue;
-    byParent.set(parentId, [...(byParent.get(parentId) ?? []), row.name_ar]);
+  for (const row of (data ?? []) as { child_name: string; parent_id: string | null }[]) {
+    if (!row.parent_id || !row.child_name) continue;
+    byParent.set(row.parent_id, [...(byParent.get(row.parent_id) ?? []), row.child_name]);
   }
   return new Map([...byParent.entries()].map(([id, names]) => [id, names.join(" و")]));
 }
+
 
 function normalizeAttachments(raw: unknown): ChatAttachment[] {
   if (!Array.isArray(raw)) return [];
@@ -251,10 +242,10 @@ export async function getChatBoard(
       .map((a) => a.path)
       .filter((p): p is string => Boolean(p)),
   );
-  const signed = await signPaths([...paths, ...avatarPaths]);
+  const signed = await signPaths(supabase, [...paths, ...avatarPaths]);
 
   // Parents are identified by their child's name, never by their own name.
-  const childNames = await childNamesByParent(activeRoomId);
+  const childNames = await childNamesByParent(supabase, activeRoomId);
 
   const messages: ChatMessage[] = ordered.map((r) => ({
     id: r.id,
@@ -328,7 +319,7 @@ export async function sendChatMessage(supabase: Db, userId: string, input: SendM
   // A parent appears under her child's name, never her own.
   const displayName =
     senderRole === "parent"
-      ? ((await childNamesByParent(input.classroomId)).get(userId) ??
+      ? ((await childNamesByParent(supabase, input.classroomId)).get(userId) ??
         profile?.full_name ??
         null)
       : (profile?.full_name ?? null);
@@ -359,7 +350,7 @@ export async function sendChatMessage(supabase: Db, userId: string, input: SendM
       .select("name_ar")
       .eq("id", input.classroomId)
       .maybeSingle();
-    const { parentIds, teacherIds } = await classroomAudience(input.classroomId);
+    const { parentIds, teacherIds } = await classroomAudience(supabase, input.classroomId);
     const senderName = displayName ?? "أحد أعضاء الفصل";
 
     const preview = body ? body.slice(0, 120) : "مرفق جديد في المحادثة";
@@ -405,11 +396,10 @@ export async function setClassroomParentPosting(
   });
   if (allowed !== true) throw new Error("لا تملك صلاحية تعديل إعدادات هذا الفصل.");
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { error } = await supabaseAdmin
-    .from("classrooms")
-    .update({ allow_parent_messages: input.allowed })
-    .eq("id", input.classroomId);
+  const { error } = await supabase.rpc("set_classroom_parent_posting", {
+    _classroom_id: input.classroomId,
+    _allowed: input.allowed,
+  });
   if (error) throw new Error("تعذّر تحديث إعداد الشات الجماعي.");
   return { ok: true };
 }

@@ -196,7 +196,7 @@ async function notifyPlanPublished(supabase: Db, planId: string) {
       userIds = [parentId];
       title = `تم نشر ${kindLabel} الخاصة بـ ${row.application_children?.name_ar ?? "طفلك"}`;
     } else {
-      userIds = (await classroomAudience(plan.classroom_id)).parentIds;
+      userIds = (await classroomAudience(supabase, plan.classroom_id)).parentIds;
       title = `تم نشر ${kindLabel} — ${classroomName}`;
     }
 
