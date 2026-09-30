@@ -255,6 +255,13 @@ export async function getAssessmentBoard(
     })),
   }));
 
+  const lessonIds = new Set(lessons.map((l) => l.id));
+  const subjectsWithLessons = new Set(
+    (lessonRows ?? [])
+      .map((l) => topicById.get(l.topic_id)?.subject_id)
+      .filter(Boolean) as string[],
+  );
+
   return {
     canEdit: true,
     classrooms: options,
@@ -266,8 +273,14 @@ export async function getAssessmentBoard(
       gender: c.gender,
       studentNumber: c.student_number,
     })),
-    cells,
+    cells: cells.filter((c) => lessonIds.has(c.lessonId)),
+    subjectScoped,
+    scopeSubjectNames: subjectRows.map((s) => s.name_ar),
+    emptySubjects: subjectRows
+      .filter((s) => !subjectsWithLessons.has(s.id))
+      .map((s) => ({ nameAr: s.name_ar, colorHex: s.color_hex ?? "#7A1F3D" })),
   };
+
 }
 
 export type SaveAssessmentInput = {
