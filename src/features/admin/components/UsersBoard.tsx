@@ -63,7 +63,9 @@ export function UsersBoard() {
   const [editing, setEditing] = useState<AdminUser | null>(null);
   const [deleting, setDeleting] = useState<AdminUser | null>(null);
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | "none" | AppRole>("all");
+  // "all" | "none" | AppRole | `custom:${customRoleId}`
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkOpen, setBulkOpen] = useState(false);
 
