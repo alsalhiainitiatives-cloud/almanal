@@ -188,15 +188,16 @@ export function ClassChat() {
   }, [messages.length, activeRoomId, tab]);
 
   const send = useMutation({
-    mutationFn: async () =>
+    mutationFn: async (override?: string) =>
       sendFn({
         data: {
           classroomId: activeRoomId!,
-          body,
-          parentMessageId: replyTo?.id ?? null,
-          attachments: pending,
+          body: override ?? body,
+          parentMessageId: override ? null : (replyTo?.id ?? null),
+          attachments: override ? [] : pending,
         },
       }),
+
     onSuccess: () => {
       setBody("");
       setPending([]);
