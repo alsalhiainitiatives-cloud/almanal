@@ -38,6 +38,8 @@ function mapPlan(row: PlanRow, items: StudyPlanItem[]): StudyPlan {
     classroomId: row.classroom_id,
     classroomName: row.classrooms?.name_ar ?? null,
     stageName: row.classrooms?.stages?.name_ar ?? null,
+    childId: row.child_id ?? null,
+    childName: row.application_children?.name_ar ?? null,
     planType: (row.plan_type as PlanType) ?? "weekly",
     titleAr: row.title_ar,
     notes: row.notes,
@@ -69,7 +71,8 @@ async function withItems(supabase: Db, rows: PlanRow[]): Promise<StudyPlan[]> {
   return rows.map((r) => mapPlan(r, byPlan.get(r.id) ?? []));
 }
 
-const PLAN_SELECT = "*, classrooms (name_ar, stages (name_ar))";
+const PLAN_SELECT =
+  "*, classrooms (name_ar, stages (name_ar)), application_children (name_ar)";
 
 /** Plans for one classroom (teacher / staff builder view). */
 export async function listClassroomPlans(supabase: Db, classroomId: string): Promise<StudyPlan[]> {
@@ -85,6 +88,8 @@ export async function listClassroomPlans(supabase: Db, classroomId: string): Pro
 export type SavePlanInput = {
   id?: string | null;
   classroomId: string;
+  /** null / undefined = خطة عامة للفصل. */
+  childId?: string | null;
   planType: PlanType;
   titleAr?: string | null;
   notes?: string | null;
@@ -107,6 +112,7 @@ export type SavePlanInput = {
 export async function saveStudyPlan(supabase: Db, userId: string, input: SavePlanInput) {
   const payload = {
     classroom_id: input.classroomId,
+    child_id: input.childId ?? null,
     plan_type: input.planType,
     title_ar: input.titleAr?.trim() || null,
     notes: input.notes?.trim() || null,
