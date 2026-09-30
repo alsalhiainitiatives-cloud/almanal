@@ -27,8 +27,8 @@ export const MERGED_ROLES: AppRole[] = ["supervisor"];
 
 export const ROLE_LABELS: Record<AppRole, string> = {
   parent: "ولي أمر",
-  registration_officer: "مسؤول التسجيل",
-  accountant: "المحاسب",
+  registration_officer: "مسؤولة التسجيل",
+  accountant: "المحاسبة",
   teacher: "معلمة",
   principal: "مدير المدرسة",
   supervisor: "مدير النظام",
