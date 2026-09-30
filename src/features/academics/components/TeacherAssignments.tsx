@@ -61,11 +61,6 @@ export function TeacherAssignments() {
     [teachers],
   );
 
-  const subjectById = useMemo(
-    () => new Map(classrooms.flatMap((room) => room.subjects.map((s) => [s.id, s] as const))),
-    [classrooms],
-  );
-
   const filteredTeachers = useMemo(() => {
     const term = teacherSearch.trim();
     if (!term) return teachers;
