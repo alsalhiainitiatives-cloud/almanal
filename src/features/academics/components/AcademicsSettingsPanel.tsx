@@ -36,6 +36,8 @@ export function AcademicsSettingsPanel() {
   const saveColors = useServerFn(academicsSaveMonthColors);
   const setGlobal = useServerFn(academicsSetChatGlobal);
   const setClassroom = useServerFn(academicsSetChatClassroom);
+  const setParentPosting = useServerFn(chatSetParentPosting);
+
 
 
   const { data, isLoading } = useQuery({
