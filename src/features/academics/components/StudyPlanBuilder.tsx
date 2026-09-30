@@ -281,11 +281,15 @@ export function StudyPlanBuilder() {
   }, [plans.data, listFilter]);
 
   const save = useMutation({
-    mutationFn: async () =>
-      saveFn({
+    mutationFn: async () => {
+      if (scope === "child" && !draft.childId) {
+        throw new Error("اختاري الطالب المراد إنشاء خطة فردية له.");
+      }
+      return saveFn({
         data: {
           id: draft.id,
           classroomId: classroomId!,
+          childId: scope === "child" ? draft.childId : null,
           planType: draft.planType,
           titleAr: draft.titleAr || null,
           notes: draft.notes || null,
