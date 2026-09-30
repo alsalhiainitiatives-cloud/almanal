@@ -273,16 +273,24 @@ export function PrivateChatPanel({
           <div className="flex flex-col gap-1">
             {list.map((contact: PrivateContact) => (
               <button
-                key={contact.peerId}
+                key={contact.key}
                 type="button"
-                onClick={() => setPeer({ peerId: contact.peerId, chatId: contact.chatId })}
+                onClick={() =>
+                  setPeer({
+                    key: contact.key,
+                    peerId: contact.peerId,
+                    childId: contact.childId,
+                    chatId: contact.chatId,
+                  })
+                }
                 className={cn(
                   "flex items-center gap-2 rounded-xl border p-2 text-start transition",
-                  peer?.peerId === contact.peerId
+                  peer?.key === contact.key
                     ? "border-primary/50 bg-primary/10"
                     : "border-transparent hover:bg-muted/60",
                 )}
               >
+
                 <UserAvatar
                   name={contact.name}
                   src={contact.avatarUrl}
