@@ -14,6 +14,7 @@ type Db = SupabaseClient<Database>;
 
 type PlanRow = Database["public"]["Tables"]["study_plans"]["Row"] & {
   classrooms?: { name_ar: string; stages: { name_ar: string } | null } | null;
+  application_children?: { name_ar: string } | null;
 };
 
 function mapItem(row: Database["public"]["Tables"]["study_plan_items"]["Row"]): StudyPlanItem {
