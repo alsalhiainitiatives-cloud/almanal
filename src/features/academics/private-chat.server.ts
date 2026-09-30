@@ -495,12 +495,23 @@ export async function sendPrivateMessage(supabase: Db, userId: string, input: Se
 
   const { data: chat } = await supabase
     .from("private_chats")
-    .select("id, class_id, teacher_id, parent_id")
+    .select("id, class_id, teacher_id, parent_id, child_id")
     .eq("id", input.chatId)
     .maybeSingle();
   if (!chat) throw new Error("المحادثة غير متاحة.");
-  if (chat.teacher_id !== userId && chat.parent_id !== userId) {
-    throw new Error("لا يمكنك المشاركة في هذه المحادثة.");
+
+  let guardianId = chat.parent_id;
+  if (chat.teacher_id !== userId && guardianId !== userId) {
+    // A guardian linked to the child after the teacher started the conversation.
+    const { data: isParent } = chat.child_id
+      ? await supabase.rpc("is_child_parent", { _user_id: userId, _child_id: chat.child_id })
+      : { data: false };
+    if (isParent !== true) throw new Error("لا يمكنك المشاركة في هذه المحادثة.");
+    guardianId = userId;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (!chat.parent_id) {
+      await supabaseAdmin.from("private_chats").update({ parent_id: userId }).eq("id", chat.id);
+    }
   }
 
   const { error } = await supabase.from("private_messages").insert({
@@ -517,6 +528,7 @@ export async function sendPrivateMessage(supabase: Db, userId: string, input: Se
     .from("private_chats")
     .update({ updated_at: new Date().toISOString() })
     .eq("id", chat.id);
+
 
   try {
     const { notify } = await import("@/features/notifications/notifications.server");
