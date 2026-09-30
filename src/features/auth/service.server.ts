@@ -275,6 +275,73 @@ export async function listUsersWithRoles(supabase: Db) {
 }
 
 
+/**
+ * Admin-only: permanently delete a portal account.
+ * Refuses to delete the caller's own account, the last remaining admin, or an
+ * account that still owns admission applications (data would be orphaned).
+ */
+export async function deleteUserAccount(_supabase: Db, actorId: string, userId: string) {
+  if (actorId === userId) throw new Error("لا يمكنك حذف حسابك الشخصي.");
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const { data: target } = await supabaseAdmin
+    .from("profiles")
+    .select("id, full_name, email")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const { data: targetRoles } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId);
+  const roles = (targetRoles ?? []).map((r) => r.role as AppRole);
+
+  if (roles.includes("admin")) {
+    const { count } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id", { count: "exact", head: true })
+      .eq("role", "admin");
+    if ((count ?? 0) <= 1) throw new Error("لا يمكن حذف آخر حساب لمدير النظام.");
+  }
+
+  const { count: applicationsCount } = await supabaseAdmin
+    .from("applications")
+    .select("id", { count: "exact", head: true })
+    .eq("parent_id", userId);
+  if ((applicationsCount ?? 0) > 0) {
+    throw new Error(
+      `لا يمكن حذف الحساب لارتباطه بـ ${applicationsCount} طلب التحاق. انقل الطلبات لولي أمر آخر أو احذفها أولًا.`,
+    );
+  }
+
+  // Clean the access rows first so no orphan grants remain if auth deletion fails.
+  await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
+  await (supabaseAdmin as any).from("user_custom_roles").delete().eq("user_id", userId);
+  await (supabaseAdmin as any).from("user_permissions").delete().eq("user_id", userId);
+  await supabaseAdmin.from("user_sessions").delete().eq("user_id", userId);
+  await supabaseAdmin.from("teacher_classrooms").delete().eq("teacher_id", userId);
+  await (supabaseAdmin as any).from("teacher_subjects").delete().eq("teacher_id", userId);
+
+  const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+  if (authError && !/not found/i.test(authError.message)) {
+    throw new Error("تعذّر حذف الحساب من نظام الدخول — حاول مرة أخرى.");
+  }
+
+  await supabaseAdmin.from("profiles").delete().eq("id", userId);
+
+  await recordAudit({
+    userId: actorId,
+    action: "users.delete",
+    entity: "profiles",
+    entityId: userId,
+    metadata: { email: target?.email ?? null, fullName: target?.full_name ?? null, roles },
+    meta: getRequestMeta(),
+  });
+
+  return { ok: true as const, fullName: target?.full_name ?? "المستخدم" };
+}
+
 export async function replaceUserRoles(
   supabase: Db,
   actorId: string,
