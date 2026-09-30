@@ -14,8 +14,9 @@ export const roleAssignmentSchema = z.object({
         "teacher",
       ]),
     )
-    .min(1, "يجب اختيار دور واحد على الأقل")
+    // May be empty: a user can hold only admin-defined custom roles.
     .max(7),
+
 });
 
 export type RoleAssignmentInput = z.infer<typeof roleAssignmentSchema>;

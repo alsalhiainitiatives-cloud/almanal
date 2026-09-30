@@ -63,7 +63,9 @@ export function UsersBoard() {
   const [editing, setEditing] = useState<AdminUser | null>(null);
   const [deleting, setDeleting] = useState<AdminUser | null>(null);
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | "none" | AppRole>("all");
+  // "all" | "none" | AppRole | `custom:${customRoleId}`
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkOpen, setBulkOpen] = useState(false);
 
@@ -102,8 +104,11 @@ export function UsersBoard() {
   const roleCounts = useMemo(() => {
     const map = new Map<string, number>();
     for (const user of allUsers) {
-      if (user.roles.length === 0) map.set("none", (map.get("none") ?? 0) + 1);
+      const customIds = user.customRoleIds ?? [];
+      if (user.roles.length === 0 && customIds.length === 0)
+        map.set("none", (map.get("none") ?? 0) + 1);
       for (const role of user.roles) map.set(role, (map.get(role) ?? 0) + 1);
+      for (const id of customIds) map.set(`custom:${id}`, (map.get(`custom:${id}`) ?? 0) + 1);
     }
     return map;
   }, [allUsers]);
@@ -111,18 +116,22 @@ export function UsersBoard() {
   const users = useMemo(() => {
     const term = search.trim().toLowerCase();
     return allUsers.filter((user) => {
+      const customIds = user.customRoleIds ?? [];
       const matchesRole =
         roleFilter === "all"
           ? true
           : roleFilter === "none"
-            ? user.roles.length === 0
-            : user.roles.includes(roleFilter);
+            ? user.roles.length === 0 && customIds.length === 0
+            : roleFilter.startsWith("custom:")
+              ? customIds.includes(roleFilter.slice("custom:".length))
+              : user.roles.includes(roleFilter as AppRole);
       if (!matchesRole) return false;
       if (!term) return true;
       return [user.fullName, user.email, user.phone]
         .filter((v): v is string => Boolean(v))
         .some((value) => value.toLowerCase().includes(term));
     });
+
   }, [allUsers, roleFilter, search]);
 
   const allSelected = users.length > 0 && users.every((u) => selected.includes(u.id));
@@ -171,13 +180,23 @@ export function UsersBoard() {
               ...ALL_ROLES.map(
                 (role) => [role, `${ROLE_LABELS[role]} (${roleCounts.get(role) ?? 0})`] as const,
               ),
+              ...(customRolesData?.roles ?? [])
+                .filter((role) => role.isActive)
+                .map(
+                  (role) =>
+                    [
+                      `custom:${role.id}`,
+                      `${role.nameAr} (${roleCounts.get(`custom:${role.id}`) ?? 0})`,
+                    ] as const,
+                ),
               ["none", `بدون دور (${roleCounts.get("none") ?? 0})`],
             ] as Array<[string, string]>
           ).map(([value, label]) => (
             <button
               key={value}
               type="button"
-              onClick={() => setRoleFilter(value as "all" | "none" | AppRole)}
+              onClick={() => setRoleFilter(value)}
+
               className={`rounded-full px-3.5 py-1.5 text-[11px] font-bold transition-colors ${
                 roleFilter === value
                   ? "bg-primary text-primary-foreground"
@@ -751,10 +770,11 @@ function RoleDialog({ user, onClose }: { user: AdminUser | null; onClose: () => 
 
         <Button
           onClick={() => mutation.mutate()}
-          disabled={mutation.isPending || selected.length === 0}
+          disabled={mutation.isPending || (selected.length === 0 && selectedCustom.length === 0)}
           className="w-full rounded-2xl py-3 font-bold"
 
         >
+
           {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
           حفظ الأدوار
         </Button>
