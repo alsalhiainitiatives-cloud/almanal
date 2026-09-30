@@ -106,7 +106,13 @@ export async function listPrivateContacts(
     });
   }
 
-  let peers: { peerId: string; subtitle: string | null; childIds: string[] }[] = [];
+  let peers: {
+    peerId: string;
+    subtitle: string | null;
+    childIds: string[];
+    /** Children's names — shown instead of the guardian's own name. */
+    displayName: string | null;
+  }[] = [];
 
   if (role === "parent") {
     const { data: links } = await supabaseAdmin
@@ -117,6 +123,7 @@ export async function listPrivateContacts(
       peerId: id as string,
       subtitle: "معلمة الفصل",
       childIds: [],
+      displayName: null,
     }));
   } else if (role === "teacher") {
     const { data: children } = await supabaseAdmin
@@ -141,13 +148,20 @@ export async function listPrivateContacts(
     }
     peers = [...byParent.entries()].map(([peerId, entry]) => ({
       peerId,
-      subtitle: `ولي أمر ${entry.names.slice(0, 2).join(" و")}`,
+      subtitle: null,
       childIds: entry.childIds,
+      displayName: entry.names.slice(0, 2).join(" و") || null,
     }));
   } else {
     // Staff moderation: only conversations that already exist.
-    peers = chatRows.map((c) => ({ peerId: c.teacher_id, subtitle: "محادثة خاصة", childIds: [] }));
+    peers = chatRows.map((c) => ({
+      peerId: c.teacher_id,
+      subtitle: "محادثة خاصة",
+      childIds: [],
+      displayName: null,
+    }));
   }
+
 
   const peerIds = [...new Set(peers.map((p) => p.peerId))];
   const { data: profiles } = peerIds.length
