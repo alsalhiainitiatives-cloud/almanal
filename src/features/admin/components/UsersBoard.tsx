@@ -56,12 +56,17 @@ import {
 type AdminUser = Awaited<ReturnType<typeof adminListUsers>>[number];
 
 export function UsersBoard() {
-  const { hasPermission, loadingContext } = useAuth();
+  const { hasPermission, loadingContext, roles: myRoles } = useAuth();
   const canManageRoles = hasPermission(P.rolesManage);
   const canManagePermissions = hasPermission(P.permissionsManage) || canManageRoles;
+  const canDeleteUsers = (myRoles as string[]).includes("admin");
   const [editing, setEditing] = useState<AdminUser | null>(null);
+  const [deleting, setDeleting] = useState<AdminUser | null>(null);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"all" | "none" | AppRole>("all");
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkOpen, setBulkOpen] = useState(false);
+
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin", "users"],
