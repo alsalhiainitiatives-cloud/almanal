@@ -592,6 +592,12 @@ export function ClassChat() {
                           <Paperclip className="size-4" />
                         )}
                       </Button>
+                      <MessageTemplates
+                        classroomId={activeRoomId}
+                        onInsert={(text) => setBody((prev) => (prev ? `${prev}\n${text}` : text))}
+                        onSend={(text) => send.mutate(text)}
+                      />
+
                       <Textarea
                         value={body}
                         onChange={(e) => setBody(e.target.value)}
