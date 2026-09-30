@@ -457,6 +457,7 @@ export function StudyPlanBuilder() {
             value={classroomId ?? undefined}
             onValueChange={(value) => {
               setClassroomId(value);
+              setScope("classroom");
               setDraft(emptyDraft(draft.planType));
             }}
           >
