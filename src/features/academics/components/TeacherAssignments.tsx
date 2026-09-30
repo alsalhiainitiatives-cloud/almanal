@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeftRight,
+  BookOpen,
   Check,
   GraduationCap,
   Loader2,
@@ -26,12 +27,22 @@ import { cn } from "@/lib/utils";
 import {
   academicsAssignmentBoard,
   academicsSetClassroomTeachers,
+  academicsSetSubjectTeachers,
 } from "../academics.functions";
+
+type Mode = "classroom" | "subject";
+
+const MODE_LABELS: Record<Mode, string> = {
+  classroom: "إسناد الفصول (معلمة فصل)",
+  subject: "إسناد المواد (معلمة مادة)",
+};
 
 export function TeacherAssignments() {
   const queryClient = useQueryClient();
   const [teacherSearch, setTeacherSearch] = useState("");
   const [activeClassroom, setActiveClassroom] = useState<string>("");
+  const [mode, setMode] = useState<Mode>("classroom");
+  const [activeSubject, setActiveSubject] = useState<string>("");
 
   const boardQuery = useQuery({
     queryKey: ["academics", "assignments"],
@@ -41,10 +52,18 @@ export function TeacherAssignments() {
   const teachers = boardQuery.data?.teachers ?? [];
   const classrooms = boardQuery.data?.classrooms ?? [];
   const selectedClassroom = classrooms.find((room) => room.id === activeClassroom) ?? classrooms[0];
+  const classroomSubjects = selectedClassroom?.subjects ?? [];
+  const selectedSubject =
+    classroomSubjects.find((subject) => subject.id === activeSubject) ?? classroomSubjects[0];
 
   const teacherName = useMemo(
     () => new Map(teachers.map((t) => [t.id, t.fullName])),
     [teachers],
+  );
+
+  const subjectById = useMemo(
+    () => new Map(classrooms.flatMap((room) => room.subjects.map((s) => [s.id, s] as const))),
+    [classrooms],
   );
 
   const filteredTeachers = useMemo(() => {
@@ -67,7 +86,29 @@ export function TeacherAssignments() {
       toast.error(error.message === "forbidden" ? "هذا الإجراء متاح للمدير العام فقط" : error.message),
   });
 
+  const subjectMutation = useMutation({
+    mutationFn: (input: { subjectId: string; teacherIds: string[] }) =>
+      academicsSetSubjectTeachers({ data: input }),
+    onSuccess: () => {
+      toast.success("تم تحديث إسناد المادة");
+      void queryClient.invalidateQueries({ queryKey: ["academics", "assignments"] });
+    },
+    onError: (error: Error) =>
+      toast.error(error.message === "forbidden" ? "هذا الإجراء متاح للمدير العام فقط" : error.message),
+  });
+
+  const busy = saveMutation.isPending || subjectMutation.isPending;
+
   function toggle(teacherId: string) {
+    if (mode === "subject") {
+      if (!selectedSubject) return;
+      const current = selectedSubject.teacherIds;
+      const next = current.includes(teacherId)
+        ? current.filter((id) => id !== teacherId)
+        : [...current, teacherId];
+      subjectMutation.mutate({ subjectId: selectedSubject.id, teacherIds: next });
+      return;
+    }
     if (!selectedClassroom) return;
     const current = selectedClassroom.teacherIds;
     const next = current.includes(teacherId)
@@ -75,6 +116,7 @@ export function TeacherAssignments() {
       : [...current, teacherId];
     saveMutation.mutate({ classroomId: selectedClassroom.id, teacherIds: next });
   }
+
 
   if (boardQuery.isLoading) {
     return (
