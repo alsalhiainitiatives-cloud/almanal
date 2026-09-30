@@ -322,8 +322,81 @@ export function TeacherAssignments() {
               );
             })}
           </div>
+
+          {mode === "subject" && (
+            <div className="mt-4 border-t border-border/50 pt-4">
+              <h4 className="flex items-center gap-2 text-xs font-black text-foreground">
+                <BookOpen className="size-4 text-primary" />
+                مواد {selectedClassroom?.nameAr ?? "الفصل"} ({classroomSubjects.length})
+              </h4>
+              {classroomSubjects.length === 0 ? (
+                <p className="mt-2 rounded-2xl border border-dashed border-border/70 px-4 py-6 text-center text-[11px] font-bold text-muted-foreground">
+                  لا توجد مواد لهذا الفصل بعد. تُضاف المواد من تبويب «المنهج».
+                </p>
+              ) : (
+                <div className="mt-2 space-y-2">
+                  {classroomSubjects.map((subject) => {
+                    const active = selectedSubject?.id === subject.id;
+                    return (
+                      <button
+                        key={subject.id}
+                        type="button"
+                        onClick={() => setActiveSubject(subject.id)}
+                        className={cn(
+                          "w-full rounded-2xl border p-3 text-start transition",
+                          active
+                            ? "border-primary/60 bg-primary/10 shadow-sm"
+                            : "border-border/60 bg-background/60 hover:border-primary/40",
+                        )}
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <span
+                            className="size-3.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: subject.colorHex }}
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-xs font-black text-foreground">
+                              {subject.nameAr}
+                            </span>
+                            <span className="block text-[11px] text-muted-foreground">
+                              {subject.teacherIds.length
+                                ? `${subject.teacherIds.length} معلمة مادة`
+                                : "لا توجد معلمة مادة"}
+                            </span>
+                          </span>
+                        </span>
+
+                        {subject.teacherIds.length > 0 && (
+                          <span className="mt-2 flex flex-wrap gap-1.5">
+                            {subject.teacherIds.map((id) => (
+                              <span
+                                key={id}
+                                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary"
+                              >
+                                {teacherName.get(id) ?? "معلمة"}
+                                {active && (
+                                  <X
+                                    className="size-3 cursor-pointer"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      toggle(id);
+                                    }}
+                                  />
+                                )}
+                              </span>
+                            ))}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </section>
       </div>
+
 
       {/* Summary */}
       <section className="overflow-hidden rounded-[2rem] border border-border/60 bg-card/80 shadow-sm">
