@@ -20,6 +20,7 @@ const itemSchema = z.object({
 const savePlanSchema = z.object({
   id: z.string().uuid().nullable().optional(),
   classroomId: z.string().uuid(),
+  childId: z.string().uuid().nullable().optional(),
   planType: z.enum(["weekly", "monthly"]).default("weekly"),
   titleAr: z.string().max(160).nullable().optional(),
   notes: z.string().max(1000).nullable().optional(),
@@ -61,6 +62,14 @@ export const plansSetPublished = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { setStudyPlanPublished } = await import("./plans.server");
     return setStudyPlanPublished(context.supabase, data.id, data.published);
+  });
+
+export const plansClassroomChildren = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ classroomId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { listClassroomChildren } = await import("./plans.server");
+    return listClassroomChildren(context.supabase, data.classroomId);
   });
 
 export const plansParentBoard = createServerFn({ method: "POST" })
