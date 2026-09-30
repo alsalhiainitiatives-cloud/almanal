@@ -389,6 +389,35 @@ export async function getAssignmentBoard(supabase: Db, userId: string): Promise<
     enrolled.set(row.classroom_id, (enrolled.get(row.classroom_id) ?? 0) + 1);
   }
 
+  const subjectTeacherRows = (subjectLinks ?? []) as { teacher_id: string; subject_id: string }[];
+  const teachersBySubject = new Map<string, string[]>();
+  const subjectsByTeacher = new Map<string, string[]>();
+  for (const row of subjectTeacherRows) {
+    teachersBySubject.set(row.subject_id, [
+      ...(teachersBySubject.get(row.subject_id) ?? []),
+      row.teacher_id,
+    ]);
+    subjectsByTeacher.set(row.teacher_id, [
+      ...(subjectsByTeacher.get(row.teacher_id) ?? []),
+      row.subject_id,
+    ]);
+  }
+
+  const allSubjects = (
+    (subjectRows ?? []) as unknown as {
+      id: string;
+      classroom_id: string;
+      name_ar: string;
+      color_hex: string;
+    }[]
+  ).map((row) => ({
+    id: row.id,
+    classroomId: row.classroom_id,
+    nameAr: row.name_ar,
+    colorHex: row.color_hex,
+    teacherIds: teachersBySubject.get(row.id) ?? [],
+  }));
+
   const rooms = (
     (classrooms ?? []) as unknown as {
       id: string;
@@ -407,6 +436,7 @@ export async function getAssignmentBoard(supabase: Db, userId: string): Promise<
     capacity: row.capacity,
     enrolledCount: enrolled.get(row.id) ?? 0,
     teacherIds: byClassroom.get(row.id) ?? [],
+    subjects: allSubjects.filter((s) => s.classroomId === row.id),
   }));
 
   const stages = [...new Map(rooms.map((r) => [r.stageId, r.stageNameAr])).entries()].map(
@@ -419,7 +449,9 @@ export async function getAssignmentBoard(supabase: Db, userId: string): Promise<
     email: row.email,
     phone: row.phone,
     classroomIds: byTeacher.get(row.id) ?? [],
+    subjectIds: subjectsByTeacher.get(row.id) ?? [],
   }));
+
   teachers.sort((a, b) => a.fullName.localeCompare(b.fullName, "ar"));
 
   return { stages, teachers, classrooms: rooms };
