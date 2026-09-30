@@ -367,8 +367,10 @@ export function StudyPlanBuilder() {
   }
 
   function loadPlanIntoDraft(plan: StudyPlan) {
+    setScope(plan.childId ? "child" : "classroom");
     setDraft({
       id: plan.id,
+      childId: plan.childId,
       planType: plan.planType,
       titleAr: plan.titleAr ?? "",
       notes: plan.notes ?? "",
@@ -396,8 +398,9 @@ export function StudyPlanBuilder() {
         classroomId ?? "",
         activeClassroom?.nameAr ?? null,
         activeClassroom?.stageNameAr ?? null,
+        activeChild?.nameAr ?? null,
       ),
-    [draft, classroomId, activeClassroom],
+    [draft, classroomId, activeClassroom, activeChild],
   );
 
   async function runExport(kind: "png" | "pdf" | "chat") {
