@@ -97,8 +97,36 @@ export function UsersBoard() {
     [customRolesData?.roles],
   );
 
-  const users = data ?? [];
-  const allSelected = users.length > 0 && selected.length === users.length;
+  const allUsers = data ?? [];
+
+  const roleCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const user of allUsers) {
+      if (user.roles.length === 0) map.set("none", (map.get("none") ?? 0) + 1);
+      for (const role of user.roles) map.set(role, (map.get(role) ?? 0) + 1);
+    }
+    return map;
+  }, [allUsers]);
+
+  const users = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return allUsers.filter((user) => {
+      const matchesRole =
+        roleFilter === "all"
+          ? true
+          : roleFilter === "none"
+            ? user.roles.length === 0
+            : user.roles.includes(roleFilter);
+      if (!matchesRole) return false;
+      if (!term) return true;
+      return [user.fullName, user.email, user.phone]
+        .filter((v): v is string => Boolean(v))
+        .some((value) => value.toLowerCase().includes(term));
+    });
+  }, [allUsers, roleFilter, search]);
+
+  const allSelected = users.length > 0 && users.every((u) => selected.includes(u.id));
+
 
 
   if (!loadingContext && !hasPermission(P.usersView)) {
