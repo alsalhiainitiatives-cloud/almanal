@@ -328,17 +328,19 @@ export type AssignmentBoard = {
 
 export async function getAssignmentBoard(supabase: Db, userId: string): Promise<AssignmentBoard> {
   await assertSuperAdmin(supabase, userId);
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: lookup, error: lookupError } = await (supabase as any).rpc("assignment_board_lookup");
+  if (lookupError) throw new Error(lookupError.message);
+  const lk = (lookup ?? {}) as {
+    teachers?: { id: string; full_name: string; email: string | null; phone: string | null }[];
+    subjects?: { id: string; classroom_id: string; name_ar: string; color_hex: string | null; sort_order: number }[];
+    subject_links?: { teacher_id: string; subject_id: string }[];
+  };
 
   const [
-    { data: roleRows },
     { data: classrooms },
     { data: links },
     { data: children },
-    { data: subjectRows },
-    { data: subjectLinks },
   ] = await Promise.all([
-      supabaseAdmin.from("user_roles").select("user_id").eq("role", "teacher"),
       supabase
         .from("classrooms")
         .select("id, name_ar, color_hex, capacity, stage_id, stages(name_ar, sort_order)")
@@ -350,23 +352,10 @@ export async function getAssignmentBoard(supabase: Db, userId: string): Promise<
         .select("id, classroom_id, applications!inner(status, archived_at)")
         .is("withdrawn_at", null)
         .not("classroom_id", "is", null),
-      supabaseAdmin
-        .from("subjects")
-        .select("id, classroom_id, name_ar, color_hex, sort_order")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true }),
-      supabaseAdmin.from("teacher_subjects").select("teacher_id, subject_id"),
-
     ]);
-
-
-  const teacherIds = [...new Set((roleRows ?? []).map((r) => r.user_id))];
-  const { data: profiles } = teacherIds.length
-    ? await supabaseAdmin
-        .from("profiles")
-        .select("id, full_name, email, phone")
-        .in("id", teacherIds)
-    : { data: [] as { id: string; full_name: string; email: string | null; phone: string | null }[] };
+  const subjectRows = lk.subjects ?? [];
+  const subjectLinks = lk.subject_links ?? [];
+  const profiles = lk.teachers ?? [];
 
   const linkRows = (links ?? []) as { teacher_id: string; classroom_id: string }[];
   const byTeacher = new Map<string, string[]>();
@@ -464,53 +453,11 @@ export async function getAssignmentBoard(supabase: Db, userId: string): Promise<
  * website always show the same names as the Academic Tracking assignment board.
  * Assignments are the single source of truth; no duplicate manual entry.
  */
-async function syncClassroomTeacherNames(classroomIds: string[]) {
+async function syncClassroomTeacherNames(supabase: Db, classroomIds: string[]) {
   const ids = [...new Set(classroomIds)].filter(Boolean);
   if (!ids.length) return;
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-
-  const { data: links } = await supabaseAdmin
-    .from("teacher_classrooms")
-    .select("teacher_id, classroom_id, created_at")
-    .in("classroom_id", ids)
-    .order("created_at", { ascending: true });
-
-  const teacherIds = [...new Set((links ?? []).map((l) => l.teacher_id))];
-  const { data: profiles } = teacherIds.length
-    ? await supabaseAdmin.from("profiles").select("id, full_name, email").in("id", teacherIds)
-    : { data: [] as { id: string; full_name: string; email: string | null }[] };
-  const nameById = new Map(
-    (profiles ?? []).map((p) => [p.id, (p.full_name || "").trim() || p.email || "معلمة"]),
-  );
-
-  const { data: rooms } = await supabaseAdmin
-    .from("classrooms")
-    .select("id, teachers")
-    .in("id", ids);
-
-  for (const id of ids) {
-    const names = (links ?? [])
-      .filter((l) => l.classroom_id === id)
-      .map((l) => nameById.get(l.teacher_id))
-      .filter((n): n is string => !!n);
-
-    const existing = Array.isArray(rooms?.find((r) => r.id === id)?.teachers)
-      ? ((rooms?.find((r) => r.id === id)?.teachers ?? []) as { name?: string }[])
-      : [];
-    const metaByName = new Map(existing.map((t) => [(t.name ?? "").trim(), t]));
-
-    const extras = names.slice(1).map((name) => ({
-      title: "معلمة الفصل",
-      ...(metaByName.get(name) ?? {}),
-      name,
-    }));
-
-    await supabaseAdmin
-      .from("classrooms")
-      .update({ teacher_name: names[0] ?? null, teachers: extras })
-      .eq("id", id);
-  }
+  const { error } = await (supabase as any).rpc("sync_classroom_teacher_names", { _ids: ids });
+  if (error) console.error("[sync_classroom_teacher_names]", error.message);
 }
 
 /** Replace the full teacher list of one classroom. */
