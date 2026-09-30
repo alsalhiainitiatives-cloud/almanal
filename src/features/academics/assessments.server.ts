@@ -294,8 +294,49 @@ export type SaveAssessmentInput = {
   note?: string | null;
 };
 
+/**
+ * A pure subject teacher may only evaluate lessons that belong to the subjects
+ * assigned to her; staff and the classroom's homeroom teacher may evaluate all.
+ */
+async function assertLessonInScope(
+  supabase: Db,
+  userId: string,
+  lessonId: string,
+  classroomId: string,
+) {
+  const roles = await rolesOf(supabase, userId);
+  if (roles.some((r) => STAFF_ROLES.includes(r))) return;
+
+  const { data: homeroom } = await supabase
+    .from("teacher_classrooms")
+    .select("id")
+    .eq("teacher_id", userId)
+    .eq("classroom_id", classroomId)
+    .maybeSingle();
+  if (homeroom?.id) return;
+
+  const { data: lesson } = await supabase
+    .from("lessons")
+    .select("topics(subject_id)")
+    .eq("id", lessonId)
+    .maybeSingle();
+  const subjectId = (lesson as unknown as { topics: { subject_id: string } | null } | null)?.topics
+    ?.subject_id;
+  if (!subjectId) throw new Error("لم يتم العثور على الدرس المطلوب.");
+
+  const { data: link } = await supabase
+    .from("teacher_subjects")
+    .select("id")
+    .eq("teacher_id", userId)
+    .eq("subject_id", subjectId)
+    .maybeSingle();
+  if (!link?.id) throw new Error("يمكنك رصد تقييمات المواد المسندة إليك في هذا الفصل فقط.");
+}
+
 /** Upserts one child × lesson evaluation cell. */
 export async function saveAssessment(supabase: Db, userId: string, input: SaveAssessmentInput) {
+  await assertLessonInScope(supabase, userId, input.lessonId, input.classroomId);
+
   const { data: existing } = await supabase
     .from("lesson_assessments")
     .select("id")
