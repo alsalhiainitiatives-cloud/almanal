@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowLeftRight,
   BookOpen,
   Check,
   GraduationCap,
@@ -14,7 +13,6 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -30,19 +28,11 @@ import {
   academicsSetSubjectTeachers,
 } from "../academics.functions";
 
-type Mode = "classroom" | "subject";
-
-const MODE_LABELS: Record<Mode, string> = {
-  classroom: "إسناد الفصول (معلمة فصل)",
-  subject: "إسناد المواد (معلمة مادة)",
-};
-
 export function TeacherAssignments() {
   const queryClient = useQueryClient();
   const [teacherSearch, setTeacherSearch] = useState("");
+  const [activeTeacher, setActiveTeacher] = useState<string>("");
   const [activeClassroom, setActiveClassroom] = useState<string>("");
-  const [mode, setMode] = useState<Mode>("classroom");
-  const [activeSubject, setActiveSubject] = useState<string>("");
 
   const boardQuery = useQuery({
     queryKey: ["academics", "assignments"],
@@ -51,10 +41,10 @@ export function TeacherAssignments() {
 
   const teachers = boardQuery.data?.teachers ?? [];
   const classrooms = boardQuery.data?.classrooms ?? [];
-  const selectedClassroom = classrooms.find((room) => room.id === activeClassroom) ?? classrooms[0];
+
+  const selectedTeacher = teachers.find((t) => t.id === activeTeacher) ?? null;
+  const selectedClassroom = classrooms.find((room) => room.id === activeClassroom) ?? null;
   const classroomSubjects = selectedClassroom?.subjects ?? [];
-  const selectedSubject =
-    classroomSubjects.find((subject) => subject.id === activeSubject) ?? classroomSubjects[0];
 
   const teacherName = useMemo(
     () => new Map(teachers.map((t) => [t.id, t.fullName])),
@@ -65,15 +55,18 @@ export function TeacherAssignments() {
     const term = teacherSearch.trim();
     if (!term) return teachers;
     return teachers.filter(
-      (t) => t.fullName.includes(term) || (t.email ?? "").includes(term) || (t.phone ?? "").includes(term),
+      (t) =>
+        t.fullName.includes(term) ||
+        (t.email ?? "").includes(term) ||
+        (t.phone ?? "").includes(term),
     );
   }, [teacherSearch, teachers]);
 
-  const saveMutation = useMutation({
+  const classroomMutation = useMutation({
     mutationFn: (input: { classroomId: string; teacherIds: string[] }) =>
       academicsSetClassroomTeachers({ data: input }),
     onSuccess: () => {
-      toast.success("تم تحديث الإسناد");
+      toast.success("تم تحديث إسناد الفصل");
       void queryClient.invalidateQueries({ queryKey: ["academics", "assignments"] });
       void queryClient.invalidateQueries({ queryKey: ["academics", "classrooms"] });
     },
@@ -92,26 +85,35 @@ export function TeacherAssignments() {
       toast.error(error.message === "forbidden" ? "هذا الإجراء متاح للمدير العام فقط" : error.message),
   });
 
-  const busy = saveMutation.isPending || subjectMutation.isPending;
+  const busy = classroomMutation.isPending || subjectMutation.isPending;
 
-  function toggle(teacherId: string) {
-    if (mode === "subject") {
-      if (!selectedSubject) return;
-      const current = selectedSubject.teacherIds;
-      const next = current.includes(teacherId)
-        ? current.filter((id) => id !== teacherId)
-        : [...current, teacherId];
-      subjectMutation.mutate({ subjectId: selectedSubject.id, teacherIds: next });
+  function toggleClassroom(classroomId: string, teacherId?: string) {
+    const target = teacherId ?? activeTeacher;
+    if (!target) {
+      toast.error("اختاري المعلمة أولًا من العمود الأول.");
       return;
     }
-    if (!selectedClassroom) return;
-    const current = selectedClassroom.teacherIds;
-    const next = current.includes(teacherId)
-      ? current.filter((id) => id !== teacherId)
-      : [...current, teacherId];
-    saveMutation.mutate({ classroomId: selectedClassroom.id, teacherIds: next });
+    const room = classrooms.find((r) => r.id === classroomId);
+    if (!room) return;
+    const next = room.teacherIds.includes(target)
+      ? room.teacherIds.filter((id) => id !== target)
+      : [...room.teacherIds, target];
+    classroomMutation.mutate({ classroomId, teacherIds: next });
   }
 
+  function toggleSubject(subjectId: string, teacherId?: string) {
+    const target = teacherId ?? activeTeacher;
+    if (!target) {
+      toast.error("اختاري المعلمة أولًا من العمود الأول.");
+      return;
+    }
+    const subject = classroomSubjects.find((s) => s.id === subjectId);
+    if (!subject) return;
+    const next = subject.teacherIds.includes(target)
+      ? subject.teacherIds.filter((id) => id !== target)
+      : [...subject.teacherIds, target];
+    subjectMutation.mutate({ subjectId, teacherIds: next });
+  }
 
   if (boardQuery.isLoading) {
     return (
@@ -134,45 +136,44 @@ export function TeacherAssignments() {
 
   return (
     <div className="space-y-5">
-      {/* Assignment mode */}
+      {/* Steps hint */}
       <section className="rounded-[2rem] border border-border/60 bg-card/80 p-4 shadow-sm">
-        <Label className="text-[11px] font-black text-muted-foreground">نوع الإسناد</Label>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {(["classroom", "subject"] as Mode[]).map((value) => (
-            <Button
-              key={value}
-              type="button"
-              variant={mode === value ? "default" : "outline"}
-              size="sm"
-              className="rounded-2xl text-xs font-black"
-              onClick={() => setMode(value)}
-            >
-              {value === "classroom" ? (
-                <GraduationCap className="me-1.5 size-4" />
-              ) : (
-                <BookOpen className="me-1.5 size-4" />
+        <div className="flex flex-wrap items-center gap-2 text-[11px] font-black">
+          {[
+            { n: 1, label: "اختاري المعلمة", done: Boolean(selectedTeacher) },
+            { n: 2, label: "اختاري الفصل", done: Boolean(selectedClassroom) },
+            { n: 3, label: "اختاري المادة", done: false },
+          ].map((step) => (
+            <span
+              key={step.n}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-2xl border px-3 py-1.5",
+                step.done
+                  ? "border-primary/50 bg-primary/10 text-primary"
+                  : "border-border/60 bg-background/60 text-muted-foreground",
               )}
-              {MODE_LABELS[value]}
-            </Button>
+            >
+              <span className="grid size-5 place-items-center rounded-full bg-primary/15 text-[10px] text-primary">
+                {step.n}
+              </span>
+              {step.label}
+            </span>
           ))}
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">
-          {mode === "classroom"
-            ? "معلمة الفصل مسؤولة عن الفصل بالكامل: المنهج والتقييم والمتابعة."
-            : "معلمة المادة مسؤولة عن مادتها فقط داخل الفصل، دون أن تكون معلمة الفصل."}
+          {selectedTeacher
+            ? `المعلمة المحددة: ${selectedTeacher.fullName} — اضغطي الفصل لإسنادها كمعلمة فصل، أو اختاري الفصل ثم المادة لإسنادها كمعلمة مادة.`
+            : "ابدئي باختيار المعلمة من العمود الأول."}
         </p>
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_auto_1fr]">
-
-        {/* Teachers */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* 1 — Teachers */}
         <section className="rounded-[2rem] border border-border/60 bg-card/80 p-5 shadow-sm">
-          <header className="flex items-center justify-between gap-3">
-            <h3 className="flex items-center gap-2 text-sm font-black text-foreground">
-              <UsersRound className="size-4 text-primary" />
-              المعلمات ({teachers.length})
-            </h3>
-          </header>
+          <h3 className="flex items-center gap-2 text-sm font-black text-foreground">
+            <UsersRound className="size-4 text-primary" />
+            المعلمات ({teachers.length})
+          </h3>
 
           <div className="relative mt-3">
             <Search className="absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -191,31 +192,26 @@ export function TeacherAssignments() {
               </p>
             )}
             {filteredTeachers.map((teacher) => {
-              const assigned =
-                mode === "subject"
-                  ? (selectedSubject?.teacherIds.includes(teacher.id) ?? false)
-                  : (selectedClassroom?.teacherIds.includes(teacher.id) ?? false);
-              const target = mode === "subject" ? selectedSubject : selectedClassroom;
+              const active = teacher.id === activeTeacher;
               return (
                 <button
                   key={teacher.id}
                   type="button"
-                  disabled={!target || busy}
-                  onClick={() => toggle(teacher.id)}
+                  onClick={() => setActiveTeacher(active ? "" : teacher.id)}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-2xl border p-3 text-start transition",
-                    assigned
-                      ? "border-primary/50 bg-primary/10"
+                    active
+                      ? "border-primary/60 bg-primary/10 shadow-sm"
                       : "border-border/60 bg-background/60 hover:border-primary/40",
                   )}
                 >
                   <span
                     className={cn(
                       "grid size-9 shrink-0 place-items-center rounded-2xl text-xs font-black",
-                      assigned ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                      active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
                     )}
                   >
-                    {assigned ? <Check className="size-4" /> : teacher.fullName.charAt(0)}
+                    {active ? <Check className="size-4" /> : teacher.fullName.charAt(0)}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-xs font-black text-foreground">
@@ -223,58 +219,46 @@ export function TeacherAssignments() {
                     </span>
                     <span className="block truncate text-[11px] text-muted-foreground">
                       {teacher.classroomIds.length
-                        ? `معلمة فصل · ${teacher.classroomIds.length} فصل`
+                        ? `${teacher.classroomIds.length} فصل`
                         : "غير مُسندة لأي فصل"}
-                      {teacher.subjectIds.length > 0 &&
-                        ` · معلمة مادة · ${teacher.subjectIds.length} مادة`}
+                      {teacher.subjectIds.length > 0 && ` · ${teacher.subjectIds.length} مادة`}
                     </span>
                   </span>
                 </button>
               );
             })}
-
           </div>
         </section>
 
-        <div className="hidden place-items-center lg:grid">
-          <span className="grid size-11 place-items-center rounded-2xl border border-border/60 bg-background/70 text-muted-foreground">
-            <ArrowLeftRight className="size-4" />
-          </span>
-        </div>
-
-        {/* Classrooms */}
+        {/* 2 — Classrooms */}
         <section className="rounded-[2rem] border border-border/60 bg-card/80 p-5 shadow-sm">
           <h3 className="flex items-center gap-2 text-sm font-black text-foreground">
             <GraduationCap className="size-4 text-primary" />
             الفصول النشطة ({classrooms.length})
           </h3>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            {mode === "classroom"
-              ? "اختر فصلًا ثم اضغط أسماء المعلمات على اليمين لإسنادهن أو فك الإسناد."
-              : "اختر الفصل ثم المادة بالأسفل، ثم اضغط أسماء المعلمات لإسنادهن للمادة."}
+            اضغطي الفصل لعرض مواده، وزر «معلمة فصل» لإسناد المعلمة المحددة للفصل كامل.
           </p>
-
 
           <div className="mt-3 space-y-2">
             {classrooms.map((room) => {
               const active = selectedClassroom?.id === room.id;
+              const assigned = activeTeacher ? room.teacherIds.includes(activeTeacher) : false;
               return (
-                <button
+                <div
                   key={room.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveClassroom(room.id);
-                    setActiveSubject("");
-                  }}
-
                   className={cn(
-                    "w-full rounded-2xl border p-3 text-start transition",
+                    "rounded-2xl border p-3 transition",
                     active
                       ? "border-primary/60 bg-primary/10 shadow-sm"
-                      : "border-border/60 bg-background/60 hover:border-primary/40",
+                      : "border-border/60 bg-background/60",
                   )}
                 >
-                  <span className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setActiveClassroom(room.id)}
+                    className="flex w-full items-center gap-2.5 text-start"
+                  >
                     <span
                       className="size-3.5 shrink-0 rounded-full"
                       style={{ backgroundColor: room.colorHex }}
@@ -287,111 +271,132 @@ export function TeacherAssignments() {
                         </span>
                       </span>
                       <span className="block text-[11px] text-muted-foreground">
-                        {room.teacherIds.length} معلمة · {room.enrolledCount} طفل
+                        {room.teacherIds.length} معلمة فصل · {room.subjects.length} مادة ·{" "}
+                        {room.enrolledCount} طفل
                       </span>
                     </span>
-                  </span>
+                  </button>
 
                   {room.teacherIds.length > 0 && (
-                    <span className="mt-2 flex flex-wrap gap-1.5">
+                    <div className="mt-2 flex flex-wrap gap-1.5">
                       {room.teacherIds.map((id) => (
                         <span
                           key={id}
                           className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary"
                         >
                           {teacherName.get(id) ?? "معلمة"}
-                          {active && mode === "classroom" && (
-                            <X
-                              className="size-3 cursor-pointer"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                toggle(id);
-                              }}
-                            />
-                          )}
+                          <X
+                            className="size-3 cursor-pointer"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              toggleClassroom(room.id, id);
+                            }}
+                          />
                         </span>
                       ))}
-                    </span>
+                    </div>
                   )}
-                </button>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={assigned ? "default" : "outline"}
+                    disabled={!activeTeacher || busy}
+                    onClick={() => toggleClassroom(room.id)}
+                    className="mt-2 w-full rounded-2xl text-[11px] font-black"
+                  >
+                    {assigned ? "إلغاء إسنادها كمعلمة فصل" : "إسناد المعلمة كمعلمة فصل"}
+                  </Button>
+                </div>
               );
             })}
           </div>
+        </section>
 
-          {mode === "subject" && (
-            <div className="mt-4 border-t border-border/50 pt-4">
-              <h4 className="flex items-center gap-2 text-xs font-black text-foreground">
-                <BookOpen className="size-4 text-primary" />
-                مواد {selectedClassroom?.nameAr ?? "الفصل"} ({classroomSubjects.length})
-              </h4>
-              {classroomSubjects.length === 0 ? (
-                <p className="mt-2 rounded-2xl border border-dashed border-border/70 px-4 py-6 text-center text-[11px] font-bold text-muted-foreground">
-                  لا توجد مواد لهذا الفصل بعد. تُضاف المواد من تبويب «المنهج».
-                </p>
-              ) : (
-                <div className="mt-2 space-y-2">
-                  {classroomSubjects.map((subject) => {
-                    const active = selectedSubject?.id === subject.id;
-                    return (
-                      <button
-                        key={subject.id}
-                        type="button"
-                        onClick={() => setActiveSubject(subject.id)}
-                        className={cn(
-                          "w-full rounded-2xl border p-3 text-start transition",
-                          active
-                            ? "border-primary/60 bg-primary/10 shadow-sm"
-                            : "border-border/60 bg-background/60 hover:border-primary/40",
-                        )}
-                      >
-                        <span className="flex items-center gap-2.5">
-                          <span
-                            className="size-3.5 shrink-0 rounded-full"
-                            style={{ backgroundColor: subject.colorHex }}
-                          />
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-xs font-black text-foreground">
-                              {subject.nameAr}
-                            </span>
-                            <span className="block text-[11px] text-muted-foreground">
-                              {subject.teacherIds.length
-                                ? `${subject.teacherIds.length} معلمة مادة`
-                                : "لا توجد معلمة مادة"}
-                            </span>
-                          </span>
+        {/* 3 — Subjects */}
+        <section className="rounded-[2rem] border border-border/60 bg-card/80 p-5 shadow-sm">
+          <h3 className="flex items-center gap-2 text-sm font-black text-foreground">
+            <BookOpen className="size-4 text-primary" />
+            المواد {selectedClassroom ? `— ${selectedClassroom.nameAr}` : ""} (
+            {classroomSubjects.length})
+          </h3>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            إسناد المعلمة لمادة محددة داخل هذا الفصل، دون أن تكون معلمة الفصل.
+          </p>
+
+          {!selectedClassroom ? (
+            <p className="mt-3 rounded-2xl border border-dashed border-border/70 px-4 py-10 text-center text-[11px] font-bold text-muted-foreground">
+              اختاري فصلًا من العمود الأوسط لعرض مواده.
+            </p>
+          ) : classroomSubjects.length === 0 ? (
+            <p className="mt-3 rounded-2xl border border-dashed border-border/70 px-4 py-10 text-center text-[11px] font-bold text-muted-foreground">
+              لا توجد مواد لهذا الفصل بعد. تُضاف المواد من تبويب «المنهج».
+            </p>
+          ) : (
+            <div className="mt-3 space-y-2">
+              {classroomSubjects.map((subject) => {
+                const assigned = activeTeacher ? subject.teacherIds.includes(activeTeacher) : false;
+                return (
+                  <div
+                    key={subject.id}
+                    className={cn(
+                      "rounded-2xl border p-3 transition",
+                      assigned
+                        ? "border-primary/50 bg-primary/10"
+                        : "border-border/60 bg-background/60",
+                    )}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className="size-3.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: subject.colorHex }}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-xs font-black text-foreground">
+                          {subject.nameAr}
                         </span>
+                        <span className="block text-[11px] text-muted-foreground">
+                          {subject.teacherIds.length
+                            ? `${subject.teacherIds.length} معلمة مادة`
+                            : "لا توجد معلمة مادة"}
+                        </span>
+                      </span>
+                    </div>
 
-                        {subject.teacherIds.length > 0 && (
-                          <span className="mt-2 flex flex-wrap gap-1.5">
-                            {subject.teacherIds.map((id) => (
-                              <span
-                                key={id}
-                                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary"
-                              >
-                                {teacherName.get(id) ?? "معلمة"}
-                                {active && (
-                                  <X
-                                    className="size-3 cursor-pointer"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      toggle(id);
-                                    }}
-                                  />
-                                )}
-                              </span>
-                            ))}
+                    {subject.teacherIds.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {subject.teacherIds.map((id) => (
+                          <span
+                            key={id}
+                            className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary"
+                          >
+                            {teacherName.get(id) ?? "معلمة"}
+                            <X
+                              className="size-3 cursor-pointer"
+                              onClick={() => toggleSubject(subject.id, id)}
+                            />
                           </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+                        ))}
+                      </div>
+                    )}
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={assigned ? "default" : "outline"}
+                      disabled={!activeTeacher || busy}
+                      onClick={() => toggleSubject(subject.id)}
+                      className="mt-2 w-full rounded-2xl text-[11px] font-black"
+                    >
+                      {assigned ? "إلغاء إسناد المادة" : "إسناد المعلمة لهذه المادة"}
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
       </div>
-
 
       {/* Summary */}
       <section className="overflow-hidden rounded-[2rem] border border-border/60 bg-card/80 shadow-sm">
@@ -443,7 +448,6 @@ export function TeacherAssignments() {
                   <TableCell className="text-xs text-muted-foreground">{room.capacity}</TableCell>
                 </TableRow>
               ))}
-
             </TableBody>
           </Table>
         </div>
