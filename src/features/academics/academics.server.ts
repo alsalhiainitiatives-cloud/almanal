@@ -580,6 +580,73 @@ export async function setTeacherClassrooms(
   return { ok: true, count: unique.length };
 }
 
+/**
+ * Replace the full teacher list of one subject (subject teachers).
+ *
+ * Subject assignments are deliberately independent from classroom
+ * assignments: a subject teacher reaches only her own subject's classroom and
+ * never becomes the classroom's homeroom teacher, so `classrooms.teacher_name`
+ * is left untouched.
+ */
+export async function setSubjectTeachers(
+  supabase: Db,
+  userId: string,
+  subjectId: string,
+  teacherIds: string[],
+) {
+  await assertSuperAdmin(supabase, userId);
+  const unique = [...new Set(teacherIds)];
+
+  const { error: delError } = await supabase
+    .from("teacher_subjects")
+    .delete()
+    .eq("subject_id", subjectId);
+  if (delError) throw new Error(delError.message);
+
+  if (unique.length) {
+    const { error } = await supabase.from("teacher_subjects").insert(
+      unique.map((teacherId) => ({
+        teacher_id: teacherId,
+        subject_id: subjectId,
+        created_by: userId,
+      })),
+    );
+    if (error) throw new Error(error.message);
+  }
+  return { ok: true, count: unique.length };
+}
+
+/** Replace the full subject list of one teacher. */
+export async function setTeacherSubjects(
+  supabase: Db,
+  userId: string,
+  teacherId: string,
+  subjectIds: string[],
+) {
+  await assertSuperAdmin(supabase, userId);
+  const unique = [...new Set(subjectIds)];
+
+  const { error: delError } = await supabase
+    .from("teacher_subjects")
+    .delete()
+    .eq("teacher_id", teacherId);
+  if (delError) throw new Error(delError.message);
+
+  if (unique.length) {
+    const { error } = await supabase.from("teacher_subjects").insert(
+      unique.map((subjectId) => ({
+        teacher_id: teacherId,
+        subject_id: subjectId,
+        created_by: userId,
+      })),
+    );
+    if (error) throw new Error(error.message);
+  }
+  return { ok: true, count: unique.length };
+}
+
+
+
 /* ---------------------------------------------------------------------- */
 /* Copy curriculum between classrooms                                      */
 /* ---------------------------------------------------------------------- */
