@@ -56,7 +56,21 @@ export async function getAssessmentBoard(
   const teacher = roles.includes("teacher");
   if (!staff && !teacher) throw new Error("هذا القسم متاح للمعلمات وإدارة المدرسة فقط.");
 
+  // Subjects the teacher is explicitly assigned to (subject teacher scope).
+  const { data: mySubjectLinks } = teacher
+    ? await supabase
+        .from("teacher_subjects")
+        .select("subject_id, subjects(classroom_id)")
+        .eq("teacher_id", userId)
+    : { data: [] as never[] };
+  const mySubjectRows = (mySubjectLinks ?? []) as unknown as {
+    subject_id: string;
+    subjects: { classroom_id: string } | null;
+  }[];
+  const mySubjectIds = new Set(mySubjectRows.map((r) => r.subject_id));
+
   let classrooms: { id: string; name_ar: string; stages: { name_ar: string } | null }[] = [];
+  let homeroomIds = new Set<string>();
   if (staff) {
     const { data } = await supabase
       .from("classrooms")
@@ -67,21 +81,13 @@ export async function getAssessmentBoard(
   } else {
     // A teacher reaches her homeroom classrooms plus the classrooms of the
     // subjects she is assigned to as a subject teacher.
-    const [{ data: links }, { data: subjectLinks }] = await Promise.all([
-      supabase.from("teacher_classrooms").select("classroom_id").eq("teacher_id", userId),
-      supabase
-        .from("teacher_subjects")
-        .select("subjects(classroom_id)")
-        .eq("teacher_id", userId),
-    ]);
-    const subjectClassroomIds = (
-      (subjectLinks ?? []) as unknown as { subjects: { classroom_id: string } | null }[]
-    ).map((row) => row.subjects?.classroom_id);
-    const ids = [
-      ...new Set(
-        [...(links ?? []).map((l) => l.classroom_id), ...subjectClassroomIds].filter(Boolean),
-      ),
-    ] as string[];
+    const { data: links } = await supabase
+      .from("teacher_classrooms")
+      .select("classroom_id")
+      .eq("teacher_id", userId);
+    homeroomIds = new Set((links ?? []).map((l) => l.classroom_id));
+    const subjectClassroomIds = mySubjectRows.map((row) => row.subjects?.classroom_id);
+    const ids = [...new Set([...homeroomIds, ...subjectClassroomIds].filter(Boolean))] as string[];
 
     if (ids.length) {
       const { data } = await supabase
@@ -105,6 +111,10 @@ export async function getAssessmentBoard(
       ? input.classroomId
       : (options[0]?.id ?? null);
 
+  // A pure subject teacher (not staff, not the homeroom teacher of this
+  // classroom) only evaluates the subjects assigned to her.
+  const subjectScoped = !staff && Boolean(selected) && !homeroomIds.has(selected!);
+
   const empty: AssessmentBoard = {
     canEdit: true,
     classrooms: options,
@@ -112,8 +122,12 @@ export async function getAssessmentBoard(
     lessons: [],
     children: [],
     cells: [],
+    subjectScoped,
+    scopeSubjectNames: [],
+    emptySubjects: [],
   };
   if (!selected) return empty;
+
 
   const [{ data: subjects }, childrenResult] = await Promise.all([
     supabase
