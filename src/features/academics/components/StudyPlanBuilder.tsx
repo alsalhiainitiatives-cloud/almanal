@@ -70,6 +70,8 @@ type DraftItem = {
 
 type Draft = {
   id: string | null;
+  /** null = خطة عامة للفصل، وإلا فهي خطة فردية للطالب المحدد. */
+  childId: string | null;
   planType: PlanType;
   titleAr: string;
   notes: string;
@@ -79,10 +81,11 @@ type Draft = {
   items: DraftItem[];
 };
 
-function emptyDraft(type: PlanType = "weekly"): Draft {
+function emptyDraft(type: PlanType = "weekly", childId: string | null = null): Draft {
   const range = defaultRange(type);
   return {
     id: null,
+    childId,
     planType: type,
     titleAr: "",
     notes: "",
@@ -92,12 +95,20 @@ function emptyDraft(type: PlanType = "weekly"): Draft {
   };
 }
 
-function draftToPlan(draft: Draft, classroomId: string, classroomName: string | null, stageName: string | null): StudyPlan {
+function draftToPlan(
+  draft: Draft,
+  classroomId: string,
+  classroomName: string | null,
+  stageName: string | null,
+  childName: string | null,
+): StudyPlan {
   return {
     id: draft.id ?? "draft",
     classroomId,
     classroomName,
     stageName,
+    childId: draft.childId,
+    childName: draft.childId ? childName : null,
     planType: draft.planType,
     titleAr: draft.titleAr || null,
     notes: draft.notes || null,
