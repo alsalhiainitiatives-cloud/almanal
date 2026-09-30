@@ -481,6 +481,13 @@ export function PrivateChatPanel({
                 >
                   <Smile className="size-4" />
                 </Button>
+                <MessageTemplates
+                  classroomId={classroomId}
+                  disabled={readOnly || !chatId}
+                  onInsert={(body) => setText((prev) => (prev ? `${prev}\n${body}` : body))}
+                  onSend={(body) => send.mutate(body)}
+                />
+
                 <Textarea
                   value={text}
                   onChange={(e) => setText(e.target.value)}
