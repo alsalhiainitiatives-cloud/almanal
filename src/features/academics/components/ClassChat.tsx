@@ -136,6 +136,8 @@ export function ClassChat() {
   const loadBoard = useServerFn(chatBoard);
   const sendFn = useServerFn(chatSendMessage);
   const deleteFn = useServerFn(chatDeleteMessage);
+  const setPostingFn = useServerFn(chatSetParentPosting);
+
   useClearNotificationKind(["chat_message"]);
 
   const [tab, setTab] = useState<"group" | "private">("group");
