@@ -1,10 +1,21 @@
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { GraduationCap, KeyRound, Loader2, ShieldAlert, UserCog } from "lucide-react";
+import {
+  AlertTriangle,
+  GraduationCap,
+  KeyRound,
+  Loader2,
+  Search,
+  ShieldAlert,
+  Trash2,
+  UserCog,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -14,15 +25,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
 import { useAuth } from "@/features/auth/AuthProvider";
 
 import {
   adminBulkSetUserPermissions,
+  adminDeleteUser,
   adminListUsers,
   adminListUserPermissionOverrides,
   adminSetUserRoles,
   getRolePermissionMatrix,
 } from "@/features/auth/admin.functions";
+
 import {
   adminSetUserCustomRoles,
   getCustomRoleMatrix,
