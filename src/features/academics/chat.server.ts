@@ -196,6 +196,7 @@ export async function getChatBoard(
       name_ar: string;
       color_hex: string;
       teacher_name: string | null;
+      allow_parent_messages: boolean | null;
       stages: { name_ar: string } | null;
     }[]).map((c) => ({
       classroomId: c.id,
@@ -204,6 +205,7 @@ export async function getChatBoard(
       colorHex: c.color_hex,
       childName: childByRoom.get(c.id) ?? null,
       teacherNames: byRoom.get(c.id) ?? (c.teacher_name ? [c.teacher_name] : []),
+      allowParentMessages: c.allow_parent_messages !== false,
     }));
   }
 
@@ -212,7 +214,13 @@ export async function getChatBoard(
       ? input.classroomId
       : (rooms[0]?.classroomId ?? null);
 
-  if (!activeRoomId) return { role, rooms, activeRoomId: null, messages: [] };
+  if (!activeRoomId)
+    return { role, rooms, activeRoomId: null, messages: [], canPost: false, canManagePosting: false };
+
+  const activeRoom = rooms.find((r) => r.classroomId === activeRoomId)!;
+  const canManagePosting = role !== "parent";
+  const canPost = role !== "parent" || activeRoom.allowParentMessages;
+
 
   const { data: rows } = await supabase
     .from("classroom_messages")
