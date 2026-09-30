@@ -340,22 +340,52 @@ export function ClassChat() {
                 </div>
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
-                  <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-4 py-2">
                     <p className="text-xs text-muted-foreground">
-                      رسائل الفصل مرئية لجميع أعضاء الفصل
+                      {active.allowParentMessages
+                        ? "رسائل الفصل مرئية لجميع أعضاء الفصل"
+                        : "الشات الجماعي مقتصر على المعلمات وإدارة المدرسة"}
                     </p>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setTab("private");
-                        setAutoPeer(true);
-                      }}
-                    >
-                      <UserRound className="me-1 size-4" /> شات فردي
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {board.data?.canManagePosting ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={active.allowParentMessages ? "outline" : "secondary"}
+                          disabled={posting.isPending}
+                          onClick={() =>
+                            posting.mutate({
+                              classroomId: active.classroomId,
+                              allowed: !active.allowParentMessages,
+                            })
+                          }
+                        >
+                          {posting.isPending ? (
+                            <Loader2 className="me-1 size-4 animate-spin" />
+                          ) : active.allowParentMessages ? (
+                            <Lock className="me-1 size-4" />
+                          ) : (
+                            <LockOpen className="me-1 size-4" />
+                          )}
+                          {active.allowParentMessages
+                            ? "منع إرسال أولياء الأمور"
+                            : "السماح لأولياء الأمور بالإرسال"}
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setTab("private");
+                          setAutoPeer(true);
+                        }}
+                      >
+                        <UserRound className="me-1 size-4" /> شات فردي
+                      </Button>
+                    </div>
                   </div>
+
 
                   <ScrollArea className="min-h-0 flex-1">
                     <div ref={feedRef} className="flex flex-col gap-3 p-4">
