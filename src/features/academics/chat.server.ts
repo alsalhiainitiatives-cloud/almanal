@@ -168,9 +168,12 @@ export async function getChatBoard(
     const [{ data: classrooms }, { data: links }] = await Promise.all([
       supabase
         .from("classrooms")
-        .select("id, name_ar, color_hex, teacher_name, sort_order, stages (name_ar)")
+        .select(
+          "id, name_ar, color_hex, teacher_name, sort_order, allow_parent_messages, stages (name_ar)",
+        )
         .in("id", ids)
         .order("sort_order"),
+
       supabase.from("teacher_classrooms").select("classroom_id, teacher_id").in("classroom_id", ids),
     ]);
 
