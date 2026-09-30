@@ -12,6 +12,8 @@ import {
   FileText,
   Image as ImageIcon,
   Loader2,
+  Lock,
+  LockOpen,
   MessagesSquare,
   Paperclip,
   Send,
@@ -21,6 +23,7 @@ import {
   Video,
   X,
 } from "lucide-react";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
