@@ -307,7 +307,8 @@ export function StudyPlanBuilder() {
             notes: item.notes,
           })),
         },
-      }),
+      });
+    },
     onSuccess: (res) => {
       setDraft((prev) => ({ ...prev, id: res.id }));
       queryClient.invalidateQueries({ queryKey: ["study-plans"] });
