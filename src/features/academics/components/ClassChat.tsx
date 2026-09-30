@@ -212,6 +212,23 @@ export function ClassChat() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const posting = useMutation({
+    mutationFn: async (input: { classroomId: string; allowed: boolean }) =>
+      setPostingFn({ data: input }),
+    onSuccess: (_r, input) => {
+      toast.success(
+        input.allowed
+          ? "تم السماح لأولياء الأمور بالإرسال في الشات الجماعي"
+          : "الشات الجماعي أصبح مقتصرًا على المعلمات",
+      );
+      void queryClient.invalidateQueries({ queryKey: ["class-chat"] });
+      void queryClient.invalidateQueries({ queryKey: ["academics-settings"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
+
   async function onPickFiles(files: FileList | null) {
     if (!files?.length || !activeRoomId) return;
     setUploading(true);
