@@ -281,3 +281,25 @@ export async function getParentPlanBoard(supabase: Db, userId: string): Promise<
 
   return { children, plans: await withItems(supabase, (data ?? []) as unknown as PlanRow[]) };
 }
+
+export type PlanChildOption = {
+  id: string;
+  nameAr: string;
+  studentNumber: string | null;
+};
+
+/** Enrolled children of a classroom, used to pick the target of an individual plan. */
+export async function listClassroomChildren(
+  supabase: Db,
+  classroomId: string,
+): Promise<PlanChildOption[]> {
+  const { data, error } = await supabase.rpc("classroom_enrolled_children", {
+    _classroom_id: classroomId,
+  });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    nameAr: row.name_ar,
+    studentNumber: row.student_number ?? null,
+  }));
+}
