@@ -81,6 +81,33 @@ async function roomSeeds(
     .map((r) => ({ classroomId: r.classroom_id as string, childName: r.name_ar }));
 }
 
+/**
+ * Display names for parents inside one classroom: parents are shown by their
+ * child's name everywhere in the chat, never by their own name.
+ * Uses the service client because RLS hides other families' children.
+ */
+export async function childNamesByParent(classroomId: string): Promise<Map<string, string>> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("application_children")
+    .select("name_ar, applications!inner (parent_id, status)")
+    .eq("classroom_id", classroomId)
+    .eq("applications.status", "approved")
+    .is("withdrawn_at", null)
+    .limit(500);
+
+  const byParent = new Map<string, string[]>();
+  for (const row of (data ?? []) as unknown as {
+    name_ar: string;
+    applications: { parent_id: string | null } | null;
+  }[]) {
+    const parentId = row.applications?.parent_id;
+    if (!parentId || !row.name_ar) continue;
+    byParent.set(parentId, [...(byParent.get(parentId) ?? []), row.name_ar]);
+  }
+  return new Map([...byParent.entries()].map(([id, names]) => [id, names.join(" و")]));
+}
+
 function normalizeAttachments(raw: unknown): ChatAttachment[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -94,6 +121,7 @@ function normalizeAttachments(raw: unknown): ChatAttachment[] {
       size: (a['size'] as number | null) ?? null,
     }));
 }
+
 
 /** Rooms the caller may reach, plus the message feed of the active room. */
 export async function getChatBoard(
