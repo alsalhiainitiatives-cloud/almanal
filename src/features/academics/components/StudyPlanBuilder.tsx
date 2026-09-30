@@ -474,6 +474,61 @@ export function StudyPlanBuilder() {
           </Select>
         </div>
 
+        <div className="min-w-44">
+          <Label className="mb-1 block text-xs">نطاق الخطة</Label>
+          <Select
+            value={scope}
+            onValueChange={(value) => {
+              const next = value as PlanScope;
+              setScope(next);
+              setDraft((prev) => ({
+                ...prev,
+                id: null,
+                childId: next === "child" ? prev.childId : null,
+              }));
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="classroom">{PLAN_SCOPE_LABELS.classroom}</SelectItem>
+              <SelectItem value="child">{PLAN_SCOPE_LABELS.child}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {scope === "child" ? (
+          <div className="min-w-52">
+            <Label className="mb-1 block text-xs">الطالب</Label>
+            <Select
+              value={draft.childId ?? undefined}
+              onValueChange={(value) => setDraft((prev) => ({ ...prev, childId: value }))}
+              disabled={!classroomId || childrenQuery.isLoading || !children.length}
+            >
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={
+                    childrenQuery.isLoading
+                      ? "جارٍ تحميل الطلاب…"
+                      : children.length
+                        ? "اختر الطالب"
+                        : "لا يوجد طلاب مسجلون في الفصل"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {children.map((child) => (
+                  <SelectItem key={child.id} value={child.id}>
+                    {child.nameAr}
+                    {child.studentNumber ? ` — ${child.studentNumber}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
+
         <div className="min-w-40">
           <Label className="mb-1 block text-xs">نوع الخطة</Label>
           <Select
