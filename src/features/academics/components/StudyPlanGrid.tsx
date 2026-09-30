@@ -18,10 +18,14 @@ export function StudyPlanGrid({
     <div dir="rtl" className="rounded-3xl border border-border/60 bg-card p-5">
       <ReportLetterhead
         className="mb-4"
-        badge="الخطة الدراسية"
+        badge={plan.childId ? "خطة دراسية فردية" : "الخطة الدراسية"}
         documentTitle={planTitle(plan)}
         subtitle={formatPlanRange(plan)}
-        meta={[plan.classroomName, plan.stageName]}
+        meta={[
+          plan.childId ? `الطالب: ${plan.childName ?? "—"}` : null,
+          plan.classroomName,
+          plan.stageName,
+        ]}
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
