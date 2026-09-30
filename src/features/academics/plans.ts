@@ -96,3 +96,20 @@ export function defaultRange(type: PlanType, from = new Date()) {
 export function planTitle(plan: StudyPlan) {
   return plan.titleAr?.trim() || `${PLAN_TYPE_LABELS[plan.planType]} — ${formatPlanRange(plan)}`;
 }
+
+/** نطاق الخطة: عامة للفصل أو فردية لطفل محدد. */
+export type PlanScope = "classroom" | "child";
+
+export const PLAN_SCOPE_LABELS: Record<PlanScope, string> = {
+  classroom: "خطة عامة للفصل",
+  child: "خطة فردية لطالب",
+};
+
+export function planScopeOf(plan: { childId: string | null }): PlanScope {
+  return plan.childId ? "child" : "classroom";
+}
+
+/** شارة قصيرة تُعرض بجانب الخطة في كل الشاشات. */
+export function planScopeBadge(plan: { childId: string | null; childName: string | null }) {
+  return plan.childId ? `خطة خاصة: ${plan.childName ?? "طالب"}` : "خطة عامة للفصل";
+}
