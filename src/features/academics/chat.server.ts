@@ -81,6 +81,33 @@ async function roomSeeds(
     .map((r) => ({ classroomId: r.classroom_id as string, childName: r.name_ar }));
 }
 
+/**
+ * Display names for parents inside one classroom: parents are shown by their
+ * child's name everywhere in the chat, never by their own name.
+ * Uses the service client because RLS hides other families' children.
+ */
+export async function childNamesByParent(classroomId: string): Promise<Map<string, string>> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("application_children")
+    .select("name_ar, applications!inner (parent_id, status)")
+    .eq("classroom_id", classroomId)
+    .eq("applications.status", "approved")
+    .is("withdrawn_at", null)
+    .limit(500);
+
+  const byParent = new Map<string, string[]>();
+  for (const row of (data ?? []) as unknown as {
+    name_ar: string;
+    applications: { parent_id: string | null } | null;
+  }[]) {
+    const parentId = row.applications?.parent_id;
+    if (!parentId || !row.name_ar) continue;
+    byParent.set(parentId, [...(byParent.get(parentId) ?? []), row.name_ar]);
+  }
+  return new Map([...byParent.entries()].map(([id, names]) => [id, names.join(" و")]));
+}
+
 function normalizeAttachments(raw: unknown): ChatAttachment[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -94,6 +121,7 @@ function normalizeAttachments(raw: unknown): ChatAttachment[] {
       size: (a['size'] as number | null) ?? null,
     }));
 }
+
 
 /** Rooms the caller may reach, plus the message feed of the active room. */
 export async function getChatBoard(
@@ -140,9 +168,12 @@ export async function getChatBoard(
     const [{ data: classrooms }, { data: links }] = await Promise.all([
       supabase
         .from("classrooms")
-        .select("id, name_ar, color_hex, teacher_name, sort_order, stages (name_ar)")
+        .select(
+          "id, name_ar, color_hex, teacher_name, sort_order, allow_parent_messages, stages (name_ar)",
+        )
         .in("id", ids)
         .order("sort_order"),
+
       supabase.from("teacher_classrooms").select("classroom_id, teacher_id").in("classroom_id", ids),
     ]);
 
@@ -165,6 +196,7 @@ export async function getChatBoard(
       name_ar: string;
       color_hex: string;
       teacher_name: string | null;
+      allow_parent_messages: boolean | null;
       stages: { name_ar: string } | null;
     }[]).map((c) => ({
       classroomId: c.id,
@@ -173,6 +205,7 @@ export async function getChatBoard(
       colorHex: c.color_hex,
       childName: childByRoom.get(c.id) ?? null,
       teacherNames: byRoom.get(c.id) ?? (c.teacher_name ? [c.teacher_name] : []),
+      allowParentMessages: c.allow_parent_messages !== false,
     }));
   }
 
@@ -181,7 +214,13 @@ export async function getChatBoard(
       ? input.classroomId
       : (rooms[0]?.classroomId ?? null);
 
-  if (!activeRoomId) return { role, rooms, activeRoomId: null, messages: [] };
+  if (!activeRoomId)
+    return { role, rooms, activeRoomId: null, messages: [], canPost: false, canManagePosting: false };
+
+  const activeRoom = rooms.find((r) => r.classroomId === activeRoomId)!;
+  const canManagePosting = role !== "parent";
+  const canPost = role !== "parent" || activeRoom.allowParentMessages;
+
 
   const { data: rows } = await supabase
     .from("classroom_messages")
@@ -214,12 +253,16 @@ export async function getChatBoard(
   );
   const signed = await signPaths([...paths, ...avatarPaths]);
 
+  // Parents are identified by their child's name, never by their own name.
+  const childNames = await childNamesByParent(activeRoomId);
+
   const messages: ChatMessage[] = ordered.map((r) => ({
     id: r.id,
     classroomId: r.classroom_id,
     parentMessageId: r.parent_message_id,
     senderId: r.sender_id,
-    senderName: r.sender_name,
+    senderName:
+      r.sender_role === "parent" ? (childNames.get(r.sender_id) ?? r.sender_name) : r.sender_name,
     senderAvatarUrl: (() => {
       const raw = avatarById.get(r.sender_id) ?? null;
       if (!raw) return null;
@@ -238,7 +281,8 @@ export async function getChatBoard(
     mine: r.sender_id === userId,
   }));
 
-  return { role, rooms, activeRoomId, messages };
+  return { role, rooms, activeRoomId, messages, canPost, canManagePosting };
+
 }
 
 export type SendMessageInput = {
@@ -261,11 +305,33 @@ export async function sendChatMessage(supabase: Db, userId: string, input: SendM
   const attachments = (input.attachments ?? []).slice(0, 6);
   if (!body && !attachments.length) throw new Error("لا يمكن إرسال رسالة فارغة.");
 
+  // Group chat can be restricted to teachers and administration per classroom.
+  if (senderRole === "parent") {
+    const { data: classroomFlag } = await supabase
+      .from("classrooms")
+      .select("allow_parent_messages")
+      .eq("id", input.classroomId)
+      .maybeSingle();
+    if (classroomFlag?.allow_parent_messages === false) {
+      throw new Error(
+        "إرسال الرسائل في الشات الجماعي مقتصر على المعلمات — يمكنك التواصل عبر الرسائل الخاصة.",
+      );
+    }
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name")
     .eq("id", userId)
     .maybeSingle();
+
+  // A parent appears under her child's name, never her own.
+  const displayName =
+    senderRole === "parent"
+      ? ((await childNamesByParent(input.classroomId)).get(userId) ??
+        profile?.full_name ??
+        null)
+      : (profile?.full_name ?? null);
 
   const { data, error } = await supabase
     .from("classroom_messages")
@@ -273,7 +339,7 @@ export async function sendChatMessage(supabase: Db, userId: string, input: SendM
       classroom_id: input.classroomId,
       parent_message_id: input.parentMessageId ?? null,
       sender_id: userId,
-      sender_name: profile?.full_name ?? null,
+      sender_name: displayName,
       sender_role: senderRole,
       body,
       attachments: attachments as never,
@@ -294,7 +360,8 @@ export async function sendChatMessage(supabase: Db, userId: string, input: SendM
       .eq("id", input.classroomId)
       .maybeSingle();
     const { parentIds, teacherIds } = await classroomAudience(input.classroomId);
-    const senderName = profile?.full_name ?? "أحد أعضاء الفصل";
+    const senderName = displayName ?? "أحد أعضاء الفصل";
+
     const preview = body ? body.slice(0, 120) : "مرفق جديد في المحادثة";
     const title = `رسالة جديدة في ${classroom?.name_ar ?? "محادثة الفصل"}`;
 
