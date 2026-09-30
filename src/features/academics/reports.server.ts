@@ -35,11 +35,10 @@ async function rolesOf(supabase: Db, userId: string): Promise<AppRole[]> {
   return (data ?? []).map((r) => r.role as AppRole);
 }
 
-async function signEvidence(paths: string[]): Promise<Record<string, string>> {
+async function signEvidence(supabase: Db, paths: string[]): Promise<Record<string, string>> {
   const unique = [...new Set(paths.filter(Boolean))];
   if (!unique.length) return {};
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin.storage
+  const { data } = await supabase.storage
     .from(ASSESSMENT_BUCKET)
     .createSignedUrls(unique, 60 * 60 * 6);
   const map: Record<string, string> = {};
@@ -289,6 +288,7 @@ export async function buildChildReport(
 
   const raw = (cellRows ?? []) as unknown as RawCell[];
   const urls = await signEvidence(
+    supabase,
     raw.flatMap((r) => (r.assessment_evidences ?? []).map((e) => e.file_path ?? "")),
   );
 

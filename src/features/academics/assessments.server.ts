@@ -34,11 +34,10 @@ async function rolesOf(supabase: Db, userId: string): Promise<AppRole[]> {
   return (data ?? []).map((r) => r.role as AppRole);
 }
 
-async function signEvidence(paths: string[]): Promise<Record<string, string>> {
+async function signEvidence(supabase: Db, paths: string[]): Promise<Record<string, string>> {
   const unique = [...new Set(paths.filter(Boolean))];
   if (!unique.length) return {};
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin.storage
+  const { data } = await supabase.storage
     .from(ASSESSMENT_BUCKET)
     .createSignedUrls(unique, 60 * 60 * 6);
   const map: Record<string, string> = {};
@@ -215,6 +214,7 @@ export async function getAssessmentBoard(
 
   const raw = (assessmentRows ?? []) as unknown as RawRow[];
   const urls = await signEvidence(
+    supabase,
     raw.flatMap((r) => (r.assessment_evidences ?? []).map((e) => e.file_path ?? "")),
   );
 
@@ -370,8 +370,7 @@ export async function deleteAssessmentEvidence(supabase: Db, id: string) {
   if (error) throw new Error(error.message);
 
   if (row?.file_path) {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.storage.from(ASSESSMENT_BUCKET).remove([row.file_path]);
+    await supabase.storage.from(ASSESSMENT_BUCKET).remove([row.file_path]);
   }
   return { ok: true };
 }
