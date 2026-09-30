@@ -8,7 +8,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { getRequest } from "@tanstack/react-start/server";
 
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database } from "@/integrations/supabase/types";
 
 export const MAX_FAILED_ATTEMPTS = 6;
@@ -68,17 +67,37 @@ export function isEmail(value: string): boolean {
   return value.includes("@");
 }
 
+/**
+ * Publishable-key client that acts as the caller when the request carries a
+ * bearer token, otherwise as an anonymous visitor. All privileged bookkeeping
+ * goes through SECURITY DEFINER database functions — no service key needed.
+ */
+function requestClient() {
+  let authorization: string | null = null;
+  try {
+    authorization = getRequest()?.headers.get("authorization") ?? null;
+  } catch {
+    authorization = null;
+  }
+  return createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
+    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+    global: authorization?.toLowerCase().startsWith("bearer ")
+      ? { headers: { Authorization: authorization } }
+      : undefined,
+  });
+}
+
 export async function recordLoginAttempt(input: {
   identifier: string;
   success: boolean;
   meta: RequestMeta;
 }) {
   try {
-    await supabaseAdmin.from("login_attempts").insert({
-      identifier: input.identifier.slice(0, 160).toLowerCase(),
-      ip_address: input.meta.ip,
-      user_agent: input.meta.userAgent,
-      success: input.success,
+    await requestClient().rpc("log_login_attempt", {
+      _identifier: input.identifier,
+      _ip: input.meta.ip ?? "",
+      _user_agent: input.meta.userAgent ?? "",
+      _success: input.success,
     });
   } catch (error) {
     // Telemetry must never block authentication.
@@ -97,19 +116,20 @@ export async function recordAudit(input: {
   meta: RequestMeta;
 }) {
   try {
-    await supabaseAdmin.from("audit_logs").insert({
-    user_id: input.userId ?? null,
-    actor_email: input.actorEmail ?? null,
-    action: input.action,
-    entity: input.entity ?? null,
-    entity_id: input.entityId ?? null,
-    success: input.success ?? true,
-    metadata: (input.metadata ?? {}) as never,
-    ip_address: input.meta.ip,
-    user_agent: input.meta.userAgent,
-    browser: input.meta.browser,
-    device: input.meta.device,
+    const { error } = await requestClient().rpc("write_audit_log", {
+      _user_id: input.userId ?? (null as unknown as string),
+      _actor_email: input.actorEmail ?? "",
+      _action: input.action,
+      _entity: input.entity ?? "",
+      _entity_id: input.entityId ?? "",
+      _success: input.success ?? true,
+      _metadata: (input.metadata ?? {}) as never,
+      _ip: input.meta.ip ?? "",
+      _user_agent: input.meta.userAgent ?? "",
+      _browser: input.meta.browser,
+      _device: input.meta.device,
     });
+    if (error) console.error("[auth] audit log rejected", error.message);
   } catch (error) {
     console.error("[auth] failed to write audit log", error);
   }
@@ -117,26 +137,14 @@ export async function recordAudit(input: {
 
 /** Brute-force protection: too many recent failures for the identifier or IP. */
 export async function isRateLimited(identifier: string, ip: string | null): Promise<boolean> {
-  const since = new Date(Date.now() - LOCKOUT_WINDOW_MINUTES * 60_000).toISOString();
   try {
-    const byIdentifier = await supabaseAdmin
-    .from("login_attempts")
-    .select("id", { count: "exact", head: true })
-    .eq("identifier", identifier.toLowerCase())
-    .eq("success", false)
-    .gte("created_at", since);
-
-    if ((byIdentifier.count ?? 0) >= MAX_FAILED_ATTEMPTS) return true;
-
-    if (ip) {
-      const byIp = await supabaseAdmin
-        .from("login_attempts")
-        .select("id", { count: "exact", head: true })
-        .eq("ip_address", ip)
-        .eq("success", false)
-        .gte("created_at", since);
-      if ((byIp.count ?? 0) >= MAX_FAILED_ATTEMPTS * 4) return true;
-    }
+    const { data } = await requestClient().rpc("login_rate_limited", {
+      _identifier: identifier.toLowerCase(),
+      _ip: ip ?? (null as unknown as string),
+      _window_minutes: LOCKOUT_WINDOW_MINUTES,
+      _max: MAX_FAILED_ATTEMPTS,
+    });
+    return data === true;
   } catch (error) {
     // Fail open on telemetry outages rather than locking every family out.
     console.error("[auth] rate limit check failed", error);
@@ -157,14 +165,8 @@ export async function resolveEmail(identifier: string): Promise<string | null> {
   if (!phone) return null;
 
   try {
-    const { data } = await supabaseAdmin
-      .from("profiles")
-      .select("email, phone")
-      .ilike("phone", `%${phone}`)
-      .limit(2);
-
-    if (!data || data.length !== 1) return null;
-    return data[0].email ?? null;
+    const { data } = await requestClient().rpc("resolve_login_email", { _phone_tail: phone });
+    return (data as string | null) ?? null;
   } catch (error) {
     console.error("[auth] phone resolution failed", error);
     return null;
@@ -184,39 +186,25 @@ export async function registerSessionRecord(input: {
   userId: string;
   rememberMe: boolean;
   meta: RequestMeta;
+  accessToken: string;
 }) {
-  const now = new Date().toISOString();
   try {
-    const existing = await supabaseAdmin
-    .from("user_sessions")
-    .select("id")
-    .eq("user_id", input.userId)
-    .is("revoked_at", null)
-    .eq("user_agent", input.meta.userAgent ?? "")
-    .eq("ip_address", input.meta.ip ?? "")
-    .maybeSingle();
-
-    if (existing.data?.id) {
-      await supabaseAdmin
-        .from("user_sessions")
-        .update({ last_seen_at: now, remember_me: input.rememberMe })
-        .eq("id", existing.data.id);
-    } else {
-      await supabaseAdmin.from("user_sessions").insert({
-        user_id: input.userId,
-        ip_address: input.meta.ip,
-        user_agent: input.meta.userAgent,
-        browser: input.meta.browser,
-        device: input.meta.device,
-        remember_me: input.rememberMe,
-        last_seen_at: now,
-      });
-    }
-
-    await supabaseAdmin
-      .from("profiles")
-      .update({ last_login_at: now })
-      .eq("id", input.userId);
+    const client = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
+      {
+        auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+        global: { headers: { Authorization: `Bearer ${input.accessToken}` } },
+      },
+    );
+    const { error } = await client.rpc("register_my_session", {
+      _remember: input.rememberMe,
+      _ip: input.meta.ip ?? "",
+      _user_agent: input.meta.userAgent ?? "",
+      _browser: input.meta.browser,
+      _device: input.meta.device,
+    });
+    if (error) console.error("[auth] session bookkeeping rejected", error.message);
   } catch (error) {
     console.error("[auth] session bookkeeping failed", error);
   }
