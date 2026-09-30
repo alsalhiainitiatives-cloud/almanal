@@ -45,15 +45,24 @@ import { academicsClassrooms, academicsCurriculum } from "../academics.functions
 import { chatSendMessage } from "../chat.functions";
 import { exportPlanImage, exportPlanPdf, planImageAttachment } from "../plan-export";
 import {
+  PLAN_SCOPE_LABELS,
   PLAN_TYPE_LABELS,
   SCHOOL_DAYS,
   defaultRange,
   formatPlanRange,
+  planScopeBadge,
   planTitle,
+  type PlanScope,
   type PlanType,
   type StudyPlan,
 } from "../plans";
-import { plansDelete, plansForClassroom, plansSave, plansSetPublished } from "../plans.functions";
+import {
+  plansClassroomChildren,
+  plansDelete,
+  plansForClassroom,
+  plansSave,
+  plansSetPublished,
+} from "../plans.functions";
 import { StudyPlanGrid } from "./StudyPlanGrid";
 
 type DraftItem = {
@@ -70,6 +79,8 @@ type DraftItem = {
 
 type Draft = {
   id: string | null;
+  /** null = خطة عامة للفصل، وإلا فهي خطة فردية للطالب المحدد. */
+  childId: string | null;
   planType: PlanType;
   titleAr: string;
   notes: string;
@@ -79,10 +90,11 @@ type Draft = {
   items: DraftItem[];
 };
 
-function emptyDraft(type: PlanType = "weekly"): Draft {
+function emptyDraft(type: PlanType = "weekly", childId: string | null = null): Draft {
   const range = defaultRange(type);
   return {
     id: null,
+    childId,
     planType: type,
     titleAr: "",
     notes: "",
@@ -92,12 +104,20 @@ function emptyDraft(type: PlanType = "weekly"): Draft {
   };
 }
 
-function draftToPlan(draft: Draft, classroomId: string, classroomName: string | null, stageName: string | null): StudyPlan {
+function draftToPlan(
+  draft: Draft,
+  classroomId: string,
+  classroomName: string | null,
+  stageName: string | null,
+  childName: string | null,
+): StudyPlan {
   return {
     id: draft.id ?? "draft",
     classroomId,
     classroomName,
     stageName,
+    childId: draft.childId,
+    childName: draft.childId ? childName : null,
     planType: draft.planType,
     titleAr: draft.titleAr || null,
     notes: draft.notes || null,
@@ -198,12 +218,15 @@ export function StudyPlanBuilder() {
   const loadClassrooms = useServerFn(academicsClassrooms);
   const loadCurriculum = useServerFn(academicsCurriculum);
   const loadPlans = useServerFn(plansForClassroom);
+  const loadChildren = useServerFn(plansClassroomChildren);
   const saveFn = useServerFn(plansSave);
   const deleteFn = useServerFn(plansDelete);
   const publishFn = useServerFn(plansSetPublished);
   const sendChat = useServerFn(chatSendMessage);
 
   const [classroomId, setClassroomId] = useState<string | null>(null);
+  const [scope, setScope] = useState<PlanScope>("classroom");
+  const [listFilter, setListFilter] = useState<"all" | "classroom" | "child">("all");
   const [draft, setDraft] = useState<Draft>(() => emptyDraft());
   const [openSubjects, setOpenSubjects] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState<string | null>(null);
@@ -238,12 +261,35 @@ export function StudyPlanBuilder() {
     enabled: Boolean(classroomId),
   });
 
+  const childrenQuery = useQuery({
+    queryKey: ["study-plan-children", classroomId],
+    queryFn: () => loadChildren({ data: { classroomId: classroomId! } }),
+    enabled: Boolean(classroomId),
+  });
+  const children = childrenQuery.data ?? [];
+
+  const activeChild = useMemo(
+    () => children.find((c) => c.id === draft.childId) ?? null,
+    [children, draft.childId],
+  );
+
+  const visiblePlans = useMemo(() => {
+    const rows = plans.data ?? [];
+    if (listFilter === "classroom") return rows.filter((p) => !p.childId);
+    if (listFilter === "child") return rows.filter((p) => Boolean(p.childId));
+    return rows;
+  }, [plans.data, listFilter]);
+
   const save = useMutation({
-    mutationFn: async () =>
-      saveFn({
+    mutationFn: async () => {
+      if (scope === "child" && !draft.childId) {
+        throw new Error("اختاري الطالب المراد إنشاء خطة فردية له.");
+      }
+      return saveFn({
         data: {
           id: draft.id,
           classroomId: classroomId!,
+          childId: scope === "child" ? draft.childId : null,
           planType: draft.planType,
           titleAr: draft.titleAr || null,
           notes: draft.notes || null,
@@ -261,7 +307,8 @@ export function StudyPlanBuilder() {
             notes: item.notes,
           })),
         },
-      }),
+      });
+    },
     onSuccess: (res) => {
       setDraft((prev) => ({ ...prev, id: res.id }));
       queryClient.invalidateQueries({ queryKey: ["study-plans"] });
@@ -320,8 +367,10 @@ export function StudyPlanBuilder() {
   }
 
   function loadPlanIntoDraft(plan: StudyPlan) {
+    setScope(plan.childId ? "child" : "classroom");
     setDraft({
       id: plan.id,
+      childId: plan.childId,
       planType: plan.planType,
       titleAr: plan.titleAr ?? "",
       notes: plan.notes ?? "",
@@ -349,8 +398,9 @@ export function StudyPlanBuilder() {
         classroomId ?? "",
         activeClassroom?.nameAr ?? null,
         activeClassroom?.stageNameAr ?? null,
+        activeChild?.nameAr ?? null,
       ),
-    [draft, classroomId, activeClassroom],
+    [draft, classroomId, activeClassroom, activeChild],
   );
 
   async function runExport(kind: "png" | "pdf" | "chat") {
@@ -407,6 +457,7 @@ export function StudyPlanBuilder() {
             value={classroomId ?? undefined}
             onValueChange={(value) => {
               setClassroomId(value);
+              setScope("classroom");
               setDraft(emptyDraft(draft.planType));
             }}
           >
@@ -422,6 +473,61 @@ export function StudyPlanBuilder() {
             </SelectContent>
           </Select>
         </div>
+
+        <div className="min-w-44">
+          <Label className="mb-1 block text-xs">نطاق الخطة</Label>
+          <Select
+            value={scope}
+            onValueChange={(value) => {
+              const next = value as PlanScope;
+              setScope(next);
+              setDraft((prev) => ({
+                ...prev,
+                id: null,
+                childId: next === "child" ? prev.childId : null,
+              }));
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="classroom">{PLAN_SCOPE_LABELS.classroom}</SelectItem>
+              <SelectItem value="child">{PLAN_SCOPE_LABELS.child}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {scope === "child" ? (
+          <div className="min-w-52">
+            <Label className="mb-1 block text-xs">الطالب</Label>
+            <Select
+              value={draft.childId ?? undefined}
+              onValueChange={(value) => setDraft((prev) => ({ ...prev, childId: value }))}
+              disabled={!classroomId || childrenQuery.isLoading || !children.length}
+            >
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={
+                    childrenQuery.isLoading
+                      ? "جارٍ تحميل الطلاب…"
+                      : children.length
+                        ? "اختر الطالب"
+                        : "لا يوجد طلاب مسجلون في الفصل"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {children.map((child) => (
+                  <SelectItem key={child.id} value={child.id}>
+                    {child.nameAr}
+                    {child.studentNumber ? ` — ${child.studentNumber}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
 
         <div className="min-w-40">
           <Label className="mb-1 block text-xs">نوع الخطة</Label>

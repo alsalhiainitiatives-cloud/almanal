@@ -14,6 +14,7 @@ type Db = SupabaseClient<Database>;
 
 type PlanRow = Database["public"]["Tables"]["study_plans"]["Row"] & {
   classrooms?: { name_ar: string; stages: { name_ar: string } | null } | null;
+  application_children?: { name_ar: string } | null;
 };
 
 function mapItem(row: Database["public"]["Tables"]["study_plan_items"]["Row"]): StudyPlanItem {
@@ -37,6 +38,8 @@ function mapPlan(row: PlanRow, items: StudyPlanItem[]): StudyPlan {
     classroomId: row.classroom_id,
     classroomName: row.classrooms?.name_ar ?? null,
     stageName: row.classrooms?.stages?.name_ar ?? null,
+    childId: row.child_id ?? null,
+    childName: row.application_children?.name_ar ?? null,
     planType: (row.plan_type as PlanType) ?? "weekly",
     titleAr: row.title_ar,
     notes: row.notes,
@@ -68,7 +71,8 @@ async function withItems(supabase: Db, rows: PlanRow[]): Promise<StudyPlan[]> {
   return rows.map((r) => mapPlan(r, byPlan.get(r.id) ?? []));
 }
 
-const PLAN_SELECT = "*, classrooms (name_ar, stages (name_ar))";
+const PLAN_SELECT =
+  "*, classrooms (name_ar, stages (name_ar)), application_children (name_ar)";
 
 /** Plans for one classroom (teacher / staff builder view). */
 export async function listClassroomPlans(supabase: Db, classroomId: string): Promise<StudyPlan[]> {
@@ -84,6 +88,8 @@ export async function listClassroomPlans(supabase: Db, classroomId: string): Pro
 export type SavePlanInput = {
   id?: string | null;
   classroomId: string;
+  /** null / undefined = خطة عامة للفصل. */
+  childId?: string | null;
   planType: PlanType;
   titleAr?: string | null;
   notes?: string | null;
@@ -106,6 +112,7 @@ export type SavePlanInput = {
 export async function saveStudyPlan(supabase: Db, userId: string, input: SavePlanInput) {
   const payload = {
     classroom_id: input.classroomId,
+    child_id: input.childId ?? null,
     plan_type: input.planType,
     title_ar: input.titleAr?.trim() || null,
     notes: input.notes?.trim() || null,
@@ -153,7 +160,11 @@ export async function saveStudyPlan(supabase: Db, userId: string, input: SavePla
   return { id: planId! };
 }
 
-/** Tells parents of the classroom that a plan is now available in their portal. */
+/**
+ * Tells parents a plan is now available in their portal. A classroom-wide plan
+ * reaches every parent in the classroom; an individual plan reaches only the
+ * guardian of that one child, so no family sees another child's plan.
+ */
 async function notifyPlanPublished(supabase: Db, planId: string) {
   try {
     const { classroomAudience, notify } = await import(
@@ -161,17 +172,38 @@ async function notifyPlanPublished(supabase: Db, planId: string) {
     );
     const { data: plan } = await supabase
       .from("study_plans")
-      .select("title_ar, plan_type, start_date, classroom_id, classrooms (name_ar)")
+      .select(
+        "title_ar, plan_type, start_date, classroom_id, child_id, classrooms (name_ar), application_children (name_ar, applications (parent_id))",
+      )
       .eq("id", planId)
       .maybeSingle();
     if (!plan?.classroom_id) return;
-    const classroomName =
-      (plan as unknown as { classrooms: { name_ar: string } | null }).classrooms?.name_ar ?? "فصل طفلك";
-    const { parentIds } = await classroomAudience(plan.classroom_id);
+    const row = plan as unknown as {
+      classrooms: { name_ar: string } | null;
+      application_children: {
+        name_ar: string;
+        applications: { parent_id: string | null } | null;
+      } | null;
+    };
+    const classroomName = row.classrooms?.name_ar ?? "فصل طفلك";
+    const kindLabel = plan.plan_type === "monthly" ? "الخطة الشهرية" : "الخطة الأسبوعية";
+
+    let userIds: string[];
+    let title: string;
+    if (plan.child_id) {
+      const parentId = row.application_children?.applications?.parent_id ?? null;
+      if (!parentId) return;
+      userIds = [parentId];
+      title = `تم نشر ${kindLabel} الخاصة بـ ${row.application_children?.name_ar ?? "طفلك"}`;
+    } else {
+      userIds = (await classroomAudience(plan.classroom_id)).parentIds;
+      title = `تم نشر ${kindLabel} — ${classroomName}`;
+    }
+
     await notify(supabase, {
-      userIds: parentIds,
+      userIds,
       kind: "study_plan",
-      title: `تم نشر ${plan.plan_type === "monthly" ? "الخطة الشهرية" : "الخطة الأسبوعية"} — ${classroomName}`,
+      title,
       body: `${plan.title_ar ?? "الخطة الدراسية"} — تبدأ من ${plan.start_date}. يمكنك استعراضها الآن من «خطة طفلي الدراسية».`,
       link: "/study-plans",
       severity: "success",
@@ -248,4 +280,26 @@ export async function getParentPlanBoard(supabase: Db, userId: string): Promise<
     .limit(120);
 
   return { children, plans: await withItems(supabase, (data ?? []) as unknown as PlanRow[]) };
+}
+
+export type PlanChildOption = {
+  id: string;
+  nameAr: string;
+  studentNumber: string | null;
+};
+
+/** Enrolled children of a classroom, used to pick the target of an individual plan. */
+export async function listClassroomChildren(
+  supabase: Db,
+  classroomId: string,
+): Promise<PlanChildOption[]> {
+  const { data, error } = await supabase.rpc("classroom_enrolled_children", {
+    _classroom_id: classroomId,
+  });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    nameAr: row.name_ar,
+    studentNumber: row.student_number ?? null,
+  }));
 }
