@@ -4041,6 +4041,10 @@ export type Database = {
         Returns: number
       }
       admin_delete_custom_role: { Args: { _id: string }; Returns: boolean }
+      admin_delete_user_account: {
+        Args: { _confirm: string; _user_id: string }
+        Returns: Json
+      }
       admin_set_custom_role_permissions: {
         Args: { _custom_role_id: string; _permission_keys: string[] }
         Returns: number
@@ -4087,6 +4091,7 @@ export type Database = {
         Args: { _assessment_id: string }
         Returns: string
       }
+      assignment_board_lookup: { Args: never; Returns: Json }
       can_access_private_chat: {
         Args: { _chat_id: string; _user_id: string }
         Returns: boolean
@@ -4230,6 +4235,10 @@ export type Database = {
       submit_site_testimonial: {
         Args: { _name: string; _quote: string; _rating: number; _role: string }
         Returns: string
+      }
+      sync_classroom_teacher_names: {
+        Args: { _ids: string[] }
+        Returns: undefined
       }
       topic_classroom_id: { Args: { _topic_id: string }; Returns: string }
       track_application_documents_public: {
