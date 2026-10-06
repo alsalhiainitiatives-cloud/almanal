@@ -60,11 +60,14 @@ async function roomSeeds(
   if (role === "teacher") {
     const [{ data }, { data: subj }] = await Promise.all([
       supabase.from("teacher_classrooms").select("classroom_id").eq("teacher_id", userId),
-      supabase.from("teacher_subjects").select("classroom_id").eq("teacher_id", userId),
+      supabase.from("teacher_subjects").select("subjects (classroom_id)").eq("teacher_id", userId),
     ]);
+    const subjRooms = ((subj ?? []) as unknown as {
+      subjects: { classroom_id: string | null } | null;
+    }[]).map((r) => ({ classroom_id: r.subjects?.classroom_id ?? null }));
     return [
       ...new Set(
-        [...(data ?? []), ...((subj ?? []) as { classroom_id: string | null }[])]
+        [...(data ?? []), ...subjRooms]
           .map((r) => r.classroom_id)
           .filter(Boolean),
       ),
