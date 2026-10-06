@@ -58,11 +58,20 @@ async function roomSeeds(
     return (data ?? []).map((c) => ({ classroomId: c.id, childName: null }));
   }
   if (role === "teacher") {
-    const { data } = await supabase
-      .from("teacher_classrooms")
-      .select("classroom_id")
-      .eq("teacher_id", userId);
-    return [...new Set((data ?? []).map((r) => r.classroom_id).filter(Boolean))].map((id) => ({
+    const [{ data }, { data: subj }] = await Promise.all([
+      supabase.from("teacher_classrooms").select("classroom_id").eq("teacher_id", userId),
+      supabase.from("teacher_subjects").select("subjects (classroom_id)").eq("teacher_id", userId),
+    ]);
+    const subjRooms = ((subj ?? []) as unknown as {
+      subjects: { classroom_id: string | null } | null;
+    }[]).map((r) => ({ classroom_id: r.subjects?.classroom_id ?? null }));
+    return [
+      ...new Set(
+        [...(data ?? []), ...subjRooms]
+          .map((r) => r.classroom_id)
+          .filter(Boolean),
+      ),
+    ].map((id) => ({
       classroomId: id as string,
       childName: null,
     }));
@@ -338,7 +347,10 @@ export async function sendChatMessage(supabase: Db, userId: string, input: SendM
     .select("id")
     .maybeSingle();
 
-  if (error) throw new Error("تعذّر إرسال الرسالة — تأكد من صلاحيتك على هذا الفصل.");
+  if (error) {
+    console.error("chat send failed", error.code, error.message);
+    throw new Error("تعذّر إرسال الرسالة — تأكد من صلاحيتك على هذا الفصل.");
+  }
 
   // Fan out an internal notification so the header bell + tab badges light up.
   try {
