@@ -55,7 +55,7 @@ export const Route = createFileRoute("/admissions/stage/$slug/")({
     };
   },
   notFoundComponent: StageNotFound,
-  errorComponent: StageNotFound,
+  errorComponent: StageError,
   component: StageDetailPage,
 });
 
@@ -365,4 +365,7 @@ function ServiceRow({
       </div>
     </div>
   );
+}
+function StageError() {
+  return <StageNotFound />;
 }

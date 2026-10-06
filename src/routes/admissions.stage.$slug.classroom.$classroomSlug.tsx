@@ -46,7 +46,7 @@ export const Route = createFileRoute("/admissions/stage/$slug/classroom/$classro
     };
   },
   notFoundComponent: ClassroomMissing,
-  errorComponent: ClassroomMissing,
+  errorComponent: ClassroomError,
   component: ClassroomDetailPage,
 });
 
@@ -290,4 +290,8 @@ function Fact({
       <dd className="mt-1.5 text-sm font-black text-foreground">{value}</dd>
     </div>
   );
+}
+
+function ClassroomError() {
+  return <ClassroomMissing />;
 }
