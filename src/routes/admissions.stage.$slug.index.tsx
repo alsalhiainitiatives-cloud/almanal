@@ -1,3 +1,4 @@
+import { StageNotFound } from "@/features/admissions/components/MissingNotice";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import {
@@ -54,21 +55,11 @@ export const Route = createFileRoute("/admissions/stage/$slug/")({
       ],
     };
   },
-  notFoundComponent: StageNotFound,
-  errorComponent: StageError,
+  notFoundComponent: () => <StageNotFound />,
+  errorComponent: () => <StageNotFound />,
   component: StageDetailPage,
 });
 
-function StageNotFound() {
-  return (
-    <div className="section-y text-center">
-      <p className="text-xl font-black text-foreground">لم نعثر على هذه المرحلة</p>
-      <Button asChild variant="hero" className="mt-6">
-        <Link to="/admissions">العودة لصفحة القبول</Link>
-      </Button>
-    </div>
-  );
-}
 
 function StageDetailPage() {
   const { slug } = Route.useParams();
@@ -365,7 +356,4 @@ function ServiceRow({
       </div>
     </div>
   );
-}
-function StageError() {
-  return <StageNotFound />;
 }

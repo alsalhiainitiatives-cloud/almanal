@@ -1,3 +1,4 @@
+import { ClassroomMissing } from "@/features/admissions/components/MissingNotice";
 import { useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
@@ -45,21 +46,11 @@ export const Route = createFileRoute("/admissions/stage/$slug/classroom/$classro
       ],
     };
   },
-  notFoundComponent: ClassroomMissing,
-  errorComponent: ClassroomError,
+  notFoundComponent: () => <ClassroomMissing />,
+  errorComponent: () => <ClassroomMissing />,
   component: ClassroomDetailPage,
 });
 
-function ClassroomMissing() {
-  return (
-    <div className="section-y text-center">
-      <p className="text-xl font-black text-foreground">لم نعثر على هذا الفصل</p>
-      <Button asChild variant="hero" className="mt-6">
-        <Link to="/admissions">العودة للمراحل</Link>
-      </Button>
-    </div>
-  );
-}
 
 function ClassroomDetailPage() {
   const { slug, classroomSlug } = Route.useParams();
@@ -292,6 +283,3 @@ function Fact({
   );
 }
 
-function ClassroomError() {
-  return <ClassroomMissing />;
-}
