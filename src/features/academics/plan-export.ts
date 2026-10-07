@@ -12,11 +12,28 @@ function safeName(plan: StudyPlan) {
 
 async function renderPng(node: HTMLElement): Promise<Blob> {
   const { toBlob } = await import("html-to-image");
-  const blob = await toBlob(node, {
-    pixelRatio: 2,
-    backgroundColor: "#FFFFFF",
-    cacheBust: true,
-  });
+  let blob: Blob | null = null;
+  try {
+    blob = await toBlob(node, {
+      pixelRatio: 2,
+      backgroundColor: "#FFFFFF",
+      cacheBust: true,
+      skipFonts: false,
+      imagePlaceholder:
+        "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==",
+      style: { opacity: "1" },
+    });
+  } catch (e) {
+    console.error("[plan-export] render failed", e);
+    blob = await toBlob(node, {
+      pixelRatio: 2,
+      backgroundColor: "#FFFFFF",
+      skipFonts: true,
+      imagePlaceholder:
+        "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==",
+      style: { opacity: "1" },
+    }).catch(() => null);
+  }
   if (!blob) throw new Error("تعذّر توليد صورة الخطة.");
   return blob;
 }

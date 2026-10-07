@@ -426,7 +426,14 @@ export function StudyPlanBuilder() {
         toast.success("تم نشر الخطة في محادثة الفصل.");
       }
     } catch (e) {
-      toast.error((e as Error).message);
+      console.error("[plan-export]", kind, e);
+      const msg =
+        e instanceof Error && e.message
+          ? e.message
+          : typeof e === "string" && e
+            ? e
+            : "تعذّر إكمال العملية، حاول مرة أخرى.";
+      toast.error(msg);
     } finally {
       setBusy(null);
     }

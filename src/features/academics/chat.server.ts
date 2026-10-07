@@ -29,7 +29,16 @@ const STAFF_ROLES: AppRole[] = [
 
 async function rolesOf(supabase: Db, userId: string): Promise<AppRole[]> {
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-  return (data ?? []).map((r) => r.role as AppRole);
+  const roles = (data ?? []).map((r) => r.role as AppRole);
+  // Active custom roles (e.g. deputies) count as administration.
+  const { data: custom } = await supabase
+    .from("user_custom_roles")
+    .select("custom_roles!inner(is_active)")
+    .eq("user_id", userId)
+    .eq("custom_roles.is_active", true)
+    .limit(1);
+  if (custom?.length && !roles.includes("supervisor")) roles.push("supervisor");
+  return roles;
 }
 
 async function signPaths(supabase: Db, paths: string[]): Promise<Record<string, string>> {
