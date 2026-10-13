@@ -494,8 +494,18 @@ export function StudentDataBoard() {
               ) : (
                 <CheckCircle2 className="size-4" />
               )}
-              اعتماد استيراد {validRows.length} طالب
+              {progress
+                ? `جارٍ الاستيراد ${progress.done} من ${progress.total}…`
+                : `اعتماد استيراد ${validRows.length} طالب`}
             </Button>
+            {progress ? (
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }}
+                />
+              </div>
+            ) : null}
           </div>
         </div>
 
