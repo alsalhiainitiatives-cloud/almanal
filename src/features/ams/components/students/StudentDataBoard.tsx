@@ -258,25 +258,48 @@ export function StudentDataBoard() {
     }
   }
 
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+
+  // Import in small sequential batches: each server call stays well under the
+  // hosting platform's per-request query cap, so large sheets import fully.
   const importMutation = useMutation({
-    mutationFn: () =>
-      runImport({
-        data: { academicYear: year, records: validRows.map((r) => r.record as StudentRecord) },
-      }),
+    mutationFn: async () => {
+      const records = validRows.map((r) => r.record as StudentRecord);
+      const BATCH = 5;
+      let imported = 0;
+      let failed = 0;
+      const failures: { name: string; message?: string }[] = [];
+      setProgress({ done: 0, total: records.length });
+      for (let i = 0; i < records.length; i += BATCH) {
+        const chunk = records.slice(i, i + BATCH);
+        try {
+          const res = await runImport({ data: { academicYear: year, records: chunk } });
+          imported += res.imported;
+          failed += res.failed;
+          res.results.filter((r) => !r.ok).forEach((r) => failures.push(r));
+        } catch (e) {
+          failed += chunk.length;
+          chunk.forEach((c) =>
+            failures.push({ name: c.name_ar, message: e instanceof Error ? e.message : "خطأ" }),
+          );
+        }
+        setProgress({ done: Math.min(i + BATCH, records.length), total: records.length });
+      }
+      return { imported, failed, failures };
+    },
     onSuccess: (result) => {
       invalidate();
       setPreview(null);
       setFileName("");
       setDuplicates({});
+      setProgress(null);
       toast.success(`تم استيراد ${result.imported} طالب/طالبة${result.failed ? ` — تعذّر ${result.failed}` : ""}`);
-      if (result.failed) {
-        result.results
-          .filter((r) => !r.ok)
-          .slice(0, 5)
-          .forEach((r) => toast.error(`${r.name}: ${r.message ?? "خطأ"}`));
-      }
+      result.failures.slice(0, 5).forEach((r) => toast.error(`${r.name}: ${r.message ?? "خطأ"}`));
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      setProgress(null);
+      toast.error(e.message);
+    },
   });
 
   /* ------------------------------ sheet CRUD ------------------------------ */
@@ -471,8 +494,18 @@ export function StudentDataBoard() {
               ) : (
                 <CheckCircle2 className="size-4" />
               )}
-              اعتماد استيراد {validRows.length} طالب
+              {progress
+                ? `جارٍ الاستيراد ${progress.done} من ${progress.total}…`
+                : `اعتماد استيراد ${validRows.length} طالب`}
             </Button>
+            {progress ? (
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }}
+                />
+              </div>
+            ) : null}
           </div>
         </div>
 

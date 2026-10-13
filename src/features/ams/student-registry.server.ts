@@ -430,3 +430,48 @@ export async function deleteStudentRecord(supabase: Db, userId: string, input: {
   }
   return { ok: true as const };
 }
+
+/**
+ * Bulk delete with a constant number of queries (Cloudflare caps subrequests
+ * per invocation). Applications whose every child is selected are removed
+ * whole; otherwise only the selected child rows are removed.
+ */
+export async function deleteStudentRecords(
+  supabase: Db,
+  userId: string,
+  input: { childIds: string[]; confirm: string },
+) {
+  await guard(supabase, userId, "archive");
+  if (input.confirm.trim() !== "تأكيد الحذف") throw new Error("عبارة التأكيد غير صحيحة.");
+  const ids = [...new Set(input.childIds)];
+  if (!ids.length) return { deleted: 0 };
+
+  const { data: rows, error } = await supabase
+    .from("application_children")
+    .select("id, application_id")
+    .in("id", ids);
+  if (error) throw new Error("تعذّر قراءة سجلات الطلاب.");
+  const found = rows ?? [];
+  const appIds = [...new Set(found.map((r) => r.application_id))];
+  if (!appIds.length) return { deleted: 0 };
+
+  const { data: siblings } = await supabase
+    .from("application_children")
+    .select("id, application_id")
+    .in("application_id", appIds);
+  const selected = new Set(found.map((r) => r.id));
+  const fullApps = appIds.filter((a) =>
+    (siblings ?? []).filter((s) => s.application_id === a).every((s) => selected.has(s.id)),
+  );
+  const partialChildIds = found.filter((r) => !fullApps.includes(r.application_id)).map((r) => r.id);
+
+  if (fullApps.length) {
+    const { error: e } = await supabase.from("applications").delete().in("id", fullApps);
+    if (e) throw new Error("تعذّر حذف بعض سجلات الطلاب.");
+  }
+  if (partialChildIds.length) {
+    const { error: e } = await supabase.from("application_children").delete().in("id", partialChildIds);
+    if (e) throw new Error("تعذّر حذف بعض سجلات الطلاب.");
+  }
+  return { deleted: found.length };
+}

@@ -55,6 +55,7 @@ import {
 import {
   addStudent,
   deleteStudentRecord,
+  deleteStudentRecords,
   findDuplicateStudents,
   importStudents,
   updateStudentRecord,
@@ -474,6 +475,13 @@ export const amsStudentDelete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ childId: uuid }).parse(data))
   .handler(async ({ data, context }) => deleteStudentRecord(context.supabase, context.userId, data));
+
+export const amsStudentsDeleteBulk = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ childIds: z.array(uuid).min(1).max(100), confirm: z.string().max(40) }).parse(data),
+  )
+  .handler(async ({ data, context }) => deleteStudentRecords(context.supabase, context.userId, data));
 
 /* ---------------- Age-based stage transfers ---------------- */
 
