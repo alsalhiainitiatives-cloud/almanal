@@ -1,16 +1,18 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { FileText, GraduationCap, Search } from "lucide-react";
+import { FileText, GraduationCap, Search, Trash2 } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { amsStudents } from "@/features/ams/ams.functions";
 import { AmsShell } from "@/features/ams/components/AmsShell";
 import { EmptyState, SkeletonRows } from "@/features/ams/components/atoms";
+import { DeleteStudentsDialog } from "@/features/ams/components/students/DeleteStudentsDialog";
 import { formatApplicationCode } from "@/features/admissions/application-code";
 import { isValidAcademicNumber } from "@/features/ams/academic-number";
 import { ageInMonths, formatAge } from "@/features/admissions/eligibility";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/ams/students/registry")({
@@ -28,6 +30,17 @@ function StudentsPage() {
   const [stageId, setStageId] = useState<string | null>(null);
   const [classroomId, setClassroomId] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const { roles } = useAuth();
+  const canDelete = (roles as string[]).some((r) => ["admin", "supervisor", "principal"].includes(r));
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [targets, setTargets] = useState<{ id: string; name: string }[] | null>(null);
+  const toggle = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["ams", "students", stageId, classroomId],
@@ -106,6 +119,35 @@ function StudentsPage() {
             <span className="rounded-2xl bg-muted px-3 py-2 text-xs font-extrabold text-foreground">
               {rows.length} طالب/طالبة
             </span>
+            {canDelete ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="rounded-xl text-xs font-bold"
+                  disabled={!selected.size}
+                  onClick={() =>
+                    setTargets(
+                      (data?.students ?? [])
+                        .filter((s) => selected.has(s.id))
+                        .map((s) => ({ id: s.id, name: s.name_ar })),
+                    )
+                  }
+                >
+                  <Trash2 className="size-3.5" />
+                  حذف المحدد ({selected.size})
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl border-destructive/40 text-xs font-bold text-destructive"
+                  disabled={!rows.length}
+                  onClick={() => setTargets(rows.map((s) => ({ id: s.id, name: s.name_ar })))}
+                >
+                  حذف كل المعروضين ({rows.length})
+                </Button>
+              </>
+            ) : null}
           </div>
 
           {rows.length === 0 ? (
@@ -119,6 +161,19 @@ function StudentsPage() {
               <table className="w-full min-w-[880px] text-start text-sm">
                 <thead className="bg-muted/40 text-[11px] font-black text-muted-foreground">
                   <tr>
+                    {canDelete ? (
+                      <th className="px-3 py-3">
+                        <input
+                          type="checkbox"
+                          aria-label="تحديد الكل"
+                          className="size-4"
+                          checked={rows.length > 0 && rows.every((s) => selected.has(s.id))}
+                          onChange={(e) =>
+                            setSelected(e.target.checked ? new Set(rows.map((s) => s.id)) : new Set())
+                          }
+                        />
+                      </th>
+                    ) : null}
                     <th className="px-4 py-3 text-start">الطالب</th>
                     <th className="px-4 py-3 text-start">الهوية</th>
                     <th className="px-4 py-3 text-start">العمر</th>
@@ -132,6 +187,17 @@ function StudentsPage() {
                 <tbody>
                   {rows.map((s) => (
                     <tr key={s.id} className="border-t border-border/50 hover:bg-muted/25">
+                      {canDelete ? (
+                        <td className="px-3 py-3">
+                          <input
+                            type="checkbox"
+                            aria-label={`تحديد ${s.name_ar}`}
+                            className="size-4"
+                            checked={selected.has(s.id)}
+                            onChange={() => toggle(s.id)}
+                          />
+                        </td>
+                      ) : null}
                       <td className="px-4 py-3">
                         <p className="font-extrabold text-foreground">{s.name_ar}</p>
                         <p className="text-[11px] text-muted-foreground">
