@@ -242,6 +242,17 @@ function StudentsPage() {
                             ملف الطالب
                           </Link>
                         </Button>
+                        {canDelete ? (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label={`حذف ${s.name_ar}`}
+                            className="ms-1 size-8 rounded-xl text-destructive"
+                            onClick={() => setTargets([{ id: s.id, name: s.name_ar }])}
+                          >
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        ) : null}
                       </td>
                     </tr>
                   ))}
@@ -251,6 +262,11 @@ function StudentsPage() {
           )}
         </div>
       )}
+      <DeleteStudentsDialog
+        targets={targets}
+        onClose={() => setTargets(null)}
+        onDone={() => setSelected(new Set())}
+      />
     </AmsShell>
   );
 }
