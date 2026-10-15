@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { QURRA_OPTIONS } from "@/features/ams/student-import";
 import { amsStudentUpdate, amsStudents } from "@/features/ams/ams.functions";
 import { QURRA_OPTIONS, type StudentRecord } from "@/features/ams/student-import";
 
