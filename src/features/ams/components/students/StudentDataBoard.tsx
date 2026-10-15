@@ -105,6 +105,8 @@ const EMPTY_FORM: FormState = {
   parent_phone: "",
   parent_email: "",
   notes: "",
+  qurra_status: "not_requested",
+  mother_national_id: "",
 };
 
 const trimmed = (value: string) => {
@@ -144,6 +146,8 @@ function toRecord(form: FormState): StudentRecord | { error: string } {
     parent_phone: form.parent_phone!.trim(),
     parent_email: trimmed(form.parent_email!),
     notes: trimmed(form.notes!),
+    qurra_status: (form.qurra_status || "not_requested") as StudentRecord["qurra_status"],
+    mother_national_id: trimmed(form.mother_national_id ?? ""),
   };
 }
 
@@ -172,7 +176,9 @@ function fromStudent(student: Student): FormState {
     parent_nationality: student.parentNationality ?? "",
     parent_phone: student.parentPhone ?? "",
     parent_email: student.parentEmail ?? "",
-    notes: "",
+    notes: student.notes ?? "",
+    qurra_status: student.qurraStatus ?? "not_requested",
+    mother_national_id: student.motherNationalId ?? "",
   };
 }
 
