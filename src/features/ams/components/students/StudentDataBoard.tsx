@@ -44,6 +44,7 @@ import { EmptyState, SkeletonRows } from "@/features/ams/components/atoms";
 import { exportCsv, exportExcel, exportPdf, type Column } from "@/features/ams/reports-export";
 import {
   IMPORT_COLUMNS,
+  QURRA_OPTIONS,
   downloadImportTemplate,
   parseImportFile,
   validateRow,
@@ -910,6 +911,35 @@ export function StudentDataBoard() {
                     ))}
                 </select>
               </label>
+
+              <div className="space-y-2 rounded-2xl border border-primary/25 bg-primary/5 p-3 sm:col-span-2">
+                <p className="text-[11px] font-black text-primary">دعم برنامج قرة</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="space-y-1.5">
+                    <span className="text-[11px] font-black text-muted-foreground">حالة قرة</span>
+                    <select
+                      value={editing.form.qurra_status ?? "not_requested"}
+                      onChange={(e) => setEditing((prev) => (prev ? { ...prev, form: { ...prev.form, qurra_status: e.target.value } } : prev))}
+                      className="h-10 w-full rounded-xl border border-border/60 bg-background px-3 text-xs font-bold"
+                    >
+                      {QURRA_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="text-[11px] font-black text-muted-foreground">هوية الأم</span>
+                    <Input
+                      dir="ltr"
+                      value={editing.form.mother_national_id ?? ""}
+                      onChange={(e) => setEditing((prev) => (prev ? { ...prev, form: { ...prev.form, mother_national_id: e.target.value } } : prev))}
+                      className="h-10 rounded-xl text-xs font-bold"
+                    />
+                  </label>
+                </div>
+              </div>
 
               {(
                 [
