@@ -50,6 +50,28 @@ const parentDraft = (record: StudentRecord) => ({
   notes: record.notes ?? null,
 });
 
+/**
+ * Mirrors the Qurra status chosen in the sheet / edit form onto the
+ * application's single qurra_requests row. `undefined` leaves it untouched.
+ */
+async function syncQurra(supabase: Db, applicationId: string, record: StudentRecord, isNew: boolean) {
+  const status = record.qurra_status;
+  if (status === undefined || (isNew && (status === null || status === "not_requested"))) return;
+  const requested = !!status && status !== "not_requested";
+  const decided = status === "approved" || status === "rejected";
+  const { error } = await supabase.from("qurra_requests").upsert(
+    {
+      application_id: applicationId,
+      requested,
+      status: status ?? "not_requested",
+      mother_national_id: record.mother_national_id ?? null,
+      decided_at: decided ? new Date().toISOString() : null,
+    },
+    { onConflict: "application_id" },
+  );
+  if (error) throw new Error("تم حفظ الطالب لكن تعذّر حفظ حالة قرة.");
+}
+
 /** Creates one approved student record and returns its academic number. */
 async function createStudent(
   supabase: Db,
@@ -90,6 +112,7 @@ async function createStudent(
     throw new Error("تعذّر حفظ بيانات الطالب.");
   }
 
+  await syncQurra(supabase, app.id, record, true);
   const number = await issueAcademicNumber(supabase, app.id, academicYear);
   await supabase
     .from("applications")
@@ -402,6 +425,7 @@ export async function updateStudentRecord(
     })
     .eq("id", child.application_id);
 
+  await syncQurra(supabase, child.application_id, input.record, false);
   return { ok: true as const };
 }
 

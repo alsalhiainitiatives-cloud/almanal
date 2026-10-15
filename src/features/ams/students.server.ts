@@ -29,7 +29,8 @@ const STUDENT_SELECT = `
   applications!inner (
     id, application_number, tracking_number, status, academic_year, student_number,
     parent_id, parent_national_id, parent_nationality, parent_relationship,
-    submitted_at, decided_at, draft_data, season_id
+    submitted_at, decided_at, draft_data, season_id,
+    qurra_requests ( status, requested, mother_national_id )
   )
 `;
 
@@ -58,6 +59,18 @@ function parentFromDraft(draft: Record<string, unknown> | null) {
     | { fullName?: string; mobile?: string; email?: string; city?: string; district?: string; job?: string }
     | null;
   return parent ?? null;
+}
+
+function qurraOf(apps: unknown) {
+  const raw = (apps as { qurra_requests?: unknown } | null)?.qurra_requests;
+  const q = (Array.isArray(raw) ? raw[0] : raw) as
+    | { status: string; requested: boolean; mother_national_id: string | null }
+    | null
+    | undefined;
+  return {
+    qurraStatus: q && q.requested ? q.status : "not_requested",
+    motherNationalId: q?.mother_national_id ?? null,
+  };
 }
 
 export async function listStudents(
@@ -138,6 +151,8 @@ export async function listStudents(
       parentNationalId: app.parent_national_id,
       parentNationality: app.parent_nationality,
       parentRelationship: app.parent_relationship,
+      notes: typeof app.draft_data?.notes === "string" ? (app.draft_data.notes as string) : null,
+      ...qurraOf(row.applications),
     };
   });
 
