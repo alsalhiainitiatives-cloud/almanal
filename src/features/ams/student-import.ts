@@ -38,8 +38,40 @@ export const IMPORT_COLUMNS: ImportColumn[] = [
   { key: "parent_nationality", label: "جنسية ولي الأمر", width: 16 },
   { key: "parent_phone", label: "جوال ولي الأمر", width: 16, required: true, hint: "05XXXXXXXX" },
   { key: "parent_email", label: "البريد الإلكتروني", width: 24 },
+  { key: "qurra_status", label: "دعم قرة", width: 20, hint: "نعم / لا / قيد المراجعة" },
+  { key: "mother_national_id", label: "هوية الأم (قرة)", width: 18 },
   { key: "notes", label: "ملاحظات", width: 26 },
 ];
+
+/** Qurra support states usable in the import sheet and the edit form. */
+export const QURRA_OPTIONS = [
+  { value: "not_requested", label: "غير مستفيد" },
+  { value: "approved", label: "مستفيد — معتمد من قرة" },
+  { value: "waiting_school_review", label: "بانتظار مراجعة الروضة" },
+  { value: "submitted_to_qurra", label: "مرفوع لمنصة قرة" },
+  { value: "waiting_response", label: "بانتظار رد قرة" },
+  { value: "eligible", label: "مؤهل" },
+  { value: "rejected", label: "مرفوض من قرة" },
+] as const;
+export type QurraValue = (typeof QURRA_OPTIONS)[number]["value"];
+const QURRA_VALUES = QURRA_OPTIONS.map((o) => o.value) as [QurraValue, ...QurraValue[]];
+
+/** Understands free-text sheet values: نعم/مستفيد/معتمد, لا, قيد المراجعة, or any label. */
+export function normalizeQurra(value?: string | null): QurraValue | null | "invalid" {
+  const v = String(value ?? "").trim().replace(/\s+/g, " ");
+  if (!v) return null;
+  const low = v.toLowerCase();
+  const hit = QURRA_OPTIONS.find((o) => o.value === low || o.label === v);
+  if (hit) return hit.value;
+  if (/^(نعم|اي|أي|ايوه|مستفيد|مستفيدة|معتمد|معتمدة|مدعوم|مدعومة|yes|y|قرة)$/i.test(v)) return "approved";
+  if (/^(لا|كلا|غير مستفيد|غير مستفيدة|no|n|-)$/i.test(v)) return "not_requested";
+  if (/مراجعة/.test(v)) return "waiting_school_review";
+  if (/مرفوع/.test(v)) return "submitted_to_qurra";
+  if (/انتظار|بانتظار/.test(v)) return "waiting_response";
+  if (/مرفوض/.test(v)) return "rejected";
+  if (/مؤهل/.test(v)) return "eligible";
+  return "invalid";
+}
 
 export type SheetRow = Record<string, string>;
 
@@ -68,6 +100,8 @@ export const studentRecordSchema = z.object({
   parent_phone: z.string().trim().min(9).max(20),
   parent_email: z.string().trim().max(120).nullish(),
   notes: z.string().trim().max(500).nullish(),
+  qurra_status: z.enum(QURRA_VALUES).nullish(),
+  mother_national_id: z.string().trim().max(20).nullish(),
 });
 
 export type StudentRecord = z.infer<typeof studentRecordSchema>;
@@ -159,6 +193,8 @@ export function validateRow(
   if (!clean(raw.parent_name)) errors.push("اسم ولي الأمر مطلوب");
   if (!phone || phone.replace(/\D/g, "").length < 9) errors.push("جوال ولي الأمر غير صحيح");
   if (nationalId && !/^\d{10}$/.test(nationalId)) errors.push("هوية الطالب يجب أن تكون 10 أرقام");
+  const qurra = normalizeQurra(raw.qurra_status);
+  if (qurra === "invalid") errors.push("قيمة «دعم قرة» غير مفهومة (نعم / لا / قيد المراجعة)");
 
   const record =
     errors.length === 0 && gender && birth && stage && phone
@@ -188,6 +224,10 @@ export function validateRow(
           parent_phone: phone,
           parent_email: clean(raw.parent_email),
           notes: clean(raw.notes),
+          qurra_status: qurra === "invalid" ? null : qurra,
+          mother_national_id: clean(raw.mother_national_id)
+            ? normalizeDigits(String(raw.mother_national_id).trim())
+            : null,
         } satisfies StudentRecord)
       : null;
 
@@ -295,6 +335,11 @@ export async function downloadImportTemplate(
         allowBlank: true,
         formulae: [`"${classList}"`],
       };
+    r.getCell(colIndex("qurra_status")).dataValidation = {
+      type: "list",
+      allowBlank: true,
+      formulae: ['"نعم,لا,قيد المراجعة,مرفوع لمنصة قرة,بانتظار رد قرة,مرفوض من قرة"'],
+    };
     const birth = r.getCell(colIndex("birth_date"));
     birth.numFmt = "yyyy-mm-dd";
   }
@@ -310,7 +355,8 @@ export async function downloadImportTemplate(
     ["٤", "تاريخ الميلاد بصيغة YYYY-MM-DD مثال: 2021-09-14."],
     ["٥", "الجنس: ذكر أو أنثى فقط."],
     ["٦", "المرحلة والفصل يجب أن تطابق المسميات في النظام (انظر القائمتين أدناه)."],
-    ["٧", "يصدر النظام الرقم الأكاديمي تلقائيًا لكل طالب بعد الاعتماد."],
+    ["٧", "دعم قرة: اكتب «نعم» للطفل المستفيد من قرة، أو «لا»، أو «قيد المراجعة». يمكن تعديلها لاحقًا من سجل الطلاب."],
+    ["٨", "يصدر النظام الرقم الأكاديمي تلقائيًا لكل طالب بعد الاعتماد."],
     ["", ""],
     ["المراحل المتاحة", stages.map((s) => s.name_ar).join(" · ") || "—"],
     ["الفصول المتاحة", classrooms.map((c) => c.name_ar).join(" · ") || "—"],

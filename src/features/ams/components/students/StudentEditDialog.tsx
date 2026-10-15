@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { amsStudentUpdate, amsStudents } from "@/features/ams/ams.functions";
-import type { StudentRecord } from "@/features/ams/student-import";
+import { QURRA_OPTIONS, type StudentRecord } from "@/features/ams/student-import";
 
 type Student = Awaited<ReturnType<typeof amsStudents>>["students"][number];
 type FormState = Record<string, string>;
@@ -49,6 +49,8 @@ const EMPTY_FORM: FormState = {
   parent_phone: "",
   parent_email: "",
   notes: "",
+  qurra_status: "not_requested",
+  mother_national_id: "",
 };
 
 const trimmed = (value: string) => {
@@ -88,6 +90,8 @@ function toRecord(form: FormState): StudentRecord | { error: string } {
     parent_phone: form.parent_phone!.trim(),
     parent_email: trimmed(form.parent_email!),
     notes: trimmed(form.notes!),
+    qurra_status: (form.qurra_status || "not_requested") as StudentRecord["qurra_status"],
+    mother_national_id: trimmed(form.mother_national_id ?? ""),
   };
 }
 
@@ -116,7 +120,9 @@ function fromStudent(student: Student): FormState {
     parent_nationality: student.parentNationality ?? "",
     parent_phone: student.parentPhone ?? "",
     parent_email: student.parentEmail ?? "",
-    notes: "",
+    notes: student.notes ?? "",
+    qurra_status: student.qurraStatus ?? "not_requested",
+    mother_national_id: student.motherNationalId ?? "",
   };
 }
 
@@ -279,6 +285,35 @@ export function StudentEditDialog({
                   ))}
               </select>
             </label>
+
+            <div className="space-y-2 rounded-2xl border border-primary/25 bg-primary/5 p-3 sm:col-span-2">
+              <p className="text-[11px] font-black text-primary">دعم برنامج قرة</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="space-y-1.5">
+                  <span className="text-[11px] font-black text-muted-foreground">حالة قرة</span>
+                  <select
+                    value={form.qurra_status ?? "not_requested"}
+                    onChange={(e) => set("qurra_status", e.target.value)}
+                    className="h-10 w-full rounded-xl border border-border/60 bg-background px-3 text-xs font-bold"
+                  >
+                    {QURRA_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="space-y-1.5">
+                  <span className="text-[11px] font-black text-muted-foreground">هوية الأم</span>
+                  <Input
+                    dir="ltr"
+                    value={form.mother_national_id ?? ""}
+                    onChange={(e) => set("mother_national_id", e.target.value)}
+                    className="h-10 rounded-xl text-xs font-bold"
+                  />
+                </label>
+              </div>
+            </div>
 
             {(
               [
