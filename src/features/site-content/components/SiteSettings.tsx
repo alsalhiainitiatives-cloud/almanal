@@ -143,48 +143,75 @@ function ListSection<T>({
 }) {
   const patchAt = (index: number, patch: Partial<T>) =>
     onChange(items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  const [open, setOpen] = React.useState<number | null>(null);
+  const labelOf = (item: T) => {
+    const rec = item as Record<string, unknown>;
+    const v = ["title", "name", "q", "label"].map((k) => rec[k]).find((x) => typeof x === "string" && x.trim());
+    return (v as string) || "عنصر بدون عنوان";
+  };
 
   return (
     <Card className="rounded-[1.75rem] border-border/60 shadow-soft">
       <CardHeader className="flex flex-row items-center justify-between gap-3">
-        <CardTitle className="text-base font-extrabold">{title}</CardTitle>
+        <CardTitle className="text-base font-extrabold">
+          {title} <span className="text-xs font-bold text-muted-foreground">({items.length})</span>
+        </CardTitle>
         <Button
           type="button"
           variant="soft"
           size="sm"
           className="rounded-2xl"
-          onClick={() => onChange([...items, blank()])}
+          onClick={() => {
+            onChange([blank(), ...items]);
+            setOpen(0);
+          }}
         >
           <Plus className="size-4" />
           {addLabel}
         </Button>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2">
         {items.length === 0 && (
           <p className="rounded-2xl bg-beige/60 px-4 py-3 text-xs font-semibold text-muted-foreground">
             لا توجد عناصر بعد.
           </p>
         )}
         {items.map((item, index) => (
-          <div
-            key={index}
-            className="rounded-[1.5rem] border border-border/60 bg-card/70 p-4 shadow-soft"
-          >
-            <div className="grid gap-3 sm:grid-cols-2">
-              {render(item, (patch) => patchAt(index, patch))}
-            </div>
-            <div className="mt-3 flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="rounded-2xl text-destructive hover:text-destructive"
-                onClick={() => onChange(items.filter((_, i) => i !== index))}
-              >
-                <Trash2 className="size-4" />
-                حذف
-              </Button>
-            </div>
+          <div key={index} className="rounded-[1.25rem] border border-border/60 bg-card/70 shadow-soft">
+            <button
+              type="button"
+              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-start"
+              onClick={() => setOpen(open === index ? null : index)}
+            >
+              <span className="truncate text-sm font-bold">
+                <span className="me-2 text-xs text-muted-foreground">{index + 1}.</span>
+                {labelOf(item)}
+              </span>
+              <span className="text-xs font-bold text-primary">{open === index ? "إغلاق" : "تعديل"}</span>
+            </button>
+            {open === index && (
+              <div className="border-t border-border/60 p-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {render(item, (patch) => patchAt(index, patch))}
+                </div>
+                <div className="mt-3 flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="rounded-2xl text-destructive hover:text-destructive"
+                    onClick={() => {
+                      if (!window.confirm(`حذف «${labelOf(item)}»؟`)) return;
+                      onChange(items.filter((_, i) => i !== index));
+                      setOpen(null);
+                    }}
+                  >
+                    <Trash2 className="size-4" />
+                    حذف
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </CardContent>
