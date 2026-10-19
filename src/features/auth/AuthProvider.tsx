@@ -14,6 +14,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type React from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getSecurityContext, logSecurityEvent } from "./auth.functions";
@@ -41,7 +42,12 @@ type AuthContextValue = {
   signOut: () => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+// Keep one context identity across HMR/duplicate module evaluations, otherwise
+// consumers loaded from a fresh module copy miss the mounted provider.
+const CONTEXT_KEY = "__almanal_auth_context__";
+const globalStore = globalThis as unknown as Record<string, React.Context<AuthContextValue | null> | undefined>;
+const AuthContext =
+  globalStore[CONTEXT_KEY] ?? (globalStore[CONTEXT_KEY] = createContext<AuthContextValue | null>(null));
 
 const ROLE_PRIORITY: AppRole[] = [
   "admin",
@@ -133,8 +139,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+const SIGNED_OUT_FALLBACK: AuthContextValue = {
+  user: null,
+  session: null,
+  isAuthenticated: false,
+  initializing: true,
+  loadingContext: false,
+  profile: null,
+  sessions: [],
+  roles: [],
+  permissions: [],
+  primaryRole: null,
+  isReadOnly: false,
+  hasRole: () => false,
+  hasAnyRole: () => false,
+  hasPermission: () => false,
+  hasAnyPermission: () => false,
+  refresh: async () => {},
+  signOut: async () => {},
+};
+
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
+  // Never blank the app: during a hot reload a consumer can briefly render
+  // outside the provider; treat it as "still initializing" instead of throwing.
+  if (!ctx) {
+    if (import.meta.env.DEV) console.warn("useAuth rendered outside <AuthProvider>");
+    return SIGNED_OUT_FALLBACK;
+  }
   return ctx;
 }
