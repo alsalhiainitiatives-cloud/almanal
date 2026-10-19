@@ -21,7 +21,11 @@ export const Route = createFileRoute("/_authenticated/ams/website/settings")({
 });
 
 function WebsiteSettingsPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, roles } = useAuth();
+  const allowed =
+    hasPermission(P.settingsManage) ||
+    hasPermission(P.websiteContentManage) ||
+    (roles as string[]).some((r) => ["admin", "supervisor", "principal"].includes(r));
 
   return (
     <AmsShell
@@ -29,10 +33,10 @@ function WebsiteSettingsPage() {
       description="الهوية والشعار والهيرو ومعلومات التواصل ومحتوى الصفحات والسياسات"
       wide
     >
-      {hasPermission(P.settingsManage) ? (
+      {allowed ? (
         <SiteSettings />
       ) : (
-        <AccessNotice message="لا تملك صلاحية تعديل محتوى الموقع — هذه الصفحة متاحة لمدير النظام ومدير المدرسة فقط." />
+        <AccessNotice message="لا تملك صلاحية «إدارة محتوى الموقع الإلكتروني». اطلب منحها من مدير النظام." />
       )}
     </AmsShell>
   );

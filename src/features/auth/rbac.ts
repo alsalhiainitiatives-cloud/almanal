@@ -88,6 +88,7 @@ export const P = {
   paymentsManage: "payments.manage",
   reportsView: "reports.view",
   settingsManage: "settings.manage",
+  websiteContentManage: "website.content_manage",
   inboxView: "inbox.view",
   inboxReply: "inbox.reply",
   inboxStatus: "inbox.status",
