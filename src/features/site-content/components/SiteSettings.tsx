@@ -143,7 +143,7 @@ function ListSection<T>({
 }) {
   const patchAt = (index: number, patch: Partial<T>) =>
     onChange(items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
-  const [open, setOpen] = React.useState<number | null>(null);
+  const [open, setOpen] = useState<number | null>(null);
   const labelOf = (item: T) => {
     const rec = item as Record<string, unknown>;
     const v = ["title", "name", "q", "label"].map((k) => rec[k]).find((x) => typeof x === "string" && x.trim());
