@@ -129,7 +129,7 @@ const NAV_GROUPS = [
   {
     label: "إدارة النظام",
     items: [
-      { to: "/ams/website", label: "الموقع الإلكتروني", icon: Globe, permission: P.applicationsReview, featured: true },
+      { to: "/ams/website", label: "الموقع الإلكتروني", icon: Globe, permission: P.websiteContentManage, featured: true },
       { to: "/ams/system", label: "إعدادات النظام", icon: KeyRound, permission: P.usersView, featured: true },
     ],
   },

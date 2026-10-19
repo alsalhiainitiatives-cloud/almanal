@@ -51,7 +51,16 @@ export const siteContentSave = createServerFn({ method: "POST" })
       _user_id: context.userId,
       _role: "principal",
     });
-    if (!isAdmin && !isPrincipal) throw new Error("غير مصرح بتعديل محتوى الموقع.");
+    const { data: isSupervisor } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "supervisor",
+    });
+    const { data: canManage } = await context.supabase.rpc("has_permission", {
+      _user_id: context.userId,
+      _permission: "website.content_manage",
+    });
+    if (!isAdmin && !isPrincipal && !isSupervisor && !canManage)
+      throw new Error("غير مصرح بتعديل محتوى الموقع.");
 
     const { error } = await context.supabase.from("site_content").upsert(
       {
