@@ -14,6 +14,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type React from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getSecurityContext, logSecurityEvent } from "./auth.functions";
@@ -41,7 +42,12 @@ type AuthContextValue = {
   signOut: () => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+// Keep one context identity across HMR/duplicate module evaluations, otherwise
+// consumers loaded from a fresh module copy miss the mounted provider.
+const CONTEXT_KEY = "__almanal_auth_context__";
+const globalStore = globalThis as unknown as Record<string, React.Context<AuthContextValue | null> | undefined>;
+const AuthContext =
+  globalStore[CONTEXT_KEY] ?? (globalStore[CONTEXT_KEY] = createContext<AuthContextValue | null>(null));
 
 const ROLE_PRIORITY: AppRole[] = [
   "admin",
